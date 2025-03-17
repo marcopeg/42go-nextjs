@@ -1,34 +1,18 @@
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import { Session } from 'next-auth';
-import { JWT } from 'next-auth/jwt';
-import CredentialsProvider from 'next-auth/providers/credentials';
+import type { NextAuthConfig } from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, or, ilike } from 'drizzle-orm';
 import { verifyPassword } from './password';
 
-interface SessionCallbackParams {
-  token: JWT;
-  session: Session;
-}
-
-interface JWTCallbackParams {
-  token: JWT;
-  user?: {
-    id: string;
-    email: string;
-    name?: string | null;
-    image?: string | null;
-  };
-}
-
 // Create a custom adapter with our schema tables
-const customAdapter = DrizzleAdapter(db);
+const adapter = DrizzleAdapter(db);
 
-export const authOptions = {
-  adapter: customAdapter,
+export const authOptions: NextAuthConfig = {
+  adapter,
   session: {
-    strategy: 'jwt' as const,
+    strategy: 'jwt',
   },
   pages: {
     signIn: '/login',
@@ -38,10 +22,11 @@ export const authOptions = {
     newUser: '/register',
   },
   providers: [
-    CredentialsProvider({
-      name: 'credentials',
+    Credentials({
+      id: 'credentials',
+      name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
+        email: { label: 'Email or Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
@@ -50,11 +35,13 @@ export const authOptions = {
         }
 
         try {
-          // Find user by email
+          const identifier = credentials.email as string;
+
+          // Find user by email or username (stored in name field)
           const [user] = await db
             .select()
             .from(users)
-            .where(eq(users.email, credentials.email as string))
+            .where(or(eq(users.email, identifier), ilike(users.name, identifier)))
             .limit(1);
 
           if (!user || !user.password) {
@@ -85,18 +72,18 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async session({ token, session }: SessionCallbackParams) {
+    async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id as string;
+        session.user.id = token.sub as string;
         session.user.name = token.name as string | null;
         session.user.email = token.email as string;
         session.user.image = token.picture as string | null;
       }
       return session;
     },
-    async jwt({ token, user }: JWTCallbackParams) {
+    async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.sub = user.id;
         token.email = user.email;
         token.name = user.name;
         token.picture = user.image;

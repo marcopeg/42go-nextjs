@@ -9,6 +9,7 @@ export const env = createEnv({
     NODE_ENV: z.enum(['development', 'test', 'production']),
     DATABASE_URL: z.string().url(),
     NEXTAUTH_SECRET: z.string().min(1),
+    DISABLE_DEV_API: z.enum(['true', 'false']).optional().default('false'),
   },
 
   /**
@@ -29,6 +30,7 @@ export const env = createEnv({
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_NEXTAUTH_URL: process.env.NEXT_PUBLIC_NEXTAUTH_URL,
+    DISABLE_DEV_API: process.env.DISABLE_DEV_API,
   },
 
   /**

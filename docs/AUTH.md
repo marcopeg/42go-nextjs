@@ -12,12 +12,13 @@ This document provides an overview of the authentication system implemented in t
 6. [Usage in Components](#usage-in-components)
 7. [Adding Social Providers](#adding-social-providers)
 8. [Password Management](#password-management)
+9. [Development Tools](#development-tools)
 
 ## Overview
 
 The authentication system provides the following features:
 
-- Credential-based authentication (email/password)
+- Credential-based authentication (username/email and password)
 - JWT-based session management
 - Infrastructure for social authentication providers
 - Support for passwordless authentication (magic links)
@@ -149,10 +150,10 @@ export const verificationTokens = authSchema.table(
 
 ### Credential-based Authentication
 
-1. User submits email and password through a login form
+1. User submits username/email and password through a login form
 2. The credentials are sent to the Auth.js API route
 3. Auth.js calls the `authorize` function in the credentials provider
-4. The system looks up the user by email in the database
+4. The system looks up the user by email or username in the database
 5. If found, it verifies the password using bcrypt
 6. If verification succeeds, a JWT token is created and stored in a cookie
 7. The user is redirected to the callback URL or dashboard
@@ -252,6 +253,17 @@ export default function UserProfile() {
 }
 ```
 
+To sign in with credentials:
+
+```typescript
+// Sign in with username or email
+signIn('credentials', {
+  email: usernameOrEmail, // This can be either username or email
+  password: password,
+  redirect: false,
+});
+```
+
 ### Server-Side Authentication
 
 To use authentication in server components:
@@ -328,6 +340,80 @@ export async function createUser(email: string, password: string, name?: string)
   });
 }
 ```
+
+## Development Tools
+
+### Creating Test Users
+
+For development and testing purposes, the application includes a special API endpoint that allows you to quickly create test users. This API is **disabled in production** by default.
+
+#### API Endpoint
+
+```
+GET /api/dev/create-user?username=testuser
+```
+
+This will create a user with:
+
+- Username: `testuser`
+- Email: `testuser@example.com`
+- Password: `testuser`
+
+#### Usage
+
+You can create test users by making a GET request to the endpoint:
+
+```bash
+# Using curl
+curl "http://localhost:3000/api/dev/create-user?username=admin"
+
+# Using a browser
+# Simply navigate to http://localhost:3000/api/dev/create-user?username=admin
+```
+
+#### Response
+
+The API will return a JSON response with the created user details:
+
+```json
+{
+  "message": "User admin created successfully",
+  "userId": "uuid-of-the-user",
+  "email": "admin@example.com",
+  "username": "admin",
+  "password": "admin"
+}
+```
+
+If the user already exists, it will return:
+
+```json
+{
+  "message": "User admin already exists",
+  "userId": "uuid-of-the-user",
+  "email": "admin@example.com",
+  "username": "admin"
+}
+```
+
+#### Login with Test Users
+
+You can log in with the created test users using either:
+
+- The username (e.g., `admin`)
+- The email address (e.g., `admin@example.com`)
+
+Both will work with the password being the same as the username.
+
+#### Security Considerations
+
+This API is intended for development and testing only. It is automatically disabled in production environments. You can also manually disable it by setting the `DISABLE_DEV_API=true` environment variable.
+
+#### Environment Variables
+
+| Variable          | Description                                  | Default |
+| ----------------- | -------------------------------------------- | ------- |
+| `DISABLE_DEV_API` | Set to `true` to disable the development API | `false` |
 
 ---
 
