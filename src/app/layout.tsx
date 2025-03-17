@@ -8,6 +8,7 @@ import { TransitionProvider } from '@/components/transition-provider';
 import { RouteChangeLoader } from '@/components/route-change-loader';
 import { AuthProvider } from '@/lib/auth/auth-provider';
 import { LayoutProvider } from '@/components/layout/layout-provider';
+import { Toaster } from '@/components/ui/toaster';
 import appConfig from '@/lib/config';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <TransitionProvider>
                 <LayoutProvider>{children}</LayoutProvider>
               </TransitionProvider>
+              <Toaster />
             </AuthProvider>
           </AccentColorProvider>
         </ThemeProvider>

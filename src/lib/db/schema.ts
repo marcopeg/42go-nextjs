@@ -1,7 +1,8 @@
-import { text, timestamp, primaryKey, integer, pgSchema } from 'drizzle-orm/pg-core';
+import { text, timestamp, primaryKey, integer, pgSchema, pgTable } from 'drizzle-orm/pg-core';
 
 // Define the auth schema
 const authSchema = pgSchema('auth');
+// No need to define public schema as it's the default in PostgreSQL
 
 // Users table
 export const users = authSchema.table('users', {
@@ -62,12 +63,23 @@ export const verificationTokens = authSchema.table(
   })
 );
 
+// Feedback table for public contact form submissions - using pgTable for public schema
+export const feedback = pgTable('feedback', {
+  id: text('id').notNull().primaryKey(),
+  email: text('email').notNull(),
+  message: text('message').notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 // Export all schemas for migrations
 const schemas = {
   users,
   accounts,
   sessions,
   verificationTokens,
+  feedback,
 };
 
 export default schemas;

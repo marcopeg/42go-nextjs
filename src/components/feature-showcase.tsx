@@ -11,14 +11,20 @@ interface FeatureCardProps {
 
 function FeatureCard({ icon, title, description, delay }: FeatureCardProps) {
   return (
-    <ScrollAnimation type="scale" delay={delay} className="h-full">
+    <ScrollAnimation type="scale" delay={delay} className="h-full" duration={0.5}>
       <Card className="h-full transition-all hover:shadow-md">
         <CardHeader>
-          <div className="mb-2 text-accent">{icon}</div>
-          <CardTitle className="text-xl">{title}</CardTitle>
+          <ScrollAnimation type="fade" delay={delay + 0.2} duration={0.4}>
+            <div className="mb-2 text-accent">{icon}</div>
+          </ScrollAnimation>
+          <ScrollAnimation type="slide" direction="up" delay={delay + 0.3} duration={0.4}>
+            <CardTitle className="text-xl">{title}</CardTitle>
+          </ScrollAnimation>
         </CardHeader>
         <CardContent>
-          <CardDescription className="text-sm">{description}</CardDescription>
+          <ScrollAnimation type="fade" delay={delay + 0.4} duration={0.4}>
+            <CardDescription className="text-sm">{description}</CardDescription>
+          </ScrollAnimation>
         </CardContent>
       </Card>
     </ScrollAnimation>
@@ -126,12 +132,14 @@ export function FeatureShowcase() {
 
   return (
     <section className="py-16">
-      <ScrollAnimation type="fade" delay={0.05}>
+      <ScrollAnimation type="slide" direction="down" delay={0.05} duration={0.6}>
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-2">Powerful Features</h2>
-          <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Everything you need to build modern web applications, right out of the box.
-          </p>
+          <ScrollAnimation type="fade" delay={0.2} duration={0.5}>
+            <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              Everything you need to build modern web applications, right out of the box.
+            </p>
+          </ScrollAnimation>
         </div>
       </ScrollAnimation>
 
