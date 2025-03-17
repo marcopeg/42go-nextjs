@@ -74,8 +74,8 @@
 
 2. **Legal & Policy Pages**
 
-   - ❌ Create privacy policy page template
-   - ❌ Implement terms of service page template
+   - ✅ Create privacy policy page template
+   - ✅ Implement terms of service page template
    - ❌ Add customizable content blocks for legal text
 
 3. **User Dashboard & Settings**
