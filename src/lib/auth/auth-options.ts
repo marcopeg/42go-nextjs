@@ -1,13 +1,80 @@
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import GitHub from 'next-auth/providers/github';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { users, accounts, sessions, verificationTokens } from '@/lib/db/schema';
 import { eq, or, ilike } from 'drizzle-orm';
 import { verifyPassword } from './password';
+import { isGitHubOAuthEnabled } from './oauth-config';
 
 // Create a custom adapter with our schema tables
-const adapter = DrizzleAdapter(db);
+const adapter = DrizzleAdapter(db, {
+  usersTable: users,
+  accountsTable: accounts,
+  sessionsTable: sessions,
+  verificationTokensTable: verificationTokens,
+});
+
+// Initialize providers array
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const providers: any[] = [
+  Credentials({
+    id: 'credentials',
+    name: 'Credentials',
+    credentials: {
+      email: { label: 'Email or Username', type: 'text' },
+      password: { label: 'Password', type: 'password' },
+    },
+    async authorize(credentials) {
+      if (!credentials?.email || !credentials?.password) {
+        return null;
+      }
+
+      try {
+        const identifier = credentials.email as string;
+
+        // Find user by email or username (stored in name field)
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(or(eq(users.email, identifier), ilike(users.name, identifier)))
+          .limit(1);
+
+        if (!user || !user.password) {
+          return null;
+        }
+
+        // Verify password
+        const isPasswordValid = await verifyPassword(credentials.password as string, user.password);
+
+        if (!isPasswordValid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name || null,
+          image: user.image || null,
+        };
+      } catch (error) {
+        console.error('Authentication error:', error);
+        return null;
+      }
+    },
+  }),
+];
+
+// Add GitHub provider if enabled
+if (isGitHubOAuthEnabled()) {
+  providers.push(
+    GitHub({
+      clientId: process.env.GITHUB_ID as string,
+      clientSecret: process.env.GITHUB_SECRET as string,
+    })
+  );
+}
 
 export const authOptions: NextAuthConfig = {
   adapter,
@@ -21,56 +88,7 @@ export const authOptions: NextAuthConfig = {
     verifyRequest: '/verify-request',
     newUser: '/register',
   },
-  providers: [
-    Credentials({
-      id: 'credentials',
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email or Username', type: 'text' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
-
-        try {
-          const identifier = credentials.email as string;
-
-          // Find user by email or username (stored in name field)
-          const [user] = await db
-            .select()
-            .from(users)
-            .where(or(eq(users.email, identifier), ilike(users.name, identifier)))
-            .limit(1);
-
-          if (!user || !user.password) {
-            return null;
-          }
-
-          // Verify password
-          const isPasswordValid = await verifyPassword(
-            credentials.password as string,
-            user.password
-          );
-
-          if (!isPasswordValid) {
-            return null;
-          }
-
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name || null,
-            image: user.image || null,
-          };
-        } catch (error) {
-          console.error('Authentication error:', error);
-          return null;
-        }
-      },
-    }),
-  ],
+  providers,
   callbacks: {
     async session({ session, token }) {
       if (token && session.user) {

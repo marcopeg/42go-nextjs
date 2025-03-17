@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { OAuthProviders } from './oauth-providers';
 
 export function LoginForm() {
   const router = useRouter();
@@ -108,6 +109,11 @@ export function LoginForm() {
           </Button>
         </CardFooter>
       </form>
+
+      {/* OAuth Providers */}
+      <CardContent className="pt-0">
+        <OAuthProviders />
+      </CardContent>
     </Card>
   );
 }
