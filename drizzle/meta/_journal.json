@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1742204769524,
-      "tag": "0000_gifted_zeigeist",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1742205250441,
-      "tag": "0001_brainy_wonder_man",
+      "when": 1742205250443,
+      "tag": "0000_initial_schema_with_auth",
       "breakpoints": true
     }
   ]

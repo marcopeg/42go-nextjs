@@ -26,7 +26,7 @@ The authentication system provides the following features:
 
 ## Database Schema
 
-The authentication system uses the following database tables:
+The authentication system uses the following database tables, all organized under the `auth` schema:
 
 ### Database Connection
 
@@ -65,13 +65,19 @@ export default defineConfig({
     database: 'promptslab',
     ssl: false, // SSL is disabled for local development
   },
+  verbose: true,
+  strict: true,
 });
 ```
+
+### Schema Organization
+
+All authentication-related tables are organized under the `auth` schema in PostgreSQL for better organization and separation of concerns.
 
 ### Users Table
 
 ```typescript
-export const users = pgTable('users', {
+export const users = authSchema.table('users', {
   id: text('id').notNull().primaryKey(),
   name: text('name'),
   email: text('email').notNull().unique(),
@@ -86,7 +92,7 @@ export const users = pgTable('users', {
 ### Accounts Table (for OAuth providers)
 
 ```typescript
-export const accounts = pgTable(
+export const accounts = authSchema.table(
   'accounts',
   {
     userId: text('user_id')
@@ -114,7 +120,7 @@ export const accounts = pgTable(
 ### Sessions Table
 
 ```typescript
-export const sessions = pgTable('sessions', {
+export const sessions = authSchema.table('sessions', {
   sessionToken: text('session_token').notNull().primaryKey(),
   userId: text('user_id')
     .notNull()
@@ -126,7 +132,7 @@ export const sessions = pgTable('sessions', {
 ### Verification Tokens Table (for email verification)
 
 ```typescript
-export const verificationTokens = pgTable(
+export const verificationTokens = authSchema.table(
   'verification_tokens',
   {
     identifier: text('identifier').notNull(),

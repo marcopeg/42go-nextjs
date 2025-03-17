@@ -22,8 +22,11 @@ interface JWTCallbackParams {
   };
 }
 
+// Create a custom adapter with our schema tables
+const customAdapter = DrizzleAdapter(db);
+
 export const authOptions = {
-  adapter: DrizzleAdapter(db),
+  adapter: customAdapter,
   session: {
     strategy: 'jwt' as const,
   },

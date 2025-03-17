@@ -1,7 +1,10 @@
-import { pgTable, text, timestamp, primaryKey, integer } from 'drizzle-orm/pg-core';
+import { text, timestamp, primaryKey, integer, pgSchema } from 'drizzle-orm/pg-core';
+
+// Define the auth schema
+const authSchema = pgSchema('auth');
 
 // Users table
-export const users = pgTable('users', {
+export const users = authSchema.table('users', {
   id: text('id').notNull().primaryKey(),
   name: text('name'),
   email: text('email').notNull().unique(),
@@ -13,7 +16,7 @@ export const users = pgTable('users', {
 });
 
 // Accounts table for OAuth providers
-export const accounts = pgTable(
+export const accounts = authSchema.table(
   'accounts',
   {
     userId: text('user_id')
@@ -38,7 +41,7 @@ export const accounts = pgTable(
 );
 
 // Sessions table
-export const sessions = pgTable('sessions', {
+export const sessions = authSchema.table('sessions', {
   sessionToken: text('session_token').notNull().primaryKey(),
   userId: text('user_id')
     .notNull()
@@ -47,7 +50,7 @@ export const sessions = pgTable('sessions', {
 });
 
 // Verification tokens for email verification
-export const verificationTokens = pgTable(
+export const verificationTokens = authSchema.table(
   'verification_tokens',
   {
     identifier: text('identifier').notNull(),

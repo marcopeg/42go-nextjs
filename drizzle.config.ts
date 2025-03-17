@@ -13,7 +13,9 @@ export default defineConfig({
     port: 5432,
     user: 'postgres',
     password: 'postgres',
-    database: 'promptslab',
+    database: 'postgres',
     ssl: false,
   },
+  verbose: true,
+  strict: true,
 });
