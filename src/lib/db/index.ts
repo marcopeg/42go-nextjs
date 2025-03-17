@@ -5,6 +5,7 @@ import { env } from '@/env';
 // Create a PostgreSQL connection pool
 const pool = new Pool({
   connectionString: env.DATABASE_URL,
+  ssl: false,
 });
 
 // Create a DrizzleORM instance

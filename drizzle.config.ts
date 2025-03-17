@@ -14,5 +14,6 @@ export default defineConfig({
     user: 'postgres',
     password: 'postgres',
     database: 'promptslab',
+    ssl: false,
   },
 });

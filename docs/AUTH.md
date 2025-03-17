@@ -28,6 +28,46 @@ The authentication system provides the following features:
 
 The authentication system uses the following database tables:
 
+### Database Connection
+
+The database connection is configured in `src/lib/db/index.ts`:
+
+```typescript
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
+import { env } from '@/env';
+
+// Create a PostgreSQL connection pool
+const pool = new Pool({
+  connectionString: env.DATABASE_URL,
+  ssl: false, // SSL is disabled for local development
+});
+
+// Create a DrizzleORM instance
+export const db = drizzle(pool);
+
+// Export the pool for direct usage if needed
+export { pool };
+```
+
+For Drizzle Studio, the configuration is in `drizzle.config.ts`:
+
+```typescript
+export default defineConfig({
+  schema: './src/lib/db/schema.ts',
+  out: './drizzle',
+  dialect: 'postgresql',
+  dbCredentials: {
+    host: 'localhost',
+    port: 5432,
+    user: 'postgres',
+    password: 'postgres',
+    database: 'promptslab',
+    ssl: false, // SSL is disabled for local development
+  },
+});
+```
+
 ### Users Table
 
 ```typescript
@@ -152,6 +192,9 @@ export const authOptions = {
 The authentication system requires the following environment variables:
 
 ```
+# Database
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres"
+
 # Auth
 NEXTAUTH_SECRET="your-secret-key-here"
 NEXT_PUBLIC_NEXTAUTH_URL="http://localhost:3000"
@@ -163,6 +206,7 @@ NEXT_PUBLIC_NEXTAUTH_URL="http://localhost:3000"
 # GITHUB_SECRET=""
 ```
 
+- `DATABASE_URL`: Connection string for the PostgreSQL database
 - `NEXTAUTH_SECRET`: A secret string used to encrypt cookies and tokens
 - `NEXT_PUBLIC_NEXTAUTH_URL`: The base URL of your application
 
@@ -282,3 +326,22 @@ export async function createUser(email: string, password: string, name?: string)
 ---
 
 This documentation provides an overview of the current authentication system. As the project evolves, additional features like password reset, email verification, and role-based access control can be implemented.
+
+## Database Management with Drizzle Studio
+
+The project uses Drizzle Studio for database management. To run Drizzle Studio:
+
+```bash
+npm run db:studio
+```
+
+This will start Drizzle Studio at https://local.drizzle.studio, where you can:
+
+- View and edit database tables
+- Run SQL queries
+- Manage database schema
+- Visualize relationships between tables
+
+Note: Drizzle Studio is configured to connect to the local PostgreSQL database without SSL, which is appropriate for local development. For production environments, SSL should be enabled.
+
+---
