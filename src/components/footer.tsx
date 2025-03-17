@@ -2,6 +2,8 @@ import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 import { DbTimeDisplay } from './db-time-display';
+import { ThemeToggle } from './theme-toggle';
+import { AccentColorPicker } from './accent-color-picker';
 
 export function Footer({ className }: { className?: string }) {
   const currentYear = new Date().getFullYear();
@@ -15,20 +17,26 @@ export function Footer({ className }: { className?: string }) {
           </p>
           <DbTimeDisplay className="mt-1" />
         </div>
-        <nav className="flex gap-4 sm:gap-6">
-          <Link
-            href="/privacy"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            Privacy
-          </Link>
-          <Link
-            href="/terms"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            Terms
-          </Link>
-        </nav>
+        <div className="flex flex-col items-center gap-4">
+          <nav className="flex gap-4 sm:gap-6">
+            <Link
+              href="/privacy"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Privacy
+            </Link>
+            <Link
+              href="/terms"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Terms
+            </Link>
+          </nav>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <AccentColorPicker />
+          </div>
+        </div>
       </div>
     </footer>
   );

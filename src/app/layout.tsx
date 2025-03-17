@@ -4,10 +4,10 @@ import './globals.css';
 
 import { ThemeProvider } from '@/components/theme-provider';
 import { AccentColorProvider } from '@/components/accent-color-provider';
-import { Footer } from '@/components/footer';
 import { TransitionProvider } from '@/components/transition-provider';
 import { RouteChangeLoader } from '@/components/route-change-loader';
 import { AuthProvider } from '@/lib/auth/auth-provider';
+import { LayoutProvider } from '@/components/layout/layout-provider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -25,10 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AuthProvider>
               <RouteChangeLoader />
               <TransitionProvider>
-                <div className="flex min-h-screen flex-col">
-                  <main className="flex-1">{children}</main>
-                  <Footer />
-                </div>
+                <LayoutProvider>{children}</LayoutProvider>
               </TransitionProvider>
             </AuthProvider>
           </AccentColorProvider>
