@@ -11,6 +11,27 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load sidebar state from localStorage on mount
+  useEffect(() => {
+    // Only run on client-side
+    if (typeof window !== 'undefined') {
+      const storedCollapsedState = localStorage.getItem('sidebarCollapsed');
+      if (storedCollapsedState !== null) {
+        setIsSidebarCollapsed(storedCollapsedState === 'true');
+      }
+      setIsLoaded(true);
+    }
+  }, []);
+
+  // Save sidebar state to localStorage when it changes
+  useEffect(() => {
+    // Only run on client-side
+    if (typeof window !== 'undefined' && isLoaded) {
+      localStorage.setItem('sidebarCollapsed', isSidebarCollapsed.toString());
+    }
+  }, [isSidebarCollapsed, isLoaded]);
 
   // Close mobile menu on larger screens
   useEffect(() => {
