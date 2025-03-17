@@ -70,8 +70,8 @@
 1. **Landing Page**
 
    - ✅ Implement hero section with CTA
-   - ❌ Create feature showcase section
-   - ❌ Build pricing wall component
+   - ✅ Create feature showcase section
+   - ✅ Build pricing wall component
    - ❌ Add adopters and testimonials section
    - ❌ Implement feedback/contact section
 
