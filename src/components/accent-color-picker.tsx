@@ -31,7 +31,7 @@ export function AccentColorPicker() {
           <DropdownMenuItem
             key={color.name}
             onClick={() => setAccentColor(color)}
-            className="flex items-center justify-between"
+            className="flex w-full items-center justify-between"
           >
             <div className="flex items-center gap-2">
               <div
