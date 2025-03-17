@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { OAuthProviders } from './oauth-providers';
+import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 export function LoginForm() {
   const router = useRouter();
@@ -16,7 +17,14 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordAuthEnabled, setIsPasswordAuthEnabled] = useState(true);
   const isFormFilled = username.trim() !== '' && password.trim() !== '';
+
+  useEffect(() => {
+    // Check if password auth is enabled on the client side
+    const passwordAuthEnabled = process.env.NEXT_PUBLIC_PASSWORD_AUTH_ENABLED !== 'false';
+    setIsPasswordAuthEnabled(passwordAuthEnabled);
+  }, []);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,62 +65,78 @@ export function LoginForm() {
 
   return (
     <Card>
-      <form onSubmit={onSubmit}>
-        <CardContent className="pt-6">
-          <div className="space-y-1 my-4">
-            <Label htmlFor="username" className="text-sm mb-2 ml-3">
-              Login with password
-            </Label>
-            <div className="space-y-0">
-              <Input
-                id="username"
-                name="username"
-                type="text"
-                placeholder="username or name@example.com"
-                required
-                autoFocus
-                autoComplete="username email"
-                disabled={isLoading}
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                className="rounded-b-none focus:ring-0 focus:ring-offset-0 focus:outline-none"
-              />
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="password"
-                required
-                autoComplete="current-password"
-                disabled={isLoading}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="rounded-t-none focus:ring-0 focus:ring-offset-0"
-              />
+      {isPasswordAuthEnabled && (
+        <form onSubmit={onSubmit}>
+          <CardContent className="pt-6">
+            <div className="space-y-1 my-4">
+              <div className="relative mb-4">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Login with password
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-0">
+                <Input
+                  id="username"
+                  name="username"
+                  type="text"
+                  placeholder="username or name@example.com"
+                  required
+                  autoFocus
+                  autoComplete="username email"
+                  disabled={isLoading}
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  className="rounded-b-none focus:ring-0 focus:ring-offset-0 focus:outline-none"
+                />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="password"
+                  required
+                  autoComplete="current-password"
+                  disabled={isLoading}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="rounded-t-none focus:ring-0 focus:ring-offset-0"
+                />
+              </div>
+              {error && <div className="mt-2 text-sm text-red-500">{error}</div>}
             </div>
-            {error && <div className="mt-2 text-sm text-red-500">{error}</div>}
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-1 pt-0">
-          <Button
-            type="submit"
-            className={cn(
-              'w-full bg-accent text-accent-foreground hover:bg-accent/90',
-              !isFormFilled && 'opacity-70'
-            )}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Signing in...' : 'Sign In'}
-          </Button>
-          <Button variant="link" className="text-xs h-8" asChild tabIndex={0}>
-            <a href="/forgot-password">Forgot password?</a>
-          </Button>
-        </CardFooter>
-      </form>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-1 pt-0">
+            <Button
+              type="submit"
+              className={cn(
+                'w-full bg-accent text-accent-foreground hover:bg-accent/90',
+                !isFormFilled && 'opacity-70'
+              )}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Signing in...' : 'Sign In'}
+            </Button>
+            <div className="flex justify-between w-full text-xs">
+              <Button variant="link" className="h-8 px-0" asChild tabIndex={0}>
+                <a href="/forgot-password">Forgot password?</a>
+              </Button>
+              {isPasswordAuthEnabled && (
+                <Button variant="link" className="h-8 px-0" asChild tabIndex={0}>
+                  <Link href="/register">Sign up!</Link>
+                </Button>
+              )}
+            </div>
+          </CardFooter>
+        </form>
+      )}
 
       {/* OAuth Providers */}
-      <CardContent className="pt-0">
-        <OAuthProviders />
+      <CardContent className={isPasswordAuthEnabled ? 'pt-0' : 'pt-6'}>
+        <OAuthProviders showSeparator={isPasswordAuthEnabled} />
       </CardContent>
     </Card>
   );

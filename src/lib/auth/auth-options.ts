@@ -8,7 +8,12 @@ import { db } from '@/lib/db';
 import { users, accounts, sessions, verificationTokens } from '@/lib/db/schema';
 import { eq, or, ilike } from 'drizzle-orm';
 import { verifyPassword } from './password';
-import { isGitHubOAuthEnabled, isGoogleOAuthEnabled, isFacebookOAuthEnabled } from './oauth-config';
+import {
+  isGitHubOAuthEnabled,
+  isGoogleOAuthEnabled,
+  isFacebookOAuthEnabled,
+  isPasswordAuthEnabled,
+} from './oauth-config';
 
 // Create a custom adapter with our schema tables
 const adapter = DrizzleAdapter(db, {
@@ -20,53 +25,61 @@ const adapter = DrizzleAdapter(db, {
 
 // Initialize providers array
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const providers: any[] = [
-  Credentials({
-    id: 'credentials',
-    name: 'Credentials',
-    credentials: {
-      email: { label: 'Email or Username', type: 'text' },
-      password: { label: 'Password', type: 'password' },
-    },
-    async authorize(credentials) {
-      if (!credentials?.email || !credentials?.password) {
-        return null;
-      }
+const providers: any[] = [];
 
-      try {
-        const identifier = credentials.email as string;
-
-        // Find user by email or username (stored in name field)
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(or(eq(users.email, identifier), ilike(users.name, identifier)))
-          .limit(1);
-
-        if (!user || !user.password) {
+// Add Credentials provider if enabled
+if (isPasswordAuthEnabled()) {
+  providers.push(
+    Credentials({
+      id: 'credentials',
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email or Username', type: 'text' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
-        // Verify password
-        const isPasswordValid = await verifyPassword(credentials.password as string, user.password);
+        try {
+          const identifier = credentials.email as string;
 
-        if (!isPasswordValid) {
+          // Find user by email or username (stored in name field)
+          const [user] = await db
+            .select()
+            .from(users)
+            .where(or(eq(users.email, identifier), ilike(users.name, identifier)))
+            .limit(1);
+
+          if (!user || !user.password) {
+            return null;
+          }
+
+          // Verify password
+          const isPasswordValid = await verifyPassword(
+            credentials.password as string,
+            user.password
+          );
+
+          if (!isPasswordValid) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name || null,
+            image: user.image || null,
+          };
+        } catch (error) {
+          console.error('Authentication error:', error);
           return null;
         }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name || null,
-          image: user.image || null,
-        };
-      } catch (error) {
-        console.error('Authentication error:', error);
-        return null;
-      }
-    },
-  }),
-];
+      },
+    })
+  );
+}
 
 // Add GitHub provider if enabled
 if (isGitHubOAuthEnabled()) {

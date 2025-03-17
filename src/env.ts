@@ -27,6 +27,7 @@ export const env = createEnv({
     NEXT_PUBLIC_GITHUB_ENABLED: z.enum(['true', 'false']).optional().default('false'),
     NEXT_PUBLIC_GOOGLE_ENABLED: z.enum(['true', 'false']).optional().default('false'),
     NEXT_PUBLIC_FACEBOOK_ENABLED: z.enum(['true', 'false']).optional().default('false'),
+    NEXT_PUBLIC_PASSWORD_AUTH_ENABLED: z.enum(['true', 'false']).optional().default('true'),
   },
 
   /**
@@ -49,6 +50,7 @@ export const env = createEnv({
     FACEBOOK_CLIENT_ID: process.env.FACEBOOK_CLIENT_ID,
     FACEBOOK_CLIENT_SECRET: process.env.FACEBOOK_CLIENT_SECRET,
     NEXT_PUBLIC_FACEBOOK_ENABLED: process.env.NEXT_PUBLIC_FACEBOOK_ENABLED,
+    NEXT_PUBLIC_PASSWORD_AUTH_ENABLED: process.env.NEXT_PUBLIC_PASSWORD_AUTH_ENABLED,
   },
 
   /**

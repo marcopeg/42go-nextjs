@@ -27,6 +27,14 @@ export function isFacebookOAuthEnabled(): boolean {
 }
 
 /**
+ * Check if password authentication is enabled
+ * This function is used on the server side
+ */
+export function isPasswordAuthEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_PASSWORD_AUTH_ENABLED !== 'false';
+}
+
+/**
  * Update your .env file to include:
  * NEXT_PUBLIC_GITHUB_ENABLED="true" when GitHub OAuth is properly configured
  */
