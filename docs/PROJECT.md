@@ -8,7 +8,7 @@ This codebase aim to be a boilerplate project for my saas experiments.
 - 🔥 Type checking [TypeScript](https://www.typescriptlang.org)
 - 💎 Integrate with [Tailwind CSS](https://tailwindcss.com) and Shadcn UI
 - ✅ Strict Mode for TypeScript and [React](https://react.dev)
-- 🔒 Authentication with [Clerk](https://go.clerk.com/zGlzydF): Sign up, Sign in, Sign out, Forgot password, Reset password, and more.
+- 🔒 Authentication with [Next-Auth](https://next-auth.js.org): Sign up, Sign in, Sign out, Forgot password, Reset password, and more.
 - 👤 Password-based authentication that can easily deactivated in production (I intend to use it primarily as a development tool)
 - 👤 Social Auth (Google, Facebook, Twitter, GitHub, Apple, and more should be easy to implement)
 - 👤 Passwordless Authentication with Magic Links should also be possible

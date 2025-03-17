@@ -47,13 +47,13 @@
 
 1. **Password-based Authentication**
 
-   - ❌ Implement Clerk password authentication
+   - ✅ Implement Next-Auth password authentication
    - ❌ Create toggle system for disabling in production
    - ❌ Add comprehensive documentation for this feature
 
 2. **Social Authentication Preparation**
 
-   - ❌ Set up infrastructure for social auth providers
+   - ✅ Set up infrastructure for social auth providers
    - ❌ Create documentation for adding new providers
    - ❌ Implement placeholder UI for social login buttons
 
