@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { OAuthProviders } from './oauth-providers';
 import { Separator } from '@/components/ui/separator';
@@ -57,10 +56,10 @@ export function RegisterForm() {
   }
 
   return (
-    <Card>
+    <div className="w-full">
       {isPasswordAuthEnabled && (
         <form onSubmit={onSubmit}>
-          <CardContent className="pt-6">
+          <div className="pt-6">
             <div className="space-y-4 my-4">
               <div className="relative mb-4">
                 <div className="absolute inset-0 flex items-center">
@@ -121,8 +120,8 @@ export function RegisterForm() {
               </div>
               {error && <div className="mt-2 text-sm text-red-500">{error}</div>}
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-1 pt-0">
+          </div>
+          <div className="flex flex-col space-y-1 pt-0">
             <Button
               type="submit"
               className={cn(
@@ -133,14 +132,14 @@ export function RegisterForm() {
             >
               {isLoading ? 'Creating account...' : 'Create Account'}
             </Button>
-          </CardFooter>
+          </div>
         </form>
       )}
 
       {/* OAuth Providers */}
-      <CardContent className={isPasswordAuthEnabled ? 'pt-0' : 'pt-6'}>
+      <div className={isPasswordAuthEnabled ? 'pt-0' : 'pt-6'}>
         <OAuthProviders showSeparator={isPasswordAuthEnabled} />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

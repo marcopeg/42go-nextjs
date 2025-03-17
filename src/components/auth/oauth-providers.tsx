@@ -39,7 +39,7 @@ export function OAuthProviders({ showSeparator = true }: OAuthProvidersProps) {
   }
 
   return (
-    <div className="space-y-4 mt-4">
+    <div className="space-y-4 mt-8">
       {isPasswordAuthEnabled && showSeparator && (
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
