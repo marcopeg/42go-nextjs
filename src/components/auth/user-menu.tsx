@@ -20,12 +20,9 @@ export function UserMenu() {
     return (
       <div className="flex items-center gap-4">
         <Link href="/login">
-          <Button variant="ghost" size="sm">
+          <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">
             Login
           </Button>
-        </Link>
-        <Link href="/login?mode=register">
-          <Button size="sm">Create Account</Button>
         </Link>
       </div>
     );

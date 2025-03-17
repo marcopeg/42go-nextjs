@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { PublicLayout } from './public-layout';
 import { AppLayout } from './app-layout';
+import { MinimalLayout } from './minimal-layout';
 
 interface LayoutProviderProps {
   children: React.ReactNode;
@@ -13,6 +14,11 @@ export function LayoutProvider({ children }: LayoutProviderProps) {
 
   // Use app layout for dashboard and settings
   const isAppRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/settings');
+
+  // Use minimal layout (no header/footer) for login page
+  if (pathname === '/login') {
+    return <MinimalLayout>{children}</MinimalLayout>;
+  }
 
   if (isAppRoute) {
     return <AppLayout>{children}</AppLayout>;

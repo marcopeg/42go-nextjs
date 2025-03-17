@@ -6,14 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 export function LoginForm() {
@@ -63,43 +56,43 @@ export function LoginForm() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Sign In</CardTitle>
-        <CardDescription>Enter your username/email and password to sign in</CardDescription>
-      </CardHeader>
       <form onSubmit={onSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="username">Username or Email</Label>
-            <Input
-              id="username"
-              name="username"
-              type="text"
-              placeholder="username or name@example.com"
-              required
-              autoFocus
-              autoComplete="username email"
-              disabled={isLoading}
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-            />
+        <CardContent className="pt-6">
+          <div className="space-y-1 my-4">
+            <Label htmlFor="username" className="text-sm mb-2 ml-3">
+              Login with password
+            </Label>
+            <div className="space-y-0">
+              <Input
+                id="username"
+                name="username"
+                type="text"
+                placeholder="username or name@example.com"
+                required
+                autoFocus
+                autoComplete="username email"
+                disabled={isLoading}
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                className="rounded-b-none focus:ring-0 focus:ring-offset-0 focus:outline-none"
+              />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="password"
+                required
+                autoComplete="current-password"
+                disabled={isLoading}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="rounded-t-none focus:ring-0 focus:ring-offset-0"
+              />
+            </div>
+            {error && <div className="mt-2 text-sm text-red-500">{error}</div>}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              disabled={isLoading}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
-          </div>
-          {error && <div className="text-sm text-red-500">{error}</div>}
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4 pt-6">
+        <CardFooter className="flex flex-col space-y-1 pt-0">
           <Button
             type="submit"
             className={cn(
@@ -110,7 +103,7 @@ export function LoginForm() {
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
-          <Button variant="link" className="text-xs" asChild tabIndex={0}>
+          <Button variant="link" className="text-xs h-8" asChild tabIndex={0}>
             <a href="/forgot-password">Forgot password?</a>
           </Button>
         </CardFooter>
