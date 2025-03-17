@@ -41,5 +41,3 @@ export const accentColors: AccentColor[] = [
     foreground: '0 0% 100%',
   },
 ];
-
-export const defaultAccentColor = accentColors[0]; // Orange is default

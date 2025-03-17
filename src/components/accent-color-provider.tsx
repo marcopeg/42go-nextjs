@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { AccentColor, accentColors, defaultAccentColor } from '@/lib/theme-config';
+import { AccentColor, accentColors } from '@/lib/theme-config';
+import appConfig from '@/lib/app.config';
 
 type AccentColorContextType = {
   accentColor: AccentColor;
@@ -10,7 +11,7 @@ type AccentColorContextType = {
 };
 
 const AccentColorContext = createContext<AccentColorContextType>({
-  accentColor: defaultAccentColor,
+  accentColor: appConfig.accentColor,
   setAccentColor: () => {},
   availableColors: accentColors,
 });
@@ -18,7 +19,7 @@ const AccentColorContext = createContext<AccentColorContextType>({
 export const useAccentColor = () => useContext(AccentColorContext);
 
 export function AccentColorProvider({ children }: { children: React.ReactNode }) {
-  const [accentColor, setAccentColor] = useState<AccentColor>(defaultAccentColor);
+  const [accentColor, setAccentColor] = useState<AccentColor>(appConfig.accentColor);
 
   // Apply the accent color to CSS variables
   useEffect(() => {

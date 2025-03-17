@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { UserMenu } from '@/components/auth/user-menu';
+import { AppTitle } from '@/components/app-title';
 
 export function PublicHeader() {
   return (
@@ -9,7 +10,7 @@ export function PublicHeader() {
       <div className="container flex h-14 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="font-bold">Cursor Next Boilerplate</span>
+            <AppTitle />
           </Link>
         </div>
         <UserMenu />
