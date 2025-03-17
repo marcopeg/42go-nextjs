@@ -3,8 +3,13 @@
 import { useSession } from 'next-auth/react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export function UserAvatar() {
+interface UserAvatarProps {
+  className?: string;
+}
+
+export function UserAvatar({ className }: UserAvatarProps) {
   const { data: session } = useSession();
 
   // If no session, return null
@@ -31,7 +36,7 @@ export function UserAvatar() {
   };
 
   return (
-    <Avatar>
+    <Avatar className={cn(className)}>
       {session.user?.image && (
         <AvatarImage src={session.user.image} alt={session.user?.name || 'User'} />
       )}

@@ -2,6 +2,9 @@
 
 import { ThemeToggle } from '@/components/theme-toggle';
 import { AccentColorPicker } from '@/components/accent-color-picker';
+import { signOut } from 'next-auth/react';
+import { LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function SettingsPage() {
@@ -9,7 +12,7 @@ export default function SettingsPage() {
     <div className="container py-10">
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Appearance</CardTitle>
@@ -35,6 +38,32 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 <AccentColorPicker />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Account</CardTitle>
+            <CardDescription>Manage your account settings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">Sign Out</h3>
+                  <p className="text-sm text-muted-foreground">Sign out of your account</p>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="gap-1"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
               </div>
             </div>
           </CardContent>

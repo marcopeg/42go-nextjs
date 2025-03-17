@@ -9,9 +9,15 @@ type AppTitleProps = {
   className?: string;
   showIcon?: boolean;
   showSubtitle?: boolean;
+  showTitle?: boolean;
 };
 
-export function AppTitle({ className, showIcon = true, showSubtitle = true }: AppTitleProps) {
+export function AppTitle({
+  className,
+  showIcon = true,
+  showSubtitle = true,
+  showTitle = true,
+}: AppTitleProps) {
   const { title, subtitle, icon } = appConfig;
 
   // Determine if the icon is a component or a string (URL/path)
@@ -32,7 +38,7 @@ export function AppTitle({ className, showIcon = true, showSubtitle = true }: Ap
       )}
 
       <div className="flex flex-col">
-        <span className="font-bold">{title}</span>
+        {showTitle && <span className="font-bold">{title}</span>}
         {showSubtitle && subtitle && (
           <span className="text-xs text-muted-foreground">{subtitle}</span>
         )}
