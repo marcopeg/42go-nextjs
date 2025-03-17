@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import appConfig from '@/lib/app.config';
+import appConfig from '@/lib/config';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 

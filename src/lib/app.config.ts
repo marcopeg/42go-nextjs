@@ -1,10 +1,32 @@
 /**
- * Application configuration
- * This file contains global settings that can be changed by developers
+ * Application configuration types
+ * This file contains the type definitions for the application configuration
  */
 
-import { AccentColor, accentColors } from './theme-config';
-import { Layers } from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
+
+/**
+ * Theme configuration for accent colors
+ * HSL format: hue saturation lightness
+ */
+export type AccentColor = {
+  name: string;
+  value: string;
+  foreground: string;
+};
+
+export type ThemeConfig = {
+  /**
+   * Available accent colors for the application
+   */
+  accentColors: AccentColor[];
+
+  /**
+   * Default accent color name
+   * Must match one of the names in accentColors
+   */
+  defaultAccentColor: string;
+};
 
 export type AppConfig = {
   /**
@@ -20,29 +42,14 @@ export type AppConfig = {
   /**
    * Application icon
    * Can be:
-   * - A Lucide icon name (see https://lucide.dev/icons/ for all available icons)
+   * - A Lucide icon component (see https://lucide.dev/icons/ for all available icons)
    * - A path to a resource in the public folder (e.g., '/images/logo.svg')
    * - A fully qualified URL
    */
-  icon: typeof Layers | string;
+  icon: LucideIcon | string;
 
   /**
-   * The default accent color for the application
-   * This can be changed by users in the settings
+   * Theme configuration
    */
-  accentColor: AccentColor;
+  theme: ThemeConfig;
 };
-
-/**
- * Default application configuration
- */
-const appConfig: AppConfig = {
-  title: 'Cursor Next Boilerplate',
-  subtitle: 'Build amazing apps faster',
-  // Default icon is Layers from Lucide
-  // For all available icons, see: https://lucide.dev/icons/
-  icon: Layers,
-  accentColor: accentColors.find(color => color.name === 'orange') || accentColors[0],
-};
-
-export default appConfig;

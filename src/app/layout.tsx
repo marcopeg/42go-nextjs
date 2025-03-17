@@ -8,7 +8,7 @@ import { TransitionProvider } from '@/components/transition-provider';
 import { RouteChangeLoader } from '@/components/route-change-loader';
 import { AuthProvider } from '@/lib/auth/auth-provider';
 import { LayoutProvider } from '@/components/layout/layout-provider';
-import appConfig from '@/lib/app.config';
+import appConfig from '@/lib/config';
 
 const inter = Inter({ subsets: ['latin'] });
 
