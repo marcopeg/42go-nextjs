@@ -19,6 +19,14 @@ export function isGoogleOAuthEnabled(): boolean {
 }
 
 /**
+ * Check if Facebook OAuth is enabled by verifying if the required environment variables are set
+ * This function is used on the server side
+ */
+export function isFacebookOAuthEnabled(): boolean {
+  return Boolean(process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET);
+}
+
+/**
  * Update your .env file to include:
  * NEXT_PUBLIC_GITHUB_ENABLED="true" when GitHub OAuth is properly configured
  */

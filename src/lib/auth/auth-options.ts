@@ -3,11 +3,12 @@ import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import GitHub from 'next-auth/providers/github';
 import Google from 'next-auth/providers/google';
+import Facebook from 'next-auth/providers/facebook';
 import { db } from '@/lib/db';
 import { users, accounts, sessions, verificationTokens } from '@/lib/db/schema';
 import { eq, or, ilike } from 'drizzle-orm';
 import { verifyPassword } from './password';
-import { isGitHubOAuthEnabled, isGoogleOAuthEnabled } from './oauth-config';
+import { isGitHubOAuthEnabled, isGoogleOAuthEnabled, isFacebookOAuthEnabled } from './oauth-config';
 
 // Create a custom adapter with our schema tables
 const adapter = DrizzleAdapter(db, {
@@ -83,6 +84,16 @@ if (isGoogleOAuthEnabled()) {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    })
+  );
+}
+
+// Add Facebook provider if enabled
+if (isFacebookOAuthEnabled()) {
+  providers.push(
+    Facebook({
+      clientId: process.env.FACEBOOK_CLIENT_ID as string,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET as string,
     })
   );
 }
