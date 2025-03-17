@@ -55,6 +55,8 @@
 
    - ✅ Set up infrastructure for social auth providers
    - ✅ Create documentation for adding new providers
+   - ✅ Implement Google OAuth authentication
+   - ✅ Implement GitHub OAuth authentication
    - ❌ Implement placeholder UI for social login buttons
 
 3. **Authentication Flow Pages**

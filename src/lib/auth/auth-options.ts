@@ -2,11 +2,12 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import GitHub from 'next-auth/providers/github';
+import Google from 'next-auth/providers/google';
 import { db } from '@/lib/db';
 import { users, accounts, sessions, verificationTokens } from '@/lib/db/schema';
 import { eq, or, ilike } from 'drizzle-orm';
 import { verifyPassword } from './password';
-import { isGitHubOAuthEnabled } from './oauth-config';
+import { isGitHubOAuthEnabled, isGoogleOAuthEnabled } from './oauth-config';
 
 // Create a custom adapter with our schema tables
 const adapter = DrizzleAdapter(db, {
@@ -76,6 +77,16 @@ if (isGitHubOAuthEnabled()) {
   );
 }
 
+// Add Google provider if enabled
+if (isGoogleOAuthEnabled()) {
+  providers.push(
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    })
+  );
+}
+
 export const authOptions: NextAuthConfig = {
   adapter,
   session: {
@@ -86,7 +97,7 @@ export const authOptions: NextAuthConfig = {
     signOut: '/',
     error: '/error',
     verifyRequest: '/verify-request',
-    newUser: '/register',
+    newUser: '/dashboard',
   },
   providers,
   callbacks: {

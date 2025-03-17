@@ -10,6 +10,10 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
     NEXTAUTH_SECRET: z.string().min(1),
     DISABLE_DEV_API: z.enum(['true', 'false']).optional().default('false'),
+    GITHUB_ID: z.string().optional(),
+    GITHUB_SECRET: z.string().optional(),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
   },
 
   /**
@@ -18,6 +22,8 @@ export const env = createEnv({
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url(),
     NEXT_PUBLIC_NEXTAUTH_URL: z.string().url(),
+    NEXT_PUBLIC_GITHUB_ENABLED: z.enum(['true', 'false']).optional().default('false'),
+    NEXT_PUBLIC_GOOGLE_ENABLED: z.enum(['true', 'false']).optional().default('false'),
   },
 
   /**
@@ -31,6 +37,12 @@ export const env = createEnv({
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_NEXTAUTH_URL: process.env.NEXT_PUBLIC_NEXTAUTH_URL,
     DISABLE_DEV_API: process.env.DISABLE_DEV_API,
+    GITHUB_ID: process.env.GITHUB_ID,
+    GITHUB_SECRET: process.env.GITHUB_SECRET,
+    NEXT_PUBLIC_GITHUB_ENABLED: process.env.NEXT_PUBLIC_GITHUB_ENABLED,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    NEXT_PUBLIC_GOOGLE_ENABLED: process.env.NEXT_PUBLIC_GOOGLE_ENABLED,
   },
 
   /**

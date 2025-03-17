@@ -2,20 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import { GitHubLoginButton } from './github-login-button';
+import { GoogleLoginButton } from './google-login-button';
 import { Separator } from '@/components/ui/separator';
 
 export function OAuthProviders() {
-  // Use client-side detection of GitHub OAuth
+  // Use client-side detection of OAuth providers
   const [isGitHubEnabled, setIsGitHubEnabled] = useState(false);
+  const [isGoogleEnabled, setIsGoogleEnabled] = useState(false);
 
   useEffect(() => {
-    // Check if GitHub OAuth is enabled on the client side
-    const githubId = process.env.NEXT_PUBLIC_GITHUB_ENABLED === 'true';
-    setIsGitHubEnabled(githubId);
+    // Check if OAuth providers are enabled on the client side
+    const githubEnabled = process.env.NEXT_PUBLIC_GITHUB_ENABLED === 'true';
+    const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_ENABLED === 'true';
+
+    setIsGitHubEnabled(githubEnabled);
+    setIsGoogleEnabled(googleEnabled);
   }, []);
 
   // Don't render anything during SSR or if no providers are enabled
-  if (typeof window === 'undefined' || !isGitHubEnabled) {
+  if (typeof window === 'undefined' || (!isGitHubEnabled && !isGoogleEnabled)) {
     return null;
   }
 
@@ -30,7 +35,8 @@ export function OAuthProviders() {
         </div>
       </div>
       <div className="space-y-2">
-        <GitHubLoginButton isEnabled={isGitHubEnabled} />
+        {isGitHubEnabled && <GitHubLoginButton isEnabled={isGitHubEnabled} />}
+        {isGoogleEnabled && <GoogleLoginButton isEnabled={isGoogleEnabled} />}
       </div>
     </div>
   );
