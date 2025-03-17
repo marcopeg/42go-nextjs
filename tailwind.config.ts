@@ -1,5 +1,6 @@
 import type { Config } from 'tailwindcss';
 import defaultTheme from 'tailwindcss/defaultTheme';
+import tailwindcssAnimate from 'tailwindcss-animate';
 
 const config = {
   darkMode: 'class',
@@ -78,7 +79,7 @@ const config = {
       },
     },
   },
-  plugins: [import('tailwindcss-animate').default],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;
 
 export default config;
