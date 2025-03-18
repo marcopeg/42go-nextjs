@@ -4,14 +4,19 @@ import Link from 'next/link';
 import { RegisterForm } from '@/components/auth/register-form';
 import { useEffect, useState } from 'react';
 import { AppTitle } from '@/components/app-title';
+import appConfig from '@/lib/config';
 
 export function RegisterPage() {
   const [isPasswordAuthEnabled, setIsPasswordAuthEnabled] = useState(true);
+  const [hasIcon, setHasIcon] = useState(false);
 
   useEffect(() => {
     // Check if password auth is enabled on the client side
     const passwordAuthEnabled = process.env.NEXT_PUBLIC_PASSWORD_AUTH_ENABLED !== 'false';
     setIsPasswordAuthEnabled(passwordAuthEnabled);
+
+    // Check if icon exists in config
+    setHasIcon(!!appConfig.icon);
   }, []);
 
   // If password auth is disabled, redirect to login page
@@ -29,9 +34,9 @@ export function RegisterPage() {
   return (
     <div className="container flex h-screen w-screen flex-col items-center justify-center">
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-        <div className="flex flex-col space-y-2 text-center">
-          <Link href="/" className="mx-auto">
-            <AppTitle className="justify-center" />
+        <div className={`flex flex-col space-y-2 ${!hasIcon ? 'text-center' : ''}`}>
+          <Link href="/" className={hasIcon ? '' : 'mx-auto'}>
+            <AppTitle className={hasIcon ? '' : 'justify-center'} />
           </Link>
           <p className="text-sm text-muted-foreground mt-2">Create a new account to get started</p>
         </div>
