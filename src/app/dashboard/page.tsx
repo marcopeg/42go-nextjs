@@ -5,7 +5,7 @@ import { InternalPage } from '@/components/layout/internal-page';
 
 export default function DashboardPage() {
   return (
-    <InternalPage title="Dashboard">
+    <InternalPage title="Dashboard" subtitle="Welcome to the dashboard">
       <UserDashboard />
     </InternalPage>
   );

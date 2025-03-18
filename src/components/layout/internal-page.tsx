@@ -54,7 +54,12 @@ export function InternalPage({
                   <ActionButton {...leftAction} />
                 </div>
               )}
-              <div className="overflow-hidden flex-1 min-w-0">
+              <div
+                className={cn(
+                  'overflow-hidden flex-1 min-w-0',
+                  subtitle ? 'flex flex-col justify-center' : 'flex flex-col justify-end pb-2'
+                )}
+              >
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <h1 className="text-2xl font-bold tracking-tight truncate">{title}</h1>
@@ -67,7 +72,7 @@ export function InternalPage({
                 {subtitle && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <p className="text-muted-foreground mt-1 truncate text-sm">{subtitle}</p>
+                      <p className="text-muted-foreground truncate text-sm">{subtitle}</p>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" align="start" className="max-w-[300px]">
                       {subtitle}
