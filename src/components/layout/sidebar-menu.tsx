@@ -46,14 +46,14 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
 
       {/* App Title & Logo - Top Section */}
       <header className="border-b border-border overflow-hidden">
-        <div className="flex items-center justify-between h-18 max-h-18 px-6 overflow-hidden">
+        <div className="flex items-center justify-between h-16 max-h-16 px-6 overflow-hidden">
           <div className="flex items-center overflow-hidden">
             {!isCollapsed ? (
               <div className="overflow-hidden flex-1 min-w-0 flex flex-col justify-end pb-2">
-                <AppTitle showIcon={true} />
+                <AppTitle showIcon={true} showSubtitle={false} />
               </div>
             ) : (
-              <div className="h-18"></div>
+              <div className="h-16"></div>
             )}
           </div>
           <div className="flex-shrink-0">

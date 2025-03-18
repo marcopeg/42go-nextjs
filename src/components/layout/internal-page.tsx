@@ -56,13 +56,13 @@ export function InternalPage({
               )}
               <div
                 className={cn(
-                  'overflow-hidden flex-1 min-w-0',
-                  subtitle ? 'flex flex-col justify-center' : 'flex flex-col justify-end pb-2'
+                  'overflow-hidden flex-1 min-w-0 flex flex-col',
+                  subtitle ? 'justify-center' : 'justify-end pb-0'
                 )}
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <h1 className="text-2xl font-bold tracking-tight truncate">{title}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight truncate ">{title}</h1>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" align="start" className="max-w-[300px]">
                     {title}
