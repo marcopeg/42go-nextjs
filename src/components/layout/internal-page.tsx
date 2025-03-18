@@ -46,7 +46,6 @@ export function InternalPage({
             'border-b border-border overflow-hidden',
             stickyHeader && 'sticky top-0 bg-background z-10'
           )}
-          style={{ height: '64px' }}
         >
           <div className="flex items-center justify-between h-16 max-h-16 px-6 overflow-hidden">
             <div className="flex items-center overflow-hidden">

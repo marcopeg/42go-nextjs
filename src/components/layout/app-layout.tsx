@@ -80,7 +80,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main Content */}
       <main
-        className={`flex-1 transition-all duration-300 ease-in-out overflow-auto px-6 py-6
+        className={`flex-1 transition-all duration-300 ease-in-out overflow-auto px-6
                       ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}
       >
         {/* Mobile Header with Menu Toggle */}
