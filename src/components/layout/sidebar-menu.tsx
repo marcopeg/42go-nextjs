@@ -45,21 +45,28 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
       )}
 
       {/* App Title & Logo - Top Section */}
-      <div
-        className={cn(
-          'flex items-center border-b h-16 max-h-16 overflow-hidden px-4',
-          isCollapsed ? 'justify-center' : 'justify-between'
-        )}
-      >
-        {!isCollapsed && (
-          <div className="overflow-hidden">
-            <AppTitle showIcon={true} />
+      <header className="border-b border-border overflow-hidden" style={{ height: '88px' }}>
+        <div className="flex items-center justify-between h-18 max-h-18 px-6 overflow-hidden">
+          <div className="flex items-center overflow-hidden">
+            {!isCollapsed ? (
+              <div className="overflow-hidden flex-1 min-w-0 flex flex-col justify-end pb-2">
+                <AppTitle showIcon={true} />
+              </div>
+            ) : (
+              <div className="h-18"></div>
+            )}
           </div>
-        )}
-        <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={toggleCollapse}>
-          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </Button>
-      </div>
+          <div className="flex-shrink-0">
+            <Button variant="ghost" size="icon" onClick={toggleCollapse}>
+              {isCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </header>
 
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto py-4 px-3">
