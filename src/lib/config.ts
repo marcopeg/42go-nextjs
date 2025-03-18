@@ -1,11 +1,11 @@
 /**
  * Configuration loader
- * This file imports the configuration from the root app.config.mjs file
+ * This file imports the configuration from the root app.config.js file
  * and applies the proper TypeScript types
  */
 
 import { AppConfig, AccentColor } from './app.config';
-import appConfigValues from '../../app.config.mjs';
+import appConfigValues from '../../app.config.js';
 
 // Cast the imported config to the AppConfig type
 const rawConfig = appConfigValues as unknown as AppConfig;

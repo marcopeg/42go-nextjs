@@ -67,10 +67,8 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-accent text-accent-foreground'
-                    : 'hover:bg-accent/50 hover:text-accent-foreground',
+                  'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer',
+                  isActive ? 'bg-accent text-accent-foreground' : 'hover:underline',
                   isCollapsed && 'justify-center px-0'
                 )}
               >
@@ -84,12 +82,12 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
 
       {/* User Section - Bottom */}
       {session?.user && (
-        <div className="border-t p-4">
+        <div className="border-t">
           <Link
             href="/settings"
             className={cn(
-              'flex items-center rounded-md py-2 text-sm font-medium transition-colors hover:bg-accent/50 hover:text-accent-foreground',
-              isCollapsed ? 'justify-center px-0' : 'px-3 justify-between'
+              'flex items-center p-4 text-sm font-medium transition-colors cursor-pointer hover:underline',
+              isCollapsed ? 'justify-center' : 'justify-between'
             )}
           >
             <div className="flex items-center">

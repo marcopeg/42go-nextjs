@@ -5,17 +5,17 @@
 
 // Import the Layers icon from lucide-react
 // For all available icons, see: https://lucide.dev/icons/
-import { Layers } from 'lucide-react';
+import { Aperture } from 'lucide-react';
 
 /**
  * Default application configuration
  */
 
-export default {
+const appConfig = {
   title: 'Cursor Boilerplate',
-  subtitle: 'Build amazing apps faster',
+  subtitle: 'Build fast s**t that nobody wants',
   // Default icon is Layers from Lucide
-  icon: Layers,
+  icon: Aperture,
   theme: {
     accentColors: [
       {
@@ -53,3 +53,5 @@ export default {
     defaultAccentColor: 'orange',
   },
 };
+
+export default appConfig;
