@@ -1,11 +1,12 @@
-import { Metadata } from 'next';
-import { UserDashboard } from '@/components/auth/user-dashboard';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Dashboard',
-  description: 'User dashboard',
-};
+import { UserDashboard } from '@/components/auth/user-dashboard';
+import { InternalPage } from '@/components/layout/internal-page';
 
 export default function DashboardPage() {
-  return <UserDashboard />;
+  return (
+    <InternalPage title="Dashboard">
+      <UserDashboard />
+    </InternalPage>
+  );
 }

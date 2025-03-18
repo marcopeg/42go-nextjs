@@ -47,12 +47,16 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
       {/* App Title & Logo - Top Section */}
       <div
         className={cn(
-          'flex items-center p-4 border-b',
+          'flex items-center border-b h-16 max-h-16 overflow-hidden px-4',
           isCollapsed ? 'justify-center' : 'justify-between'
         )}
       >
-        {!isCollapsed && <AppTitle showIcon={true} />}
-        <Button variant="ghost" size="icon" className="flex" onClick={toggleCollapse}>
+        {!isCollapsed && (
+          <div className="overflow-hidden">
+            <AppTitle showIcon={true} />
+          </div>
+        )}
+        <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={toggleCollapse}>
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
       </div>

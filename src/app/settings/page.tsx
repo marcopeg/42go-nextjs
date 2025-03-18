@@ -3,15 +3,27 @@
 import { ThemeToggle } from '@/components/theme-toggle';
 import { AccentColorPicker } from '@/components/accent-color-picker';
 import { signOut } from 'next-auth/react';
-import { LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { LogOut, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { InternalPage } from '@/components/layout/internal-page';
 
 export default function SettingsPage() {
-  return (
-    <div className="container py-10">
-      <h1 className="text-3xl font-bold mb-6">Settings</h1>
+  const router = useRouter();
 
+  return (
+    <InternalPage
+      title="Settings"
+      rightActions={[
+        {
+          icon: X,
+          tooltip: 'Close',
+          onClick: () => router.push('/dashboard'),
+          variant: 'ghost',
+        },
+      ]}
+    >
       <div className="grid gap-6">
         <Card>
           <CardHeader>
@@ -69,6 +81,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </InternalPage>
   );
 }
