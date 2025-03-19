@@ -24,39 +24,35 @@ export function UserDashboard() {
   }
 
   return (
-    <div className="container py-10">
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome, {session?.user?.name || session?.user?.email}</CardTitle>
-            <CardDescription>You are logged in successfully</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div>
-                <span className="font-medium">Email:</span> {session?.user?.email}
-              </div>
-              {session?.user?.name && (
-                <div>
-                  <span className="font-medium">Name:</span> {session.user.name}
-                </div>
-              )}
-              {session?.user?.id && (
-                <div>
-                  <span className="font-medium">User ID:</span> {session.user.id}
-                </div>
-              )}
+    <div className="grid gap-6 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Welcome, {session?.user?.name || session?.user?.email}</CardTitle>
+          <CardDescription>You are logged in successfully</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div>
+              <span className="font-medium">Email:</span> {session?.user?.email}
             </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="button" variant="outline" onClick={() => signOut({ callbackUrl: '/' })}>
-              Sign out
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
+            {session?.user?.name && (
+              <div>
+                <span className="font-medium">Name:</span> {session.user.name}
+              </div>
+            )}
+            {session?.user?.id && (
+              <div>
+                <span className="font-medium">User ID:</span> {session.user.id}
+              </div>
+            )}
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button type="button" variant="outline" onClick={() => signOut({ callbackUrl: '/' })}>
+            Sign out
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
