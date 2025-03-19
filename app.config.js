@@ -16,6 +16,23 @@ const appConfig = {
   icon: Aperture,
   title: 'Cursor Boilerplate',
   subtitle: 'Build fast s**t that nobody wants',
+  // Hero section on the landing page
+  hero: {
+    title: 'Build Your SaaS **Faster** With Our Modern Boilerplate',
+    subtitle:
+      'Everything you need to launch your next web application. Authentication, UI components, and database integration — all pre-configured and ready to go.',
+    actions: [
+      {
+        label: 'Get Started',
+        href: '/register',
+        role: 'primary',
+      },
+      {
+        label: 'View Documentation',
+        href: 'https://github.com/marcopeg/cursor-boilerplate',
+      },
+    ],
+  },
   // Features showcased on the landing page
   features: {
     title: 'Powerful Features',
