@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { LucideIcon } from 'lucide-react';
+import { PageContentTransition } from '@/components/page-content-transition';
 
 interface ActionProps {
   icon?: LucideIcon;
@@ -92,8 +93,10 @@ export function InternalPage({
           </div>
         </header>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto pb-16 px-6 pt-6">{children}</main>
+        {/* Main Content with Animation */}
+        <main className="flex-1 overflow-auto pb-16 px-6 pt-6">
+          <PageContentTransition>{children}</PageContentTransition>
+        </main>
 
         {/* Bottom Bar */}
         {bottomBar && (
