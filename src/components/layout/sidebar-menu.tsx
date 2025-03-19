@@ -27,6 +27,11 @@ const navItems: NavItem[] = [
     href: '/dashboard',
     icon: LayoutDashboard,
   },
+  {
+    title: 'Settings',
+    href: '/settings',
+    icon: Settings,
+  },
 ];
 
 export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: SidebarMenuProps) {
@@ -78,11 +83,14 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer',
-                  isActive ? 'bg-accent text-accent-foreground' : 'hover:underline',
+                  'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer relative',
+                  isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                   isCollapsed && 'justify-center px-0'
                 )}
               >
+                {isActive && (
+                  <span className="absolute left-0 top-0 bottom-0 w-1 bg-accent rounded-r-sm" />
+                )}
                 <item.icon className={cn('h-5 w-5', isCollapsed ? 'mr-0' : 'mr-2')} />
                 {!isCollapsed && <span>{item.title}</span>}
               </Link>
@@ -95,7 +103,7 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
       {session?.user && (
         <div className="border-t">
           <Link
-            href="/settings"
+            href="/settings/profile"
             className={cn(
               'flex items-center p-4 text-sm font-medium transition-colors cursor-pointer hover:underline',
               isCollapsed ? 'justify-center' : 'justify-between'
@@ -116,7 +124,6 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
                 </div>
               )}
             </div>
-            {!isCollapsed && <Settings className="h-4 w-4" />}
           </Link>
         </div>
       )}
