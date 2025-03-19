@@ -3,7 +3,16 @@
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronLeft, ChevronRight, LayoutDashboard, Settings, X } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  LayoutDashboard,
+  Settings,
+  Users,
+  FileText,
+  Bell,
+  X,
+} from 'lucide-react';
 import { AppTitle } from '@/components/app-title';
 import { UserAvatar } from '@/components/auth/user-avatar';
 import { Button } from '@/components/ui/button';
@@ -31,6 +40,21 @@ const navItems: NavItem[] = [
     title: 'Settings',
     href: '/settings',
     icon: Settings,
+  },
+  {
+    title: 'Users',
+    href: '/users',
+    icon: Users,
+  },
+  {
+    title: 'Documents',
+    href: '/documents',
+    icon: FileText,
+  },
+  {
+    title: 'Notifications',
+    href: '/notifications',
+    icon: Bell,
   },
 ];
 
@@ -83,16 +107,32 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer relative',
-                  isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                  'flex items-center px-3 py-2 text-sm transition-all duration-200 cursor-pointer relative border group',
+                  isActive
+                    ? 'text-foreground font-bold border-transparent rounded-none' +
+                        (!isCollapsed ? ' translate-x-1' : '')
+                    : 'text-muted-foreground hover:text-foreground border-transparent rounded-none font-medium',
+                  'hover:rounded-md hover:border-accent',
                   isCollapsed && 'justify-center px-0'
                 )}
               >
-                {isActive && (
-                  <span className="absolute left-0 top-0 bottom-0 w-1 bg-accent rounded-r-sm" />
+                <item.icon
+                  className={cn(
+                    'h-5 w-5 transition-transform duration-200',
+                    !isCollapsed && !isActive ? 'group-hover:translate-x-1' : '',
+                    isCollapsed ? 'mr-0' : 'mr-2'
+                  )}
+                />
+                {!isCollapsed && (
+                  <span
+                    className={cn(
+                      'transition-transform duration-200',
+                      isActive ? '' : 'group-hover:translate-x-1'
+                    )}
+                  >
+                    {item.title}
+                  </span>
                 )}
-                <item.icon className={cn('h-5 w-5', isCollapsed ? 'mr-0' : 'mr-2')} />
-                {!isCollapsed && <span>{item.title}</span>}
               </Link>
             );
           })}
@@ -105,14 +145,21 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
           <Link
             href="/settings/profile"
             className={cn(
-              'flex items-center p-4 text-sm font-medium transition-colors cursor-pointer hover:underline',
+              'flex items-center p-4 text-sm font-medium transition-all duration-200 cursor-pointer border border-transparent group',
+              'hover:rounded-md hover:border-accent',
               isCollapsed ? 'justify-center' : 'justify-between'
             )}
           >
             <div className="flex items-center">
-              <UserAvatar className={cn('h-8 w-8', isCollapsed ? 'mr-0' : 'mr-2')} />
+              <UserAvatar
+                className={cn(
+                  'h-8 w-8 transition-transform duration-200',
+                  !isCollapsed ? 'group-hover:translate-x-1' : '',
+                  isCollapsed ? 'mr-0' : 'mr-2'
+                )}
+              />
               {!isCollapsed && (
-                <div className="flex flex-col truncate">
+                <div className="flex flex-col truncate transition-transform duration-200 group-hover:translate-x-1">
                   {session.user.name && (
                     <span className="font-medium truncate">{session.user.name}</span>
                   )}
