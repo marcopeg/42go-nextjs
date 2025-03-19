@@ -33,6 +33,69 @@ const appConfig = {
       },
     ],
   },
+  // Pricing section on the landing page
+  pricing: {
+    title: 'Simple, Transparent Pricing',
+    subtitle: "Choose the plan that's right for you and start building today.",
+    tiers: [
+      {
+        name: 'Free',
+        price: '$0',
+        period: '/month',
+        description: 'Perfect for trying out the platform',
+        features: [
+          { text: 'Up to 3 projects', status: 'included' },
+          { text: 'Basic analytics', status: 'included' },
+          { text: 'Community support', status: 'included' },
+          { text: '1 team member', status: 'included' },
+          { text: 'Custom domains', status: 'excluded' },
+          { text: 'API access', status: 'coming-soon' },
+        ],
+        cta: {
+          label: 'Get Started',
+          href: '/register',
+        },
+      },
+      {
+        name: 'Pro',
+        price: '$29',
+        period: '/month',
+        description: 'For serious developers and small teams',
+        features: [
+          { text: 'Unlimited projects', status: 'included' },
+          { text: 'Advanced analytics', status: 'included' },
+          { text: 'Priority support', status: 'included' },
+          { text: 'Up to 5 team members', status: 'included' },
+          { text: 'Custom domains', status: 'included' },
+          { text: 'API access', status: 'coming-soon' },
+        ],
+        cta: {
+          label: 'Start Free Trial',
+          href: '/register?plan=pro',
+        },
+        highlighted: true,
+        badge: 'Most Popular',
+      },
+      {
+        name: 'Enterprise',
+        price: '$99',
+        period: '/month',
+        description: 'For large teams with advanced needs',
+        features: [
+          { text: 'Everything in Pro', status: 'included' },
+          { text: 'Unlimited team members', status: 'included' },
+          { text: 'Dedicated support', status: 'included' },
+          { text: 'Custom integrations', status: 'included' },
+          { text: 'Advanced security', status: 'included' },
+          { text: 'SLA guarantees', status: 'included' },
+        ],
+        cta: {
+          label: 'Contact Sales',
+          href: '/contact',
+        },
+      },
+    ],
+  },
   // Features showcased on the landing page
   features: {
     title: 'Powerful Features',
