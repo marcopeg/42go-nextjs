@@ -22,27 +22,49 @@ exports.seed = async function (knex) {
     await trx('auth.groups_users').del();
     await trx('auth.grants').del();
     await trx('auth.groups').del();
-    // Don't delete users table as it may contain important user data
+    await trx('auth.users').del();
+    await trx('auth.accounts').del();
+    await trx('auth.verification_tokens').del();
+    await trx('public.feedback').del();
 
-    // 1. Get or create admin user
-    let adminUserId;
-    const existingAdmin = await trx('auth.users').where({ email: 'admin@example.com' }).first();
+    // Add Admin user
+    const adminId = uuidv4();
+    await trx('auth.users').insert({
+      id: adminId,
+      name: 'admin',
+      email: 'admin@admin.com',
+      password: await hashPassword('admin'),
+      image: 'https://ui-avatars.com/api/?name=Admin+Admin',
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    console.log(`Created Admin user with ID: ${adminId}`);
 
-    if (existingAdmin) {
-      console.log(`Admin user already exists with ID: ${existingAdmin.id}`);
-      adminUserId = existingAdmin.id;
-    } else {
-      adminUserId = uuidv4();
-      await trx('auth.users').insert({
-        id: adminUserId,
-        name: 'admin',
-        email: 'admin@example.com',
-        password: await hashPassword('admin'),
-        created_at: new Date(),
-        updated_at: new Date(),
-      });
-      console.log(`Created admin user with ID: ${adminUserId}`);
-    }
+    // Add John Doe user
+    const johnDoeId = uuidv4();
+    await trx('auth.users').insert({
+      id: johnDoeId,
+      name: 'john',
+      email: 'john.doe@example.com',
+      password: await hashPassword('john'),
+      image: 'https://api.dicebear.com/8.x/adventurer/svg?seed=john-doe',
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    console.log(`Created John Doe user with ID: ${johnDoeId}`);
+
+    // Add Jane Doe user
+    const janeDoeId = uuidv4();
+    await trx('auth.users').insert({
+      id: janeDoeId,
+      name: 'jane',
+      email: 'jane.doe@example.com',
+      password: await hashPassword('jane'),
+      image: 'https://api.dicebear.com/8.x/adventurer/svg?seed=jane-doe',
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    console.log(`Created Jane Doe user with ID: ${janeDoeId}`);
 
     // 2. Add the backoffice group
     const [backofficeGroup] = await trx('auth.groups')
@@ -71,7 +93,7 @@ exports.seed = async function (knex) {
     // 4. Associate the admin user to the backoffice group
     await trx('auth.groups_users').insert({
       group_id: backofficeGroup.id,
-      user_id: adminUserId,
+      user_id: adminId,
       created_at: new Date(),
     });
 
