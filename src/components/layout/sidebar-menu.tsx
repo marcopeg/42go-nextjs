@@ -143,7 +143,7 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
       {session?.user && (
         <div className="border-t">
           <Link
-            href="/settings/profile"
+            href="/settings"
             className={cn(
               'flex items-center p-4 text-sm font-medium transition-all duration-200 cursor-pointer border border-transparent group',
               'hover:rounded-md hover:border-accent',

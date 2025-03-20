@@ -8,6 +8,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import dynamic from 'next/dynamic';
+import appConfig from '../../app.config';
+import { ReactNode } from 'react';
+
+// Simple markdown parser for basic formatting
+function renderMarkdown(text: string): ReactNode {
+  // Replace **text** with <span className="text-accent">text</span>
+  return text.split(/(\*\*.*?\*\*)/g).map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      const content = part.slice(2, -2);
+      return (
+        <span key={i} className="text-accent">
+          {content}
+        </span>
+      );
+    }
+    return part;
+  });
+}
 
 // Dynamically import ReCAPTCHA to avoid SSR issues
 const ReCAPTCHA = dynamic(() => import('react-google-recaptcha'), {
@@ -30,6 +48,7 @@ export function FeedbackForm() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const recaptchaRef = useRef<ReCaptchaInstance | null>(null);
   const { toast } = useToast();
+  const { feedback } = appConfig;
 
   const handleCaptchaChange = (token: string | null) => {
     setCaptchaToken(token);
@@ -49,8 +68,8 @@ export function FeedbackForm() {
 
     if (!email || !message) {
       toast({
-        title: 'Missing information',
-        description: 'Please provide both email and message.',
+        title: feedback.form.errors.missing.title,
+        description: feedback.form.errors.missing.message,
         variant: 'destructive',
       });
       return;
@@ -59,8 +78,8 @@ export function FeedbackForm() {
     // Only check for captcha token if captcha is enabled
     if (isCaptchaEnabled && !captchaToken) {
       toast({
-        title: 'CAPTCHA required',
-        description: 'Please complete the CAPTCHA verification.',
+        title: feedback.form.errors.captcha.title,
+        description: feedback.form.errors.captcha.message,
         variant: 'destructive',
       });
       return;
@@ -84,19 +103,19 @@ export function FeedbackForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong');
+        throw new Error(data.error || feedback.form.errors.default.message);
       }
 
       toast({
-        title: 'Feedback submitted',
-        description: 'Thank you for your feedback! We will get back to you soon.',
+        title: feedback.form.success.title,
+        description: feedback.form.success.message,
       });
 
       resetForm();
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to submit feedback',
+        title: feedback.form.errors.default.title,
+        description: error instanceof Error ? error.message : feedback.form.errors.default.message,
         variant: 'destructive',
       });
     } finally {
@@ -108,10 +127,10 @@ export function FeedbackForm() {
     <section className="py-16">
       <ScrollAnimation type="slide" direction="down" delay={0.05} duration={0.6}>
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-2">Get in Touch</h2>
+          <h2 className="text-3xl font-bold mb-2">{renderMarkdown(feedback.title)}</h2>
           <ScrollAnimation type="fade" delay={0.2} duration={0.5}>
             <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Have questions or feedback? We&apos;d love to hear from you.
+              {renderMarkdown(feedback.subtitle)}
             </p>
           </ScrollAnimation>
         </div>
@@ -120,21 +139,19 @@ export function FeedbackForm() {
       <ScrollAnimation type="fade" delay={0.3} duration={0.6}>
         <Card className="max-w-md mx-auto">
           <CardHeader>
-            <CardTitle>Send us a message</CardTitle>
-            <CardDescription>
-              Fill out the form below and we&apos;ll get back to you as soon as possible.
-            </CardDescription>
+            <CardTitle>{feedback.form.title}</CardTitle>
+            <CardDescription>{feedback.form.description}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm font-medium">
-                  Email
+                  {feedback.form.fields.email.label}
                 </label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="your@email.com"
+                  placeholder={feedback.form.fields.email.placeholder}
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
@@ -143,14 +160,14 @@ export function FeedbackForm() {
 
               <div className="space-y-2">
                 <label htmlFor="message" className="text-sm font-medium">
-                  Message
+                  {feedback.form.fields.message.label}
                 </label>
                 <Textarea
                   id="message"
-                  placeholder="Your message here..."
+                  placeholder={feedback.form.fields.message.placeholder}
                   value={message}
                   onChange={e => setMessage(e.target.value)}
-                  rows={4}
+                  rows={feedback.form.fields.message.rows}
                   required
                 />
               </div>
@@ -180,7 +197,7 @@ export function FeedbackForm() {
                 className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
                 disabled={isSubmitting || (isCaptchaEnabled && !captchaToken)}
               >
-                {isSubmitting ? 'Sending...' : 'Send Message'}
+                {isSubmitting ? feedback.form.button.loadingLabel : feedback.form.button.label}
               </Button>
             </form>
           </CardContent>

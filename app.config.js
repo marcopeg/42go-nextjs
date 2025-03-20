@@ -33,6 +33,54 @@ const appConfig = {
       },
     ],
   },
+  // Testimonials section on the landing page
+  testimonials: {
+    title: 'Trusted by Developers Worldwide',
+    subtitle: 'Join hundreds of companies building better products with our boilerplate',
+    adopters: [
+      { id: 1, name: 'TechCorp', logo: 'TC' },
+      { id: 2, name: 'InnovateLabs', logo: 'IL' },
+      { id: 3, name: 'FutureSystems', logo: 'FS' },
+      { id: 4, name: 'DataFlow', logo: 'DF' },
+      { id: 5, name: 'CloudNine', logo: 'CN' },
+      { id: 6, name: 'DevStudio', logo: 'DS' },
+    ],
+    quotes: [
+      {
+        id: 1,
+        content:
+          "This boilerplate saved us weeks of setup time. The authentication system is robust and the UI components are beautiful. We've been able to focus on building our product instead of infrastructure.",
+        author: {
+          name: 'Sarah Johnson',
+          role: 'CTO',
+          company: 'FinTech Innovations',
+          avatar: 'SJ',
+        },
+      },
+      {
+        id: 2,
+        content:
+          "I've used many boilerplates before, but this one stands out for its clean architecture and thoughtful design. The documentation is excellent and it was easy to customize to our needs.",
+        author: {
+          name: 'Michael Chen',
+          role: 'Lead Developer',
+          company: 'HealthTech Solutions',
+          avatar: 'MC',
+        },
+      },
+      {
+        id: 3,
+        content:
+          'The developer experience is exceptional. From the first git clone to deployment, everything just works. The code quality is top-notch and the components are well-organized.',
+        author: {
+          name: 'Emily Rodriguez',
+          role: 'Frontend Architect',
+          company: 'E-commerce Platform',
+          avatar: 'ER',
+        },
+      },
+    ],
+  },
   // Pricing section on the landing page
   pricing: {
     title: 'Simple, Transparent Pricing',
@@ -95,6 +143,48 @@ const appConfig = {
         },
       },
     ],
+  },
+  // Feedback section on the landing page
+  feedback: {
+    title: 'Get in Touch',
+    subtitle: "Have questions or feedback? We'd love to hear from you.",
+    form: {
+      title: 'Send us a message',
+      description: "Fill out the form below and we'll get back to you as soon as possible.",
+      fields: {
+        email: {
+          label: 'Email',
+          placeholder: 'your@email.com',
+        },
+        message: {
+          label: 'Message',
+          placeholder: 'Your message here...',
+          rows: 4,
+        },
+      },
+      button: {
+        label: 'Send Message',
+        loadingLabel: 'Sending...',
+      },
+      success: {
+        title: 'Feedback submitted',
+        message: 'Thank you for your feedback! We will get back to you soon.',
+      },
+      errors: {
+        missing: {
+          title: 'Missing information',
+          message: 'Please provide both email and message.',
+        },
+        captcha: {
+          title: 'CAPTCHA required',
+          message: 'Please complete the CAPTCHA verification.',
+        },
+        default: {
+          title: 'Error',
+          message: 'Failed to submit feedback',
+        },
+      },
+    },
   },
   // Features showcased on the landing page
   features: {
