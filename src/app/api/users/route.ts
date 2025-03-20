@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { auth } from '@/lib/auth/auth';
+import { sessionHasGrants } from '@/lib/auth/grants';
 
 export async function GET() {
   try {
@@ -9,6 +10,12 @@ export async function GET() {
     const session = await auth();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if the user has the 'backoffice' grant
+    const hasBackofficeAccess = await sessionHasGrants(session, ['backoffice']);
+    if (!hasBackofficeAccess) {
+      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
     }
 
     // Fetch users from the database
