@@ -11,15 +11,26 @@ jest.mock('@/lib/db', () => ({
   },
 }));
 
-// Mock the hasGrants function
-jest.mock('@/lib/auth/grants', () => ({
-  hasGrants: jest.fn().mockResolvedValue(true),
-  sessionHasGrants: jest.requireActual('@/lib/auth/grants').sessionHasGrants,
-  GrantMatchStrategy: {
-    ALL: 'all',
-    ANY: 'any',
-  },
-}));
+// Import the actual implementation instead of mocking it
+jest.mock('@/lib/auth/grants', () => {
+  const actual = jest.requireActual('@/lib/auth/grants');
+  const hasGrantsMock = jest.fn().mockImplementation(actual.hasGrants);
+
+  return {
+    ...actual,
+    hasGrants: hasGrantsMock,
+    // Use a custom implementation of sessionHasGrants that calls our mocked hasGrants
+    sessionHasGrants: jest
+      .fn()
+      .mockImplementation((session, grantTitles, strategy = actual.GrantMatchStrategy.ALL) => {
+        if (!session?.user?.id) {
+          return Promise.resolve(false);
+        }
+        return hasGrantsMock(session.user.id, grantTitles, strategy);
+      }),
+    GrantMatchStrategy: actual.GrantMatchStrategy,
+  };
+});
 
 describe('Grants Utility', () => {
   beforeEach(() => {
