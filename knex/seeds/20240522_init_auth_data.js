@@ -66,46 +66,42 @@ exports.seed = async function (knex) {
     });
     console.log(`Created Jane Doe user with ID: ${janeDoeId}`);
 
-    // 2. Add the backoffice group
-    const [backofficeGroup] = await trx('auth.groups')
-      .insert({
-        title: 'backoffice',
-        description: 'Administrators with backoffice access',
-        created_at: new Date(),
-        updated_at: new Date(),
-      })
-      .returning('id');
+    // 2. Add the backoffice group with a text ID
+    const backofficeGroupId = 'backoffice';
+    await trx('auth.groups').insert({
+      id: backofficeGroupId,
+      title: 'Backoffice',
+      description: 'Administrators with backoffice access',
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    console.log(`Created backoffice group with ID: ${backofficeGroupId}`);
 
-    console.log(`Created backoffice group with ID: ${backofficeGroup.id}`);
-
-    // 3. Add the backoffice grant
-    const [backofficeGrant] = await trx('auth.grants')
-      .insert({
-        title: 'backoffice',
-        description: 'Permission to access and manage backoffice functionality',
-        created_at: new Date(),
-        updated_at: new Date(),
-      })
-      .returning('id');
-
-    console.log(`Created backoffice grant with ID: ${backofficeGrant.id}`);
+    // 3. Add the backoffice grant with a text ID
+    const backofficeGrantId = 'backoffice';
+    await trx('auth.grants').insert({
+      id: backofficeGrantId,
+      title: 'Backoffice',
+      description: 'Permission to access and manage backoffice functionality',
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    console.log(`Created backoffice grant with ID: ${backofficeGrantId}`);
 
     // 4. Associate the admin user to the backoffice group
     await trx('auth.groups_users').insert({
-      group_id: backofficeGroup.id,
+      group_id: backofficeGroupId,
       user_id: adminId,
       created_at: new Date(),
     });
-
     console.log(`Associated admin user with backoffice group`);
 
     // 5. Associate the backoffice grant to the backoffice group
     await trx('auth.groups_grants').insert({
-      group_id: backofficeGroup.id,
-      grant_id: backofficeGrant.id,
+      group_id: backofficeGroupId,
+      grant_id: backofficeGrantId,
       created_at: new Date(),
     });
-
     console.log(`Associated backoffice grant with backoffice group`);
   });
 

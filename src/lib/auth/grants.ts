@@ -65,7 +65,7 @@ export async function hasGrants(
   // For the ALL strategy, we need to check if the user has all the required grants
   if (strategy === GrantMatchStrategy.ALL && grantTitles.length > 1) {
     // Count the unique grants the user has through their group memberships
-    const userGroupIds = userGroups.map((ug: { groupId: number }) => ug.groupId);
+    const userGroupIds = userGroups.map((ug: { groupId: string }) => ug.groupId);
 
     // Get all grants that the user has through their groups
     const userGrantsRecords = await db
@@ -77,7 +77,7 @@ export async function hasGrants(
 
     // Check if the user has all the required grants
     const uniqueUserGrantIds = [
-      ...new Set(userGrantsRecords.map((ug: { grantId: number }) => ug.grantId)),
+      ...new Set(userGrantsRecords.map((ug: { grantId: string }) => ug.grantId)),
     ];
     return uniqueUserGrantIds.length >= grantTitles.length;
   }

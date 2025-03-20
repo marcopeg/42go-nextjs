@@ -68,7 +68,7 @@ describe('Grants Utility', () => {
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
           from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ id: 1 }]),
+          where: jest.fn().mockResolvedValue([{ id: 'backoffice-grant' }]),
         };
       });
 
@@ -89,7 +89,7 @@ describe('Grants Utility', () => {
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
           from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ id: 1 }]),
+          where: jest.fn().mockResolvedValue([{ id: 'backoffice-grant' }]),
         };
       });
 
@@ -97,7 +97,7 @@ describe('Grants Utility', () => {
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
           from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ groupId: 1 }]),
+          where: jest.fn().mockResolvedValue([{ groupId: 'backoffice-group' }]),
         };
       });
 
@@ -118,7 +118,7 @@ describe('Grants Utility', () => {
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
           from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ id: 1 }]),
+          where: jest.fn().mockResolvedValue([{ id: 'backoffice-grant' }]),
         };
       });
 
@@ -126,7 +126,7 @@ describe('Grants Utility', () => {
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
           from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ groupId: 1 }]),
+          where: jest.fn().mockResolvedValue([{ groupId: 'backoffice-group' }]),
         };
       });
 
@@ -134,7 +134,7 @@ describe('Grants Utility', () => {
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
           from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ groupId: 1, userId: 'user1' }]),
+          where: jest.fn().mockResolvedValue([{ groupId: 'backoffice-group', userId: 'user1' }]),
         };
       });
 
@@ -147,7 +147,7 @@ describe('Grants Utility', () => {
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
           from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ id: 1 }, { id: 2 }]),
+          where: jest.fn().mockResolvedValue([{ id: 'backoffice-grant' }, { id: 'admin-grant' }]),
         };
       });
 
@@ -155,7 +155,9 @@ describe('Grants Utility', () => {
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
           from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ groupId: 1 }, { groupId: 2 }]),
+          where: jest
+            .fn()
+            .mockResolvedValue([{ groupId: 'backoffice-group' }, { groupId: 'admin-group' }]),
         };
       });
 
@@ -163,7 +165,7 @@ describe('Grants Utility', () => {
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
           from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ groupId: 1, userId: 'user1' }]),
+          where: jest.fn().mockResolvedValue([{ groupId: 'backoffice-group', userId: 'user1' }]),
         };
       });
 
@@ -172,8 +174,8 @@ describe('Grants Utility', () => {
         return {
           from: jest.fn().mockReturnThis(),
           where: jest.fn().mockResolvedValue([
-            { groupId: 1, grantId: 1 },
-            { groupId: 1, grantId: 2 },
+            { groupId: 'backoffice-group', grantId: 'backoffice-grant' },
+            { groupId: 'backoffice-group', grantId: 'admin-grant' },
           ]),
         };
       });

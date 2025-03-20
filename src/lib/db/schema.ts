@@ -75,7 +75,7 @@ export const feedback = pgTable('feedback', {
 
 // Groups table
 export const groups = authSchema.table('groups', {
-  id: integer('id').primaryKey(),
+  id: text('id').primaryKey(),
   title: text('title').notNull().unique(),
   description: text('description'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -86,7 +86,7 @@ export const groups = authSchema.table('groups', {
 export const groupsUsers = authSchema.table(
   'groups_users',
   {
-    groupId: integer('group_id')
+    groupId: text('group_id')
       .notNull()
       .references(() => groups.id, { onDelete: 'cascade' }),
     userId: text('user_id')
@@ -103,7 +103,7 @@ export const groupsUsers = authSchema.table(
 
 // Grants table
 export const grants = authSchema.table('grants', {
-  id: integer('id').primaryKey(),
+  id: text('id').primaryKey(),
   title: text('title').notNull().unique(),
   description: text('description'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -114,10 +114,10 @@ export const grants = authSchema.table('grants', {
 export const groupsGrants = authSchema.table(
   'groups_grants',
   {
-    groupId: integer('group_id')
+    groupId: text('group_id')
       .notNull()
       .references(() => groups.id, { onDelete: 'cascade' }),
-    grantId: integer('grant_id')
+    grantId: text('grant_id')
       .notNull()
       .references(() => grants.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
