@@ -9,13 +9,10 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "prepare": "husky",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "ts-node -r tsconfig-paths/register --project tsconfig.node.json src/lib/db/migrate.ts",
-    "db:studio": "drizzle-kit studio",
-    "knex:migrate": "knex --knexfile knexfile.js migrate:latest",
-    "knex:migrate:rollback": "knex --knexfile knexfile.js migrate:rollback",
-    "knex:migrate:make": "knex --knexfile knexfile.js migrate:make",
-    "knex:run": "node src/lib/db/run-knex-migrations.js"
+    "db:migrate": "knex --knexfile knexfile.js migrate:latest",
+    "db:migrate:rollback": "knex --knexfile knexfile.js migrate:rollback",
+    "db:migrate:make": "knex --knexfile knexfile.js migrate:make",
+    "db:run": "node src/lib/db/run-knex-migrations.js"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.8.0",
@@ -42,7 +39,7 @@
     "next": "15.2.2",
     "next-auth": "^5.0.0-beta.25",
     "next-themes": "^0.4.6",
-    "pg": "^8.14.0",
+    "pg": "^8.14.1",
     "pg-query-stream": "^4.5.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -78,12 +75,7 @@
     "typescript": "^5"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "prettier --write",
-      "eslint --fix"
-    ],
-    "*.{json,css,md,yml,yaml}": [
-      "prettier --write"
-    ]
+    "*.{js,jsx,ts,tsx}": ["prettier --write", "eslint --fix"],
+    "*.{json,css,md,yml,yaml}": ["prettier --write"]
   }
 }
