@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { FileQuestion } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 
 interface NotFoundProps {
@@ -19,9 +19,15 @@ export function NotFound({
   const router = useRouter();
   const [isHovering, setIsHovering] = useState(false);
   const { status } = useSession();
-  const isAuthenticated = status === 'authenticated';
+  const [isClient, setIsClient] = useState(false);
 
-  // Determine the redirect path and button text based on authentication status
+  // Use useEffect to handle client-side-only code
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Only determine redirect path and button text on the client
+  const isAuthenticated = isClient ? status === 'authenticated' : false;
   const redirectPath = isAuthenticated ? '/dashboard' : '/';
   const buttonText = isAuthenticated ? 'Go to Dashboard' : 'Go to Home Page';
 
