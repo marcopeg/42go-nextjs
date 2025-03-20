@@ -22,11 +22,11 @@ jest.mock('@/lib/auth/grants', () => {
     // Use a custom implementation of sessionHasGrants that calls our mocked hasGrants
     sessionHasGrants: jest
       .fn()
-      .mockImplementation((session, grantTitles, strategy = actual.GrantMatchStrategy.ALL) => {
+      .mockImplementation((session, grantIds, strategy = actual.GrantMatchStrategy.ALL) => {
         if (!session?.user?.id) {
           return Promise.resolve(false);
         }
-        return hasGrantsMock(session.user.id, grantTitles, strategy);
+        return hasGrantsMock(session.user.id, grantIds, strategy);
       }),
     GrantMatchStrategy: actual.GrantMatchStrategy,
   };
@@ -44,34 +44,13 @@ describe('Grants Utility', () => {
       expect(db.select).not.toHaveBeenCalled();
     });
 
-    it('should return false if grantTitles is empty', async () => {
+    it('should return false if grantIds is empty', async () => {
       const result = await hasGrants('user1', []);
       expect(result).toBe(false);
       expect(db.select).not.toHaveBeenCalled();
     });
 
-    it('should return false if no grants are found with the specified titles', async () => {
-      // Mock empty grant records
-      (db.select as jest.Mock).mockImplementationOnce(() => {
-        return {
-          from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([]),
-        };
-      });
-
-      const result = await hasGrants('user1', ['backoffice']);
-      expect(result).toBe(false);
-    });
-
     it('should return false if no groups have the specified grants', async () => {
-      // Mock grant records
-      (db.select as jest.Mock).mockImplementationOnce(() => {
-        return {
-          from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ id: 'backoffice-grant' }]),
-        };
-      });
-
       // Mock empty group records
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
@@ -85,14 +64,6 @@ describe('Grants Utility', () => {
     });
 
     it('should return false if user is not a member of any groups with the grants', async () => {
-      // Mock grant records
-      (db.select as jest.Mock).mockImplementationOnce(() => {
-        return {
-          from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ id: 'backoffice-grant' }]),
-        };
-      });
-
       // Mock group records
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
@@ -114,14 +85,6 @@ describe('Grants Utility', () => {
     });
 
     it('should return true if user has the grant with ANY strategy (default)', async () => {
-      // Mock grant records
-      (db.select as jest.Mock).mockImplementationOnce(() => {
-        return {
-          from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ id: 'backoffice-grant' }]),
-        };
-      });
-
       // Mock group records
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
@@ -143,14 +106,6 @@ describe('Grants Utility', () => {
     });
 
     it('should check for ALL grants when strategy is ALL and multiple grants', async () => {
-      // Mock grant records
-      (db.select as jest.Mock).mockImplementationOnce(() => {
-        return {
-          from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ id: 'backoffice-grant' }, { id: 'admin-grant' }]),
-        };
-      });
-
       // Mock group records
       (db.select as jest.Mock).mockImplementationOnce(() => {
         return {
@@ -174,8 +129,8 @@ describe('Grants Utility', () => {
         return {
           from: jest.fn().mockReturnThis(),
           where: jest.fn().mockResolvedValue([
-            { groupId: 'backoffice-group', grantId: 'backoffice-grant' },
-            { groupId: 'backoffice-group', grantId: 'admin-grant' },
+            { groupId: 'backoffice-group', grantId: 'backoffice' },
+            { groupId: 'backoffice-group', grantId: 'admin' },
           ]),
         };
       });
