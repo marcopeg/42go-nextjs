@@ -78,33 +78,46 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
       )}
 
       {/* Collapse Toggle Button - Positioned absolutely */}
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={toggleCollapse}
-        className="absolute -right-3 top-[21px] z-10 h-6 w-6 rounded-full p-0 shadow-md border border-border flex items-center justify-center bg-white dark:bg-slate-950 transition-colors duration-200"
-        style={{
-          backgroundColor: isHovered ? `hsl(${accentColor.value})` : '',
-          color: isHovered ? `hsl(${accentColor.foreground})` : '',
-          borderColor: isHovered ? `hsl(${accentColor.value})` : '',
-        }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-      >
-        {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
-      </Button>
+      <div className="absolute -right-3 top-[21px] z-10">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={toggleCollapse}
+          className="h-6 w-6 rounded-full p-0 shadow-md border border-border flex items-center justify-center bg-white dark:bg-slate-950 transition-colors duration-200"
+          style={{
+            backgroundColor: isHovered ? `hsl(${accentColor.value})` : '',
+            color: isHovered ? `hsl(${accentColor.foreground})` : '',
+            borderColor: isHovered ? `hsl(${accentColor.value})` : '',
+          }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+        </Button>
+      </div>
 
       {/* App Title & Logo - Top Section */}
       <header className="border-b border-border overflow-hidden">
-        <div className="flex items-center h-16 max-h-16 px-6 overflow-hidden">
+        <div className="flex items-center justify-center h-16 max-h-16 px-6 overflow-hidden">
           <div className="flex items-center overflow-hidden">
             {!isCollapsed ? (
               <div className="overflow-hidden flex-1 min-w-0 flex flex-col justify-end pb-2">
-                <AppTitle showIcon={true} showSubtitle={false} />
+                <Link href="/dashboard" className="hover:opacity-80 transition-opacity">
+                  <AppTitle showIcon={true} showSubtitle={false} />
+                </Link>
               </div>
             ) : (
-              <div className="h-16"></div>
+              <div className="flex items-center justify-center h-16">
+                <Link href="/dashboard" className="hover:opacity-80 transition-opacity">
+                  <AppTitle
+                    showIcon={true}
+                    showSubtitle={false}
+                    showTitle={false}
+                    iconOnly={true}
+                  />
+                </Link>
+              </div>
             )}
           </div>
         </div>
