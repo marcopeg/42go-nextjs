@@ -17,6 +17,8 @@ import { AppTitle } from '@/components/app-title';
 import { UserAvatar } from '@/components/auth/user-avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { useAccentColor } from '@/components/accent-color-provider';
 
 interface SidebarMenuProps {
   isCollapsed: boolean;
@@ -61,9 +63,11 @@ const navItems: NavItem[] = [
 export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: SidebarMenuProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const [isHovered, setIsHovered] = useState(false);
+  const { accentColor } = useAccentColor();
 
   return (
-    <div className="flex h-full flex-col border-r bg-background">
+    <div className="flex h-full flex-col border-r bg-background relative">
       {/* Mobile Close Button */}
       {closeMobileMenu && (
         <div className="flex justify-end p-4 md:hidden">
@@ -73,9 +77,27 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
         </div>
       )}
 
+      {/* Collapse Toggle Button - Positioned absolutely */}
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={toggleCollapse}
+        className="absolute -right-3 top-[21px] z-10 h-6 w-6 rounded-full p-0 shadow-md border border-border flex items-center justify-center bg-white dark:bg-slate-950 transition-colors duration-200"
+        style={{
+          backgroundColor: isHovered ? `hsl(${accentColor.value})` : '',
+          color: isHovered ? `hsl(${accentColor.foreground})` : '',
+          borderColor: isHovered ? `hsl(${accentColor.value})` : '',
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+      </Button>
+
       {/* App Title & Logo - Top Section */}
       <header className="border-b border-border overflow-hidden">
-        <div className="flex items-center justify-between h-16 max-h-16 px-6 overflow-hidden">
+        <div className="flex items-center h-16 max-h-16 px-6 overflow-hidden">
           <div className="flex items-center overflow-hidden">
             {!isCollapsed ? (
               <div className="overflow-hidden flex-1 min-w-0 flex flex-col justify-end pb-2">
@@ -84,15 +106,6 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
             ) : (
               <div className="h-16"></div>
             )}
-          </div>
-          <div className="flex-shrink-0">
-            <Button variant="ghost" size="icon" onClick={toggleCollapse}>
-              {isCollapsed ? (
-                <ChevronRight className="h-4 w-4" />
-              ) : (
-                <ChevronLeft className="h-4 w-4" />
-              )}
-            </Button>
           </div>
         </div>
       </header>
