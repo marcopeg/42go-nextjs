@@ -5,6 +5,7 @@ import { FileQuestion } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface NotFoundProps {
   title?: string;
@@ -17,6 +18,12 @@ export function NotFound({
 }: NotFoundProps) {
   const router = useRouter();
   const [isHovering, setIsHovering] = useState(false);
+  const { status } = useSession();
+  const isAuthenticated = status === 'authenticated';
+
+  // Determine the redirect path and button text based on authentication status
+  const redirectPath = isAuthenticated ? '/dashboard' : '/';
+  const buttonText = isAuthenticated ? 'Go to Dashboard' : 'Go to Home Page';
 
   // Shake keyframes - used for both load and hover animations
   const shakeKeyframes = [0, -5, 5, -5, 5, -3, 3, -2, 2, 0];
@@ -189,27 +196,20 @@ export function NotFound({
       </motion.p>
 
       <motion.div
-        className="flex gap-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.6 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            onClick={() => router.push('/dashboard')}
-            variant="default"
-            size="lg"
-            className="bg-accent text-accent-foreground hover:bg-accent/90"
-          >
-            Go to Dashboard
-          </Button>
-        </motion.div>
-
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button onClick={() => router.back()} variant="outline" size="lg">
-            Go Back
-          </Button>
-        </motion.div>
+        <Button
+          onClick={() => router.push(redirectPath)}
+          variant="default"
+          size="lg"
+          className="bg-accent text-accent-foreground hover:bg-accent/90"
+        >
+          {buttonText}
+        </Button>
       </motion.div>
     </motion.div>
   );
