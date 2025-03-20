@@ -85,7 +85,6 @@ export function LoginForm() {
                   type="text"
                   placeholder="username or name@example.com"
                   required
-                  autoFocus
                   autoComplete="username email"
                   disabled={isLoading}
                   value={username}
@@ -120,11 +119,11 @@ export function LoginForm() {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
             <div className="flex justify-between w-full text-xs">
-              <Button variant="link" className="h-8 px-0" asChild tabIndex={0}>
+              <Button variant="link" className="h-8 px-0" asChild>
                 <a href="/forgot-password">Forgot password?</a>
               </Button>
               {isPasswordAuthEnabled && (
-                <Button variant="link" className="h-8 px-0" asChild tabIndex={0}>
+                <Button variant="link" className="h-8 px-0" asChild>
                   <Link href="/register">Sign up!</Link>
                 </Button>
               )}
