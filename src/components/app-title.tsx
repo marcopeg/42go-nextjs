@@ -29,6 +29,25 @@ export function AppTitle({
   // Get first letter of title for fallback
   const firstLetter = title.charAt(0).toUpperCase();
 
+  // For icon-only display, we need a simpler layout
+  if (iconOnly) {
+    return (
+      <div className={cn('flex justify-center items-center', className)}>
+        {IconComponent && <IconComponent className="h-6 w-6" />}
+        {iconIsUrl && (
+          <div className="h-6 w-6 relative">
+            <Image src={icon as string} alt={`${title} logo`} fill className="object-contain" />
+          </div>
+        )}
+        {!IconComponent && !iconIsUrl && (
+          <div className="h-6 w-6 rounded-md bg-accent text-accent-foreground flex items-center justify-center font-semibold text-sm">
+            {firstLetter}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={cn('flex items-center gap-2', className)}>
       {showIcon && (

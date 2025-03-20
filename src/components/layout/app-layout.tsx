@@ -50,7 +50,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Desktop Sidebar */}
       <aside
         className={`fixed top-0 left-0 z-40 h-full transition-all duration-300 ease-in-out hidden md:block 
-                    ${isSidebarCollapsed ? 'w-16' : 'w-64'}`}
+                    ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}
       >
         <SidebarMenu
           isCollapsed={isSidebarCollapsed}
@@ -81,7 +81,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Main Content */}
       <main
         className={`flex-1 transition-all duration-300 ease-in-out overflow-auto px-6
-                      ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}
+                      ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}
       >
         {/* Mobile Header with Menu Toggle */}
         <div className="flex justify-end md:hidden mb-4">

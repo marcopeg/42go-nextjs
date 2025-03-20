@@ -99,27 +99,31 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
 
       {/* App Title & Logo - Top Section */}
       <header className="border-b border-border overflow-hidden">
-        <div className="flex items-center justify-center h-16 max-h-16 px-6 overflow-hidden">
-          <div className="flex items-center overflow-hidden">
-            {!isCollapsed ? (
-              <div className="overflow-hidden flex-1 min-w-0 flex flex-col justify-end pb-2">
-                <Link href="/dashboard" className="hover:opacity-80 transition-opacity">
-                  <AppTitle showIcon={true} showSubtitle={false} />
-                </Link>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-16">
-                <Link href="/dashboard" className="hover:opacity-80 transition-opacity">
-                  <AppTitle
-                    showIcon={true}
-                    showSubtitle={false}
-                    showTitle={false}
-                    iconOnly={true}
-                  />
-                </Link>
-              </div>
-            )}
-          </div>
+        <div
+          className={cn(
+            'flex items-center h-16 max-h-16 overflow-hidden',
+            isCollapsed ? 'justify-center px-0' : 'px-6'
+          )}
+        >
+          {!isCollapsed ? (
+            <div className="overflow-hidden flex-1 min-w-0 flex flex-col justify-end pb-2">
+              <Link href="/dashboard" className="hover:opacity-80 transition-opacity">
+                <AppTitle showIcon={true} showSubtitle={false} />
+              </Link>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-16">
+              <Link href="/dashboard" className="hover:opacity-80 transition-opacity">
+                <AppTitle
+                  className="mx-auto"
+                  showIcon={true}
+                  showSubtitle={false}
+                  showTitle={false}
+                  iconOnly={true}
+                />
+              </Link>
+            </div>
+          )}
         </div>
       </header>
 
