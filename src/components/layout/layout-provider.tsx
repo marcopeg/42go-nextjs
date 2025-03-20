@@ -12,8 +12,9 @@ interface LayoutProviderProps {
 export function LayoutProvider({ children }: LayoutProviderProps) {
   const pathname = usePathname();
 
-  // Use app layout for dashboard, settings, and users
+  // Use app layout for /app routes and legacy app routes for backward compatibility
   const isAppRoute =
+    pathname.startsWith('/app') ||
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/settings') ||
     pathname.startsWith('/users');

@@ -35,27 +35,27 @@ type NavItem = {
 const navItems: NavItem[] = [
   {
     title: 'Dashboard',
-    href: '/dashboard',
+    href: '/app/dashboard',
     icon: LayoutDashboard,
   },
   {
     title: 'Settings',
-    href: '/settings',
+    href: '/app/settings',
     icon: Settings,
   },
   {
     title: 'Users',
-    href: '/users',
+    href: '/app/users',
     icon: Users,
   },
   {
     title: 'Documents',
-    href: '/documents',
+    href: '/app/documents',
     icon: FileText,
   },
   {
     title: 'Notifications',
-    href: '/notifications',
+    href: '/app/notifications',
     icon: Bell,
   },
 ];
@@ -107,13 +107,13 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
         >
           {!isCollapsed ? (
             <div className="overflow-hidden flex-1 min-w-0 flex flex-col justify-end pb-2">
-              <Link href="/dashboard" className="hover:opacity-80 transition-opacity">
+              <Link href="/app/dashboard" className="hover:opacity-80 transition-opacity">
                 <AppTitle showIcon={true} showSubtitle={false} />
               </Link>
             </div>
           ) : (
             <div className="flex items-center justify-center h-16">
-              <Link href="/dashboard" className="hover:opacity-80 transition-opacity">
+              <Link href="/app/dashboard" className="hover:opacity-80 transition-opacity">
                 <AppTitle
                   className="mx-auto"
                   showIcon={true}
@@ -173,7 +173,7 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
       {session?.user && (
         <div className="border-t">
           <Link
-            href="/settings"
+            href="/app/settings"
             className={cn(
               'flex items-center p-4 text-sm font-medium transition-all duration-200 cursor-pointer border border-transparent group',
               'hover:rounded-md hover:border-accent',

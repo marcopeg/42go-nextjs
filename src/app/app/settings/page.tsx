@@ -19,7 +19,7 @@ export default function SettingsPage() {
         {
           icon: X,
           tooltip: 'Close',
-          onClick: () => router.push('/dashboard'),
+          onClick: () => router.push('/app/dashboard'),
           variant: 'ghost',
         },
       ]}

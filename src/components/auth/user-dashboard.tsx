@@ -20,7 +20,7 @@ export function UserDashboard() {
   }
 
   if (status === 'unauthenticated') {
-    redirect('/login');
+    redirect('/login?callbackUrl=/app/dashboard');
   }
 
   return (

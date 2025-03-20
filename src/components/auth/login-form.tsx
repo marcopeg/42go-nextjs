@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,9 @@ import Link from 'next/link';
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams?.get('callbackUrl') || '/app';
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [username, setUsername] = useState('');
@@ -39,7 +42,7 @@ export function LoginForm() {
         email: identifier,
         password: passwordValue,
         redirect: false,
-        callbackUrl: '/dashboard',
+        callbackUrl,
       });
 
       if (result?.error) {
@@ -51,7 +54,7 @@ export function LoginForm() {
       if (result?.url) {
         router.push(result.url);
       } else {
-        router.push('/dashboard');
+        router.push(callbackUrl);
       }
       router.refresh();
     } catch (error) {
