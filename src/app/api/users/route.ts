@@ -11,7 +11,6 @@ export async function GET() {
   try {
     // Check if user is authenticated
     const session = await auth();
-    console.log('Current session:', JSON.stringify(session, null, 2));
 
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -19,7 +18,6 @@ export async function GET() {
 
     // Check if the user has the 'backoffice' grant by ID
     const hasBackofficeAccess = await sessionHasGrants(session, [GRANT_BACKOFFICE]);
-    console.log('Has backoffice access:', hasBackofficeAccess);
 
     if (!hasBackofficeAccess) {
       return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
