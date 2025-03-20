@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Mail, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useApiCallWithBoundary } from '@/lib/hooks/use-api-call';
 
 type User = {
   id: string;
@@ -61,28 +62,19 @@ const SparkleEffect = ({ color = 'var(--accent)' }) => {
 };
 
 export function UsersList() {
-  const [usersList, setUsersList] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchUsers() {
-      try {
-        const response = await fetch('/api/users');
-        if (!response.ok) {
-          throw new Error('Failed to fetch users');
-        }
-        const data = await response.json();
-        setUsersList(data.users);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
+  // Memoize the access denied message to keep it stable
+  const accessDeniedMessage = useMemo(
+    () =>
+      "You don't have permission to view the users list. Please contact an administrator if you believe this is an error.",
+    []
+  );
 
-    fetchUsers();
-  }, []);
+  const { data, loading, error } = useApiCallWithBoundary<{ users: User[] }>('/api/users', {
+    accessDeniedMessage,
+  });
+  const usersList = data?.users || [];
 
   // Get initials from name or email
   const getInitials = (name: string | null, email: string) => {
@@ -183,6 +175,10 @@ export function UsersList() {
 
   if (loading) {
     return <div className="text-center py-8">Loading users...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-destructive">Error: {error.message}</div>;
   }
 
   if (usersList.length === 0) {
