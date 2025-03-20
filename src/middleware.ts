@@ -20,9 +20,18 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Handle legacy routes that no longer exist - redirect to 404 page or homepage
+  if (
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/settings') ||
+    pathname.startsWith('/users')
+  ) {
+    return NextResponse.redirect(new URL('/404', request.url));
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/app/:path*'],
+  matcher: ['/app/:path*', '/dashboard/:path*', '/settings/:path*', '/users/:path*'],
 };

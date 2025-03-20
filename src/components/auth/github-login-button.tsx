@@ -13,7 +13,7 @@ interface GitHubLoginButtonProps {
 export function GitHubLoginButton({ isEnabled }: GitHubLoginButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = searchParams.get('callbackUrl') || '/app/dashboard';
 
   // If GitHub OAuth is not enabled, don't render anything
   if (!isEnabled) {

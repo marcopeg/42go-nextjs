@@ -121,7 +121,7 @@ export const authOptions: NextAuthConfig = {
     signOut: '/',
     error: '/error',
     verifyRequest: '/verify-request',
-    newUser: '/dashboard',
+    newUser: '/app/dashboard',
   },
   providers,
   callbacks: {

@@ -28,7 +28,7 @@ export function NotFound({
 
   // Only determine redirect path and button text on the client
   const isAuthenticated = isClient ? status === 'authenticated' : false;
-  const redirectPath = isAuthenticated ? '/dashboard' : '/';
+  const redirectPath = isAuthenticated ? '/app/dashboard' : '/';
   const buttonText = isAuthenticated ? 'Go to Dashboard' : 'Go to Home Page';
 
   // Shake keyframes - used for both load and hover animations

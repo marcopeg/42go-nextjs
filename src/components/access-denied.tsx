@@ -173,7 +173,7 @@ export function AccessDenied({
         whileTap={{ scale: 0.95 }}
       >
         <Button
-          onClick={() => router.push('/dashboard')}
+          onClick={() => router.push('/app/dashboard')}
           variant="default"
           size="lg"
           className="bg-accent text-accent-foreground hover:bg-accent/90"

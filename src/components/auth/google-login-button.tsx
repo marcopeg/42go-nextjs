@@ -12,7 +12,7 @@ interface GoogleLoginButtonProps {
 export function GoogleLoginButton({ isEnabled }: GoogleLoginButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = searchParams.get('callbackUrl') || '/app/dashboard';
 
   // If Google OAuth is not enabled, don't render anything
   if (!isEnabled) {

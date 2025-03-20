@@ -12,7 +12,7 @@ interface FacebookLoginButtonProps {
 export function FacebookLoginButton({ isEnabled }: FacebookLoginButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = searchParams.get('callbackUrl') || '/app/dashboard';
 
   // If Facebook OAuth is not enabled, don't render anything
   if (!isEnabled) {
