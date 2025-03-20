@@ -12,7 +12,8 @@
     "db:migrate": "knex --knexfile knexfile.js migrate:latest",
     "db:migrate:rollback": "knex --knexfile knexfile.js migrate:rollback",
     "db:migrate:make": "knex --knexfile knexfile.js migrate:make",
-    "db:run": "node src/lib/db/run-knex-migrations.js"
+    "db:run": "node src/lib/db/run-knex-migrations.js",
+    "db:seed": "knex --knexfile knexfile.js seed:run"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.8.0",

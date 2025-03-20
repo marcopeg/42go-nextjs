@@ -73,6 +73,62 @@ export const feedback = pgTable('feedback', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Groups table
+export const groups = authSchema.table('groups', {
+  id: integer('id').primaryKey(),
+  title: text('title').notNull().unique(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Groups Users table for user group memberships
+export const groupsUsers = authSchema.table(
+  'groups_users',
+  {
+    groupId: integer('group_id')
+      .notNull()
+      .references(() => groups.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  table => ({
+    compoundKey: primaryKey({
+      columns: [table.groupId, table.userId],
+    }),
+  })
+);
+
+// Grants table
+export const grants = authSchema.table('grants', {
+  id: integer('id').primaryKey(),
+  title: text('title').notNull().unique(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Groups Grants table for associating grants to groups
+export const groupsGrants = authSchema.table(
+  'groups_grants',
+  {
+    groupId: integer('group_id')
+      .notNull()
+      .references(() => groups.id, { onDelete: 'cascade' }),
+    grantId: integer('grant_id')
+      .notNull()
+      .references(() => grants.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  table => ({
+    compoundKey: primaryKey({
+      columns: [table.groupId, table.grantId],
+    }),
+  })
+);
+
 // Export all schemas for migrations
 const schemas = {
   users,
@@ -80,6 +136,10 @@ const schemas = {
   sessions,
   verificationTokens,
   feedback,
+  groups,
+  groupsUsers,
+  grants,
+  groupsGrants,
 };
 
 export default schemas;
