@@ -49,7 +49,7 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link
-            href="/dashboard"
+            href="/app/dashboard"
             className="flex w-full cursor-pointer items-center border border-transparent hover:border-accent"
           >
             <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -59,7 +59,7 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <div className="flex w-full">
           <Link
-            href="/settings"
+            href="/app/settings"
             className="flex w-1/2 cursor-pointer items-center px-3 py-2 text-sm border border-transparent hover:bg-accent hover:text-accent-foreground hover:border-accent"
           >
             <Settings className="mr-2 h-4 w-4" />
