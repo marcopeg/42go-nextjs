@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
-import { auth } from '@/lib/auth/auth';
 import { sessionHasGrants } from '@/lib/auth/grants';
 
 // Define the grant ID constants for clarity
@@ -9,18 +8,11 @@ const GRANT_BACKOFFICE = 'users:list';
 
 export async function GET() {
   try {
-    // Check if user is authenticated
-    const session = await auth();
+    // Check if the user has the required grant
+    const hasAccess = await sessionHasGrants([GRANT_BACKOFFICE]);
 
-    if (!session) {
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if the user has the 'backoffice' grant by ID
-    const hasBackofficeAccess = await sessionHasGrants(session, [GRANT_BACKOFFICE]);
-
-    if (!hasBackofficeAccess) {
-      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
     }
 
     // Fetch users from the database

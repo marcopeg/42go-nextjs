@@ -1,8 +1,6 @@
 import { db } from '@/lib/db';
 import { rolesUsers, rolesGrants } from '@/lib/db/schema';
 import { eq, inArray } from 'drizzle-orm';
-import { Session } from 'next-auth';
-import { NextResponse } from 'next/server';
 
 /**
  * Enum representing different matching strategies for checking grants
@@ -103,19 +101,26 @@ export async function hasGrants(
 
 /**
  * Middleware utility to check if the current session user has the required grants
+ * Now fetches the session internally
  *
- * @param session The current user session
- * @param grantIds Array of grant IDs to check for
+ * @param grantIds Array of grant IDs to check for (optional)
  * @param strategy The matching strategy (ALL or ANY)
- * @returns Promise<boolean> True if the session user has the specified grants
+ * @returns Promise<boolean> True if the session user has the specified grants or just has an active session if no grants specified
  */
 export async function sessionHasGrants(
-  session: Session | null,
-  grantIds: string[],
+  grantIds?: string[],
   strategy: GrantMatchStrategy = GrantMatchStrategy.ALL
 ): Promise<boolean> {
+  const { auth } = await import('@/lib/auth/auth');
+  const session = await auth();
+
   if (!session?.user?.id) {
     return false;
+  }
+
+  // If no grants are specified, just check for active session
+  if (!grantIds || grantIds.length === 0) {
+    return true;
   }
 
   return hasGrants(session.user.id, grantIds, strategy);
@@ -130,6 +135,9 @@ export async function sessionHasGrants(
  */
 export function requireRoles(roleNames: string[] = []) {
   return async () => {
+    // Import dependencies dynamically to avoid test environment issues
+    const { NextResponse } = await import('next/server');
+
     // Check if user has required roles
     const { auth } = await import('@/lib/auth/auth');
     const session = await auth();
@@ -138,12 +146,11 @@ export function requireRoles(roleNames: string[] = []) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (roleNames.length === 0) {
-      // If no roles specified, just check for authenticated user
-      return { success: true, session };
-    }
-
-    const hasRequiredGrants = await sessionHasGrants(session, roleNames, GrantMatchStrategy.ANY);
+    // Use the updated sessionHasGrants function
+    const hasRequiredGrants = await sessionHasGrants(
+      roleNames.length > 0 ? roleNames : undefined,
+      GrantMatchStrategy.ANY
+    );
 
     if (!hasRequiredGrants) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
