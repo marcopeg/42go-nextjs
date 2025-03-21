@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
 
   // Disable React Strict Mode to prevent double rendering in development
   // This will reduce the number of duplicate API calls (like /api/auth/session)
-  reactStrictMode: false,
+  // reactStrictMode: false,
 };
 
 export default nextConfig;
