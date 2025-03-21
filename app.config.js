@@ -16,6 +16,12 @@ const appConfig = {
   icon: Aperture,
   title: 'Cursor Boilerplate',
   subtitle: 'Build fast s**t that nobody wants',
+  // Mobile-specific configurations
+  mobile: {
+    menu: {
+      width: '88%', // Width of the mobile menu as percentage of viewport
+    },
+  },
   // Hero section on the landing page
   hero: {
     title: 'Build Your SaaS **Faster** With Our Modern Boilerplate',

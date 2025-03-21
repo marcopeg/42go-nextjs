@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAccentColor } from '@/components/accent-color-provider';
+import appConfig from '@/lib/config';
 
 interface SidebarMenuProps {
   isCollapsed: boolean;
@@ -66,17 +67,14 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
   const [isHovered, setIsHovered] = useState(false);
   const { accentColor } = useAccentColor();
 
-  return (
-    <div className="flex h-full flex-col border-r bg-background relative">
-      {/* Mobile Close Button */}
-      {closeMobileMenu && (
-        <div className="flex justify-end p-4 md:hidden">
-          <Button variant="ghost" size="icon" onClick={closeMobileMenu}>
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-      )}
+  // Get mobile menu width from config or default to 80%
+  const mobileMenuWidth = appConfig.mobile?.menu?.width || '80%';
 
+  return (
+    <div
+      className="flex h-full flex-col border-r bg-background relative"
+      style={{ width: closeMobileMenu ? mobileMenuWidth : 'auto' }}
+    >
       {/* Collapse Toggle Button - Positioned absolutely */}
       <div className="absolute -right-3 top-[21px] z-10 hidden md:block">
         <Button
@@ -99,32 +97,55 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
 
       {/* App Title & Logo - Top Section */}
       <header className="border-b border-border overflow-hidden">
-        <div
-          className={cn(
-            'flex items-center h-16 max-h-16 overflow-hidden',
-            isCollapsed ? 'justify-center px-0' : 'px-6'
-          )}
-        >
-          {!isCollapsed ? (
-            <div className="overflow-hidden flex-1 min-w-0 flex flex-col justify-end pb-2">
+        {closeMobileMenu ? (
+          // Mobile header with app title and close button on same line
+          <div className="flex items-center h-16 px-4 w-full">
+            <div className="flex-grow overflow-hidden mr-2">
               <Link href="/app/dashboard" className="hover:opacity-80 transition-opacity">
-                <AppTitle showIcon={true} showSubtitle={false} />
+                <AppTitle showIcon={true} showSubtitle={false} className="truncate" />
               </Link>
             </div>
-          ) : (
-            <div className="flex items-center justify-center h-16">
-              <Link href="/app/dashboard" className="hover:opacity-80 transition-opacity">
-                <AppTitle
-                  className="mx-auto"
-                  showIcon={true}
-                  showSubtitle={false}
-                  showTitle={false}
-                  iconOnly={true}
-                />
-              </Link>
+            <div className="flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={closeMobileMenu}
+                className="flex items-center justify-center"
+              >
+                <X className="h-5 w-5" />
+                <span className="sr-only">Close menu</span>
+              </Button>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          // Desktop header
+          <div
+            className={cn(
+              'flex items-center h-16 max-h-16 overflow-hidden',
+              isCollapsed ? 'justify-center px-0' : 'px-6'
+            )}
+          >
+            {!isCollapsed ? (
+              <div className="overflow-hidden flex-1 min-w-0 flex flex-col justify-end pb-2">
+                <Link href="/app/dashboard" className="hover:opacity-80 transition-opacity">
+                  <AppTitle showIcon={true} showSubtitle={false} />
+                </Link>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-16">
+                <Link href="/app/dashboard" className="hover:opacity-80 transition-opacity">
+                  <AppTitle
+                    className="mx-auto"
+                    showIcon={true}
+                    showSubtitle={false}
+                    showTitle={false}
+                    iconOnly={true}
+                  />
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
       </header>
 
       {/* Navigation Items */}

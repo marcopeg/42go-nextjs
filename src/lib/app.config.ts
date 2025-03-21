@@ -28,6 +28,16 @@ export type ThemeConfig = {
   defaultAccentColor: string;
 };
 
+export type MobileConfig = {
+  menu: {
+    /**
+     * Width of the mobile menu sidebar as a percentage of viewport width
+     * @example '80%'
+     */
+    width: string;
+  };
+};
+
 export type AppConfig = {
   /**
    * The title of the application, displayed in the header and browser tab
@@ -47,6 +57,11 @@ export type AppConfig = {
    * - A fully qualified URL
    */
   icon: LucideIcon | string;
+
+  /**
+   * Mobile-specific configurations
+   */
+  mobile?: MobileConfig;
 
   /**
    * Theme configuration

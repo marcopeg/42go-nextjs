@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { SidebarMenu } from './sidebar-menu';
 import { MobileNavToggle } from './mobile-nav-toggle';
+import appConfig from '@/lib/config';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -45,6 +46,9 @@ export function AppLayout({ children }: AppLayoutProps) {
     return () => window.removeEventListener('resize', handleResize);
   }, [isMobileMenuOpen]);
 
+  // Get mobile menu width from config or default to 80%
+  const mobileMenuWidth = appConfig.mobile?.menu?.width || '80%';
+
   return (
     <div className="flex min-h-screen">
       {/* Desktop Sidebar */}
@@ -68,8 +72,9 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Mobile Sidebar - Content */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 transition-transform duration-300 ease-in-out md:hidden 
+        className={`fixed top-0 left-0 z-50 h-full transition-transform duration-300 ease-in-out md:hidden 
                     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{ width: mobileMenuWidth }}
       >
         <SidebarMenu
           isCollapsed={false}
