@@ -1,39 +1,43 @@
 'use client';
 
 import { SessionProvider } from 'next-auth/react';
-import { ReactNode, useEffect, useRef, useMemo } from 'react';
+import { ReactNode, useRef } from 'react';
+import type { Session } from 'next-auth';
+
+// Create a stable key for the SessionProvider to prevent remounts
+const STABLE_KEY = 'stable-session-provider';
 
 interface AuthProviderProps {
   children: ReactNode;
+  session?: Session | null; // Optional session prop to prevent duplicate fetches
 }
 
-export function AuthProvider({ children }: AuthProviderProps) {
-  // Don't reuse key changes at all - use a stable key forever
-  // React's key system is causing unnecessary remounts and session fetches
+/**
+ * AuthProvider component that wraps SessionProvider with additional stability
+ * to prevent React hook order issues during authentication transitions.
+ */
+export function AuthProvider({ children, session }: AuthProviderProps) {
+  // Store the initial session value and prevent it from changing
+  const initialSessionRef = useRef(session);
 
-  // Using a ref to track mount state without causing re-renders
-  const isComponentMounted = useRef(false);
+  // Store session options with consistent references
+  const sessionOptions = {
+    // Longer refresh interval to reduce API calls
+    refetchInterval: 15 * 60, // 15 minutes
+    // Don't refetch just because window gets focus - rely on interval
+    refetchOnWindowFocus: false,
+  };
 
-  // Mark initialization on first mount only - this prevents multiple requests
-  useEffect(() => {
-    if (!isComponentMounted.current) {
-      isComponentMounted.current = true;
-    }
-  }, []);
-
-  // Memoize the session provider options to prevent re-renders
-  const sessionOptions = useMemo(
-    () => ({
-      // Longer refresh interval to reduce API calls
-      refetchInterval: 15 * 60, // 15 minutes
-      // Don't refetch just because window gets focus - rely on interval
-      refetchOnWindowFocus: false,
-    }),
-    []
-  );
-
+  // For client-side only re-renders, use a different key to enforce
+  // component stability during authentication transitions
   return (
-    // Don't use dynamic key - it causes remounts which trigger multiple session fetches
-    <SessionProvider {...sessionOptions}>{children}</SessionProvider>
+    <SessionProvider
+      key={STABLE_KEY}
+      session={initialSessionRef.current}
+      refetchInterval={sessionOptions.refetchInterval}
+      refetchOnWindowFocus={sessionOptions.refetchOnWindowFocus}
+    >
+      {children}
+    </SessionProvider>
   );
 }

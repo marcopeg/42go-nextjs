@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -11,7 +11,6 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get('callbackUrl') || '/app';
 
@@ -52,11 +51,13 @@ export function LoginForm() {
       }
 
       if (result?.url) {
-        router.push(result.url);
+        // Use window.location for a full page navigation instead of client-side routing
+        // This prevents the React hook ordering issue in the app router
+        window.location.href = result.url;
       } else {
-        router.push(callbackUrl);
+        window.location.href = callbackUrl;
       }
-      router.refresh();
+      // Remove router.refresh() - it causes the hook order issue
     } catch (error) {
       setError('Something went wrong. Please try again.');
       console.error('Login error:', error);

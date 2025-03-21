@@ -11,6 +11,7 @@ import { AuthProvider } from '@/lib/auth/auth-provider';
 import { LayoutProvider } from '@/components/layout-provider';
 import { Toaster } from '@/components/ui/toaster';
 import appConfig from '@/lib/config';
+import { auth } from '@/lib/auth/auth';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -19,7 +20,9 @@ export const metadata: Metadata = {
   description: appConfig.subtitle || 'Create Apps with Cursor and Next.js',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
@@ -28,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <TransitionProvider>
               <RouteChangeProvider>
                 <RouteChangeLoader />
-                <AuthProvider>
+                <AuthProvider session={session}>
                   <LayoutProvider>{children}</LayoutProvider>
                 </AuthProvider>
               </RouteChangeProvider>
