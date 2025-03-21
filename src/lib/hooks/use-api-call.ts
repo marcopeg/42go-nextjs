@@ -65,21 +65,31 @@ function useApiCallBase<T>(
       const currentOptions = optionsRef.current;
       const response = await fetch(url, currentOptions);
 
-      // Check if the response is an access denied error (status 403)
-      if (response.status === 403) {
+      // Check if the response is an access denied error (status 401 or 403)
+      if (response.status === 403 || response.status === 401) {
         // If we have an ApiErrorContext and should use it, set the error there
         const currentApiErrorContext = apiErrorContextRef.current;
         const shouldUseErrorBoundary =
           currentOptions?.useErrorBoundary && currentApiErrorContext !== undefined;
 
+        let errorMessage = currentOptions?.accessDeniedMessage;
+
+        // If no custom message is provided, use specific messages based on status code
+        if (!errorMessage) {
+          errorMessage =
+            response.status === 401
+              ? 'Please log in to access this resource.'
+              : 'You do not have permission to access this resource.';
+        }
+
         if (shouldUseErrorBoundary && currentApiErrorContext) {
-          currentApiErrorContext.setAccessDenied(true, currentOptions?.accessDeniedMessage);
+          currentApiErrorContext.setAccessDenied(true, errorMessage);
         }
 
         // Update local state
         setState({
           data: null,
-          error: new Error('Access denied'),
+          error: new Error(errorMessage),
           loading: false,
           isAccessDenied: true,
         });

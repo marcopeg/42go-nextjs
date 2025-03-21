@@ -12,7 +12,7 @@ export async function GET() {
     const hasAccess = await sessionHasGrants([GRANT_BACKOFFICE]);
 
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Fetch users from the database
