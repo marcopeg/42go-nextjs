@@ -6,7 +6,7 @@ import { sessionHasGrants } from '@/lib/auth/grants';
 export async function GET() {
   try {
     // Check if the user has the required grant
-    const hasAccess = await sessionHasGrants(['users:list']);
+    const hasAccess = await sessionHasGrants(['users:list1']);
 
     if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
