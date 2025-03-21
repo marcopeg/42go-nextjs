@@ -40,12 +40,12 @@ export function InternalPage({
 }: InternalPageProps) {
   return (
     <TooltipProvider>
-      <div className="flex flex-col h-full min-h-[calc(100vh-4rem)] -mx-6">
+      <div className="flex flex-col h-full -mx-6 relative">
         {/* Header */}
         <header
           className={cn(
-            'border-b border-border overflow-hidden',
-            stickyHeader && 'sticky top-0 bg-background z-10'
+            'border-b border-border overflow-hidden w-full',
+            stickyHeader && 'sticky top-0 bg-background z-20'
           )}
         >
           <div className="flex items-center justify-between h-16 max-h-16 px-6 overflow-hidden">
@@ -94,7 +94,7 @@ export function InternalPage({
         </header>
 
         {/* Main Content with Animation */}
-        <main className="flex-1 overflow-auto pb-16 px-6 pt-6">
+        <main className="flex-1 px-6 pt-6 pb-16 overflow-auto">
           <PageContentTransition>{children}</PageContentTransition>
         </main>
 
@@ -102,8 +102,8 @@ export function InternalPage({
         {bottomBar && (
           <footer
             className={cn(
-              'px-6 py-4 border-t flex items-center justify-between',
-              bottomBar.sticky && 'sticky bottom-0 bg-background z-10'
+              'px-6 py-4 border-t flex items-center justify-between w-full',
+              bottomBar.sticky && 'sticky bottom-0 bg-background z-20'
             )}
           >
             <div>{bottomBar.leftContent}</div>
