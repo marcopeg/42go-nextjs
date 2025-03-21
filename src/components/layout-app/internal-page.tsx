@@ -45,8 +45,12 @@ export function InternalPage({
         <header
           className={cn(
             'border-b border-border overflow-hidden w-full',
-            stickyHeader && 'sticky top-0 bg-background z-20'
+            stickyHeader ? 'sticky top-0 bg-background z-20' : 'relative !static position-static'
           )}
+          style={{
+            position: stickyHeader ? 'sticky' : 'static',
+            top: stickyHeader ? 0 : 'auto',
+          }}
         >
           <div className="flex items-center justify-between h-16 max-h-16 px-6 overflow-hidden">
             <div className="flex items-center overflow-hidden">
@@ -103,7 +107,7 @@ export function InternalPage({
           <footer
             className={cn(
               'px-6 py-4 border-t flex items-center justify-between w-full',
-              bottomBar.sticky && 'sticky bottom-0 bg-background z-20'
+              bottomBar.sticky ? 'sticky bottom-0 bg-background z-20' : 'relative'
             )}
           >
             <div>{bottomBar.leftContent}</div>

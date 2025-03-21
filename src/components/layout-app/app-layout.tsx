@@ -85,7 +85,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main Content */}
       <main
-        className={`flex-1 transition-all duration-300 ease-in-out h-screen overflow-hidden px-6
+        className={`flex-1 transition-all duration-300 ease-in-out min-h-screen px-6
                       ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}
       >
         {/* Mobile Header with Menu Toggle */}
@@ -97,7 +97,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
 
         {/* Page Content */}
-        <div className="container mx-auto px-0 h-full">{children}</div>
+        <div className="container mx-auto px-0 h-full flex flex-col">{children}</div>
       </main>
     </div>
   );
