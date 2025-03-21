@@ -1,34 +1,39 @@
 'use client';
 
 import { SessionProvider } from 'next-auth/react';
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useEffect, useRef, useMemo } from 'react';
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  // Using a ref-like pattern with useState to track if we've done the initial hydration
-  const [hydrated, setHydrated] = useState(false);
+  // Don't reuse key changes at all - use a stable key forever
+  // React's key system is causing unnecessary remounts and session fetches
 
-  // Only run once on initial client-side hydration
+  // Using a ref to track mount state without causing re-renders
+  const isComponentMounted = useRef(false);
+
+  // Mark initialization on first mount only - this prevents multiple requests
   useEffect(() => {
-    // Mark as hydrated to prevent further remounts
-    if (!hydrated) {
-      setHydrated(true);
+    if (!isComponentMounted.current) {
+      isComponentMounted.current = true;
     }
-  }, [hydrated]);
+  }, []);
+
+  // Memoize the session provider options to prevent re-renders
+  const sessionOptions = useMemo(
+    () => ({
+      // Longer refresh interval to reduce API calls
+      refetchInterval: 15 * 60, // 15 minutes
+      // Don't refetch just because window gets focus - rely on interval
+      refetchOnWindowFocus: false,
+    }),
+    []
+  );
 
   return (
-    <SessionProvider
-      // Only use the key for initial hydration, then keep it stable
-      key={`auth-provider-${hydrated ? 'stable' : 'initial'}`}
-      // Refetch session every 5 minutes to keep it fresh
-      refetchInterval={5 * 60}
-      // Refetch when window focuses to keep session up-to-date
-      refetchOnWindowFocus={true}
-    >
-      {children}
-    </SessionProvider>
+    // Don't use dynamic key - it causes remounts which trigger multiple session fetches
+    <SessionProvider {...sessionOptions}>{children}</SessionProvider>
   );
 }

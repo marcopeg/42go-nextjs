@@ -1,6 +1,7 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
+import { useCachedSession } from '@/lib/auth/use-cached-session';
 import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +14,7 @@ import {
 } from '@/components/ui/card';
 
 export function UserDashboard() {
-  const { data: session, status } = useSession();
+  const { data: session, status } = useCachedSession();
 
   if (status === 'loading') {
     return <div className="flex justify-center p-8">Loading...</div>;

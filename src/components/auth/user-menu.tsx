@@ -1,6 +1,7 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
+import { useCachedSession } from '@/lib/auth/use-cached-session';
 import Link from 'next/link';
 import { Settings, LogOut, LayoutDashboard } from 'lucide-react';
 import { UserAvatar } from './user-avatar';
@@ -14,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 export function UserMenu() {
-  const { data: session } = useSession();
+  const { data: session } = useCachedSession();
 
   if (!session?.user) {
     return (

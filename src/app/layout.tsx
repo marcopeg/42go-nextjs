@@ -5,6 +5,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AccentColorProvider } from '@/components/accent-color-provider';
 import { TransitionProvider } from '@/components/transition-provider';
+import { RouteChangeProvider } from '@/components/route-change-provider';
 import { RouteChangeLoader } from '@/components/route-change-loader';
 import { AuthProvider } from '@/lib/auth/auth-provider';
 import { LayoutProvider } from '@/components/layout-provider';
@@ -25,10 +26,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AccentColorProvider>
             <TransitionProvider>
-              <RouteChangeLoader />
-              <AuthProvider>
-                <LayoutProvider>{children}</LayoutProvider>
-              </AuthProvider>
+              <RouteChangeProvider>
+                <RouteChangeLoader />
+                <AuthProvider>
+                  <LayoutProvider>{children}</LayoutProvider>
+                </AuthProvider>
+              </RouteChangeProvider>
               <Toaster />
             </TransitionProvider>
           </AccentColorProvider>

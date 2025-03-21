@@ -1,11 +1,11 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useCachedSession } from '@/lib/auth/use-cached-session';
 import { PublicLayout } from '@/components/layout-public/public-layout';
 import { MinimalLayout } from '@/components/layout-public/minimal-layout';
 import { AppLayout } from '@/components/layout-app/app-layout';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 
 interface LayoutProviderProps {
   children: React.ReactNode;
@@ -13,38 +13,51 @@ interface LayoutProviderProps {
 
 export function LayoutProvider({ children }: LayoutProviderProps) {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { data: session, status } = useCachedSession();
   const [isInitializing, setIsInitializing] = useState(true);
+
+  // Memoize the session status check to prevent redundant state updates
+  const handleAuthStateChange = useCallback(() => {
+    if (status !== 'loading' && isInitializing) {
+      setIsInitializing(false);
+    }
+  }, [status, isInitializing]);
 
   // Wait for authentication state to be determined
   useEffect(() => {
-    // Only set initializing to false once we have a definite auth state
-    if (status !== 'loading') {
-      setIsInitializing(false);
-    }
-  }, [status]);
+    handleAuthStateChange();
+  }, [handleAuthStateChange]);
 
-  // Always compute these values regardless of the condition
-  // This ensures hooks are called consistently
-  const isAppRoute = pathname.startsWith('/app');
-  const isLoginRoute = pathname === '/login';
-  const isAuthenticated = status === 'authenticated' && !!session;
+  // Memoize these values to prevent recalculations on every render
+  const layoutInfo = useMemo(() => {
+    const isAppRoute = pathname.startsWith('/app');
+    const isLoginRoute = pathname === '/login';
+    const isAuthenticated = status === 'authenticated' && !!session;
 
-  // During initialization, render a loading indicator
-  if (isInitializing) {
-    return (
+    return { isAppRoute, isLoginRoute, isAuthenticated };
+  }, [pathname, status, session]);
+
+  // Memoize the loading component
+  const loadingView = useMemo(
+    () => (
       <div className="h-screen w-screen flex items-center justify-center bg-background">
         <div className="animate-pulse">Loading...</div>
       </div>
-    );
+    ),
+    []
+  );
+
+  // During initialization, render a loading indicator
+  if (isInitializing) {
+    return loadingView;
   }
 
   // Determine which layout to use based on route and auth state
-  if (isLoginRoute) {
+  if (layoutInfo.isLoginRoute) {
     return <MinimalLayout>{children}</MinimalLayout>;
   }
 
-  if (isAppRoute && isAuthenticated) {
+  if (layoutInfo.isAppRoute && layoutInfo.isAuthenticated) {
     return <AppLayout>{children}</AppLayout>;
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useCachedSession } from '@/lib/auth/use-cached-session';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -62,7 +62,7 @@ const navItems: NavItem[] = [
 ];
 
 export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: SidebarMenuProps) {
-  const { data: session } = useSession();
+  const { data: session } = useCachedSession();
   const pathname = usePathname();
   const [isHovered, setIsHovered] = useState(false);
   const { accentColor } = useAccentColor();
