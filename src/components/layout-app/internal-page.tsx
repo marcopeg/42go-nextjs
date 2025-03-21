@@ -41,11 +41,11 @@ export function InternalPage({
   // Determine header sticky classes based on the value of stickyHeader
   const getHeaderStickyClasses = () => {
     if (stickyHeader === 'always') {
-      return 'sticky top-0 bg-background z-20';
+      return 'sticky top-0 bg-background/80 backdrop-blur-sm z-20';
     } else if (stickyHeader === 'never') {
       return 'relative !static position-static';
     } else if (stickyHeader === true) {
-      return 'md:sticky md:top-0 md:bg-background md:z-20 relative';
+      return 'md:sticky md:top-0 md:bg-background/80 md:backdrop-blur-sm md:z-20 relative';
     }
     return 'relative !static position-static';
   };
@@ -68,7 +68,10 @@ export function InternalPage({
       <div className="flex flex-col h-full -mx-6 relative">
         {/* Header */}
         <header
-          className={cn('border-b border-border overflow-hidden w-full', getHeaderStickyClasses())}
+          className={cn(
+            'border-b border-border overflow-hidden w-full transition-all duration-200',
+            getHeaderStickyClasses()
+          )}
           style={getHeaderStyles()}
         >
           <div className="flex items-center justify-between h-16 max-h-16 px-6 overflow-hidden">
