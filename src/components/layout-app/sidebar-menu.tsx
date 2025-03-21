@@ -78,7 +78,7 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
       )}
 
       {/* Collapse Toggle Button - Positioned absolutely */}
-      <div className="absolute -right-3 top-[21px] z-10">
+      <div className="absolute -right-3 top-[21px] z-10 hidden md:block">
         <Button
           variant="outline"
           size="icon"
