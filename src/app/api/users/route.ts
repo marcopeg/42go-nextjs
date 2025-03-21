@@ -5,7 +5,7 @@ import { auth } from '@/lib/auth/auth';
 import { sessionHasGrants } from '@/lib/auth/grants';
 
 // Define the grant ID constants for clarity
-const GRANT_BACKOFFICE = 'backoffice';
+const GRANT_BACKOFFICE = 'users:list';
 
 export async function GET() {
   try {

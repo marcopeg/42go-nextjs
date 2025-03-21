@@ -18,10 +18,10 @@ exports.seed = async function (knex) {
   await knex.transaction(async trx => {
     // Delete existing data in reverse order of dependencies
     console.log('Clearing existing data...');
-    await trx('auth.groups_grants').del();
-    await trx('auth.groups_users').del();
+    await trx('auth.roles_grants').del();
+    await trx('auth.roles_users').del();
     await trx('auth.grants').del();
-    await trx('auth.groups').del();
+    await trx('auth.roles').del();
     await trx('auth.users').del();
     await trx('auth.accounts').del();
     await trx('auth.verification_tokens').del();
@@ -66,43 +66,53 @@ exports.seed = async function (knex) {
     });
     console.log(`Created Jane Doe user with ID: ${janeDoeId}`);
 
-    // 2. Add the backoffice group with a text ID
-    const backofficeGroupId = 'backoffice';
-    await trx('auth.groups').insert({
-      id: backofficeGroupId,
+    // 2. Add the backoffice role with a text ID
+    const backofficeRoleId = 'backoffice';
+    await trx('auth.roles').insert({
+      id: backofficeRoleId,
       title: 'Backoffice',
       description: 'Administrators with backoffice access',
       created_at: new Date(),
       updated_at: new Date(),
     });
-    console.log(`Created backoffice group with ID: ${backofficeGroupId}`);
+    console.log(`Created backoffice role with ID: ${backofficeRoleId}`);
 
     // 3. Add the backoffice grant with a text ID
-    const backofficeGrantId = 'backoffice';
+    const usersListGrantId = 'users:list';
     await trx('auth.grants').insert({
-      id: backofficeGrantId,
-      title: 'Backoffice',
-      description: 'Permission to access and manage backoffice functionality',
+      id: usersListGrantId,
+      title: 'List users',
+      description: 'Let see all users in the system',
       created_at: new Date(),
       updated_at: new Date(),
     });
-    console.log(`Created backoffice grant with ID: ${backofficeGrantId}`);
+    console.log(`Created backoffice grant with ID: ${usersListGrantId}`);
 
-    // 4. Associate the admin user to the backoffice group
-    await trx('auth.groups_users').insert({
-      group_id: backofficeGroupId,
+    const usersEditGrantId = 'users:edit';
+    await trx('auth.grants').insert({
+      id: usersEditGrantId,
+      title: 'Edit user',
+      description: 'Let apply changes to a user',
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    console.log(`Created backoffice grant with ID: ${usersEditGrantId}`);
+
+    // 4. Associate the admin user to the backoffice role
+    await trx('auth.roles_users').insert({
+      role_id: backofficeRoleId,
       user_id: adminId,
       created_at: new Date(),
     });
-    console.log(`Associated admin user with backoffice group`);
+    console.log(`Associated admin user with backoffice role`);
 
-    // 5. Associate the backoffice grant to the backoffice group
-    await trx('auth.groups_grants').insert({
-      group_id: backofficeGroupId,
-      grant_id: backofficeGrantId,
+    // 5. Associate the users list to the backoffice role
+    await trx('auth.roles_grants').insert({
+      role_id: backofficeRoleId,
+      grant_id: usersListGrantId,
       created_at: new Date(),
     });
-    console.log(`Associated backoffice grant with backoffice group`);
+    console.log(`Associated backoffice grant with backoffice role`);
   });
 
   console.log('Seed completed successfully!');

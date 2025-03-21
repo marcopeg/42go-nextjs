@@ -1,7 +1,8 @@
 import { db } from '@/lib/db';
-import { groupsUsers, groupsGrants } from '@/lib/db/schema';
-import { eq, inArray, and } from 'drizzle-orm';
+import { rolesUsers, rolesGrants } from '@/lib/db/schema';
+import { eq, inArray } from 'drizzle-orm';
 import { Session } from 'next-auth';
+import { NextResponse } from 'next/server';
 
 /**
  * Enum representing different matching strategies for checking grants
@@ -12,10 +13,30 @@ export enum GrantMatchStrategy {
 }
 
 /**
+ * Checks if a pattern matches a specific grant ID
+ * Supports wildcards with '*' (e.g., 'users:*' matches 'users:list', 'users:edit', etc.)
+ *
+ * @param pattern The pattern to match (can include '*' as wildcard)
+ * @param grantId The specific grant ID to check against the pattern
+ * @returns boolean True if the grantId matches the pattern
+ */
+function matchesPattern(pattern: string, grantId: string): boolean {
+  // Convert the pattern to a regex pattern
+  // Replace '*' with '.*' for regex wildcard and escape other special chars
+  const regexPattern = pattern
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special chars
+    .replace('\\*', '.*'); // Replace escaped * with .* for wildcard
+
+  const regex = new RegExp(`^${regexPattern}$`);
+  return regex.test(grantId);
+}
+
+/**
  * Checks if a user has the specified grants based on the matching strategy
+ * Now supports wildcard patterns in grantIds (e.g., 'users:*')
  *
  * @param userId The ID of the user to check
- * @param grantIds Array of grant IDs to check for
+ * @param grantIds Array of grant IDs or patterns to check for
  * @param strategy The matching strategy (ALL or ANY)
  * @returns Promise<boolean> True if the user has the specified grants according to the strategy
  */
@@ -28,51 +49,56 @@ export async function hasGrants(
     return false;
   }
 
-  // Find groups that have the specified grants
-  const groupsWithGrants = await db
-    .select({ groupId: groupsGrants.groupId })
-    .from(groupsGrants)
-    .where(inArray(groupsGrants.grantId, grantIds));
+  // Separate exact match IDs and pattern IDs
+  const exactMatchIds = grantIds.filter(id => !id.includes('*'));
+  const patternIds = grantIds.filter(id => id.includes('*'));
 
-  if (!groupsWithGrants.length) {
+  // Get all user role IDs
+  const userRoles = await db
+    .select({ roleId: rolesUsers.roleId })
+    .from(rolesUsers)
+    .where(eq(rolesUsers.userId, userId));
+
+  if (!userRoles.length) {
     return false;
   }
 
-  const groupIds = groupsWithGrants.map(group => group.groupId);
+  const userRoleIds = userRoles.map(role => role.roleId);
 
-  // Check if the user is a member of any of these groups
-  const userGroups = await db
-    .select()
-    .from(groupsUsers)
-    .where(and(eq(groupsUsers.userId, userId), inArray(groupsUsers.groupId, groupIds)));
+  // Get all grants that the user has through their roles
+  const userGrants = await db
+    .select({ grantId: rolesGrants.grantId })
+    .from(rolesGrants)
+    .where(inArray(rolesGrants.roleId, userRoleIds));
 
-  if (!userGroups.length) {
+  if (!userGrants.length) {
     return false;
   }
 
-  // For the ALL strategy, we need to check if the user has all the required grants
-  if (strategy === GrantMatchStrategy.ALL && grantIds.length > 1) {
-    // Count the unique grants the user has through their group memberships
-    const userGroupIds = userGroups.map((ug: { groupId: string }) => ug.groupId);
+  const userGrantIds = userGrants.map(g => g.grantId);
 
-    // Get all grants that the user has through their groups
-    const userGrantsRecords = await db
-      .select()
-      .from(groupsGrants)
-      .where(
-        and(inArray(groupsGrants.groupId, userGroupIds), inArray(groupsGrants.grantId, grantIds))
-      );
+  // Check for exact matches
+  const exactMatches = exactMatchIds.filter(id => userGrantIds.includes(id));
 
-    // Check if the user has all the required grants
-    const uniqueUserGrantIds = [
-      ...new Set(userGrantsRecords.map((ug: { grantId: string }) => ug.grantId)),
-    ];
-    return uniqueUserGrantIds.length >= grantIds.length;
+  // Check for pattern matches
+  let patternMatches: string[] = [];
+  if (patternIds.length > 0) {
+    // For each pattern, check if any of the user's grants match
+    patternMatches = patternIds.filter(pattern =>
+      userGrantIds.some(grantId => matchesPattern(pattern, grantId))
+    );
   }
 
-  // For the ANY strategy, we only need to confirm the user is in at least one group
-  // with at least one of the grants, which we've already done
-  return true;
+  // Combine the matches
+  const matchedGrants = [...exactMatches, ...patternMatches];
+
+  // For ALL strategy, all specified grants must match
+  if (strategy === GrantMatchStrategy.ALL) {
+    return matchedGrants.length === grantIds.length;
+  }
+
+  // For ANY strategy, at least one grant must match
+  return matchedGrants.length > 0;
 }
 
 /**
@@ -93,4 +119,36 @@ export async function sessionHasGrants(
   }
 
   return hasGrants(session.user.id, grantIds, strategy);
+}
+
+/**
+ * Higher-order function to create a middleware that requires specific roles
+ * Returns a function that can be used as middleware in API routes
+ *
+ * @param roleNames Array of role names required for access
+ * @returns A middleware function that checks if the user has the required roles
+ */
+export function requireRoles(roleNames: string[] = []) {
+  return async () => {
+    // Check if user has required roles
+    const { auth } = await import('@/lib/auth/auth');
+    const session = await auth();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (roleNames.length === 0) {
+      // If no roles specified, just check for authenticated user
+      return { success: true, session };
+    }
+
+    const hasRequiredGrants = await sessionHasGrants(session, roleNames, GrantMatchStrategy.ANY);
+
+    if (!hasRequiredGrants) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    return { success: true, session };
+  };
 }

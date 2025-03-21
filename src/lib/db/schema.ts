@@ -73,8 +73,8 @@ export const feedback = pgTable('feedback', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-// Groups table
-export const groups = authSchema.table('groups', {
+// Roles table
+export const roles = authSchema.table('roles', {
   id: text('id').primaryKey(),
   title: text('title').notNull().unique(),
   description: text('description'),
@@ -82,13 +82,13 @@ export const groups = authSchema.table('groups', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-// Groups Users table for user group memberships
-export const groupsUsers = authSchema.table(
-  'groups_users',
+// Roles Users table for user role memberships
+export const rolesUsers = authSchema.table(
+  'roles_users',
   {
-    groupId: text('group_id')
+    roleId: text('role_id')
       .notNull()
-      .references(() => groups.id, { onDelete: 'cascade' }),
+      .references(() => roles.id, { onDelete: 'cascade' }),
     userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -96,7 +96,7 @@ export const groupsUsers = authSchema.table(
   },
   table => ({
     compoundKey: primaryKey({
-      columns: [table.groupId, table.userId],
+      columns: [table.roleId, table.userId],
     }),
   })
 );
@@ -110,13 +110,13 @@ export const grants = authSchema.table('grants', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-// Groups Grants table for associating grants to groups
-export const groupsGrants = authSchema.table(
-  'groups_grants',
+// Roles Grants table for associating grants to roles
+export const rolesGrants = authSchema.table(
+  'roles_grants',
   {
-    groupId: text('group_id')
+    roleId: text('role_id')
       .notNull()
-      .references(() => groups.id, { onDelete: 'cascade' }),
+      .references(() => roles.id, { onDelete: 'cascade' }),
     grantId: text('grant_id')
       .notNull()
       .references(() => grants.id, { onDelete: 'cascade' }),
@@ -124,7 +124,7 @@ export const groupsGrants = authSchema.table(
   },
   table => ({
     compoundKey: primaryKey({
-      columns: [table.groupId, table.grantId],
+      columns: [table.roleId, table.grantId],
     }),
   })
 );
@@ -136,10 +136,10 @@ const schemas = {
   sessions,
   verificationTokens,
   feedback,
-  groups,
-  groupsUsers,
+  roles,
+  rolesUsers,
   grants,
-  groupsGrants,
+  rolesGrants,
 };
 
 export default schemas;
