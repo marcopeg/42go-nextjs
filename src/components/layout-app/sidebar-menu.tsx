@@ -161,7 +161,8 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
                   'flex items-center px-3 py-2 text-sm transition-all duration-200 cursor-pointer relative border group',
                   isActive
                     ? 'text-foreground font-bold border-transparent rounded-none' +
-                        (!isCollapsed ? ' translate-x-1' : '')
+                        (!isCollapsed && !closeMobileMenu ? ' translate-x-1' : '') +
+                        (closeMobileMenu ? ' border-accent rounded-md' : '')
                     : 'text-muted-foreground hover:text-foreground border-transparent rounded-none font-medium',
                   'hover:rounded-md hover:border-accent',
                   isCollapsed && 'justify-center px-0'
