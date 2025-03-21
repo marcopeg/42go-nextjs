@@ -8,20 +8,21 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  // Add a key state that changes when auth changes to force a complete remount
-  // This prevents React hooks inconsistency errors during auth transitions
-  const [mountKey, setMountKey] = useState(0);
+  // Using a ref-like pattern with useState to track if we've done the initial hydration
+  const [hydrated, setHydrated] = useState(false);
 
-  // Force remount on client side
+  // Only run once on initial client-side hydration
   useEffect(() => {
-    // This will ensure a clean component tree on hydration
-    setMountKey(prev => prev + 1);
-  }, []);
+    // Mark as hydrated to prevent further remounts
+    if (!hydrated) {
+      setHydrated(true);
+    }
+  }, [hydrated]);
 
   return (
     <SessionProvider
-      // The key prop ensures the provider and all children remount when authentication changes
-      key={`auth-provider-${mountKey}`}
+      // Only use the key for initial hydration, then keep it stable
+      key={`auth-provider-${hydrated ? 'stable' : 'initial'}`}
       // Refetch session every 5 minutes to keep it fresh
       refetchInterval={5 * 60}
       // Refetch when window focuses to keep session up-to-date
