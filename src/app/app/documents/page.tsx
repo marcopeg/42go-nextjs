@@ -56,11 +56,11 @@ const mockUsers = generateMockUsers();
 
 export default function DocumentsPage() {
   return (
-    <InternalPage title="Documents" subtitle="Manage your documents" stickyHeader={true}>
+    <InternalPage title="Documents" subtitle="Manage your documents">
       {/* Table with 50 mock users to create scrollable content */}
-      <div className="rounded-md border">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      <div className="overflow-hidden rounded-md border">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full min-w-full table-fixed">
             <thead>
               <tr className="bg-muted/50">
                 <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">

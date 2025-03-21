@@ -26,7 +26,7 @@ interface InternalPageProps {
     sticky?: boolean;
   };
   children: ReactNode;
-  stickyHeader?: boolean;
+  stickyHeader?: boolean | 'always' | 'never';
 }
 
 export function InternalPage({
@@ -38,19 +38,38 @@ export function InternalPage({
   children,
   stickyHeader = true,
 }: InternalPageProps) {
+  // Determine header sticky classes based on the value of stickyHeader
+  const getHeaderStickyClasses = () => {
+    if (stickyHeader === 'always') {
+      return 'sticky top-0 bg-background z-20';
+    } else if (stickyHeader === 'never') {
+      return 'relative !static position-static';
+    } else if (stickyHeader === true) {
+      return 'md:sticky md:top-0 md:bg-background md:z-20 relative';
+    }
+    return 'relative !static position-static';
+  };
+
+  // Get inline styles for the header
+  const getHeaderStyles = () => {
+    if (stickyHeader === 'always') {
+      return { position: 'sticky' as const, top: 0 };
+    } else if (stickyHeader === 'never') {
+      return { position: 'static' as const, top: 'auto' };
+    } else if (stickyHeader === true) {
+      // Use CSS media queries for the default case (handled in className)
+      return {};
+    }
+    return { position: 'static' as const, top: 'auto' };
+  };
+
   return (
     <TooltipProvider>
       <div className="flex flex-col h-full -mx-6 relative">
         {/* Header */}
         <header
-          className={cn(
-            'border-b border-border overflow-hidden w-full',
-            stickyHeader ? 'sticky top-0 bg-background z-20' : 'relative !static position-static'
-          )}
-          style={{
-            position: stickyHeader ? 'sticky' : 'static',
-            top: stickyHeader ? 0 : 'auto',
-          }}
+          className={cn('border-b border-border overflow-hidden w-full', getHeaderStickyClasses())}
+          style={getHeaderStyles()}
         >
           <div className="flex items-center justify-between h-16 max-h-16 px-6 overflow-hidden">
             <div className="flex items-center overflow-hidden">
@@ -98,8 +117,10 @@ export function InternalPage({
         </header>
 
         {/* Main Content with Animation */}
-        <main className="flex-1 px-6 pt-6 pb-16 overflow-auto">
-          <PageContentTransition>{children}</PageContentTransition>
+        <main className="flex-1 px-6 pt-6 pb-16 overflow-y-auto overflow-x-auto max-w-full">
+          <div className="min-w-full">
+            <PageContentTransition>{children}</PageContentTransition>
+          </div>
         </main>
 
         {/* Bottom Bar */}
