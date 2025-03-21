@@ -24,10 +24,14 @@ export function LayoutProvider({ children }: LayoutProviderProps) {
     }
   }, [status]);
 
-  // During initialization, render nothing or a simple loading indicator
-  // This prevents layout flickering by delaying the first render until we know the auth state
+  // Always compute these values regardless of the condition
+  // This ensures hooks are called consistently
+  const isAppRoute = pathname.startsWith('/app');
+  const isLoginRoute = pathname === '/login';
+  const isAuthenticated = status === 'authenticated' && !!session;
+
+  // During initialization, render a loading indicator
   if (isInitializing) {
-    // Return a minimal layout with just a loading indicator or nothing
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-background">
         <div className="animate-pulse">Loading...</div>
@@ -35,19 +39,15 @@ export function LayoutProvider({ children }: LayoutProviderProps) {
     );
   }
 
-  // Use minimal layout (no header/footer) for login page
-  if (pathname === '/login') {
+  // Determine which layout to use based on route and auth state
+  if (isLoginRoute) {
     return <MinimalLayout>{children}</MinimalLayout>;
   }
-
-  // Only use app layout for /app/* routes AND when user is authenticated
-  const isAppRoute = pathname.startsWith('/app');
-  const isAuthenticated = status === 'authenticated' && !!session;
 
   if (isAppRoute && isAuthenticated) {
     return <AppLayout>{children}</AppLayout>;
   }
 
-  // Use public layout for everything else
+  // Default to public layout
   return <PublicLayout>{children}</PublicLayout>;
 }

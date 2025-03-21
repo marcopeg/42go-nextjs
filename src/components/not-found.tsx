@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { FileQuestion } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 
@@ -33,10 +33,15 @@ export function NotFound({
     setIsClient(true);
   }, []);
 
-  // Only determine redirect path and button text on the client
-  const isAuthenticated = isClient ? status === 'authenticated' : false;
-  const redirectPath = isAuthenticated ? '/app/dashboard' : '/';
-  const buttonText = isAuthenticated ? 'Go to Dashboard' : 'Go to Home Page';
+  // Use useMemo to compute these values to ensure hooks are always called
+  // This avoids conditional hook calls that can cause the "rendered more hooks than previous render" error
+  const { redirectPath, buttonText } = useMemo(() => {
+    const authenticated = isClient ? status === 'authenticated' : false;
+    return {
+      redirectPath: authenticated ? '/app/dashboard' : '/',
+      buttonText: authenticated ? 'Go to Dashboard' : 'Go to Home Page',
+    };
+  }, [isClient, status]);
 
   // Animation keyframes
   const shakeKeyframes = [0, -5, 5, -5, 5, -3, 3, -2, 2, 0];

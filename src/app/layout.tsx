@@ -24,13 +24,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AccentColorProvider>
-            <AuthProvider>
+            <TransitionProvider>
               <RouteChangeLoader />
-              <TransitionProvider>
+              <AuthProvider>
                 <LayoutProvider>{children}</LayoutProvider>
-              </TransitionProvider>
+              </AuthProvider>
               <Toaster />
-            </AuthProvider>
+            </TransitionProvider>
           </AccentColorProvider>
         </ThemeProvider>
       </body>
