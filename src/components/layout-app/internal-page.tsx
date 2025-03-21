@@ -120,7 +120,7 @@ export function InternalPage({
         </header>
 
         {/* Main Content with Animation */}
-        <main className="flex-1 px-6 pt-6 pb-16 overflow-y-auto max-w-full">
+        <main className="flex-1 px-6 pt-6 overflow-y-auto max-w-full pb-24 md:pb-16">
           <div className="overflow-x-auto">
             <PageContentTransition>{children}</PageContentTransition>
           </div>
@@ -131,7 +131,7 @@ export function InternalPage({
           <footer
             className={cn(
               'px-6 py-4 border-t flex items-center justify-between w-full',
-              bottomBar.sticky ? 'sticky bottom-0 bg-background z-20' : 'relative'
+              bottomBar.sticky ? 'sticky bottom-0 bg-background z-20 mb-16 md:mb-0' : 'relative'
             )}
           >
             <div>{bottomBar.leftContent}</div>
