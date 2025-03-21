@@ -2,9 +2,9 @@
 
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { PublicLayout } from './public-layout';
-import { AppLayout } from './app-layout';
-import { MinimalLayout } from './minimal-layout';
+import { PublicLayout } from '@/components/layout-public/public-layout';
+import { MinimalLayout } from '@/components/layout-public/minimal-layout';
+import { AppLayout } from '@/components/layout-app/app-layout';
 
 interface LayoutProviderProps {
   children: React.ReactNode;
