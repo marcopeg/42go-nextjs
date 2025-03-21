@@ -6,13 +6,14 @@ import { ApiErrorBoundary } from '@/components/api-error-boundary';
 
 export default function UsersPage() {
   return (
-    <InternalPage title="Users" subtitle="Manage your application users">
-      <ApiErrorBoundary
-        fallbackTitle="Access Denied"
-        fallbackMessage="You don't have permission to view users. Please contact an administrator if you believe this is an error."
-      >
+    <ApiErrorBoundary
+      fallbackTitle="Access Denied"
+      fallbackMessage="You don't have permission to access the user management section."
+      fullPage={true}
+    >
+      <InternalPage title="Users" subtitle="Manage all users in your organization">
         <UsersList />
-      </ApiErrorBoundary>
-    </InternalPage>
+      </InternalPage>
+    </ApiErrorBoundary>
   );
 }

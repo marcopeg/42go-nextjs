@@ -23,12 +23,19 @@ interface ApiErrorBoundaryProps {
   children: ReactNode;
   fallbackTitle?: string;
   fallbackMessage?: string;
+  /**
+   * When true, the access denied component will be rendered with full-page styling,
+   * taking up the entire content area including where the title would be.
+   * Use for high-level page components.
+   */
+  fullPage?: boolean;
 }
 
 export function ApiErrorBoundary({
   children,
   fallbackTitle = 'Access Denied',
   fallbackMessage = 'You do not have permission to access this resource.',
+  fullPage = false,
 }: ApiErrorBoundaryProps) {
   const [isAccessDenied, setIsAccessDenied] = useState(false);
   const [accessDeniedMessage, setAccessDeniedMessage] = useState(fallbackMessage);
@@ -57,7 +64,7 @@ export function ApiErrorBoundary({
   );
 
   if (isAccessDenied) {
-    return <AccessDenied title={fallbackTitle} message={accessDeniedMessage} />;
+    return <AccessDenied title={fallbackTitle} message={accessDeniedMessage} fullPage={fullPage} />;
   }
 
   return <ApiErrorContext.Provider value={value}>{children}</ApiErrorContext.Provider>;

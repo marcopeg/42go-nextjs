@@ -6,13 +6,14 @@ import { ApiErrorBoundary } from '@/components/api-error-boundary';
 
 export default function DashboardPage() {
   return (
-    <InternalPage title="Dashboard" subtitle="Welcome to the dashboard">
-      <ApiErrorBoundary
-        fallbackTitle="Access Denied"
-        fallbackMessage="You don't have permission to access this dashboard. Please contact an administrator if you believe this is an error."
-      >
+    <ApiErrorBoundary
+      fallbackTitle="Access Denied"
+      fallbackMessage="You don't have permission to access this dashboard. Please contact an administrator if you believe this is an error."
+      fullPage={true}
+    >
+      <InternalPage title="Dashboard" subtitle="Welcome to the dashboard">
         <UserDashboard />
-      </ApiErrorBoundary>
-    </InternalPage>
+      </InternalPage>
+    </ApiErrorBoundary>
   );
 }

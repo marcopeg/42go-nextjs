@@ -19,7 +19,7 @@ const appConfig = {
   // Mobile-specific configurations
   mobile: {
     menu: {
-      width: '88%', // Width of the mobile menu as percentage of viewport
+      width: '100%', // Width of the mobile menu as percentage of viewport
     },
   },
   // Hero section on the landing page
