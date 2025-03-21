@@ -72,7 +72,7 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
 
   return (
     <div
-      className="flex h-full flex-col border-r bg-background relative"
+      className="flex h-full flex-col border-r bg-background/70 backdrop-blur-sm relative"
       style={{ width: closeMobileMenu ? mobileMenuWidth : 'auto' }}
     >
       {/* Collapse Toggle Button - Positioned absolutely */}
