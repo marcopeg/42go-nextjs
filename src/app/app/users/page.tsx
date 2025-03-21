@@ -1,6 +1,6 @@
 'use client';
 
-import { InternalPage } from '@/components/layout/internal-page';
+import { InternalPage } from '@/components/layout-app/internal-page';
 import { UsersList } from '@/components/users/users-list';
 import { ApiErrorBoundary } from '@/components/api-error-boundary';
 

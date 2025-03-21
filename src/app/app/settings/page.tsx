@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { LogOut, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { InternalPage } from '@/components/layout/internal-page';
+import { InternalPage } from '@/components/layout-app/internal-page';
 
 export default function SettingsPage() {
   const router = useRouter();

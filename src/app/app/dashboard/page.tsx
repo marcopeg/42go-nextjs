@@ -1,7 +1,7 @@
 'use client';
 
 import { UserDashboard } from '@/components/auth/user-dashboard';
-import { InternalPage } from '@/components/layout/internal-page';
+import { InternalPage } from '@/components/layout-app/internal-page';
 import { ApiErrorBoundary } from '@/components/api-error-boundary';
 
 export default function DashboardPage() {
