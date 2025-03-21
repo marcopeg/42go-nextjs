@@ -3,13 +3,10 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { sessionHasGrants } from '@/lib/auth/grants';
 
-// Define the grant ID constants for clarity
-const GRANT_BACKOFFICE = 'users:list';
-
 export async function GET() {
   try {
     // Check if the user has the required grant
-    const hasAccess = await sessionHasGrants([GRANT_BACKOFFICE]);
+    const hasAccess = await sessionHasGrants(['users:list']);
 
     if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
