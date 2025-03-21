@@ -117,8 +117,8 @@ export function InternalPage({
         </header>
 
         {/* Main Content with Animation */}
-        <main className="flex-1 px-6 pt-6 pb-16 overflow-y-auto overflow-x-auto max-w-full">
-          <div className="min-w-full">
+        <main className="flex-1 px-6 pt-6 pb-16 overflow-y-auto max-w-full">
+          <div className="overflow-x-auto">
             <PageContentTransition>{children}</PageContentTransition>
           </div>
         </main>
