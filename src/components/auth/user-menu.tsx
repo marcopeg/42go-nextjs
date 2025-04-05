@@ -3,7 +3,6 @@
 import { signOut } from 'next-auth/react';
 import { useCachedSession } from '@/lib/auth/use-cached-session';
 import Link from 'next/link';
-import { Settings, LogOut, LayoutDashboard } from 'lucide-react';
 import { UserAvatar } from './user-avatar';
 import {
   DropdownMenu,
@@ -13,9 +12,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import appConfig from '@/lib/config';
+import { MenuItem } from '@/types/menu';
 
 export function UserMenu() {
   const { data: session } = useCachedSession();
+  const publicMenuItems = appConfig.menu?.public || [];
 
   if (!session?.user) {
     return (
@@ -28,6 +30,21 @@ export function UserMenu() {
       </div>
     );
   }
+
+  // Filter menu items based on authentication status
+  const menuItems = publicMenuItems.filter((item: MenuItem) => {
+    // Show all items for authenticated users
+    if (session?.user) return true;
+    // For non-authenticated users, only show items that don't require auth
+    return !item.requiresAuth;
+  });
+
+  // Handle menu item actions
+  const handleMenuItemClick = (item: MenuItem) => {
+    if (item.action === 'logout') {
+      signOut({ callbackUrl: '/' });
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -48,32 +65,29 @@ export function UserMenu() {
           </div>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link
-            href="/app/dashboard"
-            className="flex w-full cursor-pointer items-center border border-transparent hover:border-accent"
+
+        {menuItems.map((item: MenuItem, index: number) => (
+          <DropdownMenuItem
+            key={index}
+            asChild={item.action !== 'logout'}
+            onClick={() => item.action === 'logout' && handleMenuItemClick(item)}
           >
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            <span>Dashboard</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <div className="flex w-full">
-          <Link
-            href="/app/settings"
-            className="flex w-1/2 cursor-pointer items-center px-3 py-2 text-sm border border-transparent hover:bg-accent hover:text-accent-foreground hover:border-accent"
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </Link>
-          <button
-            className="flex w-1/2 cursor-pointer items-center justify-end px-3 py-2 text-sm border border-transparent hover:bg-accent hover:text-accent-foreground hover:border-accent"
-            onClick={() => signOut({ callbackUrl: '/' })}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Logout</span>
-          </button>
-        </div>
+            {item.action === 'logout' ? (
+              <div className="flex w-full cursor-pointer items-center border border-transparent hover:border-accent">
+                <item.icon className="mr-2 h-4 w-4" />
+                <span>{item.title}</span>
+              </div>
+            ) : (
+              <Link
+                href={item.href}
+                className="flex w-full cursor-pointer items-center border border-transparent hover:border-accent"
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                <span>{item.title}</span>
+              </Link>
+            )}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

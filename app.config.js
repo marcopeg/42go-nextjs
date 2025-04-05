@@ -5,7 +5,21 @@
 
 // Import the Layers icon from lucide-react
 // For all available icons, see: https://lucide.dev/icons/
-import { Aperture, Shield, Palette, Database, Terminal, Brain } from 'lucide-react';
+import {
+  Aperture,
+  Shield,
+  Palette,
+  Database,
+  Terminal,
+  Brain,
+  LayoutDashboard,
+  Settings,
+  Users,
+  FileText,
+  Bell,
+  Home,
+  LogOut,
+} from 'lucide-react';
 
 /**
  * Default application configuration
@@ -21,6 +35,64 @@ const appConfig = {
     menu: {
       width: '100%', // Width of the mobile menu as percentage of viewport
     },
+  },
+  // Menu configurations
+  menu: {
+    // Sidebar menu for logged-in users
+    sidebar: [
+      {
+        title: 'Dashboard',
+        href: '/app/dashboard',
+        icon: LayoutDashboard,
+      },
+      {
+        title: 'Settings',
+        href: '/app/settings',
+        icon: Settings,
+      },
+      {
+        title: 'Users',
+        href: '/app/users',
+        icon: Users,
+      },
+      {
+        title: 'Documents',
+        href: '/app/documents',
+        icon: FileText,
+      },
+      {
+        title: 'Notifications',
+        href: '/app/notifications',
+        icon: Bell,
+      },
+    ],
+    // Public menu for non-logged-in users
+    public: [
+      {
+        title: 'Home',
+        href: '/',
+        icon: Home,
+      },
+      {
+        title: 'Dashboard',
+        href: '/app/dashboard',
+        icon: LayoutDashboard,
+        requiresAuth: true,
+      },
+      {
+        title: 'Settings',
+        href: '/app/settings',
+        icon: Settings,
+        requiresAuth: true,
+      },
+      {
+        title: 'Logout',
+        href: '#',
+        icon: LogOut,
+        requiresAuth: true,
+        action: 'logout',
+      },
+    ],
   },
   // Hero section on the landing page
   hero: {

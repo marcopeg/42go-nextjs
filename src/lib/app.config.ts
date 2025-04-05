@@ -38,6 +38,51 @@ export type MobileConfig = {
   };
 };
 
+/**
+ * Menu item configuration
+ */
+export type MenuItem = {
+  /**
+   * The title of the menu item
+   */
+  title: string;
+
+  /**
+   * The URL the menu item links to
+   */
+  href: string;
+
+  /**
+   * The icon to display for the menu item
+   */
+  icon: LucideIcon;
+
+  /**
+   * Whether this menu item requires authentication
+   */
+  requiresAuth?: boolean;
+
+  /**
+   * Special action to perform when clicked (e.g., 'logout')
+   */
+  action?: string;
+};
+
+/**
+ * Menu configuration
+ */
+export type MenuConfig = {
+  /**
+   * Sidebar menu items for logged-in users
+   */
+  sidebar: MenuItem[];
+
+  /**
+   * Public menu items for non-logged-in users
+   */
+  public: MenuItem[];
+};
+
 export type AppConfig = {
   /**
    * The title of the application, displayed in the header and browser tab
@@ -62,6 +107,11 @@ export type AppConfig = {
    * Mobile-specific configurations
    */
   mobile?: MobileConfig;
+
+  /**
+   * Menu configurations
+   */
+  menu?: MenuConfig;
 
   /**
    * Theme configuration

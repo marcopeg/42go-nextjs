@@ -3,16 +3,7 @@
 import { useCachedSession } from '@/lib/auth/use-cached-session';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  ChevronLeft,
-  ChevronRight,
-  LayoutDashboard,
-  Settings,
-  Users,
-  FileText,
-  Bell,
-  X,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { AppTitle } from '@/components/app-title';
 import { UserAvatar } from '@/components/auth/user-avatar';
 import { Button } from '@/components/ui/button';
@@ -20,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAccentColor } from '@/components/accent-color-provider';
 import appConfig from '@/lib/config';
+import { MenuItem } from '@/types/menu';
 
 interface SidebarMenuProps {
   isCollapsed: boolean;
@@ -27,39 +19,8 @@ interface SidebarMenuProps {
   closeMobileMenu?: () => void;
 }
 
-type NavItem = {
-  title: string;
-  href: string;
-  icon: React.ElementType;
-};
-
-const navItems: NavItem[] = [
-  {
-    title: 'Dashboard',
-    href: '/app/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    title: 'Settings',
-    href: '/app/settings',
-    icon: Settings,
-  },
-  {
-    title: 'Users',
-    href: '/app/users',
-    icon: Users,
-  },
-  {
-    title: 'Documents',
-    href: '/app/documents',
-    icon: FileText,
-  },
-  {
-    title: 'Notifications',
-    href: '/app/notifications',
-    icon: Bell,
-  },
-];
+// Get navItems from appConfig
+const navItems: MenuItem[] = appConfig.menu?.sidebar || [];
 
 export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: SidebarMenuProps) {
   const { data: session } = useCachedSession();
