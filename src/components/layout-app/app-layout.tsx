@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { SidebarMenu } from './sidebar-menu';
-import { Home, Settings, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import Link from 'next/link';
 import appConfig from '@/lib/config';
+import { MenuItem } from '@/types/menu';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -50,6 +51,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   // Get mobile menu width from config or default to 80%
   const mobileMenuWidth = appConfig.app?.mobile?.menu?.width || '80%';
 
+  // Get mobile menu items from config
+  const mobileMenuItems: MenuItem[] = appConfig.app?.mobile?.menu?.items || [];
+
   return (
     <div className="flex min-h-screen">
       {/* Desktop Sidebar */}
@@ -74,20 +78,22 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border h-16 flex items-center justify-around z-40 md:hidden">
-        <Link href="/dashboard" className="flex flex-col items-center justify-center w-1/3 h-full">
-          <Home className="h-5 w-5" />
-          <span className="text-xs mt-1">Dashboard</span>
-        </Link>
-        <Link href="/settings" className="flex flex-col items-center justify-center w-1/3 h-full">
-          <Settings className="h-5 w-5" />
-          <span className="text-xs mt-1">Settings</span>
-        </Link>
+        {mobileMenuItems.slice(0, 2).map(item => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="flex flex-col items-center justify-center w-1/3 h-full"
+          >
+            <item.icon className="h-5 w-5" />
+            <span className="text-xs mt-1">{item.title}</span>
+          </Link>
+        ))}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="flex flex-col items-center justify-center w-1/3 h-full"
         >
           <Menu className="h-5 w-5" />
-          <span className="text-xs mt-1">Menu</span>
+          <span className="text-xs mt-1">More</span>
         </button>
       </div>
 

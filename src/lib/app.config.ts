@@ -35,6 +35,11 @@ export type MobileConfig = {
      * @example '80%'
      */
     width: string;
+
+    /**
+     * The items to display in the mobile menu
+     */
+    items: MenuItem[];
   };
 };
 
@@ -296,6 +301,11 @@ export type AppConfig = {
          * Width of the mobile menu as percentage of viewport
          */
         width: string;
+
+        /**
+         * The items to display in the mobile menu
+         */
+        items: MenuItem[];
       };
     };
 

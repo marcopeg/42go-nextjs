@@ -38,6 +38,23 @@ const appConfig = {
     mobile: {
       menu: {
         width: '100%', // Width of the mobile menu as percentage of viewport
+        items: [
+          {
+            title: 'Dashboard',
+            href: '/app/dashboard',
+            icon: LayoutDashboard,
+          },
+          {
+            title: 'Settings',
+            href: '/app/settings',
+            icon: Settings,
+          },
+          {
+            title: 'Documents',
+            href: '/app/documents',
+            icon: FileText,
+          },
+        ],
       },
     },
     // Sidebar menu for logged-in users
