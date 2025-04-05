@@ -125,37 +125,3 @@ export async function sessionHasGrants(
 
   return hasGrants(session.user.id, grantIds, strategy);
 }
-
-/**
- * Higher-order function to create a middleware that requires specific roles
- * Returns a function that can be used as middleware in API routes
- *
- * @param roleNames Array of role names required for access
- * @returns A middleware function that checks if the user has the required roles
- */
-export function requireRoles(roleNames: string[] = []) {
-  return async () => {
-    // Import dependencies dynamically to avoid test environment issues
-    const { NextResponse } = await import('next/server');
-
-    // Check if user has required roles
-    const { auth } = await import('@/lib/auth/auth');
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Use the updated sessionHasGrants function
-    const hasRequiredGrants = await sessionHasGrants(
-      roleNames.length > 0 ? roleNames : undefined,
-      GrantMatchStrategy.ANY
-    );
-
-    if (!hasRequiredGrants) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    return { success: true, session };
-  };
-}
