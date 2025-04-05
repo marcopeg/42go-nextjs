@@ -25,19 +25,19 @@ export function HeroSection() {
     <section className="w-full py-20 md:py-32 flex flex-col items-center justify-center text-center">
       <ScrollAnimation type="fade" delay={0.1}>
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4 max-w-4xl">
-          {renderMarkdown(appConfig.hero.title)}
+          {renderMarkdown(appConfig.landing?.hero?.title || '')}
         </h1>
       </ScrollAnimation>
 
       <ScrollAnimation type="fade" delay={0.2}>
         <p className="text-xl text-muted-foreground mb-8 max-w-2xl">
-          {renderMarkdown(appConfig.hero.subtitle)}
+          {renderMarkdown(appConfig.landing?.hero?.subtitle || '')}
         </p>
       </ScrollAnimation>
 
       <ScrollAnimation type="scale" delay={0.3} whileHover whileTap>
         <div className="flex flex-col sm:flex-row gap-4">
-          {appConfig.hero.actions.map((action, index) => (
+          {appConfig.landing?.hero?.actions?.map((action, index) => (
             <Link key={index} href={action.href} passHref>
               <Button
                 size="lg"

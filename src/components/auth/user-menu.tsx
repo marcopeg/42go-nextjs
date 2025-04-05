@@ -17,7 +17,7 @@ import { MenuItem } from '@/types/menu';
 
 export function UserMenu() {
   const { data: session } = useCachedSession();
-  const publicMenuItems = appConfig.menu?.public || [];
+  const publicMenuItems = appConfig.landing?.user?.menu || [];
 
   if (!session?.user) {
     return (

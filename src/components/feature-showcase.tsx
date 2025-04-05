@@ -12,20 +12,14 @@ interface FeatureCardProps {
 
 function FeatureCard({ icon, title, description, delay }: FeatureCardProps) {
   return (
-    <ScrollAnimation type="scale" delay={delay} className="h-full" duration={0.5}>
-      <Card className="h-full transition-all hover:shadow-md">
+    <ScrollAnimation type="slide" direction="up" delay={delay} duration={0.6}>
+      <Card className="h-full">
         <CardHeader>
-          <ScrollAnimation type="fade" delay={delay + 0.2} duration={0.4}>
-            <div className="mb-2 text-accent">{icon}</div>
-          </ScrollAnimation>
-          <ScrollAnimation type="slide" direction="up" delay={delay + 0.3} duration={0.4}>
-            <CardTitle className="text-xl">{title}</CardTitle>
-          </ScrollAnimation>
+          <div className="mb-2">{icon}</div>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollAnimation type="fade" delay={delay + 0.4} duration={0.4}>
-            <CardDescription className="text-sm">{description}</CardDescription>
-          </ScrollAnimation>
+          <CardDescription>{description}</CardDescription>
         </CardContent>
       </Card>
     </ScrollAnimation>
@@ -34,21 +28,22 @@ function FeatureCard({ icon, title, description, delay }: FeatureCardProps) {
 
 export function FeatureShowcase() {
   // Use features from app.config.js with delay added
-  const features = appConfig.features.items.map((feature, index) => ({
-    icon: <feature.icon className="h-8 w-8" />,
-    title: feature.title,
-    description: feature.abstract,
-    delay: 0.1 * (index + 1),
-  }));
+  const features =
+    appConfig.landing?.features?.items.map((feature, index) => ({
+      icon: <feature.icon className="h-8 w-8" />,
+      title: feature.title,
+      description: feature.abstract,
+      delay: 0.1 * (index + 1),
+    })) || [];
 
   return (
     <section className="py-16">
       <ScrollAnimation type="slide" direction="down" delay={0.05} duration={0.6}>
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-2">{appConfig.features.title}</h2>
+          <h2 className="text-3xl font-bold mb-2">{appConfig.landing?.features?.title}</h2>
           <ScrollAnimation type="fade" delay={0.2} duration={0.5}>
             <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              {appConfig.features.subtitle}
+              {appConfig.landing?.features?.subtitle}
             </p>
           </ScrollAnimation>
         </div>

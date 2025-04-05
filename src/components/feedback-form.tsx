@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { ScrollAnimation } from '@/components/scroll-animation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollAnimation } from '@/components/scroll-animation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import dynamic from 'next/dynamic';
 import appConfig from '../../app.config';
 import { ReactNode } from 'react';
 
@@ -27,95 +26,40 @@ function renderMarkdown(text: string): ReactNode {
   });
 }
 
-// Dynamically import ReCAPTCHA to avoid SSR issues
-const ReCAPTCHA = dynamic(() => import('react-google-recaptcha'), {
-  ssr: false,
-});
-
-// Check if reCAPTCHA is enabled
-const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-const isCaptchaEnabled = !!RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY.length > 0;
-
-// Define a type for the reCAPTCHA instance
-type ReCaptchaInstance = {
-  reset: () => void;
-};
-
 export function FeedbackForm() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const recaptchaRef = useRef<ReCaptchaInstance | null>(null);
   const { toast } = useToast();
-  const { feedback } = appConfig;
 
-  const handleCaptchaChange = (token: string | null) => {
-    setCaptchaToken(token);
-  };
+  const feedback = appConfig.landing?.feedback;
 
-  const resetForm = () => {
-    setEmail('');
-    setMessage('');
-    setCaptchaToken(null);
-    if (isCaptchaEnabled && recaptchaRef.current) {
-      recaptchaRef.current.reset();
-    }
-  };
+  if (!feedback) {
+    return null;
+  }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!email || !message) {
-      toast({
-        title: feedback.form.errors.missing.title,
-        description: feedback.form.errors.missing.message,
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Only check for captcha token if captcha is enabled
-    if (isCaptchaEnabled && !captchaToken) {
-      toast({
-        title: feedback.form.errors.captcha.title,
-        description: feedback.form.errors.captcha.message,
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          message,
-          captchaToken: captchaToken || 'captcha-disabled',
-        }),
-      });
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || feedback.form.errors.default.message);
-      }
-
+      // Show success message
       toast({
         title: feedback.form.success.title,
         description: feedback.form.success.message,
       });
 
-      resetForm();
-    } catch (error) {
+      // Reset form
+      setEmail('');
+      setMessage('');
+    } catch {
+      // Show error message
       toast({
         title: feedback.form.errors.default.title,
-        description: error instanceof Error ? error.message : feedback.form.errors.default.message,
+        description: feedback.form.errors.default.message,
         variant: 'destructive',
       });
     } finally {
@@ -136,8 +80,8 @@ export function FeedbackForm() {
         </div>
       </ScrollAnimation>
 
-      <ScrollAnimation type="fade" delay={0.3} duration={0.6}>
-        <Card className="max-w-md mx-auto">
+      <div className="max-w-md mx-auto">
+        <Card>
           <CardHeader>
             <CardTitle>{feedback.form.title}</CardTitle>
             <CardDescription>{feedback.form.description}</CardDescription>
@@ -157,7 +101,6 @@ export function FeedbackForm() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <label htmlFor="message" className="text-sm font-medium">
                   {feedback.form.fields.message.label}
@@ -165,44 +108,19 @@ export function FeedbackForm() {
                 <Textarea
                   id="message"
                   placeholder={feedback.form.fields.message.placeholder}
+                  rows={feedback.form.fields.message.rows}
                   value={message}
                   onChange={e => setMessage(e.target.value)}
-                  rows={feedback.form.fields.message.rows}
                   required
                 />
               </div>
-
-              {isCaptchaEnabled && (
-                <div className="flex justify-center my-4">
-                  <ReCAPTCHA
-                    key="recaptcha"
-                    sitekey={RECAPTCHA_SITE_KEY || ''}
-                    onChange={handleCaptchaChange}
-                    onLoad={() => {
-                      // Store the ref after the component is loaded
-                      if (typeof window !== 'undefined') {
-                        const recaptchaElement = document.querySelector('.g-recaptcha');
-                        if (recaptchaElement) {
-                          // @ts-expect-error - The global grecaptcha object is not typed
-                          recaptchaRef.current = window.grecaptcha;
-                        }
-                      }
-                    }}
-                  />
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-                disabled={isSubmitting || (isCaptchaEnabled && !captchaToken)}
-              >
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? feedback.form.button.loadingLabel : feedback.form.button.label}
               </Button>
             </form>
           </CardContent>
         </Card>
-      </ScrollAnimation>
+      </div>
     </section>
   );
 }

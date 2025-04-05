@@ -29,99 +29,84 @@ function renderMarkdown(text: string): ReactNode {
   });
 }
 
-// Feature status icon mapping
-const featureStatusIcons = {
-  included: () => <Check className="h-5 w-5 text-accent flex-shrink-0 mr-2" />,
-  excluded: () => <X className="h-5 w-5 text-muted-foreground flex-shrink-0 mr-2" />,
-  'coming-soon': () => (
-    <Clock className="h-5 w-5 text-yellow-500 dark:text-yellow-400 flex-shrink-0 mr-2" />
-  ),
-};
-
 interface PricingTierProps {
-  tier: (typeof appConfig.pricing.tiers)[0];
-  index: number;
+  tier: {
+    name: string;
+    price: string;
+    period: string;
+    description: string;
+    features: {
+      text: string;
+      status: string;
+    }[];
+    cta: {
+      label: string;
+      href: string;
+    };
+    highlighted?: boolean;
+    badge?: string;
+  };
   delay: number;
 }
 
-function PricingTier({ tier, index, delay }: PricingTierProps) {
+function PricingTier({ tier, delay }: PricingTierProps) {
+  const getFeatureIcon = (status: string) => {
+    switch (status) {
+      case 'included':
+        return <Check className="h-4 w-4 text-green-500" />;
+      case 'excluded':
+        return <X className="h-4 w-4 text-red-500" />;
+      case 'coming-soon':
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <ScrollAnimation
-      type={tier.highlighted ? 'scale' : 'slide'}
-      direction={
-        tier.highlighted ? undefined : index === 0 ? 'right' : index === 2 ? 'left' : undefined
-      }
-      delay={delay}
-      duration={0.6}
-      className="h-full"
-    >
-      <Card
-        className={`h-full flex flex-col ${
-          tier.highlighted ? 'border-accent shadow-lg relative' : ''
-        }`}
-      >
-        {tier.highlighted && tier.badge && (
-          <div className="absolute -top-3 left-0 right-0 flex justify-center">
-            <ScrollAnimation type="scale" delay={delay + 0.4} duration={0.3} whileHover>
-              <span className="bg-accent text-accent-foreground text-xs font-semibold px-3 py-1 rounded-full">
-                {tier.badge}
-              </span>
-            </ScrollAnimation>
+    <ScrollAnimation type="slide" direction="up" delay={delay} duration={0.6}>
+      <Card className={`h-full ${tier.highlighted ? 'border-accent shadow-lg scale-105' : ''}`}>
+        {tier.badge && (
+          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+            <span className="bg-accent text-accent-foreground text-xs font-semibold px-3 py-1 rounded-full">
+              {tier.badge}
+            </span>
           </div>
         )}
         <CardHeader>
-          <ScrollAnimation type="fade" delay={delay + 0.2} duration={0.4}>
-            <CardTitle>{tier.name}</CardTitle>
-            <div className="flex items-baseline mt-2">
-              <span className="text-3xl font-extrabold">{tier.price}</span>
-              <span className="ml-1 text-sm text-gray-500 dark:text-gray-400">{tier.period}</span>
-            </div>
-            <CardDescription className="mt-2">{tier.description}</CardDescription>
-          </ScrollAnimation>
+          <CardTitle className="text-2xl">{tier.name}</CardTitle>
+          <div className="flex items-baseline mt-4">
+            <span className="text-4xl font-bold">{tier.price}</span>
+            <span className="text-muted-foreground ml-1">{tier.period}</span>
+          </div>
+          <CardDescription className="mt-2">{tier.description}</CardDescription>
         </CardHeader>
-        <CardContent className="flex-grow">
-          <ScrollAnimation type="fade" delay={delay + 0.3} duration={0.5}>
-            <ul className="space-y-3">
-              {tier.features.map((feature, featureIndex) => (
-                <li key={featureIndex} className="flex items-start">
-                  <ScrollAnimation
-                    type="scale"
-                    delay={delay + 0.3 + featureIndex * 0.05}
-                    duration={0.3}
-                  >
-                    {featureStatusIcons[feature.status as keyof typeof featureStatusIcons]?.() ||
-                      featureStatusIcons['included']()}
-                  </ScrollAnimation>
-                  <span
-                    className={`text-sm ${
-                      feature.status === 'excluded' ? 'text-muted-foreground' : ''
-                    }`}
-                  >
-                    {renderMarkdown(feature.text)}
-                    {feature.status === 'coming-soon' && (
-                      <span className="ml-1 text-xs text-yellow-500 dark:text-yellow-400">
-                        (Coming Soon)
-                      </span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </ScrollAnimation>
+        <CardContent>
+          <ul className="space-y-3">
+            {tier.features.map((feature, i) => (
+              <li key={i} className="flex items-start">
+                <span className="mr-2 mt-1">{getFeatureIcon(feature.status)}</span>
+                <span
+                  className={
+                    feature.status === 'excluded' ? 'text-muted-foreground line-through' : ''
+                  }
+                >
+                  {feature.text}
+                </span>
+              </li>
+            ))}
+          </ul>
         </CardContent>
         <CardFooter>
-          <ScrollAnimation type="scale" delay={delay + 0.5} duration={0.4} whileHover whileTap>
-            <Link href={tier.cta.href} className="w-full">
-              <Button
-                className={`w-full ${
-                  tier.highlighted ? 'bg-accent text-accent-foreground hover:bg-accent/90' : ''
-                }`}
-                variant={tier.highlighted ? 'default' : 'outline'}
-              >
-                {tier.cta.label}
-              </Button>
-            </Link>
-          </ScrollAnimation>
+          <Link href={tier.cta.href} className="w-full">
+            <Button
+              className={`w-full ${
+                tier.highlighted ? 'bg-accent text-accent-foreground hover:bg-accent/90' : ''
+              }`}
+            >
+              {tier.cta.label}
+            </Button>
+          </Link>
         </CardFooter>
       </Card>
     </ScrollAnimation>
@@ -133,18 +118,20 @@ export function PricingWall() {
     <section className="py-16">
       <ScrollAnimation type="slide" direction="down" delay={0.05} duration={0.6}>
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-2">{renderMarkdown(appConfig.pricing.title)}</h2>
+          <h2 className="text-3xl font-bold mb-2">
+            {renderMarkdown(appConfig.landing?.pricing?.title || '')}
+          </h2>
           <ScrollAnimation type="fade" delay={0.2} duration={0.5}>
             <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              {renderMarkdown(appConfig.pricing.subtitle)}
+              {renderMarkdown(appConfig.landing?.pricing?.subtitle || '')}
             </p>
           </ScrollAnimation>
         </div>
       </ScrollAnimation>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {appConfig.pricing.tiers.map((tier, index) => (
-          <PricingTier key={index} tier={tier} index={index} delay={0.1 * (index + 1)} />
+        {appConfig.landing?.pricing?.tiers?.map((tier, index) => (
+          <PricingTier key={index} tier={tier} delay={0.1 * (index + 1)} />
         ))}
       </div>
     </section>
