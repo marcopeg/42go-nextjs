@@ -54,6 +54,11 @@ export function AppLayout({ children }: AppLayoutProps) {
   // Get mobile menu items from config
   const mobileMenuItems: MenuItem[] = appConfig.app?.mobile?.menu?.items || [];
 
+  // Calculate how many items to show in the bottom bar (max 4)
+  const visibleItemsCount = Math.min(mobileMenuItems.length, 4);
+  // Calculate the width for each item (including the hamburger menu)
+  const itemWidth = `${100 / (visibleItemsCount + 1)}%`;
+
   return (
     <div className="flex min-h-screen">
       {/* Desktop Sidebar */}
@@ -77,12 +82,13 @@ export function AppLayout({ children }: AppLayoutProps) {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border h-16 flex items-center justify-around z-40 md:hidden">
-        {mobileMenuItems.slice(0, 2).map(item => (
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border h-16 flex items-center z-40 md:hidden">
+        {mobileMenuItems.slice(0, visibleItemsCount).map(item => (
           <Link
             key={item.href}
             href={item.href}
-            className="flex flex-col items-center justify-center w-1/3 h-full"
+            className="flex flex-col items-center justify-center h-full"
+            style={{ width: itemWidth }}
           >
             <item.icon className="h-5 w-5" />
             <span className="text-xs mt-1">{item.title}</span>
@@ -90,7 +96,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         ))}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="flex flex-col items-center justify-center w-1/3 h-full"
+          className="flex flex-col items-center justify-center h-full"
+          style={{ width: itemWidth }}
         >
           <Menu className="h-5 w-5" />
           <span className="text-xs mt-1">More</span>

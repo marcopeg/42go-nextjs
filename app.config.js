@@ -44,15 +44,20 @@ const appConfig = {
             href: '/app/dashboard',
             icon: LayoutDashboard,
           },
-          {
-            title: 'Settings',
-            href: '/app/settings',
-            icon: Settings,
-          },
+          // {
+          //   title: 'Settings',
+          //   href: '/app/settings',
+          //   icon: Settings,
+          // },
           {
             title: 'Documents',
             href: '/app/documents',
             icon: FileText,
+          },
+          {
+            title: 'Users',
+            href: '/app/users',
+            icon: Users,
           },
         ],
       },
