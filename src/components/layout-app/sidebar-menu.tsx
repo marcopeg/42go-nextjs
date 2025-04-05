@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { useAccentColor } from '@/components/accent-color-provider';
 import appConfig from '@/lib/config';
 import { MenuItem } from '@/types/menu';
+import { useUserGrants } from '@/lib/auth/use-user-grants';
 
 interface SidebarMenuProps {
   isCollapsed: boolean;
@@ -23,9 +24,64 @@ interface SidebarMenuProps {
 const topMenuItems: MenuItem[] = appConfig.app?.menu?.top || [];
 const bottomMenuItems: MenuItem[] = appConfig.app?.menu?.bottom || [];
 
+// Separate component for menu items to use hooks properly
+function MenuItemComponent({
+  item,
+  isCollapsed,
+  closeMobileMenu,
+}: {
+  item: MenuItem;
+  isCollapsed: boolean;
+  closeMobileMenu?: () => void;
+}) {
+  const pathname = usePathname();
+  const hasRequiredGrants = useUserGrants(item.grants);
+
+  // Skip rendering if user doesn't have required grants
+  if (!hasRequiredGrants) {
+    return null;
+  }
+
+  const isActive = pathname === item.href;
+
+  return (
+    <Link
+      key={item.href}
+      href={item.href}
+      className={cn(
+        'flex items-center px-3 py-2 text-sm transition-all duration-200 cursor-pointer relative border group',
+        isActive
+          ? 'text-foreground font-bold border-transparent rounded-none' +
+              (!isCollapsed && !closeMobileMenu ? ' translate-x-1' : '') +
+              (closeMobileMenu ? ' border-accent rounded-md' : '')
+          : 'text-muted-foreground hover:text-foreground border-transparent rounded-none font-medium',
+        'hover:rounded-md hover:border-accent',
+        isCollapsed && 'justify-center px-0'
+      )}
+    >
+      <item.icon
+        className={cn(
+          'h-5 w-5 transition-transform duration-200',
+          !isCollapsed && !isActive ? 'group-hover:translate-x-1' : '',
+          isCollapsed ? 'mr-0' : 'mr-2'
+        )}
+      />
+      {!isCollapsed && (
+        <span
+          className={cn(
+            'transition-transform duration-200',
+            isActive ? '' : 'group-hover:translate-x-1'
+          )}
+        >
+          {item.title}
+        </span>
+      )}
+    </Link>
+  );
+}
+
 export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: SidebarMenuProps) {
   const { data: session } = useCachedSession();
-  const pathname = usePathname();
   const { accentColor } = useAccentColor();
   const [isHovered, setIsHovered] = useState(false);
 
@@ -34,43 +90,14 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
 
   // Function to render menu items
   const renderMenuItems = (items: MenuItem[]) => {
-    return items.map((item: MenuItem) => {
-      const isActive = pathname === item.href;
-      return (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={cn(
-            'flex items-center px-3 py-2 text-sm transition-all duration-200 cursor-pointer relative border group',
-            isActive
-              ? 'text-foreground font-bold border-transparent rounded-none' +
-                  (!isCollapsed && !closeMobileMenu ? ' translate-x-1' : '') +
-                  (closeMobileMenu ? ' border-accent rounded-md' : '')
-              : 'text-muted-foreground hover:text-foreground border-transparent rounded-none font-medium',
-            'hover:rounded-md hover:border-accent',
-            isCollapsed && 'justify-center px-0'
-          )}
-        >
-          <item.icon
-            className={cn(
-              'h-5 w-5 transition-transform duration-200',
-              !isCollapsed && !isActive ? 'group-hover:translate-x-1' : '',
-              isCollapsed ? 'mr-0' : 'mr-2'
-            )}
-          />
-          {!isCollapsed && (
-            <span
-              className={cn(
-                'transition-transform duration-200',
-                isActive ? '' : 'group-hover:translate-x-1'
-              )}
-            >
-              {item.title}
-            </span>
-          )}
-        </Link>
-      );
-    });
+    return items.map((item: MenuItem) => (
+      <MenuItemComponent
+        key={item.href}
+        item={item}
+        isCollapsed={isCollapsed}
+        closeMobileMenu={closeMobileMenu}
+      />
+    ));
   };
 
   return (

@@ -6,6 +6,7 @@ export interface MenuItem {
   icon: LucideIcon;
   requiresAuth?: boolean;
   action?: string;
+  grants?: string[]; // Array of grant IDs required to access this menu item
 }
 
 export interface MenuConfig {

@@ -53,11 +53,13 @@ const appConfig = {
             title: 'Documents',
             href: '/app/documents',
             icon: FileText,
+            grants: ['documents:view'], // Only users with documents:view grant can see this
           },
           {
             title: 'Users',
             href: '/app/users',
             icon: Users,
+            grants: ['users:view'], // Only users with users:view grant can see this
           },
         ],
       },
@@ -74,6 +76,7 @@ const appConfig = {
           title: 'Users',
           href: '/app/users',
           icon: Users,
+          grants: ['users:list'],
         },
         {
           title: 'Documents',
@@ -96,11 +99,13 @@ const appConfig = {
           title: 'Subscription',
           href: '/app/subscription',
           icon: CreditCard,
+          grants: ['subscription:view'], // Only users with subscription:view grant can see this
         },
         {
           title: 'Settings',
           href: '/app/settings',
           icon: Settings,
+          grants: ['settings:view'], // Only users with settings:view grant can see this
         },
       ],
     },

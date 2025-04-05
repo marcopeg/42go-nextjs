@@ -5,8 +5,15 @@ import GitHub from 'next-auth/providers/github';
 import Google from 'next-auth/providers/google';
 import Facebook from 'next-auth/providers/facebook';
 import { db } from '@/lib/db';
-import { users, accounts, sessions, verificationTokens } from '@/lib/db/schema';
-import { eq, or, ilike } from 'drizzle-orm';
+import {
+  users,
+  accounts,
+  sessions,
+  verificationTokens,
+  rolesUsers,
+  rolesGrants,
+} from '@/lib/db/schema';
+import { eq, or, ilike, inArray } from 'drizzle-orm';
 import { verifyPassword } from './password';
 import {
   isGitHubOAuthEnabled,
@@ -131,6 +138,23 @@ export const authOptions: NextAuthConfig = {
         session.user.name = token.name as string | null;
         session.user.email = token.email as string;
         session.user.image = token.picture as string | null;
+
+        // Add grants to the session
+        if (token.grants) {
+          session.user.grants = token.grants as string[];
+        } else {
+          // If no grants in token, fetch them from the database
+          try {
+            const userGrants = await fetchUserGrants(token.sub as string);
+            session.user.grants = userGrants;
+
+            // Update token with grants for future requests
+            token.grants = userGrants;
+          } catch (error) {
+            console.error('Error fetching user grants:', error);
+            session.user.grants = [];
+          }
+        }
       }
       return session;
     },
@@ -140,8 +164,50 @@ export const authOptions: NextAuthConfig = {
         token.email = user.email;
         token.name = user.name;
         token.picture = user.image;
+
+        // If user has grants, add them to the token
+        if ('grants' in user) {
+          token.grants = user.grants;
+        }
       }
       return token;
     },
   },
 };
+
+/**
+ * Fetch user grants from the database
+ * This function fetches all grants associated with the user's roles
+ */
+async function fetchUserGrants(userId: string): Promise<string[]> {
+  try {
+    // Get all user role IDs
+    const userRoles = await db
+      .select({ roleId: rolesUsers.roleId })
+      .from(rolesUsers)
+      .where(eq(rolesUsers.userId, userId));
+
+    if (!userRoles.length) {
+      console.log(`No roles found for user: ${userId}`);
+      return [];
+    }
+
+    const userRoleIds = userRoles.map(role => role.roleId);
+    console.log(`Found ${userRoleIds.length} roles for user: ${userId}`);
+
+    // Get all grants that the user has through their roles
+    const userGrants = await db
+      .select({ grantId: rolesGrants.grantId })
+      .from(rolesGrants)
+      .where(inArray(rolesGrants.roleId, userRoleIds));
+
+    // Return the grant IDs
+    const grantIds = userGrants.map(g => g.grantId);
+    console.log(`Found ${grantIds.length} grants for user: ${userId}`);
+
+    return grantIds;
+  } catch (error) {
+    console.error(`Error fetching grants for user ${userId}:`, error);
+    return [];
+  }
+}
