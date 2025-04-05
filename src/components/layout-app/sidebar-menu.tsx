@@ -19,17 +19,59 @@ interface SidebarMenuProps {
   closeMobileMenu?: () => void;
 }
 
-// Get navItems from appConfig
-const navItems: MenuItem[] = appConfig.menu?.sidebar || [];
+// Get sidebar menu items from config
+const topMenuItems: MenuItem[] = appConfig.app?.menu?.top || [];
+const bottomMenuItems: MenuItem[] = appConfig.app?.menu?.bottom || [];
 
 export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: SidebarMenuProps) {
   const { data: session } = useCachedSession();
   const pathname = usePathname();
-  const [isHovered, setIsHovered] = useState(false);
   const { accentColor } = useAccentColor();
+  const [isHovered, setIsHovered] = useState(false);
 
   // Get mobile menu width from config or default to 80%
-  const mobileMenuWidth = appConfig.mobile?.menu?.width || '80%';
+  const mobileMenuWidth = appConfig.app?.mobile?.menu?.width || '80%';
+
+  // Function to render menu items
+  const renderMenuItems = (items: MenuItem[]) => {
+    return items.map((item: MenuItem) => {
+      const isActive = pathname === item.href;
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={cn(
+            'flex items-center px-3 py-2 text-sm transition-all duration-200 cursor-pointer relative border group',
+            isActive
+              ? 'text-foreground font-bold border-transparent rounded-none' +
+                  (!isCollapsed && !closeMobileMenu ? ' translate-x-1' : '') +
+                  (closeMobileMenu ? ' border-accent rounded-md' : '')
+              : 'text-muted-foreground hover:text-foreground border-transparent rounded-none font-medium',
+            'hover:rounded-md hover:border-accent',
+            isCollapsed && 'justify-center px-0'
+          )}
+        >
+          <item.icon
+            className={cn(
+              'h-5 w-5 transition-transform duration-200',
+              !isCollapsed && !isActive ? 'group-hover:translate-x-1' : '',
+              isCollapsed ? 'mr-0' : 'mr-2'
+            )}
+          />
+          {!isCollapsed && (
+            <span
+              className={cn(
+                'transition-transform duration-200',
+                isActive ? '' : 'group-hover:translate-x-1'
+              )}
+            >
+              {item.title}
+            </span>
+          )}
+        </Link>
+      );
+    });
+  };
 
   return (
     <div
@@ -109,84 +151,50 @@ export function SidebarMenu({ isCollapsed, toggleCollapse, closeMobileMenu }: Si
         )}
       </header>
 
-      {/* Navigation Items */}
+      {/* Top Navigation Items */}
       <div className="flex-1 overflow-y-auto py-4 px-3">
-        <nav className="space-y-1">
-          {navItems.map(item => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center px-3 py-2 text-sm transition-all duration-200 cursor-pointer relative border group',
-                  isActive
-                    ? 'text-foreground font-bold border-transparent rounded-none' +
-                        (!isCollapsed && !closeMobileMenu ? ' translate-x-1' : '') +
-                        (closeMobileMenu ? ' border-accent rounded-md' : '')
-                    : 'text-muted-foreground hover:text-foreground border-transparent rounded-none font-medium',
-                  'hover:rounded-md hover:border-accent',
-                  isCollapsed && 'justify-center px-0'
-                )}
-              >
-                <item.icon
+        <nav className="space-y-1">{renderMenuItems(topMenuItems)}</nav>
+      </div>
+
+      {/* Bottom Navigation Items & User Section */}
+      <div className="border-t">
+        <nav className="space-y-1 p-3">{renderMenuItems(bottomMenuItems)}</nav>
+
+        {session?.user && (
+          <div className="border-t">
+            <Link
+              href="/app/settings"
+              className={cn(
+                'flex items-center p-4 text-sm font-medium transition-all duration-200 cursor-pointer border border-transparent group',
+                'hover:rounded-md hover:border-accent',
+                isCollapsed ? 'justify-center' : 'justify-between'
+              )}
+            >
+              <div className="flex items-center">
+                <UserAvatar
                   className={cn(
-                    'h-5 w-5 transition-transform duration-200',
-                    !isCollapsed && !isActive ? 'group-hover:translate-x-1' : '',
+                    'h-8 w-8 transition-transform duration-200',
+                    !isCollapsed ? 'group-hover:translate-x-1' : '',
                     isCollapsed ? 'mr-0' : 'mr-2'
                   )}
                 />
                 {!isCollapsed && (
-                  <span
-                    className={cn(
-                      'transition-transform duration-200',
-                      isActive ? '' : 'group-hover:translate-x-1'
+                  <div className="flex flex-col truncate transition-transform duration-200 group-hover:translate-x-1">
+                    {session.user.name && (
+                      <span className="font-medium truncate">{session.user.name}</span>
                     )}
-                  >
-                    {item.title}
-                  </span>
+                    {session.user.email && (
+                      <span className="text-xs text-muted-foreground truncate">
+                        {session.user.email}
+                      </span>
+                    )}
+                  </div>
                 )}
-              </Link>
-            );
-          })}
-        </nav>
+              </div>
+            </Link>
+          </div>
+        )}
       </div>
-
-      {/* User Section - Bottom */}
-      {session?.user && (
-        <div className="border-t">
-          <Link
-            href="/app/settings"
-            className={cn(
-              'flex items-center p-4 text-sm font-medium transition-all duration-200 cursor-pointer border border-transparent group',
-              'hover:rounded-md hover:border-accent',
-              isCollapsed ? 'justify-center' : 'justify-between'
-            )}
-          >
-            <div className="flex items-center">
-              <UserAvatar
-                className={cn(
-                  'h-8 w-8 transition-transform duration-200',
-                  !isCollapsed ? 'group-hover:translate-x-1' : '',
-                  isCollapsed ? 'mr-0' : 'mr-2'
-                )}
-              />
-              {!isCollapsed && (
-                <div className="flex flex-col truncate transition-transform duration-200 group-hover:translate-x-1">
-                  {session.user.name && (
-                    <span className="font-medium truncate">{session.user.name}</span>
-                  )}
-                  {session.user.email && (
-                    <span className="text-xs text-muted-foreground truncate">
-                      {session.user.email}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </Link>
-        </div>
-      )}
     </div>
   );
 }

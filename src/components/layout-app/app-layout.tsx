@@ -48,7 +48,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   }, [isMobileMenuOpen]);
 
   // Get mobile menu width from config or default to 80%
-  const mobileMenuWidth = appConfig.mobile?.menu?.width || '80%';
+  const mobileMenuWidth = appConfig.app?.mobile?.menu?.width || '80%';
 
   return (
     <div className="flex min-h-screen">

@@ -73,9 +73,14 @@ export type MenuItem = {
  */
 export type MenuConfig = {
   /**
-   * Sidebar menu items for logged-in users
+   * Top section menu items for logged-in users
    */
-  sidebar: MenuItem[];
+  top: MenuItem[];
+
+  /**
+   * Bottom section menu items for logged-in users
+   */
+  bottom: MenuItem[];
 };
 
 /**
@@ -256,43 +261,62 @@ export type LandingConfig = {
   user: LandingUserConfig;
 };
 
+/**
+ * Application configuration
+ */
 export type AppConfig = {
   /**
-   * The title of the application, displayed in the header and browser tab
+   * The application icon
+   */
+  icon: LucideIcon;
+
+  /**
+   * The application title
    */
   title: string;
 
   /**
-   * Optional subtitle displayed below the title
+   * The application subtitle
    */
-  subtitle?: string;
+  subtitle: string;
 
   /**
-   * Application icon
-   * Can be:
-   * - A Lucide icon component (see https://lucide.dev/icons/ for all available icons)
-   * - A path to a resource in the public folder (e.g., '/images/logo.svg')
-   * - A fully qualified URL
+   * App-specific configurations (authenticated user experience)
    */
-  icon: LucideIcon | string;
+  app?: {
+    /**
+     * Mobile-specific configurations
+     */
+    mobile?: {
+      /**
+       * Mobile menu configurations
+       */
+      menu?: {
+        /**
+         * Width of the mobile menu as percentage of viewport
+         */
+        width: string;
+      };
+    };
 
-  /**
-   * Mobile-specific configurations
-   */
-  mobile?: MobileConfig;
+    /**
+     * Menu configurations for authenticated users
+     */
+    menu?: {
+      /**
+       * Top section menu items
+       */
+      top: MenuItem[];
 
-  /**
-   * Menu configurations
-   */
-  menu?: MenuConfig;
+      /**
+       * Bottom section menu items
+       */
+      bottom: MenuItem[];
+    };
+  };
 
   /**
    * Landing page configuration
    */
   landing?: LandingConfig;
-
-  /**
-   * Theme configuration
-   */
-  theme: ThemeConfig;
 };

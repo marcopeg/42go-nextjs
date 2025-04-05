@@ -19,6 +19,7 @@ import {
   Bell,
   Home,
   LogOut,
+  CreditCard,
 } from 'lucide-react';
 
 /**
@@ -30,43 +31,59 @@ const appConfig = {
   icon: Aperture,
   title: 'Cursor Boilerplate',
   subtitle: 'Build fast s**t that nobody wants',
-  // Mobile-specific configurations
-  mobile: {
+
+  // App-specific configurations (authenticated user experience)
+  app: {
+    // Mobile-specific configurations
+    mobile: {
+      menu: {
+        width: '100%', // Width of the mobile menu as percentage of viewport
+      },
+    },
+    // Sidebar menu for logged-in users
     menu: {
-      width: '100%', // Width of the mobile menu as percentage of viewport
+      top: [
+        {
+          title: 'Dashboard',
+          href: '/app/dashboard',
+          icon: LayoutDashboard,
+        },
+        {
+          title: 'Users',
+          href: '/app/users',
+          icon: Users,
+        },
+        {
+          title: 'Documents',
+          href: '/app/documents',
+          icon: FileText,
+        },
+        {
+          title: 'Notifications',
+          href: '/app/notifications',
+          icon: Bell,
+        },
+      ],
+      bottom: [
+        {
+          title: 'Account',
+          href: '/app/account',
+          icon: Users,
+        },
+        {
+          title: 'Subscription',
+          href: '/app/subscription',
+          icon: CreditCard,
+        },
+        {
+          title: 'Settings',
+          href: '/app/settings',
+          icon: Settings,
+        },
+      ],
     },
   },
-  // Menu configurations
-  menu: {
-    // Sidebar menu for logged-in users
-    sidebar: [
-      {
-        title: 'Dashboard',
-        href: '/app/dashboard',
-        icon: LayoutDashboard,
-      },
-      {
-        title: 'Settings',
-        href: '/app/settings',
-        icon: Settings,
-      },
-      {
-        title: 'Users',
-        href: '/app/users',
-        icon: Users,
-      },
-      {
-        title: 'Documents',
-        href: '/app/documents',
-        icon: FileText,
-      },
-      {
-        title: 'Notifications',
-        href: '/app/notifications',
-        icon: Bell,
-      },
-    ],
-  },
+
   // Landing page configuration
   landing: {
     // Hero section on the landing page
