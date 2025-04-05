@@ -14,6 +14,8 @@
     "db:migrate:make": "knex --knexfile knexfile.js migrate:make",
     "db:run": "node src/lib/db/run-knex-migrations.js",
     "db:seed": "knex --knexfile knexfile.js seed:run",
+    "db:dump": "bash scripts/db-dump.sh",
+    "db:restore": "bash scripts/db-restore.sh",
     "test": "jest",
     "test:watch": "jest --watch"
   },
