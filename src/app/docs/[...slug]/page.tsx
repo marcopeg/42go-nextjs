@@ -58,7 +58,7 @@ export default async function DocsPage({ params }: DocsPageProps) {
   const contentWithoutFrontmatter = stripFrontmatter(doc.content);
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="py-8">
       <DocHeader {...headerProps} />
       <MarkdownRenderer
         content={contentWithoutFrontmatter}

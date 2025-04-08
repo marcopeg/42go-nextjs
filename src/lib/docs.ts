@@ -338,3 +338,43 @@ export async function getAllDocsWithMeta(): Promise<DocInfo[]> {
     return a.slug.localeCompare(b.slug);
   });
 }
+
+// Cache for sidebar content
+let sidebarCache: {
+  content: string | null;
+  timestamp: number;
+} | null = null;
+
+// Get sidebar content with caching
+export async function getSidebar(): Promise<string | null> {
+  // Skip cache if configured to do so
+  if (!SHOULD_CACHE && sidebarCache) {
+    sidebarCache = null;
+  }
+
+  // Check if we have a valid cached version
+  const now = Date.now();
+  if (sidebarCache && now - sidebarCache.timestamp <= CACHE_DURATION) {
+    return sidebarCache.content;
+  }
+
+  // Otherwise read from disk
+  const sidebarPath = path.join(docsDirectory, 'SIDEBAR.md');
+
+  try {
+    const content = await fs.readFile(sidebarPath, 'utf8');
+    // Cache the content
+    sidebarCache = {
+      content,
+      timestamp: now,
+    };
+    return content;
+  } catch {
+    // If sidebar doesn't exist, cache the null result too
+    sidebarCache = {
+      content: null,
+      timestamp: now,
+    };
+    return null;
+  }
+}

@@ -4,6 +4,8 @@ import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CustomCodeBlock from './CustomCodeBlock';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface MarkdownRendererProps {
   content: string;
@@ -16,6 +18,8 @@ export default function MarkdownRenderer({
   skipFirstHeading = false,
   title,
 }: MarkdownRendererProps) {
+  const pathname = usePathname();
+
   // Process content to handle first h1 if needed
   const processedContent = useMemo(() => {
     if (!skipFirstHeading) return content;
@@ -46,6 +50,75 @@ export default function MarkdownRenderer({
 
     return content;
   }, [content, skipFirstHeading, title]);
+
+  // Transform relative links to valid routes
+  const transformLink = (href: string): string => {
+    if (!href) return '#';
+
+    // Only transform if it's a relative link
+    if (href.startsWith('./') || href.startsWith('../')) {
+      // Case 1: Handle relative paths with .md or .mdx extension
+      if (href.endsWith('.md') || href.endsWith('.mdx')) {
+        // Remove the extension
+        const withoutExtension = href.replace(/\.(md|mdx)$/, '');
+
+        // Convert to docs path
+        if (href.startsWith('./')) {
+          return `/docs/${withoutExtension.substring(2).toLowerCase()}`;
+        } else if (href.startsWith('../')) {
+          // Handle parent directory references
+          const segments = pathname.split('/').filter(Boolean);
+          segments.pop(); // Remove current file
+
+          // Go up one more level for each ../ pattern
+          let parentCount = 0;
+          let remainingPath = withoutExtension;
+
+          while (remainingPath.startsWith('../')) {
+            parentCount++;
+            remainingPath = remainingPath.substring(3);
+          }
+
+          // Remove parent directories from segments based on parentCount
+          const parentSegments = segments.slice(0, Math.max(1, segments.length - parentCount));
+
+          // Build the new path (lowercase)
+          return `/${parentSegments.join('/')}/${remainingPath.toLowerCase()}`;
+        }
+      }
+      // Case 2: Handle relative links without explicit extension
+      else {
+        // Assume it's a document link without extension
+        const docPath = href;
+
+        if (href.startsWith('./')) {
+          return `/docs/${docPath.substring(2).toLowerCase()}`;
+        } else if (href.startsWith('../')) {
+          // Handle parent directory references
+          const segments = pathname.split('/').filter(Boolean);
+          segments.pop(); // Remove current file
+
+          // Go up one more level for each ../ pattern
+          let parentCount = 0;
+          let remainingPath = docPath;
+
+          while (remainingPath.startsWith('../')) {
+            parentCount++;
+            remainingPath = remainingPath.substring(3);
+          }
+
+          // Remove parent directories from segments based on parentCount
+          const parentSegments = segments.slice(0, Math.max(1, segments.length - parentCount));
+
+          // Build the new path (lowercase)
+          return `/${parentSegments.join('/')}/${remainingPath.toLowerCase()}`;
+        }
+      }
+    }
+
+    // Return the original href if no transformation was needed
+    return href;
+  };
 
   return (
     <ReactMarkdown
@@ -81,15 +154,17 @@ export default function MarkdownRenderer({
         h3({ children }) {
           return <h3 className="text-xl font-bold mt-6 mb-3">{children}</h3>;
         },
-        // Style links to match primary color
+        // Transform links and apply styles
         a({ href, children }) {
+          const transformedHref = transformLink(href);
+
           return (
-            <a
-              href={href}
+            <Link
+              href={transformedHref}
               className="text-primary hover:text-primary/80 underline underline-offset-2"
             >
               {children}
-            </a>
+            </Link>
           );
         },
         // Style tables for better readability

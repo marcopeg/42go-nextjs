@@ -2,6 +2,10 @@
 
 This document provides an overview of the authentication system implemented in this project. The authentication is built using [Auth.js](https://authjs.dev/) (formerly NextAuth.js), a complete open-source authentication solution for Next.js applications.
 
+## Methods
+
+[Github](./AUTH-GITHUB.md)
+
 ## Table of Contents
 
 1. [Overview](#overview)

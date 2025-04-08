@@ -58,6 +58,35 @@ The caching system will automatically be disabled in the following scenarios:
 
 Disabling caching in development mode ensures that changes to documentation files are immediately reflected without having to restart the server or wait for cache expiration.
 
+## Navigation Sidebar
+
+The documentation system supports an optional navigation sidebar that displays a nested menu of documentation links. This feature works as follows:
+
+1. Create a `SIDEBAR.md` file in the `/docs` directory
+2. Format it using standard markdown with headings and lists
+3. Include links to your documentation pages with paths like `/docs/your-page`
+
+The sidebar content is:
+
+- Cached following the same rules as regular documentation pages
+- Only displayed if the file exists
+- Responsive (hidden on mobile, shown on desktop)
+- Highlights the current active page
+
+### Example Sidebar File
+
+```markdown
+# Documentation
+
+- [Home](/docs)
+- [Getting Started](/docs/getting-started)
+
+## Guides
+
+- [Configuration](/docs/guides/configuration)
+- [Advanced Usage](/docs/guides/advanced)
+```
+
 ## Performance Benefits
 
 Implementing this caching mechanism provides several benefits:
