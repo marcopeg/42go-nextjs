@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { LucideIcon } from 'lucide-react';
 import { PageContentTransition } from '@/components/page-content-transition';
+import { ApiErrorBoundary } from '@/components/api-error-boundary';
 
 interface ActionProps {
   icon?: LucideIcon;
@@ -27,6 +28,11 @@ interface InternalPageProps {
   };
   children: ReactNode;
   stickyHeader?: boolean | 'always' | 'never';
+  /**
+   * Optional properties for the ApiErrorBoundary
+   */
+  fallbackTitle?: string;
+  fallbackMessage?: string;
 }
 
 export function InternalPage({
@@ -37,6 +43,8 @@ export function InternalPage({
   bottomBar,
   children,
   stickyHeader = true,
+  fallbackTitle = 'Access Denied',
+  fallbackMessage = "You don't have permission to access this dashboard. Please contact an administrator if you believe this is an error.",
 }: InternalPageProps) {
   // Determine header sticky classes based on the value of stickyHeader
   const getHeaderStickyClasses = () => {
@@ -64,88 +72,94 @@ export function InternalPage({
   };
 
   return (
-    <TooltipProvider>
-      <div className="flex flex-col h-full -mx-6 relative">
-        {/* Header */}
-        <header
-          className={cn(
-            'border-b border-border overflow-hidden w-full transition-all duration-200',
-            getHeaderStickyClasses()
-          )}
-          style={getHeaderStyles()}
-        >
-          <div className="flex items-center justify-between h-16 max-h-16 px-6 overflow-hidden">
-            <div className="flex items-center overflow-hidden">
-              {leftAction && (
-                <div className="mr-4 flex-shrink-0">
-                  <ActionButton {...leftAction} />
-                </div>
-              )}
-              <div
-                className={cn(
-                  'overflow-hidden flex-1 min-w-0 flex flex-col',
-                  subtitle ? 'justify-center' : 'justify-end pb-0'
+    <ApiErrorBoundary
+      fallbackTitle={fallbackTitle}
+      fallbackMessage={fallbackMessage}
+      fullPage={true}
+    >
+      <TooltipProvider>
+        <div className="flex flex-col h-full -mx-6 relative">
+          {/* Header */}
+          <header
+            className={cn(
+              'border-b border-border overflow-hidden w-full transition-all duration-200',
+              getHeaderStickyClasses()
+            )}
+            style={getHeaderStyles()}
+          >
+            <div className="flex items-center justify-between h-16 max-h-16 px-6 overflow-hidden">
+              <div className="flex items-center overflow-hidden">
+                {leftAction && (
+                  <div className="mr-4 flex-shrink-0">
+                    <ActionButton {...leftAction} />
+                  </div>
                 )}
-              >
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <h1 className="text-2xl font-bold tracking-tight truncate ">{title}</h1>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" align="start" className="max-w-[300px]">
-                    {title}
-                  </TooltipContent>
-                </Tooltip>
-
-                {subtitle && (
+                <div
+                  className={cn(
+                    'overflow-hidden flex-1 min-w-0 flex flex-col',
+                    subtitle ? 'justify-center' : 'justify-end pb-0'
+                  )}
+                >
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <p className="text-muted-foreground truncate text-sm">{subtitle}</p>
+                      <h1 className="text-2xl font-bold tracking-tight truncate ">{title}</h1>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" align="start" className="max-w-[300px]">
-                      {subtitle}
+                      {title}
                     </TooltipContent>
                   </Tooltip>
-                )}
+
+                  {subtitle && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="text-muted-foreground truncate text-sm">{subtitle}</p>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" align="start" className="max-w-[300px]">
+                        {subtitle}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
               </div>
+
+              {rightActions && rightActions.length > 0 && (
+                <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
+                  {rightActions.map((action, index) => (
+                    <ActionButton key={index} {...action} />
+                  ))}
+                </div>
+              )}
             </div>
+          </header>
 
-            {rightActions && rightActions.length > 0 && (
-              <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
-                {rightActions.map((action, index) => (
-                  <ActionButton key={index} {...action} />
-                ))}
-              </div>
-            )}
-          </div>
-        </header>
+          {/* Main Content with Animation */}
+          <main className="flex-1 px-6 pt-6 overflow-y-auto max-w-full pb-24 md:pb-16">
+            <div className="overflow-x-auto">
+              <PageContentTransition>{children}</PageContentTransition>
+            </div>
+          </main>
 
-        {/* Main Content with Animation */}
-        <main className="flex-1 px-6 pt-6 overflow-y-auto max-w-full pb-24 md:pb-16">
-          <div className="overflow-x-auto">
-            <PageContentTransition>{children}</PageContentTransition>
-          </div>
-        </main>
-
-        {/* Bottom Bar */}
-        {bottomBar && (
-          <footer
-            className={cn(
-              'px-6 py-4 border-t flex items-center justify-between w-full',
-              bottomBar.sticky ? 'sticky bottom-0 bg-background z-20 mb-16 md:mb-0' : 'relative'
-            )}
-          >
-            <div>{bottomBar.leftContent}</div>
-            {bottomBar.rightActions && bottomBar.rightActions.length > 0 && (
-              <div className="flex items-center space-x-2">
-                {bottomBar.rightActions.map((action, index) => (
-                  <ActionButton key={index} {...action} />
-                ))}
-              </div>
-            )}
-          </footer>
-        )}
-      </div>
-    </TooltipProvider>
+          {/* Bottom Bar */}
+          {bottomBar && (
+            <footer
+              className={cn(
+                'px-6 py-4 border-t flex items-center justify-between w-full',
+                bottomBar.sticky ? 'sticky bottom-0 bg-background z-20 mb-16 md:mb-0' : 'relative'
+              )}
+            >
+              <div>{bottomBar.leftContent}</div>
+              {bottomBar.rightActions && bottomBar.rightActions.length > 0 && (
+                <div className="flex items-center space-x-2">
+                  {bottomBar.rightActions.map((action, index) => (
+                    <ActionButton key={index} {...action} />
+                  ))}
+                </div>
+              )}
+            </footer>
+          )}
+        </div>
+      </TooltipProvider>
+    </ApiErrorBoundary>
   );
 }
 
