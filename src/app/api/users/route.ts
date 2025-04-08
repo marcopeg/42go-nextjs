@@ -2,13 +2,19 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { sessionHasGrants } from '@/lib/auth/grants';
+import { sessionHasRoles } from '@/lib/auth/roles';
 
 export async function GET() {
   try {
     // Check if the user has the required grant
     const hasAccess = await sessionHasGrants(['users:list']);
-
     if (!hasAccess) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Check if the user has the required roles
+    const hasRoles = await sessionHasRoles(['backoffice']);
+    if (!hasRoles) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
