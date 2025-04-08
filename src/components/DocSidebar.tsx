@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface DocSidebarProps {
   content: string;
@@ -12,123 +12,119 @@ interface DocSidebarProps {
 export default function DocSidebar({ content }: DocSidebarProps) {
   const pathname = usePathname();
 
-  // Pre-process the content to handle relative links
+  // Process the content to customize it for sidebar display
   const processedContent = useMemo(() => {
     return content;
   }, [content]);
 
+  // Create custom components for the sidebar navigation
+  const customComponents = {
+    // Create custom components that will override the defaults in MarkdownRenderer
+    // for the sidebar-specific styling
+    a({ href, children }: { href?: string; children: React.ReactNode }) {
+      let transformedHref = href || '#';
+
+      // Only transform if it's a string
+      if (typeof href === 'string') {
+        // Case 1: Handle relative paths with .md or .mdx extension
+        if (
+          (href.startsWith('./') || href.startsWith('../')) &&
+          (href.endsWith('.md') || href.endsWith('.mdx'))
+        ) {
+          // Remove the extension
+          const withoutExtension = href.replace(/\.(md|mdx)$/, '');
+
+          // Convert to docs path
+          if (href.startsWith('./')) {
+            transformedHref = `/docs/${withoutExtension.substring(2).toLowerCase()}`;
+          } else if (href.startsWith('../')) {
+            // Handle parent directory references if needed
+            const segments = pathname.split('/').filter(Boolean);
+            segments.pop(); // Remove current file
+
+            // Go up one more level for each ../ pattern
+            let parentCount = 0;
+            let remainingPath = withoutExtension;
+
+            while (remainingPath.startsWith('../')) {
+              parentCount++;
+              remainingPath = remainingPath.substring(3);
+            }
+
+            // Remove parent directories from segments based on parentCount
+            const parentSegments = segments.slice(0, Math.max(1, segments.length - parentCount));
+
+            // Build the new path (lowercase)
+            transformedHref = `/${parentSegments.join('/')}/${remainingPath.toLowerCase()}`;
+          }
+        }
+        // Case 2: Handle relative links without explicit extension
+        else if (href.startsWith('./') || href.startsWith('../')) {
+          // Assume it's a document link without extension
+          const docPath = href;
+
+          if (href.startsWith('./')) {
+            transformedHref = `/docs/${docPath.substring(2).toLowerCase()}`;
+          } else if (href.startsWith('../')) {
+            // Handle parent directory references
+            const segments = pathname.split('/').filter(Boolean);
+            segments.pop(); // Remove current file
+
+            // Go up one more level for each ../ pattern
+            let parentCount = 0;
+            let remainingPath = docPath;
+
+            while (remainingPath.startsWith('../')) {
+              parentCount++;
+              remainingPath = remainingPath.substring(3);
+            }
+
+            // Remove parent directories from segments based on parentCount
+            const parentSegments = segments.slice(0, Math.max(1, segments.length - parentCount));
+
+            // Build the new path (lowercase)
+            transformedHref = `/${parentSegments.join('/')}/${remainingPath.toLowerCase()}`;
+          }
+        }
+      }
+
+      const isActive = pathname === transformedHref;
+
+      return (
+        <Link
+          href={transformedHref}
+          className={`block py-1 ${
+            isActive
+              ? 'text-primary font-medium'
+              : 'text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary'
+          }`}
+        >
+          {children}
+        </Link>
+      );
+    },
+    // Style headings for the sidebar
+    h1({ children }: { children: React.ReactNode }) {
+      return <h3 className="text-lg font-bold mb-2 mt-4">{children}</h3>;
+    },
+    h2({ children }: { children: React.ReactNode }) {
+      return <h4 className="text-md font-semibold mb-1 mt-3">{children}</h4>;
+    },
+    // Style lists for navigation
+    ul({ children }: { children: React.ReactNode }) {
+      return <ul className="pl-4 space-y-1 mb-2">{children}</ul>;
+    },
+    li({ children }: { children: React.ReactNode }) {
+      return <li className="text-sm">{children}</li>;
+    },
+  };
+
   return (
     <div className="w-64 shrink-0 border-r border-gray-200 dark:border-gray-800 pr-4 h-full">
       <div className="sticky top-16 max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden pr-2 -mr-2 py-4">
-        <ReactMarkdown
-          components={{
-            // Style links with active state and handle relative paths
-            a({ href, children }) {
-              let transformedHref = href || '#';
-
-              // Only transform if it's a string
-              if (typeof href === 'string') {
-                // Case 1: Handle relative paths with .md or .mdx extension
-                if (
-                  (href.startsWith('./') || href.startsWith('../')) &&
-                  (href.endsWith('.md') || href.endsWith('.mdx'))
-                ) {
-                  // Remove the extension
-                  const withoutExtension = href.replace(/\.(md|mdx)$/, '');
-
-                  // Convert to docs path
-                  if (href.startsWith('./')) {
-                    transformedHref = `/docs/${withoutExtension.substring(2).toLowerCase()}`;
-                  } else if (href.startsWith('../')) {
-                    // Handle parent directory references if needed
-                    const segments = pathname.split('/').filter(Boolean);
-                    segments.pop(); // Remove current file
-
-                    // Go up one more level for each ../ pattern
-                    let parentCount = 0;
-                    let remainingPath = withoutExtension;
-
-                    while (remainingPath.startsWith('../')) {
-                      parentCount++;
-                      remainingPath = remainingPath.substring(3);
-                    }
-
-                    // Remove parent directories from segments based on parentCount
-                    const parentSegments = segments.slice(
-                      0,
-                      Math.max(1, segments.length - parentCount)
-                    );
-
-                    // Build the new path (lowercase)
-                    transformedHref = `/${parentSegments.join('/')}/${remainingPath.toLowerCase()}`;
-                  }
-                }
-                // Case 2: Handle relative links without explicit extension
-                else if (href.startsWith('./') || href.startsWith('../')) {
-                  // Assume it's a document link without extension
-                  const docPath = href;
-
-                  if (href.startsWith('./')) {
-                    transformedHref = `/docs/${docPath.substring(2).toLowerCase()}`;
-                  } else if (href.startsWith('../')) {
-                    // Handle parent directory references
-                    const segments = pathname.split('/').filter(Boolean);
-                    segments.pop(); // Remove current file
-
-                    // Go up one more level for each ../ pattern
-                    let parentCount = 0;
-                    let remainingPath = docPath;
-
-                    while (remainingPath.startsWith('../')) {
-                      parentCount++;
-                      remainingPath = remainingPath.substring(3);
-                    }
-
-                    // Remove parent directories from segments based on parentCount
-                    const parentSegments = segments.slice(
-                      0,
-                      Math.max(1, segments.length - parentCount)
-                    );
-
-                    // Build the new path (lowercase)
-                    transformedHref = `/${parentSegments.join('/')}/${remainingPath.toLowerCase()}`;
-                  }
-                }
-              }
-
-              const isActive = pathname === transformedHref;
-
-              return (
-                <Link
-                  href={transformedHref}
-                  className={`block py-1 ${
-                    isActive
-                      ? 'text-primary font-medium'
-                      : 'text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary'
-                  }`}
-                >
-                  {children}
-                </Link>
-              );
-            },
-            // Style headings
-            h1({ children }) {
-              return <h3 className="text-lg font-bold mb-2 mt-4">{children}</h3>;
-            },
-            h2({ children }) {
-              return <h4 className="text-md font-semibold mb-1 mt-3">{children}</h4>;
-            },
-            // Style lists for navigation
-            ul({ children }) {
-              return <ul className="pl-4 space-y-1 mb-2">{children}</ul>;
-            },
-            li({ children }) {
-              return <li className="text-sm">{children}</li>;
-            },
-          }}
-        >
-          {processedContent}
-        </ReactMarkdown>
+        <div className="sidebar-markdown">
+          <MarkdownRenderer content={processedContent} components={customComponents} />
+        </div>
       </div>
     </div>
   );
