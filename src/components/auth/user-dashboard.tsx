@@ -12,11 +12,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useEnvFeature } from '@/lib/env/with-env-client';
+import { useEnv } from '@/lib/env/use-env';
 
 export function UserDashboard() {
   const { data: session, status } = useCachedSession();
-  const isDevEnvironment = useEnvFeature({
+  const isDevEnvironment = useEnv({
     environments: ['development'],
   });
 

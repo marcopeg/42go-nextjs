@@ -1,56 +1,42 @@
-# Environment-Based Feature Flags
+# Environment Feature Flags
 
-This document explains how to use environment-based feature flags in the frontend of the application.
+This document describes how to use environment-based feature flags in the application.
 
 ## Overview
 
-The application provides utilities for implementing environment-based feature flags in the frontend, similar to the backend `withEnv` utility. These utilities allow you to conditionally render components or enable/disable features based on environment settings.
+Environment feature flags allow you to conditionally enable or disable features based on the current environment (development, test, production) and environment variables. This is useful for:
+
+- Enabling beta features only in development or test environments
+- Showing different UI elements based on the environment
+- Implementing feature toggles that can be controlled via environment variables
 
 ## Available Utilities
 
-### 1. `withEnvClient` HOC
+### `withEnv` HOC
 
 A Higher-Order Component (HOC) that conditionally renders components based on environment settings.
 
 ```tsx
-import { withEnvClient, EnvMatchStrategy } from '@/lib/env/with-env-client';
+import { withEnv } from '@/lib/env/use-env';
 
-// Define your component
-function MyFeatureComponent() {
-  return <div>This is a feature that might only be available in certain environments</div>;
-}
-
-// Wrap it with the HOC
-const ProtectedFeature = withEnvClient({
+const BetaFeature = withEnv({
   environments: ['development', 'test'],
-  strategy: EnvMatchStrategy.ANY,
   requiredFlags: {
-    NEXT_PUBLIC_FEATURE_FLAG: 'enabled',
+    NEXT_PUBLIC_BETA_FEATURES: 'enabled',
   },
-  skipFlags: ['NEXT_PUBLIC_DISABLE_FEATURE'],
-  fallback: <div>This feature is not available in your environment</div>,
-})(MyFeatureComponent);
-
-// Use the protected component
-function MyPage() {
-  return (
-    <div>
-      <h1>My Page</h1>
-      <ProtectedFeature />
-    </div>
-  );
-}
+  fallback: <div>This beta feature is not available yet</div>,
+})(MyBetaComponent);
 ```
 
-### 2. `useEnvFeature` Hook
+### `useEnv` Hook
 
 A React hook that returns a boolean indicating if a feature is enabled based on environment settings.
 
 ```tsx
-import { useEnvFeature } from '@/lib/env/with-env-client';
+import { useEnv } from '@/lib/env/use-env';
 
 function MyComponent() {
-  const isFeatureEnabled = useEnvFeature({
+  const isFeatureEnabled = useEnv({
     environments: ['development', 'test'],
     requiredFlags: {
       NEXT_PUBLIC_FEATURE_FLAG: 'enabled',
@@ -69,58 +55,42 @@ function MyComponent() {
 
 Both utilities accept the following options:
 
-- `environments`: Array of allowed environments (e.g., `['development', 'test']`)
-- `strategy`: Matching strategy for environments (`ALL` or `ANY`, defaults to `ANY`)
+- `environments`: Array of allowed environments (e.g., ['development', 'test'])
+- `strategy`: Matching strategy for environments (ALL or ANY, defaults to ANY)
 - `requiredFlags`: Object mapping environment variables to required values
 - `skipFlags`: Array of environment variables that must be unset or 'false'
 - `fallback`: (HOC only) Optional component to render when conditions are not met
 
 ## Environment Variables
 
-To use these utilities, you need to set up environment variables in your `.env.local` file:
+To use environment feature flags, you need to set up the appropriate environment variables in your `.env.local` file:
 
 ```
-# Enable a feature in development and test environments
+# Enable beta features in development
+NEXT_PUBLIC_BETA_FEATURES=enabled
+
+# Feature toggles
 NEXT_PUBLIC_FEATURE_FLAG=enabled
-
-# Disable a feature
-NEXT_PUBLIC_DISABLE_FEATURE=true
+NEXT_PUBLIC_DISABLE_FEATURE=false
 ```
 
-> **Important**: All client-side environment variables must be prefixed with `NEXT_PUBLIC_` to be accessible in the browser.
+Note: All client-side environment variables must be prefixed with `NEXT_PUBLIC_` to be accessible in the browser.
 
 ## Best Practices
 
-1. **Use the HOC for component-level protection**:
-
-   - When you want to conditionally render entire components
-   - When you want to provide a fallback UI
-
-2. **Use the hook for conditional logic**:
-
-   - When you need to conditionally execute code
-   - When you want to conditionally render parts of a component
-
-3. **Keep environment variables consistent**:
-
-   - Use the same environment variables for both frontend and backend
-   - Prefix all client-side variables with `NEXT_PUBLIC_`
-
-4. **Provide meaningful fallbacks**:
-
-   - Always provide a fallback component when using the HOC
-   - Consider user experience when a feature is not available
-
-5. **Use environment-specific builds**:
-   - Set up different environment variables for different environments
-   - Use `.env.development`, `.env.production`, etc. for environment-specific settings
+1. Always provide a meaningful fallback component when using the HOC
+2. Use consistent naming conventions for environment variables
+3. Document all feature flags in a central location
+4. Use the `useEnv` hook for conditional logic within components
+5. Use the `withEnv` HOC for wrapping entire components
+6. Consider using the `skipFlags` option to disable features in specific environments
 
 ## Example Use Cases
 
-### 1. Beta Features
+### Beta Features
 
 ```tsx
-const BetaFeature = withEnvClient({
+const BetaFeature = withEnv({
   environments: ['development', 'test'],
   requiredFlags: {
     NEXT_PUBLIC_BETA_FEATURES: 'enabled',
@@ -129,11 +99,11 @@ const BetaFeature = withEnvClient({
 })(MyBetaComponent);
 ```
 
-### 2. Environment-Specific UI
+### Environment-Specific UI
 
 ```tsx
 function MyComponent() {
-  const isDevUI = useEnvFeature({
+  const isDevUI = useEnv({
     environments: ['development'],
   });
 
@@ -146,38 +116,37 @@ function MyComponent() {
 }
 ```
 
-### 3. Feature Toggles
+### Feature Toggle
 
 ```tsx
 function FeatureToggle() {
-  const isFeatureEnabled = useEnvFeature({
+  const isEnabled = useEnv({
     requiredFlags: {
       NEXT_PUBLIC_FEATURE_TOGGLE: 'enabled',
     },
   });
 
-  return (
-    <div>
-      <h2>Feature Toggle</h2>
-      <p>Status: {isFeatureEnabled ? 'Enabled' : 'Disabled'}</p>
-    </div>
-  );
+  return isEnabled ? <NewFeature /> : <OldFeature />;
 }
 ```
 
 ## Troubleshooting
 
-1. **Feature not showing up**:
+### Feature Not Showing Up
 
-   - Check that your environment variables are correctly set
-   - Verify that the environment variables are prefixed with `NEXT_PUBLIC_`
-   - Make sure you're in the correct environment (development, test, production)
+1. Check that the environment variable is set correctly in `.env.local`
+2. Verify that the environment variable is prefixed with `NEXT_PUBLIC_`
+3. Make sure the current environment is included in the `environments` array
+4. Check that the environment variable value matches the expected value in `requiredFlags`
 
-2. **Hydration errors**:
+### Hydration Errors
 
-   - Ensure that environment variables are consistent between server and client
-   - Use `useEffect` to handle environment-dependent logic
+If you see hydration errors, make sure that the environment check is consistent between server and client. The `useEnv` hook handles this automatically by returning `false` during server-side rendering.
 
-3. **Type errors**:
-   - Make sure you're passing the correct props to your components
-   - Check that your environment variables are correctly typed
+### Type Errors
+
+If you see type errors, make sure you're using the correct types from the `use-env` module:
+
+```tsx
+import { useEnv, withEnv } from '@/lib/env/use-env';
+```

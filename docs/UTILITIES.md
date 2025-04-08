@@ -114,12 +114,12 @@ export const POST = withEnv({
 
 ## Client-Side Environment Feature Flags
 
-### `withEnvClient`
+### `withEnv`
 
 A Higher-Order Component (HOC) that conditionally renders components based on environment settings. It's similar to the backend `withEnv` but for client-side components.
 
 ```tsx
-const ProtectedComponent = withEnvClient({
+const ProtectedComponent = withEnv({
   environments: ['development', 'test'],
   strategy: EnvMatchStrategy.ANY,
   requiredFlags: {
@@ -147,13 +147,13 @@ const ProtectedComponent = withEnvClient({
 4. If all checks pass, renders the component
 5. If any check fails, renders the fallback component or nothing
 
-### `useEnvFeature`
+### `useEnv`
 
 A React hook that returns a boolean indicating if a feature is enabled based on environment settings.
 
 ```tsx
 function MyComponent() {
-  const isFeatureEnabled = useEnvFeature({
+  const isFeatureEnabled = useEnv({
     environments: ['development', 'test'],
     requiredFlags: {
       NEXT_PUBLIC_FEATURE_FLAG: 'enabled',
@@ -170,7 +170,7 @@ function MyComponent() {
 
 #### Parameters
 
-- `options`: Environment options (same as `withEnvClient`)
+- `options`: Environment options (same as `withEnv`)
 
 #### Behavior
 
@@ -181,7 +181,7 @@ function MyComponent() {
 
 ```tsx
 // Conditionally render a component based on environment
-const BetaFeature = withEnvClient({
+const BetaFeature = withEnv({
   environments: ['development', 'test'],
   requiredFlags: {
     NEXT_PUBLIC_BETA_FEATURES: 'enabled',
@@ -191,7 +191,7 @@ const BetaFeature = withEnvClient({
 
 // Conditionally render parts of a component
 function MyComponent() {
-  const isDevUI = useEnvFeature({
+  const isDevUI = useEnv({
     environments: ['development'],
   });
 
@@ -208,8 +208,8 @@ function MyComponent() {
 
 1. Use `withAuth` for protecting routes that require authentication and/or specific permissions
 2. Use `withEnv` for protecting routes that should only be available in specific environments
-3. Use `withEnvClient` for conditionally rendering components based on environment settings
-4. Use `useEnvFeature` for conditional logic within components
+3. Use `withEnv` HOC for conditionally rendering components based on environment settings
+4. Use `useEnv` hook for conditional logic within components
 5. Combine these utilities when needed for maximum security and flexibility
 6. Always provide clear error messages in the responses
 7. Use appropriate HTTP status codes for different types of access denials
