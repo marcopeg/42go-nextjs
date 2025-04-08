@@ -107,12 +107,12 @@ export type HeroConfig = {
 export type TestimonialConfig = {
   title: string;
   subtitle: string;
-  adopters: {
+  adopters?: {
     id: number;
     name: string;
     logo: string;
   }[];
-  quotes: {
+  quotes?: {
     id: number;
     content: string;
     author: {

@@ -7,6 +7,7 @@ import { PricingWall } from '@/components/pricing-wall';
 import { HeroSection } from '@/components/hero-section';
 import { AdoptersTestimonials } from '@/components/adopters-testimonials';
 import { FeedbackForm } from '@/components/feedback-form';
+import appConfig from '../../app.config';
 
 export default function Home() {
   return (
@@ -22,29 +23,39 @@ export default function Home() {
         </div>
 
         {/* Hero Section */}
-        <div className="w-full max-w-7xl px-4 pt-24">
-          <HeroSection />
-        </div>
+        {appConfig.landing?.hero && (
+          <div className="w-full max-w-7xl px-4 pt-24">
+            <HeroSection />
+          </div>
+        )}
 
         {/* Feature Showcase Section */}
-        <div className="w-full max-w-7xl px-4">
-          <FeatureShowcase />
-        </div>
+        {appConfig.landing?.features && (
+          <div className="w-full max-w-7xl px-4">
+            <FeatureShowcase />
+          </div>
+        )}
 
         {/* Pricing Wall Section */}
-        <div className="w-full max-w-7xl px-4 bg-muted/50">
-          <PricingWall />
-        </div>
+        {appConfig.landing?.pricing && (
+          <div className="w-full max-w-7xl px-4 bg-muted/50">
+            <PricingWall />
+          </div>
+        )}
 
         {/* Adopters and Testimonials Section */}
-        <div className="w-full max-w-7xl px-4">
-          <AdoptersTestimonials />
-        </div>
+        {appConfig.landing?.testimonials && (
+          <div className="w-full max-w-7xl px-4">
+            <AdoptersTestimonials />
+          </div>
+        )}
 
         {/* Feedback Form Section */}
-        <div className="w-full max-w-7xl px-4 bg-muted/30 mb-16">
-          <FeedbackForm />
-        </div>
+        {appConfig.landing?.feedback && (
+          <div className="w-full max-w-7xl px-4 bg-muted/30 mb-16">
+            <FeedbackForm />
+          </div>
+        )}
       </main>
     </PageTransition>
   );

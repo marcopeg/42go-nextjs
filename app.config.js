@@ -113,7 +113,7 @@ const appConfig = {
 
   // Landing page configuration
   landing: {
-    // Hero section on the landing page
+    // Hero section on the landing page (comment out to disable)
     hero: {
       title: 'Build Your SaaS **Faster** With Our **AI-Friendly** Starter Kit',
       subtitle:
@@ -130,7 +130,7 @@ const appConfig = {
         },
       ],
     },
-    // Features showcased on the landing page
+    // Features section on the landing page (comment out to disable)
     features: {
       title: '🔋 Batteries Included',
       subtitle: 'Everything you need to build modern web applications, right out of the box.',
@@ -167,7 +167,7 @@ const appConfig = {
         },
       ],
     },
-    // Pricing section on the landing page
+    // Pricing section on the landing page (comment out to disable)
     pricing: {
       title: 'Simple, Transparent Pricing',
       subtitle: "Choose the plan that's right for you and start building today.",
@@ -242,38 +242,38 @@ const appConfig = {
         },
       ],
     },
-    // Testimonials section on the landing page
+    // Testimonials section on the landing page (comment out to disable)
     testimonials: {
-      title: 'Trusted by Developers Worldwide',
-      subtitle: 'Join hundreds of companies building better products with our boilerplate',
-      adopters: [
-        { id: 1, name: 'TechCorp', logo: 'TC' },
-        { id: 2, name: 'InnovateLabs', logo: 'IL' },
-        { id: 3, name: 'FutureSystems', logo: 'FS' },
-        { id: 4, name: 'DataFlow', logo: 'DF' },
-        { id: 5, name: 'CloudNine', logo: 'CN' },
-        { id: 6, name: 'DevStudio', logo: 'DS' },
-      ],
+      title: 'Trusted by Your Peers',
+      subtitle: 'Many friends and colleagues are using this boilerplate.',
+      // adopters: [
+      //   { id: 1, name: 'TechCorp', logo: 'TC' },
+      //   { id: 2, name: 'InnovateLabs', logo: 'IL' },
+      //   { id: 3, name: 'FutureSystems', logo: 'FS' },
+      //   { id: 4, name: 'DataFlow', logo: 'DF' },
+      //   { id: 5, name: 'CloudNine', logo: 'CN' },
+      //   { id: 6, name: 'DevStudio', logo: 'DS' },
+      // ],
       quotes: [
         {
           id: 1,
           content:
-            "This boilerplate saved us weeks of setup time. The authentication system is robust and the UI components are beautiful. We've been able to focus on building our product instead of infrastructure.",
+            "Working with 42GO is fun, easy and productive. I've learned a lot from the community and the documentation is excellent.",
           author: {
-            name: 'Sarah Johnson',
+            name: 'Sarah Connor',
             role: 'CTO',
-            company: 'FinTech Innovations',
+            company: 'Skynet AI',
             avatar: 'SJ',
           },
         },
         {
           id: 2,
           content:
-            "I've used many boilerplates before, but this one stands out for its clean architecture and thoughtful design. The documentation is excellent and it was easy to customize to our needs.",
+            'I can focus on my core features because all the infrastructure is already set up.',
           author: {
-            name: 'Michael Chen',
-            role: 'Lead Developer',
-            company: 'HealthTech Solutions',
+            name: 'R. Daneel Olivaw',
+            role: 'Roboticist',
+            company: 'Spacer Worlds',
             avatar: 'MC',
           },
         },
@@ -290,7 +290,7 @@ const appConfig = {
         },
       ],
     },
-    // Feedback section on the landing page
+    // Feedback section on the landing page (comment out to disable)
     feedback: {
       title: 'Get in Touch',
       subtitle: "Have questions or feedback? We'd love to hear from you.",

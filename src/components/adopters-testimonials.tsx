@@ -43,46 +43,50 @@ export function AdoptersTestimonials() {
       </ScrollAnimation>
 
       {/* Adopters Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-16">
-        {testimonials.adopters.map(adopter => (
-          <ScrollAnimation key={adopter.id} type="fade" delay={0.1} duration={0.5}>
-            <Card className="h-24 flex items-center justify-center">
-              <CardContent>
-                <div className="text-2xl font-bold text-muted-foreground">{adopter.logo}</div>
-              </CardContent>
-            </Card>
-          </ScrollAnimation>
-        ))}
-      </div>
+      {testimonials.adopters && testimonials.adopters.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-16">
+          {testimonials.adopters.map(adopter => (
+            <ScrollAnimation key={adopter.id} type="fade" delay={0.1} duration={0.5}>
+              <Card className="h-24 flex items-center justify-center">
+                <CardContent>
+                  <div className="text-2xl font-bold text-muted-foreground">{adopter.logo}</div>
+                </CardContent>
+              </Card>
+            </ScrollAnimation>
+          ))}
+        </div>
+      )}
 
       {/* Testimonials Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {testimonials.quotes.map(quote => (
-          <ScrollAnimation key={quote.id} type="slide" direction="up" delay={0.1} duration={0.6}>
-            <Card className="h-full">
-              <CardContent className="pt-6">
-                <div className="flex flex-col h-full">
-                  <div className="flex-grow">
-                    <p className="text-lg italic mb-6">&ldquo;{quote.content}&rdquo;</p>
-                  </div>
-                  <div className="flex items-center">
-                    <Avatar className="h-10 w-10 mr-4">
-                      <AvatarImage src={`/avatars/${quote.author.avatar}.jpg`} />
-                      <AvatarFallback>{quote.author.avatar}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold">{quote.author.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {quote.author.role} at {quote.author.company}
-                      </p>
+      {testimonials.quotes && testimonials.quotes.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {testimonials.quotes.map(quote => (
+            <ScrollAnimation key={quote.id} type="slide" direction="up" delay={0.1} duration={0.6}>
+              <Card className="h-full">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col h-full">
+                    <div className="flex-grow">
+                      <p className="text-lg italic mb-6">&ldquo;{quote.content}&rdquo;</p>
+                    </div>
+                    <div className="flex items-center">
+                      <Avatar className="h-10 w-10 mr-4">
+                        <AvatarImage src={`/avatars/${quote.author.avatar}.jpg`} />
+                        <AvatarFallback>{quote.author.avatar}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold">{quote.author.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {quote.author.role} at {quote.author.company}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </ScrollAnimation>
-        ))}
-      </div>
+                </CardContent>
+              </Card>
+            </ScrollAnimation>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
