@@ -1,8 +1,15 @@
 import Link from 'next/link';
-import { getAllDocs } from '@/lib/docs';
+import { getAllDocsWithMeta } from '@/lib/docs';
+import { Metadata } from 'next';
 
-export default function DocsPage() {
-  const docs = getAllDocs();
+export const metadata: Metadata = {
+  title: 'Documentation',
+  description: 'Browse all available documentation',
+};
+
+export default async function DocsPage() {
+  // Get docs with metadata
+  const docs = await getAllDocsWithMeta();
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -11,15 +18,19 @@ export default function DocsPage() {
       {docs.length === 0 ? (
         <p className="text-lg">No documentation files found.</p>
       ) : (
-        <ul className="space-y-2">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {docs.map(doc => (
-            <li key={doc}>
-              <Link href={`/docs/${doc}`} className="text-primary hover:underline">
-                {doc}
-              </Link>
-            </li>
+            <Link
+              key={doc.slug}
+              href={`/docs/${doc.slug}`}
+              className="block p-6 border border-gray-200 rounded-lg hover:border-primary hover:shadow-md transition-all"
+            >
+              <h2 className="text-xl font-semibold mb-2 text-primary">{doc.title || doc.slug}</h2>
+              {doc.description && <p className="text-gray-600 line-clamp-2">{doc.description}</p>}
+              <p className="text-sm text-gray-500 mt-2">{doc.slug}</p>
+            </Link>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

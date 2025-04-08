@@ -301,3 +301,40 @@ export async function getAllDocs(): Promise<string[]> {
   await scanDirectory(docsDirectory);
   return docs;
 }
+
+export interface DocInfo {
+  slug: string;
+  title?: string;
+  description?: string;
+}
+
+// Get a list of all docs with basic metadata
+export async function getAllDocsWithMeta(): Promise<DocInfo[]> {
+  const slugs = await getAllDocs();
+  const docsWithMeta: DocInfo[] = [];
+
+  for (const slug of slugs) {
+    const doc = await getDoc(slug);
+    if (doc) {
+      docsWithMeta.push({
+        slug,
+        title: doc.metadata.title,
+        description: doc.metadata.description || doc.metadata.subtitle,
+      });
+    } else {
+      docsWithMeta.push({ slug });
+    }
+  }
+
+  // Sort by title if available, otherwise by slug
+  return docsWithMeta.sort((a, b) => {
+    if (a.title && b.title) {
+      return a.title.localeCompare(b.title);
+    } else if (a.title) {
+      return -1; // Items with titles come first
+    } else if (b.title) {
+      return 1;
+    }
+    return a.slug.localeCompare(b.slug);
+  });
+}
