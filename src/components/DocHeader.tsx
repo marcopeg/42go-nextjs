@@ -18,19 +18,19 @@ export default function DocHeader({ title, subtitle, author, publicationDate }: 
   const formattedDate = publicationDate ? format(new Date(publicationDate), 'MMMM d, yyyy') : null;
 
   return (
-    <header className="mb-8 border-b border-gray-200 dark:border-gray-800 pb-6">
+    <header className="mb-8 border-b border-gray-200 dark:border-gray-800 pb-6 w-full">
       {title && <h1 className="text-4xl font-bold mb-2">{title}</h1>}
       {subtitle && <p className="text-xl text-gray-600 dark:text-gray-300 mb-4">{subtitle}</p>}
 
       {(author || formattedDate) && (
-        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex flex-wrap items-center text-sm text-gray-500 dark:text-gray-400">
           {author && (
-            <div className="mr-4">
+            <div className="mr-4 mb-2">
               <span className="font-medium">By:</span> {author}
             </div>
           )}
           {formattedDate && (
-            <div>
+            <div className="mb-2">
               <span className="font-medium">Published:</span> {formattedDate}
             </div>
           )}

@@ -150,6 +150,16 @@ export default function MarkdownRenderer({
     h3({ children }) {
       return <h3 className="text-xl font-bold mt-6 mb-3">{children}</h3>;
     },
+    // Style lists for better readability
+    ul({ children }) {
+      return <ul className="list-disc pl-6 space-y-2 my-4">{children}</ul>;
+    },
+    ol({ children }) {
+      return <ol className="list-decimal pl-6 space-y-2 my-4">{children}</ol>;
+    },
+    li({ children }) {
+      return <li className="ml-2">{children}</li>;
+    },
     // Transform links and apply styles
     a({ href, children }) {
       const transformedHref = transformLink(href);

@@ -59,12 +59,14 @@ export default async function DocsPage({ params }: DocsPageProps) {
 
   return (
     <div className="py-8">
-      <DocHeader {...headerProps} />
-      <MarkdownRenderer
-        content={contentWithoutFrontmatter}
-        skipFirstHeading={shouldSkipFirstHeading}
-        title={headerProps.title}
-      />
+      <div className="max-w-prose mx-auto">
+        <DocHeader {...headerProps} />
+        <MarkdownRenderer
+          content={contentWithoutFrontmatter}
+          skipFirstHeading={shouldSkipFirstHeading}
+          title={headerProps.title}
+        />
+      </div>
     </div>
   );
 }
