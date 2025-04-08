@@ -15,7 +15,7 @@ export default function MobileSidebarToggle({ content }: MobileSidebarToggleProp
       {/* Toggle button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-3 mb-4 bg-gray-100 rounded-md hover:bg-gray-200 transition"
+        className="w-full flex items-center justify-between p-3 mb-4 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition"
         aria-expanded={isOpen}
         aria-controls="mobile-sidebar"
       >
@@ -36,7 +36,10 @@ export default function MobileSidebarToggle({ content }: MobileSidebarToggleProp
 
       {/* Mobile drawer */}
       {isOpen && (
-        <div id="mobile-sidebar" className="mb-6 border border-gray-200 rounded-md p-4 bg-white">
+        <div
+          id="mobile-sidebar"
+          className="mb-6 border border-gray-200 dark:border-gray-800 rounded-md p-4 bg-white dark:bg-gray-900"
+        >
           <DocSidebar content={content} />
         </div>
       )}

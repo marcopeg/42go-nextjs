@@ -18,7 +18,7 @@ export default function DocSidebar({ content }: DocSidebarProps) {
   }, [content]);
 
   return (
-    <div className="w-64 shrink-0 border-r border-gray-200 h-full pr-4">
+    <div className="w-64 shrink-0 border-r border-gray-200 dark:border-gray-800 h-full pr-4">
       <div className="py-4 sticky top-0">
         <ReactMarkdown
           components={{
@@ -102,7 +102,9 @@ export default function DocSidebar({ content }: DocSidebarProps) {
                 <Link
                   href={transformedHref}
                   className={`block py-1 ${
-                    isActive ? 'text-primary font-medium' : 'text-gray-700 hover:text-primary'
+                    isActive
+                      ? 'text-primary font-medium'
+                      : 'text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary'
                   }`}
                 >
                   {children}

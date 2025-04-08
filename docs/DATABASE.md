@@ -1,4 +1,7 @@
-# Database Management
+---
+title: Database Management
+subtitle: How to use DrizzleORM, migrations, and data studio
+---
 
 This document outlines how the database is managed in this application, focusing on the use of Drizzle ORM for data access and Knex for schema migrations.
 
