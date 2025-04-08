@@ -1,6 +1,8 @@
 ---
 title: Getting Started
-description: Learn how to get started with our documentation system
+description: Learn how to get started with our application
+date: 2024-04-08
+author: Your Name
 ---
 
 # Getting Started
