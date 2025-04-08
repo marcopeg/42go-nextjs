@@ -126,7 +126,7 @@ const appConfig = {
         },
         {
           label: 'View Documentation',
-          href: 'https://github.com/marcopeg/cursor-boilerplate',
+          href: '/docs',
         },
       ],
     },

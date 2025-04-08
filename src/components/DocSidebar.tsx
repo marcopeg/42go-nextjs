@@ -18,8 +18,8 @@ export default function DocSidebar({ content }: DocSidebarProps) {
   }, [content]);
 
   return (
-    <div className="w-64 shrink-0 border-r border-gray-200 dark:border-gray-800 h-full pr-4">
-      <div className="py-4 sticky top-0">
+    <div className="w-64 shrink-0 border-r border-gray-200 dark:border-gray-800 pr-4 h-full">
+      <div className="sticky top-16 max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden pr-2 -mr-2 py-4">
         <ReactMarkdown
           components={{
             // Style links with active state and handle relative paths

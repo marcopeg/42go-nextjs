@@ -38,9 +38,11 @@ export default function MobileSidebarToggle({ content }: MobileSidebarToggleProp
       {isOpen && (
         <div
           id="mobile-sidebar"
-          className="mb-6 border border-gray-200 dark:border-gray-800 rounded-md p-4 bg-white dark:bg-gray-900"
+          className="mb-6 border border-gray-200 dark:border-gray-800 rounded-md p-4 bg-white dark:bg-gray-900 max-h-[70vh] overflow-hidden"
         >
-          <DocSidebar content={content} />
+          <div className="overflow-y-auto overflow-x-hidden pr-2 -mr-2 h-full max-h-[65vh]">
+            <DocSidebar content={content} />
+          </div>
         </div>
       )}
     </>
