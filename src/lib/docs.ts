@@ -8,6 +8,11 @@ const docsDirectory = path.join(process.cwd(), 'docs');
 const DEFAULT_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
 const DEFAULT_CACHE_MAX_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
+// Determine whether to skip caching
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isCacheSkipped = process.env.MD_CACHE_SKIP === 'true';
+const SHOULD_CACHE = !(isDevelopment || isCacheSkipped);
+
 // Parse cache duration from environment variable (format: 30m, 1h, etc.)
 function parseDuration(durationString: string | undefined): number {
   if (!durationString) return DEFAULT_CACHE_DURATION;
@@ -68,6 +73,9 @@ class DocCache {
 
   // Get from cache if valid, otherwise returns null
   get(key: string): DocFile | null {
+    // Skip cache if configured to do so
+    if (!SHOULD_CACHE) return null;
+
     const entry = this.cache.get(key);
 
     if (!entry) return null;
@@ -86,6 +94,9 @@ class DocCache {
 
   // Add to cache, respecting size limits
   set(key: string, data: DocFile): void {
+    // Skip cache if configured to do so
+    if (!SHOULD_CACHE) return;
+
     // Estimate size of the data (content length as bytes + metadata)
     const size = data.content.length * 2 + JSON.stringify(data.metadata).length * 2;
 

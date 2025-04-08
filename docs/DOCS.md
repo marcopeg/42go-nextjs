@@ -31,6 +31,7 @@ The caching system is configurable through environment variables:
 | ------------------- | ---------------- | ------- | -------------------------------------------------- |
 | `MD_CACHE_DURATION` | `<number><unit>` | `30m`   | How long documents stay in cache since last access |
 | `MD_CACHE_MAX_SIZE` | `<number><unit>` | `10mb`  | Maximum memory allocated for caching               |
+| `MD_CACHE_SKIP`     | `true`/`false`   | `false` | Force disable caching regardless of environment    |
 
 ### Duration Format
 
@@ -47,6 +48,15 @@ For `MD_CACHE_MAX_SIZE`, the following units are supported:
 - `kb`: kilobytes (e.g., `500kb`)
 - `mb`: megabytes (e.g., `10mb`)
 - `gb`: gigabytes (e.g., `1gb`)
+
+## When Caching is Skipped
+
+The caching system will automatically be disabled in the following scenarios:
+
+1. When running in development environment (`NODE_ENV=development`)
+2. When explicitly disabled via environment variable (`MD_CACHE_SKIP=true`)
+
+Disabling caching in development mode ensures that changes to documentation files are immediately reflected without having to restart the server or wait for cache expiration.
 
 ## Performance Benefits
 
