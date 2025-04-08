@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getDoc } from '@/lib/docs';
 import { Metadata } from 'next';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 
 interface DocsPageProps {
   params: {
@@ -38,9 +39,7 @@ export default async function DocsPage({ params }: DocsPageProps) {
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-6">{doc.metadata.title || 'Documentation'}</h1>
-      <div className="prose max-w-none">
-        <pre className="whitespace-pre-wrap">{doc.content}</pre>
-      </div>
+      <MarkdownRenderer content={doc.content} />
     </div>
   );
 }
