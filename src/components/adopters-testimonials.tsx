@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import appConfig from '../../app.config';
 import { ReactNode } from 'react';
+import { TestimonialConfig } from '@/lib/app.config';
 
 // Simple markdown parser for basic formatting
 function renderMarkdown(text: string): ReactNode {
@@ -23,7 +24,7 @@ function renderMarkdown(text: string): ReactNode {
 }
 
 export function AdoptersTestimonials() {
-  const testimonials = appConfig.landing?.testimonials;
+  const testimonials = appConfig.landing?.testimonials as TestimonialConfig | undefined;
 
   if (!testimonials) {
     return null;

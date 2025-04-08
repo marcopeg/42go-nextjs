@@ -99,7 +99,7 @@ export function useEnv(options: EnvOptions): boolean {
     const { isAllowed } = checkEnvironment(options, currentEnv, process.env);
 
     setIsEnabled(isAllowed);
-  }, []);
+  }, [options]);
 
   return isEnabled;
 }
