@@ -29,8 +29,8 @@ import {
 const appConfig = {
   // Default icon is Layers from Lucide
   icon: Aperture,
-  title: 'Cursor Boilerplate',
-  subtitle: 'Build fast s**t that nobody wants',
+  title: '42GO - NextJS',
+  subtitle: 'AI friendly Starter Kit for your next SaaS.',
 
   // App-specific configurations (authenticated user experience)
   app: {
@@ -115,9 +115,9 @@ const appConfig = {
   landing: {
     // Hero section on the landing page
     hero: {
-      title: 'Build Your SaaS **Faster** With Our Modern Boilerplate',
+      title: 'Build Your SaaS **Faster** With Our **AI-Friendly** Starter Kit',
       subtitle:
-        'Everything you need to launch your next web application. Authentication, UI components, and database integration — all pre-configured and ready to go.',
+        'Everything you need to launch your next SaaS. Auth, UI/UX, Database, APIs, AI, and more — all pre-configured and ready to go.',
       actions: [
         {
           label: 'Get Started',
@@ -127,6 +127,118 @@ const appConfig = {
         {
           label: 'View Documentation',
           href: 'https://github.com/marcopeg/cursor-boilerplate',
+        },
+      ],
+    },
+    // Features showcased on the landing page
+    features: {
+      title: '🔋 Batteries Included',
+      subtitle: 'Everything you need to build modern web applications, right out of the box.',
+      items: [
+        {
+          icon: Brain,
+          title: 'Optimized for AI',
+          abstract:
+            'Build with Cursor for Cursor, the AI-powered code editor. Build products and features, code with AI.',
+        },
+        {
+          icon: Shield,
+          title: 'Authentication',
+          abstract:
+            'Multiple authentication options including password-based and social logins with comprehensive security features and documentation.',
+        },
+        {
+          icon: Palette,
+          title: 'Modern UI Framework',
+          abstract:
+            'Beautiful, responsive UI with Tailwind CSS and Shadcn components, featuring light/dark mode and customizable themes.',
+        },
+        {
+          icon: Database,
+          title: 'Database Integration',
+          abstract:
+            'Powerful database management with DrizzleORM and PostgreSQL, including migration tools and Drizzle Studio.',
+        },
+        {
+          icon: Terminal,
+          title: 'Developer Experience',
+          abstract:
+            'Enhanced DX with TypeScript, ESLint, Prettier, and Husky for code quality and consistency.',
+        },
+      ],
+    },
+    // Pricing section on the landing page
+    pricing: {
+      title: 'Simple, Transparent Pricing',
+      subtitle: "Choose the plan that's right for you and start building today.",
+      tiers: [
+        {
+          name: 'Community',
+          price: '$0',
+          period: '/month',
+          description: 'Perfect for personal projects and learning',
+          features: [
+            { text: 'Source code', status: 'included' },
+            { text: 'Documentation', status: 'included' },
+            { text: 'GitHub Issues', status: 'included' },
+            { text: 'Semantic Search on Docs & Q&A', status: 'excluded' },
+            { text: 'Community Discord Server', status: 'coming-soon' },
+            { text: 'Private Discord Channel', status: 'excluded' },
+            { text: 'Private Q&A', status: 'excluded' },
+            { text: 'Vote on Features', status: 'excluded' },
+            { text: '2h of consulting', status: 'excluded' },
+            { text: 'Newsletter', status: 'coming-soon' },
+          ],
+          cta: {
+            label: 'Fork on GitHub',
+            href: '/register',
+          },
+        },
+        {
+          name: 'Pro',
+          price: '$29',
+          period: '/month',
+          description: 'For serious developers and small teams',
+          features: [
+            { text: 'Source code', status: 'included' },
+            { text: 'Documentation', status: 'included' },
+            { text: 'GitHub Issues', status: 'included' },
+            { text: 'Semantic Search on Docs & Q&A', status: 'coming-soon' },
+            { text: 'Community Discord Server', status: 'coming-soon' },
+            { text: 'Private Discord Channel', status: 'coming-soon' },
+            { text: 'Private Q&A', status: 'coming-soon' },
+            { text: 'Vote on Features', status: 'excluded' },
+            { text: '2h of consulting', status: 'excluded' },
+            { text: 'Newsletter', status: 'coming-soon' },
+          ],
+          cta: {
+            label: 'Start Free Trial',
+            href: '/register?plan=pro',
+          },
+          highlighted: true,
+          badge: 'Most Popular',
+        },
+        {
+          name: 'Enterprise',
+          price: '$299',
+          period: '/month',
+          description: 'For large teams with advanced needs',
+          features: [
+            { text: 'Source code', status: 'included' },
+            { text: 'Documentation', status: 'included' },
+            { text: 'GitHub Issues', status: 'included' },
+            { text: 'Semantic Search on Docs & Q&A', status: 'coming-soon' },
+            { text: 'Community Discord Server', status: 'coming-soon' },
+            { text: 'Private Discord Channel', status: 'coming-soon' },
+            { text: 'Private Q&A', status: 'coming-soon' },
+            { text: 'Vote on Features', status: 'coming-soon' },
+            { text: '2h of consulting', status: 'included' },
+            { text: 'Newsletter', status: 'coming-soon' },
+          ],
+          cta: {
+            label: 'Contact Sales',
+            href: '/contact',
+          },
         },
       ],
     },
@@ -178,69 +290,6 @@ const appConfig = {
         },
       ],
     },
-    // Pricing section on the landing page
-    pricing: {
-      title: 'Simple, Transparent Pricing',
-      subtitle: "Choose the plan that's right for you and start building today.",
-      tiers: [
-        {
-          name: 'Free',
-          price: '$0',
-          period: '/month',
-          description: 'Perfect for trying out the platform',
-          features: [
-            { text: 'Up to 3 projects', status: 'included' },
-            { text: 'Basic analytics', status: 'included' },
-            { text: 'Community support', status: 'included' },
-            { text: '1 team member', status: 'included' },
-            { text: 'Custom domains', status: 'excluded' },
-            { text: 'API access', status: 'coming-soon' },
-          ],
-          cta: {
-            label: 'Get Started',
-            href: '/register',
-          },
-        },
-        {
-          name: 'Pro',
-          price: '$29',
-          period: '/month',
-          description: 'For serious developers and small teams',
-          features: [
-            { text: 'Unlimited projects', status: 'included' },
-            { text: 'Advanced analytics', status: 'included' },
-            { text: 'Priority support', status: 'included' },
-            { text: 'Up to 5 team members', status: 'included' },
-            { text: 'Custom domains', status: 'included' },
-            { text: 'API access', status: 'coming-soon' },
-          ],
-          cta: {
-            label: 'Start Free Trial',
-            href: '/register?plan=pro',
-          },
-          highlighted: true,
-          badge: 'Most Popular',
-        },
-        {
-          name: 'Enterprise',
-          price: '$99',
-          period: '/month',
-          description: 'For large teams with advanced needs',
-          features: [
-            { text: 'Everything in Pro', status: 'included' },
-            { text: 'Unlimited team members', status: 'included' },
-            { text: 'Dedicated support', status: 'included' },
-            { text: 'Custom integrations', status: 'included' },
-            { text: 'Advanced security', status: 'included' },
-            { text: 'SLA guarantees', status: 'included' },
-          ],
-          cta: {
-            label: 'Contact Sales',
-            href: '/contact',
-          },
-        },
-      ],
-    },
     // Feedback section on the landing page
     feedback: {
       title: 'Get in Touch',
@@ -283,43 +332,7 @@ const appConfig = {
         },
       },
     },
-    // Features showcased on the landing page
-    features: {
-      title: 'Powerful Features',
-      subtitle: 'Everything you need to build modern web applications, right out of the box.',
-      items: [
-        {
-          icon: Brain,
-          title: 'AI Optimized',
-          abstract:
-            'Build with Cursor for Cursor, the AI-powered code editor. Use the power of AI to write code faster and smarter.',
-        },
-        {
-          icon: Shield,
-          title: 'Authentication',
-          abstract:
-            'Multiple authentication options including password-based and social logins with comprehensive security features and documentation.',
-        },
-        {
-          icon: Palette,
-          title: 'Modern UI Framework',
-          abstract:
-            'Beautiful, responsive UI with Tailwind CSS and Shadcn components, featuring light/dark mode and customizable themes.',
-        },
-        {
-          icon: Database,
-          title: 'Database Integration',
-          abstract:
-            'Powerful database management with DrizzleORM and PostgreSQL, including migration tools and Drizzle Studio.',
-        },
-        {
-          icon: Terminal,
-          title: 'Developer Experience',
-          abstract:
-            'Enhanced DX with TypeScript, ESLint, Prettier, and Husky for code quality and consistency.',
-        },
-      ],
-    },
+
     // User-related configurations for the landing page
     user: {
       // Public menu for non-logged-in users
