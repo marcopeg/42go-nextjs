@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { doesDocExist } from '@/lib/docs';
+import { doesDocExist, getDocContent } from '@/lib/docs';
 
 interface DocsPageProps {
   params: {
@@ -7,19 +7,28 @@ interface DocsPageProps {
   };
 }
 
-export default function DocsPage({ params }: DocsPageProps) {
+export default async function DocsPage({ params }: DocsPageProps) {
   // Join the slug array to create a path
   const slugPath = params.slug.join('/');
 
   // Check if the documentation file exists
-  if (!doesDocExist(slugPath)) {
+  if (!(await doesDocExist(slugPath))) {
+    notFound();
+  }
+
+  // Load the document content
+  const content = await getDocContent(slugPath);
+
+  if (!content) {
     notFound();
   }
 
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-6">Documentation</h1>
-      <p className="text-lg">test: {slugPath}</p>
+      <div className="prose max-w-none">
+        <pre className="whitespace-pre-wrap">{content}</pre>
+      </div>
     </div>
   );
 }

@@ -1,24 +1,57 @@
-import fs from 'fs';
+import fs from 'fs/promises';
+import { existsSync } from 'fs';
 import path from 'path';
 
 const docsDirectory = path.join(process.cwd(), 'docs');
 
-export function doesDocExist(slug: string): boolean {
-  // Handle nested paths by replacing URL slashes with path separators
+// Keeping a sync version for build-time usage
+export function doesDocExistSync(slug: string): boolean {
   const normalizedSlug = slug.replace(/\//g, path.sep);
-
-  // Check for both .md and .mdx files
   const mdPath = path.join(docsDirectory, `${normalizedSlug}.md`);
   const mdxPath = path.join(docsDirectory, `${normalizedSlug}.mdx`);
 
-  return fs.existsSync(mdPath) || fs.existsSync(mdxPath);
+  return existsSync(mdPath) || existsSync(mdxPath);
 }
 
-export function getAllDocs(): string[] {
+export async function doesDocExist(slug: string): Promise<boolean> {
+  const normalizedSlug = slug.replace(/\//g, path.sep);
+  const mdPath = path.join(docsDirectory, `${normalizedSlug}.md`);
+  const mdxPath = path.join(docsDirectory, `${normalizedSlug}.mdx`);
+
+  try {
+    await fs.access(mdPath);
+    return true;
+  } catch {
+    try {
+      await fs.access(mdxPath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+export async function getDocContent(slug: string): Promise<string | null> {
+  const normalizedSlug = slug.replace(/\//g, path.sep);
+  const mdPath = path.join(docsDirectory, `${normalizedSlug}.md`);
+  const mdxPath = path.join(docsDirectory, `${normalizedSlug}.mdx`);
+
+  try {
+    return await fs.readFile(mdPath, 'utf8');
+  } catch {
+    try {
+      return await fs.readFile(mdxPath, 'utf8');
+    } catch {
+      return null;
+    }
+  }
+}
+
+export async function getAllDocs(): Promise<string[]> {
   const docs: string[] = [];
 
-  function scanDirectory(dir: string, basePath: string = '') {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
+  async function scanDirectory(dir: string, basePath: string = '') {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
 
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
@@ -26,7 +59,7 @@ export function getAllDocs(): string[] {
 
       if (entry.isDirectory()) {
         // Recursively scan subdirectories
-        scanDirectory(fullPath, relativePath);
+        await scanDirectory(fullPath, relativePath);
       } else if (entry.isFile() && (entry.name.endsWith('.md') || entry.name.endsWith('.mdx'))) {
         // Add markdown files to the list
         const slug = relativePath.replace(/\.(md|mdx)$/, '');
@@ -35,6 +68,6 @@ export function getAllDocs(): string[] {
     }
   }
 
-  scanDirectory(docsDirectory);
+  await scanDirectory(docsDirectory);
   return docs;
 }
