@@ -34,6 +34,16 @@ console.log(result);
 - **Flexible**: Configure it to your needs
 - **Reliable**: Well-tested and stable
 
+## Comparison Table
+
+| Feature        | Basic Plan | Pro Plan | Enterprise |
+| -------------- | ---------- | -------- | ---------- |
+| Users          | Up to 5    | Up to 20 | Unlimited  |
+| Storage        | 10 GB      | 50 GB    | 500 GB     |
+| Support        | Email      | Priority | 24/7 Phone |
+| Custom Domains | No         | Yes      | Yes        |
+| Analytics      | Basic      | Advanced | Enterprise |
+
 ## Next Steps
 
 Check out these resources to learn more:
