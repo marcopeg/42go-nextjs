@@ -1,19 +1,12 @@
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
-import { protectRoute } from '@/lib/auth/route-protection';
-import { NextRequest, NextResponse } from 'next/server';
+import { withAuth } from '@/lib/auth/with-auth';
+import { NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest) {
-  const response = await protectRoute(req, {
-    grants: ['users:list'],
-    roles: ['backoffice', 'foo'],
-  });
-
-  // If the response is not NextResponse.next(), it means there was an error
-  if (response.status !== 200) {
-    return response;
-  }
-
+export const GET = withAuth({
+  grants: ['users:list'],
+  roles: ['backoffice', 'foo'],
+})(async () => {
   // Fetch users from the database
   const usersList = await db.select().from(users);
 
@@ -27,4 +20,4 @@ export async function GET(req: NextRequest) {
   }));
 
   return NextResponse.json({ users: mappedUsers });
-}
+});

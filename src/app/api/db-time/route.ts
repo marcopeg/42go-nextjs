@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server';
 import { sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { env } from '@/env';
+import { withEnv } from '@/lib/env/with-env';
 
-export async function GET() {
-  // Only allow this endpoint in development or test environments
-  if (env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
-  }
-
+export const GET = withEnv({
+  environments: ['development', 'test'],
+})(async () => {
   try {
     // Query the current database time
     const result = await db.execute(sql`SELECT NOW() as current_time`);
@@ -23,4 +20,4 @@ export async function GET() {
     console.error('Error fetching database time:', error);
     return NextResponse.json({ error: 'Failed to fetch database time' }, { status: 500 });
   }
-}
+});

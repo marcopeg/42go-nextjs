@@ -3,18 +3,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { hashPassword } from '@/lib/auth/password';
-import { env } from '@/env';
 import { eq, or } from 'drizzle-orm';
+import { withEnv } from '@/lib/env/with-env';
 
-export async function GET(request: NextRequest) {
-  // Only allow in development mode or when explicitly enabled
-  if (env.NODE_ENV === 'production' || env.DISABLE_DEV_API === 'true') {
-    return NextResponse.json(
-      { error: 'This API is disabled in production or by configuration' },
-      { status: 403 }
-    );
-  }
-
+export const GET = withEnv({
+  environments: ['development', 'test'],
+  skipFlags: ['DISABLE_DEV_API'],
+})(async (request: NextRequest) => {
   const searchParams = request.nextUrl.searchParams;
   const username = searchParams.get('username');
 
@@ -73,4 +68,4 @@ export async function GET(request: NextRequest) {
     console.error('Error creating test user:', error);
     return NextResponse.json({ error: 'Failed to create test user' }, { status: 500 });
   }
-}
+});
