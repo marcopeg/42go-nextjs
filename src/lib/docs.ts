@@ -31,6 +31,19 @@ export async function doesDocExist(slug: string): Promise<boolean> {
   }
 }
 
+export interface DocFile {
+  content: string;
+  metadata: DocMetadata;
+  filePath: string;
+  isMdx: boolean;
+}
+
+export interface DocMetadata {
+  title?: string;
+  description?: string;
+  [key: string]: string | undefined;
+}
+
 export async function getDocContent(slug: string): Promise<string | null> {
   const normalizedSlug = slug.replace(/\//g, path.sep);
   const mdPath = path.join(docsDirectory, `${normalizedSlug}.md`);
@@ -45,6 +58,62 @@ export async function getDocContent(slug: string): Promise<string | null> {
       return null;
     }
   }
+}
+
+export async function getDoc(slug: string): Promise<DocFile | null> {
+  const normalizedSlug = slug.replace(/\//g, path.sep);
+  const mdPath = path.join(docsDirectory, `${normalizedSlug}.md`);
+  const mdxPath = path.join(docsDirectory, `${normalizedSlug}.mdx`);
+  let content: string;
+  let filePath: string;
+  let isMdx = false;
+
+  try {
+    content = await fs.readFile(mdPath, 'utf8');
+    filePath = mdPath;
+  } catch {
+    try {
+      content = await fs.readFile(mdxPath, 'utf8');
+      filePath = mdxPath;
+      isMdx = true;
+    } catch {
+      return null;
+    }
+  }
+
+  const metadata = extractMetadata(content);
+
+  return {
+    content,
+    metadata,
+    filePath,
+    isMdx,
+  };
+}
+
+// Function to extract metadata from markdown/mdx frontmatter
+function extractMetadata(content: string): DocMetadata {
+  const metadata: DocMetadata = {};
+
+  // Check for frontmatter between --- markers
+  const match = content.match(/^---\s*\n([\s\S]*?)\n---\s*\n/);
+
+  if (match && match[1]) {
+    const frontmatter = match[1];
+
+    // Extract key-value pairs
+    const lines = frontmatter.split('\n');
+    for (const line of lines) {
+      const keyValue = line.match(/^\s*([^:]+):\s*(.+)\s*$/);
+      if (keyValue && keyValue.length >= 3) {
+        const key = keyValue[1].trim();
+        const value = keyValue[2].trim().replace(/^['"](.*)['"]$/, '$1'); // Remove quotes if present
+        metadata[key] = value;
+      }
+    }
+  }
+
+  return metadata;
 }
 
 export async function getAllDocs(): Promise<string[]> {
