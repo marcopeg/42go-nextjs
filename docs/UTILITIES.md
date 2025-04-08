@@ -112,12 +112,107 @@ export const POST = withEnv({
 });
 ```
 
+## Client-Side Environment Feature Flags
+
+### `withEnvClient`
+
+A Higher-Order Component (HOC) that conditionally renders components based on environment settings. It's similar to the backend `withEnv` but for client-side components.
+
+```tsx
+const ProtectedComponent = withEnvClient({
+  environments: ['development', 'test'],
+  strategy: EnvMatchStrategy.ANY,
+  requiredFlags: {
+    NEXT_PUBLIC_FEATURE_FLAG: 'enabled',
+  },
+  skipFlags: ['NEXT_PUBLIC_DISABLE_FEATURE'],
+  fallback: <div>This feature is not available in your environment</div>,
+})(MyComponent);
+```
+
+#### Parameters
+
+- `options`: Environment options
+  - `environments`: Array of allowed environments (e.g., ['development', 'test'])
+  - `strategy`: Matching strategy for environments (ALL or ANY, defaults to ANY)
+  - `requiredFlags`: Object mapping environment variables to required values
+  - `skipFlags`: Array of environment variables that must be unset or 'false'
+  - `fallback`: Optional component to render when conditions are not met
+
+#### Behavior
+
+1. Checks if the current environment is allowed based on the strategy
+2. Checks if any skip flags are set (unset flags are considered as "false")
+3. Checks if required flags match their expected values
+4. If all checks pass, renders the component
+5. If any check fails, renders the fallback component or nothing
+
+### `useEnvFeature`
+
+A React hook that returns a boolean indicating if a feature is enabled based on environment settings.
+
+```tsx
+function MyComponent() {
+  const isFeatureEnabled = useEnvFeature({
+    environments: ['development', 'test'],
+    requiredFlags: {
+      NEXT_PUBLIC_FEATURE_FLAG: 'enabled',
+    },
+  });
+
+  if (!isFeatureEnabled) {
+    return <div>Feature not available</div>;
+  }
+
+  return <div>Feature content</div>;
+}
+```
+
+#### Parameters
+
+- `options`: Environment options (same as `withEnvClient`)
+
+#### Behavior
+
+- Returns `true` if all environment checks pass
+- Returns `false` if any check fails
+
+#### Example Usage
+
+```tsx
+// Conditionally render a component based on environment
+const BetaFeature = withEnvClient({
+  environments: ['development', 'test'],
+  requiredFlags: {
+    NEXT_PUBLIC_BETA_FEATURES: 'enabled',
+  },
+  fallback: <div>This beta feature is not available yet</div>,
+})(MyBetaComponent);
+
+// Conditionally render parts of a component
+function MyComponent() {
+  const isDevUI = useEnvFeature({
+    environments: ['development'],
+  });
+
+  return (
+    <div>
+      <h1>My Component</h1>
+      {isDevUI && <div className="debug-panel">Debug Information</div>}
+    </div>
+  );
+}
+```
+
 ## Best Practices
 
 1. Use `withAuth` for protecting routes that require authentication and/or specific permissions
 2. Use `withEnv` for protecting routes that should only be available in specific environments
-3. Combine both when needed for maximum security
-4. Always provide clear error messages in the responses
-5. Use appropriate HTTP status codes for different types of access denials
-6. Consider using wildcards in grants for more flexible permission management
-7. Keep environment-specific routes separate from production routes
+3. Use `withEnvClient` for conditionally rendering components based on environment settings
+4. Use `useEnvFeature` for conditional logic within components
+5. Combine these utilities when needed for maximum security and flexibility
+6. Always provide clear error messages in the responses
+7. Use appropriate HTTP status codes for different types of access denials
+8. Consider using wildcards in grants for more flexible permission management
+9. Keep environment-specific routes separate from production routes
+10. Prefix all client-side environment variables with `NEXT_PUBLIC_`

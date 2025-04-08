@@ -12,9 +12,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { useEnvFeature } from '@/lib/env/with-env-client';
 
 export function UserDashboard() {
   const { data: session, status } = useCachedSession();
+  const isDevEnvironment = useEnvFeature({
+    environments: ['development'],
+  });
 
   if (status === 'loading') {
     return <div className="flex justify-center p-8">Loading...</div>;
@@ -44,6 +48,14 @@ export function UserDashboard() {
             {session?.user?.id && (
               <div>
                 <span className="font-medium">User ID:</span> {session.user.id}
+              </div>
+            )}
+            {isDevEnvironment && (
+              <div className="mt-4 p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-md border border-yellow-300 dark:border-yellow-700">
+                <p className="text-yellow-800 dark:text-yellow-200 font-medium">Hello Dev! 👋</p>
+                <p className="text-yellow-700 dark:text-yellow-300 text-sm">
+                  You&apos;re viewing the development environment
+                </p>
               </div>
             )}
           </div>
