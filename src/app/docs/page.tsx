@@ -23,11 +23,13 @@ export default async function DocsPage() {
             <Link
               key={doc.slug}
               href={`/docs/${doc.slug}`}
-              className="block p-6 border border-gray-200 rounded-lg hover:border-primary hover:shadow-md transition-all"
+              className="block p-6 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary hover:shadow-md transition-all bg-white dark:bg-gray-800"
             >
               <h2 className="text-xl font-semibold mb-2 text-primary">{doc.title || doc.slug}</h2>
-              {doc.description && <p className="text-gray-600 line-clamp-2">{doc.description}</p>}
-              <p className="text-sm text-gray-500 mt-2">{doc.slug}</p>
+              {doc.description && (
+                <p className="text-gray-600 dark:text-gray-300 line-clamp-2">{doc.description}</p>
+              )}
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{doc.slug}</p>
             </Link>
           ))}
         </div>
