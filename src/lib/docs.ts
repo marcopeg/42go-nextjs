@@ -4,6 +4,140 @@ import path from 'path';
 
 const docsDirectory = path.join(process.cwd(), 'docs');
 
+// Configure cache settings from environment variables
+const DEFAULT_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
+const DEFAULT_CACHE_MAX_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+
+// Parse cache duration from environment variable (format: 30m, 1h, etc.)
+function parseDuration(durationString: string | undefined): number {
+  if (!durationString) return DEFAULT_CACHE_DURATION;
+
+  const match = durationString.match(/^(\d+)([smh])$/);
+  if (!match) return DEFAULT_CACHE_DURATION;
+
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+
+  switch (unit) {
+    case 's':
+      return value * 1000;
+    case 'm':
+      return value * 60 * 1000;
+    case 'h':
+      return value * 60 * 60 * 1000;
+    default:
+      return DEFAULT_CACHE_DURATION;
+  }
+}
+
+// Parse cache size from environment variable (format: 10MB, 1GB, etc.)
+function parseSize(sizeString: string | undefined): number {
+  if (!sizeString) return DEFAULT_CACHE_MAX_SIZE;
+
+  const match = sizeString.match(/^(\d+)([kmg]b)$/i);
+  if (!match) return DEFAULT_CACHE_MAX_SIZE;
+
+  const value = parseInt(match[1], 10);
+  const unit = match[2].toLowerCase();
+
+  switch (unit) {
+    case 'kb':
+      return value * 1024;
+    case 'mb':
+      return value * 1024 * 1024;
+    case 'gb':
+      return value * 1024 * 1024 * 1024;
+    default:
+      return DEFAULT_CACHE_MAX_SIZE;
+  }
+}
+
+const CACHE_DURATION = parseDuration(process.env.MD_CACHE_DURATION);
+const CACHE_MAX_SIZE = parseSize(process.env.MD_CACHE_MAX_SIZE);
+
+// Cache implementation
+interface CacheEntry {
+  data: DocFile;
+  size: number;
+  timestamp: number;
+}
+
+class DocCache {
+  private cache = new Map<string, CacheEntry>();
+  private totalSize = 0;
+
+  // Get from cache if valid, otherwise returns null
+  get(key: string): DocFile | null {
+    const entry = this.cache.get(key);
+
+    if (!entry) return null;
+
+    const now = Date.now();
+    // Check if entry has expired
+    if (now - entry.timestamp > CACHE_DURATION) {
+      this.delete(key);
+      return null;
+    }
+
+    // Update last access time
+    entry.timestamp = now;
+    return entry.data;
+  }
+
+  // Add to cache, respecting size limits
+  set(key: string, data: DocFile): void {
+    // Estimate size of the data (content length as bytes + metadata)
+    const size = data.content.length * 2 + JSON.stringify(data.metadata).length * 2;
+
+    // If this single item is larger than our max cache, don't cache it
+    if (size > CACHE_MAX_SIZE) return;
+
+    // Check if we need to make room in the cache
+    this.ensureCapacity(size);
+
+    // Add or update the entry
+    const existing = this.cache.get(key);
+    if (existing) {
+      this.totalSize -= existing.size;
+    }
+
+    this.cache.set(key, {
+      data,
+      size,
+      timestamp: Date.now(),
+    });
+
+    this.totalSize += size;
+  }
+
+  // Delete a cache entry
+  delete(key: string): void {
+    const entry = this.cache.get(key);
+    if (entry) {
+      this.totalSize -= entry.size;
+      this.cache.delete(key);
+    }
+  }
+
+  // Make room for new entries if needed
+  private ensureCapacity(sizeNeeded: number): void {
+    if (this.totalSize + sizeNeeded <= CACHE_MAX_SIZE) return;
+
+    // Remove oldest entries until we have enough space
+    const entries = Array.from(this.cache.entries()).sort(
+      (a, b) => a[1].timestamp - b[1].timestamp
+    );
+
+    for (const [key] of entries) {
+      this.delete(key);
+      if (this.totalSize + sizeNeeded <= CACHE_MAX_SIZE) break;
+    }
+  }
+}
+
+// Initialize singleton cache
+const docCache = new DocCache();
+
 // Keeping a sync version for build-time usage
 export function doesDocExistSync(slug: string): boolean {
   const normalizedSlug = slug.replace(/\//g, path.sep);
@@ -61,6 +195,13 @@ export async function getDocContent(slug: string): Promise<string | null> {
 }
 
 export async function getDoc(slug: string): Promise<DocFile | null> {
+  // Check cache first
+  const cachedDoc = docCache.get(slug);
+  if (cachedDoc) {
+    return cachedDoc;
+  }
+
+  // If not in cache, read from disk
   const normalizedSlug = slug.replace(/\//g, path.sep);
   const mdPath = path.join(docsDirectory, `${normalizedSlug}.md`);
   const mdxPath = path.join(docsDirectory, `${normalizedSlug}.mdx`);
@@ -83,12 +224,17 @@ export async function getDoc(slug: string): Promise<DocFile | null> {
 
   const metadata = extractMetadata(content);
 
-  return {
+  const docFile = {
     content,
     metadata,
     filePath,
     isMdx,
   };
+
+  // Store in cache for future requests
+  docCache.set(slug, docFile);
+
+  return docFile;
 }
 
 // Function to extract metadata from markdown/mdx frontmatter
