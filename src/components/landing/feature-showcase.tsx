@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollAnimation } from '@/components/scroll-animation';
-import appConfig from '../../app.config';
+import appConfig from '../../../app.config';
 
 interface FeatureCardProps {
   icon: ReactNode;

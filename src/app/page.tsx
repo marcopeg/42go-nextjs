@@ -2,11 +2,11 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { AccentColorPicker } from '@/components/accent-color-picker';
 import { PageTransition } from '@/components/page-transition';
 import { UIAnimation } from '@/components/ui-animation';
-import { FeatureShowcase } from '@/components/feature-showcase';
-import { PricingWall } from '@/components/pricing-wall';
-import { HeroSection } from '@/components/hero-section';
+import { FeatureShowcase } from '@/components/landing/feature-showcase';
+import { PricingWall } from '@/components/landing/pricing-wall';
+import { HeroSection } from '@/components/landing/hero-section';
 import { AdoptersTestimonials } from '@/components/adopters-testimonials';
-import { FeedbackForm } from '@/components/feedback-form';
+import { FeedbackForm } from '@/components/landing/feedback-form';
 import appConfig from '../../app.config';
 
 export default function Home() {

@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollAnimation } from '@/components/scroll-animation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import appConfig from '../../app.config';
+import appConfig from '../../../app.config';
 import { ReactNode } from 'react';
 
 // Simple markdown parser for basic formatting

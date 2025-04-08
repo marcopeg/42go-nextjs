@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { ScrollAnimation } from '@/components/scroll-animation';
 import { Check, X, Clock } from 'lucide-react';
-import appConfig from '../../app.config';
+import appConfig from '../../../app.config';
 import { ReactNode } from 'react';
 
 // Simple markdown parser for basic formatting

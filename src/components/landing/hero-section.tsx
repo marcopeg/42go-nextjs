@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ScrollAnimation } from '@/components/scroll-animation';
-import appConfig from '../../app.config';
+import appConfig from '../../../app.config';
 import { ReactNode } from 'react';
 
 // Simple markdown parser for basic formatting
