@@ -185,7 +185,11 @@ export interface DocFile {
 
 export interface DocMetadata {
   title?: string;
+  subtitle?: string;
   description?: string;
+  author?: string;
+  date?: string;
+  publicationDate?: string;
   [key: string]: string | undefined;
 }
 

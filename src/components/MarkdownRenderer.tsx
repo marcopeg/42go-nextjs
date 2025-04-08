@@ -1,14 +1,52 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CustomCodeBlock from './CustomCodeBlock';
 
 interface MarkdownRendererProps {
   content: string;
+  skipFirstHeading?: boolean;
+  title?: string; // Optional title to compare against first heading
 }
 
-export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
+export default function MarkdownRenderer({
+  content,
+  skipFirstHeading = false,
+  title,
+}: MarkdownRendererProps) {
+  // Process content to handle first h1 if needed
+  const processedContent = useMemo(() => {
+    if (!skipFirstHeading) return content;
+
+    // Check if the content starts with an h1 and strip it if needed
+    const h1Regex = /^#\s+(.+?)(?:\n|$)/;
+    const h1Match = content.match(h1Regex);
+
+    if (h1Match) {
+      const headingText = h1Match[1];
+      // If title is provided, only remove if it matches
+      if (!title || title.trim() === headingText.trim()) {
+        return content.replace(h1Regex, '');
+      }
+    }
+
+    // Also check for alternate h1 syntax (underlined with ===)
+    const altH1Regex = /^(.+?)\n=+\s*(?:\n|$)/;
+    const altH1Match = content.match(altH1Regex);
+
+    if (altH1Match) {
+      const headingText = altH1Match[1];
+      // If title is provided, only remove if it matches
+      if (!title || title.trim() === headingText.trim()) {
+        return content.replace(altH1Regex, '');
+      }
+    }
+
+    return content;
+  }, [content, skipFirstHeading, title]);
+
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
@@ -79,7 +117,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
         },
       }}
     >
-      {content}
+      {processedContent}
     </ReactMarkdown>
   );
 }
