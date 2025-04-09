@@ -19,7 +19,7 @@ export default async function DocsLayout({ children }: { children: React.ReactNo
             </div>
 
             {/* Mobile sidebar toggle */}
-            <div className="md:hidden mb-4">
+            <div className="md:hidden mb-4 mt-4">
               <MobileSidebarToggle content={sidebarContent} />
             </div>
 
