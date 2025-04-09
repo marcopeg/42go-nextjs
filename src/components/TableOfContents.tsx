@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface TOCItem {
@@ -20,7 +19,6 @@ export default function TableOfContents({ markdown, position = 'mobile' }: Table
   const [headings, setHeadings] = useState<TOCItem[]>([]);
   const [activeId, setActiveId] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState(position === 'side');
-  const pathname = usePathname();
 
   // Extract headings from markdown content
   useEffect(() => {
@@ -71,32 +69,44 @@ export default function TableOfContents({ markdown, position = 'mobile' }: Table
     extractHeadings();
   }, [markdown]);
 
-  // Set up intersection observer to track which heading is in view
+  // Set up scroll event listener to track which heading is in view
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || headings.length === 0) return;
 
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
+    const handleScroll = () => {
+      // Find the heading that is closest to the top of the viewport
+      const headerOffset = 80;
+      let closestHeading = null;
+      let closestDistance = Infinity;
+
+      headings.forEach(heading => {
+        const element = document.getElementById(heading.id);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const distance = Math.abs(rect.top - headerOffset);
+
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestHeading = heading;
           }
-        });
-      },
-      {
-        rootMargin: '-80px 0% -80% 0%',
-        threshold: 0.1,
-      }
-    );
+        }
+      });
 
-    // Observe all headings
-    const elements = headings.map(heading => document.getElementById(heading.id)).filter(Boolean);
-    elements.forEach(el => observer.observe(el!));
+      if (closestHeading) {
+        setActiveId(closestHeading.id);
+      }
+    };
+
+    // Initial check
+    handleScroll();
+
+    // Add scroll event listener
+    window.addEventListener('scroll', handleScroll);
 
     return () => {
-      elements.forEach(el => observer.unobserve(el!));
+      window.removeEventListener('scroll', handleScroll);
     };
-  }, [headings, pathname]);
+  }, [headings]);
 
   // Handle smooth scrolling to the heading when clicked
   const handleClickHeading = (e: React.MouseEvent, id: string) => {
