@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CustomCodeBlock from './CustomCodeBlock';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 interface MarkdownRendererProps {
   content: string;
@@ -21,6 +21,32 @@ export default function MarkdownRenderer({
   components: customComponents = {},
 }: MarkdownRendererProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Handle initial URL hash on load
+  useEffect(() => {
+    // Check if there's a hash in the URL
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const id = window.location.hash.substring(1);
+      const element = document.getElementById(id);
+
+      if (element) {
+        // Use setTimeout to ensure the page is fully loaded
+        setTimeout(() => {
+          // Get the element's position and apply offset
+          const headerOffset = 80;
+          const elementPosition = element.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+          // Scroll to the element with offset
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth',
+          });
+        }, 100);
+      }
+    }
+  }, [pathname, searchParams]); // Re-run when pathname or search params change
 
   // Process content to handle first h1 if needed
   const processedContent = useMemo(() => {
@@ -142,13 +168,36 @@ export default function MarkdownRenderer({
 
       const id = createAnchorId(childrenAsString);
 
+      // Handle scroll with offset when clicking anchor links
+      const handleAnchorClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+
+        const element = document.getElementById(id);
+        if (element) {
+          // Get the element's position
+          const elementPosition = element.getBoundingClientRect().top;
+          // Get the current scroll position
+          const offsetPosition = elementPosition + window.scrollY - 80; // 80px offset for header
+
+          // Scroll with smooth behavior
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth',
+          });
+
+          // Update URL hash without jumping
+          window.history.pushState(null, '', `#${id}`);
+        }
+      };
+
       return (
-        <Tag id={id} className={className}>
+        <Tag id={id} className={className} style={{ scrollMarginTop: '5rem' }}>
           {children}
           <a
             href={`#${id}`}
             className="ml-2 text-muted-foreground opacity-0 hover:opacity-100 text-sm"
             aria-hidden
+            onClick={handleAnchorClick}
           >
             #
           </a>
