@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface TOCItem {
   id: string;
@@ -12,11 +13,13 @@ interface TOCItem {
 
 interface TableOfContentsProps {
   markdown: string;
+  position?: 'mobile' | 'top' | 'side';
 }
 
-export default function TableOfContents({ markdown }: TableOfContentsProps) {
+export default function TableOfContents({ markdown, position = 'mobile' }: TableOfContentsProps) {
   const [headings, setHeadings] = useState<TOCItem[]>([]);
   const [activeId, setActiveId] = useState<string>('');
+  const [isExpanded, setIsExpanded] = useState(position === 'side');
   const pathname = usePathname();
 
   // Extract headings from markdown content
@@ -114,6 +117,11 @@ export default function TableOfContents({ markdown }: TableOfContentsProps) {
 
       // Update URL hash without jumping
       window.history.pushState(null, '', `#${id}`);
+
+      // Collapse the TOC when a section is clicked on mobile or top views
+      if (position === 'mobile' || position === 'top') {
+        setIsExpanded(false);
+      }
     }
   };
 
@@ -121,33 +129,73 @@ export default function TableOfContents({ markdown }: TableOfContentsProps) {
     return null;
   }
 
+  // Render TOC heading links list (shared between all views)
+  const renderTOCLinks = () => (
+    <ul className="space-y-2 text-sm">
+      {headings.map(heading => (
+        <li key={heading.id} className="line-clamp-2">
+          <a
+            href={`#${heading.id}`}
+            onClick={e => handleClickHeading(e, heading.id)}
+            className={`
+              transition-colors block py-2 relative
+              ${
+                activeId === heading.id
+                  ? 'text-primary font-medium'
+                  : 'text-muted-foreground hover:text-foreground'
+              }
+              ${heading.level === 2 ? 'pl-3' : heading.level === 3 ? 'pl-6' : ''}
+            `}
+          >
+            {activeId === heading.id && (
+              <span className="absolute left-0 inset-y-0 w-0.5 bg-primary rounded-full" />
+            )}
+            {heading.text}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+
+  // Mobile collapsible view
+  if (position === 'mobile') {
+    return (
+      <div className="w-full border border-border rounded-lg overflow-hidden bg-background">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center justify-between w-full p-4 text-left font-semibold hover:bg-muted/50 transition-colors"
+        >
+          <span>Table of Contents</span>
+          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+
+        {isExpanded && <div className="p-4 border-t border-border">{renderTOCLinks()}</div>}
+      </div>
+    );
+  }
+
+  // Small desktop top view - now also collapsible
+  if (position === 'top') {
+    return (
+      <div className="w-full border border-border rounded-lg overflow-hidden bg-background">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center justify-between w-full p-4 text-left font-semibold hover:bg-muted/50 transition-colors"
+        >
+          <span>Table of Contents</span>
+          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+
+        {isExpanded && <div className="p-4 border-t border-border">{renderTOCLinks()}</div>}
+      </div>
+    );
+  }
+
+  // Large desktop side view
   return (
-    <nav className="toc-container rounded-lg border border-border p-4 bg-card shadow-sm">
-      <h3 className="font-semibold mb-4 pb-2 border-b border-border">Table of Contents</h3>
-      <ul className="space-y-2 text-sm">
-        {headings.map(heading => (
-          <li key={heading.id} className="line-clamp-2">
-            <a
-              href={`#${heading.id}`}
-              onClick={e => handleClickHeading(e, heading.id)}
-              className={`
-                transition-colors block py-1 relative
-                ${
-                  activeId === heading.id
-                    ? 'text-primary font-medium'
-                    : 'text-muted-foreground hover:text-foreground'
-                }
-                ${heading.level === 2 ? 'pl-3' : heading.level === 3 ? 'pl-6' : ''}
-              `}
-            >
-              {activeId === heading.id && (
-                <span className="absolute left-0 inset-y-0 w-0.5 bg-primary rounded-full" />
-              )}
-              {heading.text}
-            </a>
-          </li>
-        ))}
-      </ul>
+    <nav className="rounded-lg border border-border bg-background shadow-sm">
+      <h3 className="font-semibold p-4 pb-3 border-b border-border">Table of Contents</h3>
+      <div className="p-4">{renderTOCLinks()}</div>
     </nav>
   );
 }

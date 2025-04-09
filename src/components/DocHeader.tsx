@@ -18,7 +18,7 @@ export default function DocHeader({ title, subtitle, author, publicationDate }: 
   const formattedDate = publicationDate ? format(new Date(publicationDate), 'MMMM d, yyyy') : null;
 
   return (
-    <header className="mb-8 border-b border-gray-200 dark:border-gray-800 pb-6 w-full">
+    <header className="mb-8 md:border-b border-gray-200 dark:border-gray-800 pb-6 w-full">
       {title && <h1 className="text-4xl font-bold mb-2">{title}</h1>}
       {subtitle && <p className="text-xl text-gray-600 dark:text-gray-300 mb-4">{subtitle}</p>}
 

@@ -59,28 +59,36 @@ export default async function DocsPage({ params }: DocsPageProps) {
   const contentWithoutFrontmatter = stripFrontmatter(doc.content);
 
   return (
-    <div className="container py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-8">
-        <div>
-          {/* Mobile: TOC appears before main content but after nav */}
-          <div className="lg:hidden mb-8">
-            <TableOfContents markdown={contentWithoutFrontmatter} />
-          </div>
-
-          <DocHeader {...headerProps} />
-          <div className="prose prose-slate dark:prose-invert max-w-none">
-            <MarkdownRenderer
-              content={contentWithoutFrontmatter}
-              skipFirstHeading={shouldSkipFirstHeading}
-              title={headerProps.title}
-            />
-          </div>
+    <div className="py-8">
+      <div className="max-w-5xl mx-auto">
+        {/* Small desktop: TOC at the top (hidden on mobile and large desktop) */}
+        <div className="hidden md:block lg:hidden mb-8">
+          <TableOfContents markdown={contentWithoutFrontmatter} position="top" />
         </div>
 
-        {/* Desktop: TOC appears as sticky sidebar */}
-        <div className="hidden lg:block">
-          <div className="sticky top-24">
-            <TableOfContents markdown={contentWithoutFrontmatter} />
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] gap-8">
+          <div>
+            <DocHeader {...headerProps} />
+
+            {/* Mobile: TOC between header and content (hidden on desktop) */}
+            <div className="md:hidden mb-8">
+              <TableOfContents markdown={contentWithoutFrontmatter} position="mobile" />
+            </div>
+
+            <div className="prose prose-slate dark:prose-invert max-w-none">
+              <MarkdownRenderer
+                content={contentWithoutFrontmatter}
+                skipFirstHeading={shouldSkipFirstHeading}
+                title={headerProps.title}
+              />
+            </div>
+          </div>
+
+          {/* Large desktop: TOC on right side (hidden on mobile and small desktop) */}
+          <div className="hidden lg:block">
+            <div className="sticky top-24">
+              <TableOfContents markdown={contentWithoutFrontmatter} position="side" />
+            </div>
           </div>
         </div>
       </div>
