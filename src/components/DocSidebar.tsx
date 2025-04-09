@@ -7,9 +7,10 @@ import MarkdownRenderer from './MarkdownRenderer';
 
 interface DocSidebarProps {
   content: string;
+  mobileView?: boolean;
 }
 
-export default function DocSidebar({ content }: DocSidebarProps) {
+export default function DocSidebar({ content, mobileView = false }: DocSidebarProps) {
   const pathname = usePathname();
 
   // Process the content to customize it for sidebar display
@@ -93,7 +94,7 @@ export default function DocSidebar({ content }: DocSidebarProps) {
       return (
         <Link
           href={transformedHref}
-          className={`block py-1 ${
+          className={`block py-1.5 ${
             isActive
               ? 'text-primary font-medium'
               : 'text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary'
@@ -119,6 +120,18 @@ export default function DocSidebar({ content }: DocSidebarProps) {
     },
   };
 
+  // For mobile view, we use a different container without borders
+  if (mobileView) {
+    return (
+      <div className="w-full">
+        <div className="sidebar-markdown">
+          <MarkdownRenderer content={processedContent} components={customComponents} />
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop view with right border
   return (
     <div className="w-64 shrink-0 border-r border-gray-200 dark:border-gray-800 pr-4 h-full">
       <div className="sticky top-16 max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden pr-2 -mr-2 py-4">

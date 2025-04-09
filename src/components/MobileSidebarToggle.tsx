@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DocSidebar from './DocSidebar';
+import { Menu, X } from 'lucide-react';
 
 interface MobileSidebarToggleProps {
   content: string;
@@ -9,39 +10,65 @@ interface MobileSidebarToggleProps {
 
 export default function MobileSidebarToggle({ content }: MobileSidebarToggleProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  // Prevent scrolling when sidebar is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    // Wait for animation to complete before actually closing
+    setTimeout(() => {
+      setIsOpen(false);
+      setIsClosing(false);
+    }, 300); // Match the animation duration
+  };
 
   return (
     <>
       {/* Toggle button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 mb-4 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+        onClick={() => setIsOpen(true)}
+        className="w-full flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition shadow-sm"
         aria-expanded={isOpen}
         aria-controls="mobile-sidebar"
       >
         <span className="font-medium">Documentation Navigation</span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className={`h-5 w-5 transition-transform duration-200 ${
-            isOpen ? 'transform rotate-180' : ''
-          }`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <Menu className="h-5 w-5" />
       </button>
 
-      {/* Mobile drawer */}
-      {isOpen && (
-        <div
-          id="mobile-sidebar"
-          className="mb-6 border border-gray-200 dark:border-gray-800 rounded-md p-4 bg-white dark:bg-gray-900 max-h-[70vh] overflow-hidden"
-        >
-          <div className="overflow-y-auto overflow-x-hidden pr-2 -mr-2 h-full max-h-[65vh]">
-            <DocSidebar content={content} />
+      {/* Mobile full-screen sidebar */}
+      {(isOpen || isClosing) && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
+          <div
+            className={`fixed inset-y-0 right-0 w-full bg-background shadow-xl ${
+              isClosing
+                ? 'animate-out slide-out-to-right duration-300'
+                : 'animate-in slide-in-from-right duration-300'
+            }`}
+            id="mobile-sidebar"
+          >
+            {/* Floating close button */}
+            <button
+              onClick={handleClose}
+              className="absolute top-4 right-4 p-2 rounded-full bg-background/80 backdrop-blur-sm shadow-md hover:bg-gray-100 dark:hover:bg-gray-800 transition z-10"
+              aria-label="Close sidebar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="overflow-y-auto h-full p-4">
+              <DocSidebar content={content} mobileView={true} />
+            </div>
           </div>
         </div>
       )}
