@@ -122,6 +122,46 @@ export default function MarkdownRenderer({
     return href;
   };
 
+  // Helper function to create anchor IDs from heading text
+  const createAnchorId = (text: string): string => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-'); // Replace spaces with hyphens
+  };
+
+  // Create a heading component with anchor
+  const createHeadingWithAnchor = (
+    Tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6',
+    className: string
+  ) => {
+    const HeadingComponent = ({ children }: { children: React.ReactNode }) => {
+      const childrenAsString = React.Children.toArray(children)
+        .map(child => (typeof child === 'string' ? child : ''))
+        .join('');
+
+      const id = createAnchorId(childrenAsString);
+
+      return (
+        <Tag id={id} className={className}>
+          {children}
+          <a
+            href={`#${id}`}
+            className="ml-2 text-muted-foreground opacity-0 hover:opacity-100 text-sm"
+            aria-hidden
+          >
+            #
+          </a>
+        </Tag>
+      );
+    };
+
+    // Set display name to fix linter error
+    HeadingComponent.displayName = `${Tag}WithAnchor`;
+
+    return HeadingComponent;
+  };
+
   // Default components to use when rendering markdown
   const defaultComponents = {
     code({ inline, className, children, ...props }) {
@@ -141,15 +181,12 @@ export default function MarkdownRenderer({
     blockquote({ children }) {
       return <blockquote className="border-l-4 border-primary pl-4 italic">{children}</blockquote>;
     },
-    h1({ children }) {
-      return <h1 className="text-3xl font-bold mt-8 mb-4">{children}</h1>;
-    },
-    h2({ children }) {
-      return <h2 className="text-2xl font-bold mt-8 mb-3">{children}</h2>;
-    },
-    h3({ children }) {
-      return <h3 className="text-xl font-bold mt-6 mb-3">{children}</h3>;
-    },
+    h1: createHeadingWithAnchor('h1', 'text-3xl font-bold mt-8 mb-4 group'),
+    h2: createHeadingWithAnchor('h2', 'text-2xl font-bold mt-8 mb-3 group'),
+    h3: createHeadingWithAnchor('h3', 'text-xl font-bold mt-6 mb-3 group'),
+    h4: createHeadingWithAnchor('h4', 'text-lg font-bold mt-6 mb-3 group'),
+    h5: createHeadingWithAnchor('h5', 'text-base font-bold mt-6 mb-3 group'),
+    h6: createHeadingWithAnchor('h6', 'text-sm font-bold mt-6 mb-3 group'),
     // Style lists for better readability
     ul({ children }) {
       return <ul className="list-disc pl-6 space-y-2 my-4">{children}</ul>;
