@@ -95,14 +95,17 @@ export default function TableOfContents({
     }));
 
     // Find the closest heading that is above the viewport
-    const closestHeading = headingElements.reduce((closest, current) => {
-      // If current heading is below viewport, keep the closest one
-      if (current.top > 0) return closest;
-      // If we don't have a closest yet, use current
-      if (!closest) return current;
-      // If current is closer to viewport top than closest, use current
-      return Math.abs(current.top) < Math.abs(closest.top) ? current : closest;
-    }, null);
+    const closestHeading = headingElements.reduce<{ id: string; top: number } | null>(
+      (closest, current) => {
+        // If current heading is below viewport, keep the closest one
+        if (current.top > 0) return closest;
+        // If we don't have a closest yet, use current
+        if (!closest) return current;
+        // If current is closer to viewport top than closest, use current
+        return Math.abs(current.top) < Math.abs(closest.top) ? current : closest;
+      },
+      null
+    );
 
     if (closestHeading) {
       setActiveId(closestHeading.id);
