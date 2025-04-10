@@ -22,23 +22,23 @@ export default function DocSidebar({ content, mobileView = false }: DocSidebarPr
   const customComponents = {
     // Create custom components that will override the defaults in MarkdownRenderer
     // for the sidebar-specific styling
-    a({ href, children }: { href?: string; children: React.ReactNode }) {
-      let transformedHref = href || '#';
+    a(props: { href?: string; children?: React.ReactNode; [key: string]: unknown }) {
+      let transformedHref = props.href || '#';
 
       // Only transform if it's a string
-      if (typeof href === 'string') {
+      if (typeof props.href === 'string') {
         // Case 1: Handle relative paths with .md or .mdx extension
         if (
-          (href.startsWith('./') || href.startsWith('../')) &&
-          (href.endsWith('.md') || href.endsWith('.mdx'))
+          (props.href.startsWith('./') || props.href.startsWith('../')) &&
+          (props.href.endsWith('.md') || props.href.endsWith('.mdx'))
         ) {
           // Remove the extension
-          const withoutExtension = href.replace(/\.(md|mdx)$/, '');
+          const withoutExtension = props.href.replace(/\.(md|mdx)$/, '');
 
           // Convert to docs path
-          if (href.startsWith('./')) {
+          if (props.href.startsWith('./')) {
             transformedHref = `/docs/${withoutExtension.substring(2).toLowerCase()}`;
-          } else if (href.startsWith('../')) {
+          } else if (props.href.startsWith('../')) {
             // Handle parent directory references if needed
             const segments = pathname.split('/').filter(Boolean);
             segments.pop(); // Remove current file
@@ -60,13 +60,13 @@ export default function DocSidebar({ content, mobileView = false }: DocSidebarPr
           }
         }
         // Case 2: Handle relative links without explicit extension
-        else if (href.startsWith('./') || href.startsWith('../')) {
+        else if (props.href.startsWith('./') || props.href.startsWith('../')) {
           // Assume it's a document link without extension
-          const docPath = href;
+          const docPath = props.href;
 
-          if (href.startsWith('./')) {
+          if (props.href.startsWith('./')) {
             transformedHref = `/docs/${docPath.substring(2).toLowerCase()}`;
-          } else if (href.startsWith('../')) {
+          } else if (props.href.startsWith('../')) {
             // Handle parent directory references
             const segments = pathname.split('/').filter(Boolean);
             segments.pop(); // Remove current file
@@ -100,23 +100,23 @@ export default function DocSidebar({ content, mobileView = false }: DocSidebarPr
               : 'text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary'
           }`}
         >
-          {children}
+          {props.children}
         </Link>
       );
     },
     // Style headings for the sidebar
-    h1({ children }: { children: React.ReactNode }) {
-      return <h3 className="text-lg font-bold mb-2 mt-4">{children}</h3>;
+    h1(props: { children?: React.ReactNode; [key: string]: unknown }) {
+      return <h3 className="text-lg font-bold mb-2 mt-4">{props.children}</h3>;
     },
-    h2({ children }: { children: React.ReactNode }) {
-      return <h4 className="text-md font-semibold mb-1 mt-3">{children}</h4>;
+    h2(props: { children?: React.ReactNode; [key: string]: unknown }) {
+      return <h4 className="text-md font-semibold mb-1 mt-3">{props.children}</h4>;
     },
     // Style lists for navigation
-    ul({ children }: { children: React.ReactNode }) {
-      return <ul className="pl-4 space-y-1 mb-2">{children}</ul>;
+    ul(props: { children?: React.ReactNode; [key: string]: unknown }) {
+      return <ul className="pl-4 space-y-1 mb-2">{props.children}</ul>;
     },
-    li({ children }: { children: React.ReactNode }) {
-      return <li className="text-sm">{children}</li>;
+    li(props: { children?: React.ReactNode; [key: string]: unknown }) {
+      return <li className="text-sm">{props.children}</li>;
     },
   };
 

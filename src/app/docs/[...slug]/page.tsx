@@ -132,8 +132,8 @@ export default async function DocsPage({ params }: DocsPageProps) {
 
   // Extract header information from metadata or extracted content
   const headerProps = {
-    title: doc.metadata.title || extractedTitle,
-    subtitle: doc.metadata.subtitle || doc.metadata.description || extractedSubtitle,
+    title: doc.metadata.title || extractedTitle || undefined,
+    subtitle: doc.metadata.subtitle || doc.metadata.description || extractedSubtitle || undefined,
     author: doc.metadata.author,
     publicationDate: doc.metadata.date || doc.metadata.publicationDate,
   };

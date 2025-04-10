@@ -286,6 +286,11 @@ export type AppConfig = {
   subtitle: string;
 
   /**
+   * Theme configuration
+   */
+  theme: ThemeConfig;
+
+  /**
    * App-specific configurations (authenticated user experience)
    */
   app?: {

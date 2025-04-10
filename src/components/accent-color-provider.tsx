@@ -34,7 +34,7 @@ export function AccentColorProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     const savedColor = localStorage.getItem('accent-color');
     if (savedColor) {
-      const color = appConfig.theme.accentColors.find(c => c.name === savedColor);
+      const color = appConfig.theme.accentColors.find((c: AccentColor) => c.name === savedColor);
       if (color) {
         setAccentColor(color);
       }

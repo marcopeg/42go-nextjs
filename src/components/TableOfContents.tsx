@@ -3,20 +3,22 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
-interface TOCItem {
+interface HeadingElement extends HTMLElement {
   id: string;
-  text: string;
-  level: number;
-  isActive?: boolean;
 }
 
 interface TableOfContentsProps {
   markdown: string;
   position?: 'mobile' | 'top' | 'side';
+  className?: string;
 }
 
-export default function TableOfContents({ markdown, position = 'mobile' }: TableOfContentsProps) {
-  const [headings, setHeadings] = useState<TOCItem[]>([]);
+export default function TableOfContents({
+  markdown,
+  position = 'mobile',
+  className,
+}: TableOfContentsProps) {
+  const [headings, setHeadings] = useState<HeadingElement[]>([]);
   const [activeId, setActiveId] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState(position === 'side');
 
@@ -47,7 +49,7 @@ export default function TableOfContents({ markdown, position = 'mobile' }: Table
       const headingRegex = /^(#{1,3})\s+(.+?)(?:\n|$)/gm;
       const matches = Array.from(processedMarkdown.matchAll(headingRegex));
 
-      const items: TOCItem[] = matches.map(match => {
+      const items: HeadingElement[] = matches.map(match => {
         const level = match[1].length; // Number of # symbols
         const text = match[2].trim();
         const id = text
@@ -55,12 +57,12 @@ export default function TableOfContents({ markdown, position = 'mobile' }: Table
           .replace(/[^\w\s-]/g, '') // Remove special characters
           .replace(/\s+/g, '-'); // Replace spaces with hyphens
 
-        return {
-          id,
-          text,
-          level,
-          isActive: false,
-        };
+        const element = document.createElement('h' + level);
+        element.id = id;
+        element.textContent = text;
+        document.body.appendChild(element);
+
+        return element as HeadingElement;
       });
 
       setHeadings(items);
@@ -70,43 +72,32 @@ export default function TableOfContents({ markdown, position = 'mobile' }: Table
   }, [markdown]);
 
   // Set up scroll event listener to track which heading is in view
-  useEffect(() => {
-    if (typeof window === 'undefined' || headings.length === 0) return;
+  const handleScroll = React.useCallback(() => {
+    if (!headings.length) return;
 
-    const handleScroll = () => {
-      // Find the heading that is closest to the top of the viewport
-      const headerOffset = 80;
-      let closestHeading = null;
-      let closestDistance = Infinity;
+    const headingElements = headings.map(heading => ({
+      id: heading.id,
+      top: heading.getBoundingClientRect().top,
+    }));
 
-      headings.forEach(heading => {
-        const element = document.getElementById(heading.id);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          const distance = Math.abs(rect.top - headerOffset);
+    const closestHeading = headingElements.reduce((closest, current) => {
+      if (current.top > 0) return closest;
+      if (closest.top === 0) return current;
+      return Math.abs(current.top) < Math.abs(closest.top) ? current : closest;
+    }, headingElements[0]);
 
-          if (distance < closestDistance) {
-            closestDistance = distance;
-            closestHeading = heading;
-          }
-        }
-      });
-
-      if (closestHeading) {
-        setActiveId(closestHeading.id);
-      }
-    };
-
-    // Initial check
-    handleScroll();
-
-    // Add scroll event listener
-    window.addEventListener('scroll', handleScroll);
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    if (closestHeading) {
+      setActiveId(closestHeading.id);
+    }
   }, [headings]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !headings.length) return;
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [headings, handleScroll]);
 
   // Handle smooth scrolling to the heading when clicked
   const handleClickHeading = (e: React.MouseEvent, id: string) => {
@@ -141,30 +132,24 @@ export default function TableOfContents({ markdown, position = 'mobile' }: Table
 
   // Render TOC heading links list (shared between all views)
   const renderTOCLinks = () => (
-    <ul className="space-y-2 text-sm">
+    <nav className={`space-y-2 ${className || ''}`}>
       {headings.map(heading => (
-        <li key={heading.id} className="line-clamp-2">
-          <a
-            href={`#${heading.id}`}
-            onClick={e => handleClickHeading(e, heading.id)}
-            className={`
-              transition-colors block py-2 relative
-              ${
-                activeId === heading.id
-                  ? 'text-primary font-medium'
-                  : 'text-muted-foreground hover:text-foreground'
-              }
-              ${heading.level === 2 ? 'pl-3' : heading.level === 3 ? 'pl-6' : ''}
-            `}
-          >
-            {activeId === heading.id && (
-              <span className="absolute left-0 inset-y-0 w-0.5 bg-primary rounded-full" />
-            )}
-            {heading.text}
-          </a>
-        </li>
+        <button
+          key={heading.id}
+          onClick={e => handleClickHeading(e, heading.id)}
+          className={`block w-full text-left px-4 py-2 rounded-lg transition-colors ${
+            activeId === heading.id
+              ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900'
+          }`}
+          style={{
+            paddingLeft: `${(parseInt(heading.tagName[1]) - 1) * 1}rem`,
+          }}
+        >
+          {heading.textContent}
+        </button>
       ))}
-    </ul>
+    </nav>
   );
 
   // Mobile collapsible view
