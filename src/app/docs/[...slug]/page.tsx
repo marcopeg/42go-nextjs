@@ -6,13 +6,14 @@ import DocHeader from '@/components/DocHeader';
 import TableOfContents from '@/components/TableOfContents';
 
 interface DocsPageProps {
-  params: {
+  params: Promise<{
     slug: string[];
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: DocsPageProps): Promise<Metadata> {
-  const slugPath = params.slug.join('/');
+  const _params = await params;
+  const slugPath = _params.slug.join('/');
   const doc = await getDoc(slugPath);
 
   if (!doc) {
@@ -96,7 +97,8 @@ function extractFirstParagraph(content: string): {
 
 export default async function DocsPage({ params }: DocsPageProps) {
   // Join the slug array to create a path
-  const slugPath = params.slug.join('/');
+  const _params = await params;
+  const slugPath = _params.slug.join('/');
 
   // Check if the documentation file exists and get content
   const doc = await getDoc(slugPath);
