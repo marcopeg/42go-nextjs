@@ -57,12 +57,25 @@ export default function TableOfContents({
           .replace(/[^\w\s-]/g, '') // Remove special characters
           .replace(/\s+/g, '-'); // Replace spaces with hyphens
 
-        const element = document.createElement('h' + level);
-        element.id = id;
-        element.textContent = text;
-        document.body.appendChild(element);
+        // Create a virtual heading element without appending to DOM
+        const element = {
+          id,
+          textContent: text,
+          tagName: `H${level}`,
+          getBoundingClientRect: () => ({
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            toJSON: () => ({}),
+          }),
+        } as HeadingElement;
 
-        return element as HeadingElement;
+        return element;
       });
 
       setHeadings(items);
@@ -75,9 +88,10 @@ export default function TableOfContents({
   const handleScroll = React.useCallback(() => {
     if (!headings.length) return;
 
-    const headingElements = headings.map(heading => ({
-      id: heading.id,
-      top: heading.getBoundingClientRect().top,
+    // Get all heading elements from the document
+    const headingElements = Array.from(document.querySelectorAll('h1, h2, h3')).map(el => ({
+      id: el.id,
+      top: el.getBoundingClientRect().top,
     }));
 
     const closestHeading = headingElements.reduce((closest, current) => {
