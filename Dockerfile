@@ -48,6 +48,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
+# Add the docs folder to the image
+COPY docs .
+
 # Set correct permissions
 RUN chown -R nextjs:nodejs /app
 
