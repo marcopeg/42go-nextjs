@@ -12,11 +12,25 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Define build arguments
+# ARG DATABASE_URL
+# ARG NEXTAUTH_SECRET
+# ARG NEXT_PUBLIC_APP_URL
+# ARG NEXT_PUBLIC_NEXTAUTH_URL
+
+# Set environment variables based on build arguments
+# ENV DATABASE_URL=$DATABASE_URL
+# ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+# ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+# ENV NEXT_PUBLIC_NEXTAUTH_URL=$NEXT_PUBLIC_NEXTAUTH_URL
+
 # Set environment variables for production build
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
+# ENV NEXT_TELEMETRY_DISABLED 1
+# ENV NODE_ENV production
 
 # Build the application
+ENV SKIP_ENV_VALIDATION=true
+ENV NEXT_BUILD_OUTPUT=standalone
 RUN npm run build
 
 # Stage 3: Runner
@@ -42,6 +56,6 @@ USER nextjs
 EXPOSE 3000
 
 ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+#ENV HOSTNAME "0.0.0.0"
 
-CMD ["node", "server.js"] 
+CMD ["node", "server.js"]

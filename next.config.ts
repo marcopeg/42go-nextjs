@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
 
   // Enable MDX support
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
+
+  // Enable standalone mode for production
+  output:
+    process.env.NEXT_BUILD_OUTPUT === 'standalone'
+      ? 'standalone'
+      : process.env.NEXT_BUILD_OUTPUT === 'export'
+        ? 'export'
+        : undefined,
 };
 
 export default nextConfig;
