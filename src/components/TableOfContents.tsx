@@ -201,11 +201,6 @@ export default function TableOfContents({ markdown, position = 'mobile' }: Table
     );
   }
 
-  // Large desktop side view
-  return (
-    <nav className="rounded-lg border border-border bg-background shadow-sm">
-      <h3 className="font-semibold p-4 pb-3 border-b border-border">Table of Contents</h3>
-      <div className="p-4">{renderTOCLinks()}</div>
-    </nav>
-  );
+  // Large desktop side view - updated to match docs menu on the left with border touching top and bottom
+  return <div className="h-full">{renderTOCLinks()}</div>;
 }

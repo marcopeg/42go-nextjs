@@ -3,7 +3,7 @@
 - [Home](/docs)
 - [Database](./DATABASE.md)
 
-## Authentication
+# Authentication
 
 - [Introduction](./AUTH.md)
 - [GitHub](./AUTH-GITHUB.md)

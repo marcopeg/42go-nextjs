@@ -141,36 +141,38 @@ export default async function DocsPage({ params }: DocsPageProps) {
   const shouldSkipFirstHeading = !!headerProps.title;
 
   return (
-    <div className="py-4 md:py-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="py-4 md:py-8 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8 lg:min-h-[calc(100vh-8rem)]">
+      <div className="">
         {/* Small desktop: TOC at the top (hidden on mobile and large desktop) */}
         <div className="hidden md:block lg:hidden mb-8">
           <TableOfContents markdown={contentWithoutFrontmatter} position="top" />
         </div>
 
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] gap-8">
-          <div>
-            <DocHeader {...headerProps} />
+        {/* Main content */}
+        <div className="py-4 md:py-0">
+          <DocHeader {...headerProps} />
 
-            {/* Mobile: TOC between header and content (hidden on desktop) */}
-            <div className="md:hidden mb-8">
-              <TableOfContents markdown={contentWithoutFrontmatter} position="mobile" />
-            </div>
-
-            <div className="prose prose-slate dark:prose-invert max-w-none">
-              <MarkdownRenderer
-                content={contentWithoutFrontmatter}
-                skipFirstHeading={shouldSkipFirstHeading}
-                title={headerProps.title}
-              />
-            </div>
+          {/* Mobile: TOC between header and content (hidden on desktop) */}
+          <div className="md:hidden mb-8">
+            <TableOfContents markdown={contentWithoutFrontmatter} position="mobile" />
           </div>
 
-          {/* Large desktop: TOC on right side (hidden on mobile and small desktop) */}
-          <div className="hidden lg:block">
-            <div className="sticky top-24">
-              <TableOfContents markdown={contentWithoutFrontmatter} position="side" />
-            </div>
+          <div className="prose prose-slate dark:prose-invert max-w-none">
+            <MarkdownRenderer
+              content={contentWithoutFrontmatter}
+              skipFirstHeading={shouldSkipFirstHeading}
+              title={headerProps.title}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Large desktop: TOC on right side (hidden on mobile and small desktop) */}
+      <div className="hidden lg:block h-full">
+        <div className="sticky top-24 h-[calc(100vh-4rem)] overflow-y-auto">
+          <h3 className="text-lg font-bold">Table of Contents</h3>
+          <div className="py-4">
+            <TableOfContents markdown={contentWithoutFrontmatter} position="side" />
           </div>
         </div>
       </div>
