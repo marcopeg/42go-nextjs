@@ -67,7 +67,10 @@ prod.stop:
 prod.down:
 	docker compose -f docker-compose.prod.yml down -v
 
-prod: prod.build prod.start migrate seed
+prod.logs:
+	docker compose -f docker-compose.prod.yml logs -f app
+
+prod: prod.build prod.start migrate seed prod.logs
 
 
 ###

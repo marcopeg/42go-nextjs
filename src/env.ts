@@ -23,11 +23,10 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url(),
-    NEXT_PUBLIC_NEXTAUTH_URL: z.string().url(),
     NEXT_PUBLIC_GITHUB_ENABLED: z.enum(['true', 'false']).optional().default('false'),
     NEXT_PUBLIC_GOOGLE_ENABLED: z.enum(['true', 'false']).optional().default('false'),
     NEXT_PUBLIC_FACEBOOK_ENABLED: z.enum(['true', 'false']).optional().default('false'),
-    NEXT_PUBLIC_PASSWORD_AUTH_ENABLED: z.enum(['true', 'false']).optional().default('true'),
+    NEXT_PUBLIC_PASSWORD_AUTH_ENABLED: z.enum(['true', 'false']).optional().default('false'),
   },
 
   /**
@@ -39,7 +38,6 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_NEXTAUTH_URL: process.env.NEXT_PUBLIC_NEXTAUTH_URL,
     DISABLE_DEV_API: process.env.DISABLE_DEV_API,
     GITHUB_ID: process.env.GITHUB_ID,
     GITHUB_SECRET: process.env.GITHUB_SECRET,
