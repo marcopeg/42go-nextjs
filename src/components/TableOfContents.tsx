@@ -94,11 +94,15 @@ export default function TableOfContents({
       top: el.getBoundingClientRect().top,
     }));
 
+    // Find the closest heading that is above the viewport
     const closestHeading = headingElements.reduce((closest, current) => {
+      // If current heading is below viewport, keep the closest one
       if (current.top > 0) return closest;
-      if (closest.top === 0) return current;
+      // If we don't have a closest yet, use current
+      if (!closest) return current;
+      // If current is closer to viewport top than closest, use current
       return Math.abs(current.top) < Math.abs(closest.top) ? current : closest;
-    }, headingElements[0]);
+    }, null);
 
     if (closestHeading) {
       setActiveId(closestHeading.id);
@@ -108,9 +112,23 @@ export default function TableOfContents({
   useEffect(() => {
     if (typeof window === 'undefined' || !headings.length) return;
 
+    // Initial check for active heading
     handleScroll();
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    // Add scroll listener with throttling
+    let ticking = false;
+    const scrollListener = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', scrollListener);
+    return () => window.removeEventListener('scroll', scrollListener);
   }, [headings, handleScroll]);
 
   // Handle smooth scrolling to the heading when clicked
