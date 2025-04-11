@@ -77,6 +77,26 @@ exports.seed = async function (knex) {
     });
     console.log(`Created backoffice role with ID: ${backofficeRoleId}`);
 
+    const fooRoleId = 'foo';
+    await trx('auth.roles').insert({
+      id: fooRoleId,
+      title: 'foo',
+      description: 'Administrators with foo access',
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    console.log(`Created foo role with ID: ${fooRoleId}`);
+
+    const faaRoleId = 'faa';
+    await trx('auth.roles').insert({
+      id: faaRoleId,
+      title: 'faa',
+      description: 'Administrators with faa access',
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    console.log(`Created faa role with ID: ${faaRoleId}`);
+
     // 3. Add the backoffice grant with a text ID
     const usersListGrantId = 'users:list';
     await trx('auth.grants').insert({
@@ -101,6 +121,11 @@ exports.seed = async function (knex) {
     // 4. Associate the admin user to the backoffice role
     await trx('auth.roles_users').insert({
       role_id: backofficeRoleId,
+      user_id: adminId,
+      created_at: new Date(),
+    });
+    await trx('auth.roles_users').insert({
+      role_id: fooRoleId,
       user_id: adminId,
       created_at: new Date(),
     });
