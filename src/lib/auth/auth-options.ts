@@ -118,6 +118,16 @@ if (isFacebookOAuthEnabled()) {
   );
 }
 
+// Cookie configuration based on environment
+const isStrictCookiePolicy = process.env.NEXT_COOKIE_POLICY === 'strict';
+const cookiePrefix = isStrictCookiePolicy ? '__Secure-' : '';
+const cookieOptions = {
+  httpOnly: true,
+  path: '/',
+  sameSite: isStrictCookiePolicy ? ('none' as const) : ('lax' as const),
+  secure: isStrictCookiePolicy,
+};
+
 export const authOptions: NextAuthConfig = {
   adapter,
   session: {
@@ -125,30 +135,16 @@ export const authOptions: NextAuthConfig = {
   },
   cookies: {
     sessionToken: {
-      name: `__Secure-next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'None',
-        path: '/',
-        secure: true,
-      },
+      name: `${cookiePrefix}next-auth.session-token`,
+      options: cookieOptions,
     },
     callbackUrl: {
-      name: `__Secure-next-auth.callback-url`,
-      options: {
-        sameSite: 'None',
-        path: '/',
-        secure: true,
-      },
+      name: `${cookiePrefix}next-auth.callback-url`,
+      options: cookieOptions,
     },
     csrfToken: {
-      name: `__Host-next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'None',
-        path: '/',
-        secure: true,
-      },
+      name: `${cookiePrefix}next-auth.csrf-token`,
+      options: cookieOptions,
     },
   },
   pages: {
