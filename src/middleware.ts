@@ -23,17 +23,39 @@ export async function middleware(request: NextRequest) {
 
   // Check if the path starts with /app
   if (pathname.startsWith('/app')) {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    const isStrictCookiePolicy = process.env.NEXTAUTH_COOKIE_POLICY === 'strict';
+    try {
+      const token = await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET,
+        // Add these options to ensure proper token handling
+        secureCookie: isStrictCookiePolicy,
+        cookieName: isStrictCookiePolicy
+          ? '__Secure-next-auth.session-token'
+          : 'next-auth.session-token',
+      });
 
-    // If no token and trying to access /app routes, redirect to login
-    if (!token) {
-      const url = new URL('/login', request.url);
-      // Store the original URL to redirect back after login
-      url.searchParams.set('callbackUrl', pathname);
-      return NextResponse.redirect(url);
+      // Debug logging
+      console.log('Middleware token check:', {
+        path: pathname,
+        hasToken: !!token,
+        strict: isStrictCookiePolicy,
+        cookieName: isStrictCookiePolicy
+          ? '__Secure-next-auth.session-token'
+          : 'next-auth.session-token',
+      });
+
+      // If no token and trying to access /app routes, redirect to login
+      if (!token) {
+        const url = new URL('/login', request.url);
+        // Store the original URL to redirect back after login
+        url.searchParams.set('callbackUrl', pathname);
+        return NextResponse.redirect(url);
+      }
+    } catch (error) {
+      console.error('Middleware token error:', error);
+      // On error, allow the request to proceed
+      return NextResponse.next();
     }
   }
 
