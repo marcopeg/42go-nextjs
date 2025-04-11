@@ -37,7 +37,7 @@ export default function DocSidebar({ content, mobileView = false }: DocSidebarPr
 
           // Convert to docs path
           if (props.href.startsWith('./')) {
-            transformedHref = `/docs/${withoutExtension.substring(2).toLowerCase()}`;
+            transformedHref = `/docs/${withoutExtension.substring(2)}`;
           } else if (props.href.startsWith('../')) {
             // Handle parent directory references if needed
             const segments = pathname.split('/').filter(Boolean);
@@ -84,7 +84,7 @@ export default function DocSidebar({ content, mobileView = false }: DocSidebarPr
             const parentSegments = segments.slice(0, Math.max(1, segments.length - parentCount));
 
             // Build the new path (lowercase)
-            transformedHref = `/${parentSegments.join('/')}/${remainingPath.toLowerCase()}`;
+            transformedHref = `/${parentSegments.join('/')}/${remainingPath}`;
           }
         }
       }
