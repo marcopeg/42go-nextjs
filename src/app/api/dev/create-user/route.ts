@@ -4,12 +4,8 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { hashPassword } from '@/lib/auth/password';
 import { eq, or } from 'drizzle-orm';
-import { withEnv } from '@/lib/env/with-env';
 
-export const GET = withEnv({
-  environments: ['development', 'test'],
-  skipFlags: ['DISABLE_DEV_API'],
-})(async (request: NextRequest) => {
+export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const username = searchParams.get('username');
 
@@ -68,4 +64,4 @@ export const GET = withEnv({
     console.error('Error creating test user:', error);
     return NextResponse.json({ error: 'Failed to create test user' }, { status: 500 });
   }
-});
+}

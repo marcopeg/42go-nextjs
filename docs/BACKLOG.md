@@ -166,6 +166,12 @@
    - ❌ Add environment configuration examples
    - ❌ Document production deployment best practices
 
+## 9. Issues
+
+1. **Cookies**
+
+- the cookie name should be parametrized in app.settings.ts
+
 ## Recommended Folder Structure (AI-Friendly)
 
 ```

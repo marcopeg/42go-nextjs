@@ -21,7 +21,8 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Check if the path starts with /app
+  // AUTHENTICATED ROUTES
+  // applies a global check to all authenticated routes and redirects to login if no token is present
   if (pathname.startsWith('/app')) {
     const isStrictCookiePolicy = process.env.NEXTAUTH_COOKIE_POLICY === 'strict';
     try {
@@ -30,16 +31,6 @@ export async function middleware(request: NextRequest) {
         secret: process.env.NEXTAUTH_SECRET,
         // Add these options to ensure proper token handling
         secureCookie: isStrictCookiePolicy,
-        cookieName: isStrictCookiePolicy
-          ? '__Secure-next-auth.session-token'
-          : 'next-auth.session-token',
-      });
-
-      // Debug logging
-      console.log('Middleware token check:', {
-        path: pathname,
-        hasToken: !!token,
-        strict: isStrictCookiePolicy,
         cookieName: isStrictCookiePolicy
           ? '__Secure-next-auth.session-token'
           : 'next-auth.session-token',
@@ -59,9 +50,26 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // DEV API
+  // allowed in development/test environment if not explicitly disabled
+  if (pathname.startsWith('/api/dev')) {
+    const isDevEnvironment =
+      process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+    const isDevApiDisabled =
+      process.env.DISABLE_DEV_API === 'true' || process.env.DISABLE_DEV_API === '1';
+
+    if (!isDevEnvironment || isDevApiDisabled) {
+      // Return 404 Not Found to avoid leaking the existence of dev endpoints
+      return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+    }
+    // Allow the request to proceed if conditions are met
+    return NextResponse.next();
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/app/:path*'],
+  // Update matcher to include both /app and /api/dev routes
+  matcher: ['/app/:path*', '/api/dev/:path*'],
 };
