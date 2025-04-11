@@ -119,7 +119,7 @@ if (isFacebookOAuthEnabled()) {
 }
 
 // Cookie configuration based on environment
-const isStrictCookiePolicy = process.env.NEXT_COOKIE_POLICY === 'strict';
+const isStrictCookiePolicy = process.env.NEXTAUTH_COOKIE_POLICY === 'strict';
 const cookiePrefix = isStrictCookiePolicy ? '__Secure-' : '';
 const cookieOptions = {
   httpOnly: true,

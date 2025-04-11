@@ -8,8 +8,9 @@ export const env = createEnv({
   server: {
     NODE_ENV: z.enum(['development', 'test', 'production']),
     DATABASE_URL: z.string().url(),
-    NEXTAUTH_SECRET: z.string().min(1),
     DISABLE_DEV_API: z.enum(['true', 'false']).optional().default('false'),
+    NEXTAUTH_SECRET: z.string().min(1),
+    NEXTAUTH_COOKIE_POLICY: z.enum(['strict']).optional(),
     GITHUB_ID: z.string().optional(),
     GITHUB_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
@@ -37,6 +38,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     DATABASE_URL: process.env.DATABASE_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    NEXTAUTH_COOKIE_POLICY: process.env.NEXTAUTH_COOKIE_POLICY as 'strict' | undefined,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     DISABLE_DEV_API: process.env.DISABLE_DEV_API,
     GITHUB_ID: process.env.GITHUB_ID,
