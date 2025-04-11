@@ -243,6 +243,19 @@ export default function MarkdownRenderer({
       ),
       { displayName: 'MarkdownCode' }
     ),
+    pre: Object.assign(
+      React.forwardRef<HTMLPreElement, React.ComponentPropsWithoutRef<'pre'>>(
+        ({ children, ...props }, ref) => {
+          // Directly return children to avoid ReactMarkdown's default pre styling
+          return (
+            <pre {...props} ref={ref} style={{ background: 'none', padding: '0' }}>
+              {children}
+            </pre>
+          );
+        }
+      ),
+      { displayName: 'MarkdownPre' }
+    ),
     // Style block quotes and other elements to match app theme
     blockquote: Object.assign(
       React.forwardRef<HTMLQuoteElement, React.ComponentPropsWithoutRef<'blockquote'>>(

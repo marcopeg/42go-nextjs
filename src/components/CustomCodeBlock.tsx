@@ -11,15 +11,16 @@ interface CustomCodeBlockProps {
 
 export default function CustomCodeBlock({ language, children }: CustomCodeBlockProps) {
   return (
-    <SyntaxHighlighter
-      language={language}
-      style={vscDarkPlus}
-      customStyle={{
-        borderRadius: '0.375rem',
-        margin: '1rem 0',
-      }}
-    >
-      {children.trim()}
-    </SyntaxHighlighter>
+    <div className="my-4 rounded-md overflow-hidden dark:border dark:border-neutral-600">
+      <SyntaxHighlighter
+        language={language}
+        style={vscDarkPlus}
+        customStyle={{
+          margin: '0',
+        }}
+      >
+        {children.trim()}
+      </SyntaxHighlighter>
+    </div>
   );
 }
