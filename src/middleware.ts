@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { getSession } from '@/lib/auth/session';
 
 // Session cache expiry in seconds (30 minutes)
 const CACHE_MAX_AGE = 30 * 60;
@@ -23,10 +23,7 @@ export async function middleware(request: NextRequest) {
 
   // Check if the path starts with /app
   if (pathname.startsWith('/app')) {
-    const session = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    const session = await getSession();
 
     // If no session and trying to access /app routes, redirect to login
     if (!session) {
