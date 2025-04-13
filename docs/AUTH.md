@@ -2,22 +2,6 @@
 
 This document provides an overview of the authentication system implemented in this project. The authentication is built using [Auth.js](https://authjs.dev/) (formerly NextAuth.js), a complete open-source authentication solution for Next.js applications.
 
-## Methods
-
-[Github](./AUTH-GITHUB.md)
-
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Database Schema](#database-schema)
-3. [Authentication Flow](#authentication-flow)
-4. [Configuration](#configuration)
-5. [Environment Variables](#environment-variables)
-6. [Usage in Components](#usage-in-components)
-7. [Adding Social Providers](#adding-social-providers)
-8. [Password Management](#password-management)
-9. [Development Tools](#development-tools)
-
 ## Overview
 
 The authentication system provides the following features:
@@ -31,143 +15,28 @@ The authentication system provides the following features:
 
 ## Database Schema
 
-The authentication system uses the following database tables, all organized under the `auth` schema:
+The authentication system uses the following tables under the `auth` schema:
 
-### Database Connection
-
-The database connection is configured in `src/lib/db/index.ts`:
-
-```typescript
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
-import { env } from '@/env';
-
-// Create a PostgreSQL connection pool
-const pool = new Pool({
-  connectionString: env.DATABASE_URL,
-  ssl: false, // SSL is disabled for local development
-});
-
-// Create a DrizzleORM instance
-export const db = drizzle(pool);
-
-// Export the pool for direct usage if needed
-export { pool };
-```
-
-For Drizzle Studio, the configuration is in `drizzle.config.ts`:
-
-```typescript
-export default defineConfig({
-  schema: './src/lib/db/schema.ts',
-  out: './drizzle',
-  dialect: 'postgresql',
-  dbCredentials: {
-    host: 'localhost',
-    port: 5432,
-    user: 'postgres',
-    password: 'postgres',
-    database: 'promptslab',
-    ssl: false, // SSL is disabled for local development
-  },
-  verbose: true,
-  strict: true,
-});
-```
-
-### Schema Organization
-
-All authentication-related tables are organized under the `auth` schema in PostgreSQL for better organization and separation of concerns.
-
-### Users Table
-
-```typescript
-export const users = authSchema.table('users', {
-  id: text('id').notNull().primaryKey(),
-  name: text('name'),
-  email: text('email').notNull().unique(),
-  emailVerified: timestamp('email_verified'),
-  image: text('image'),
-  password: text('password'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
-```
-
-### Accounts Table (for OAuth providers)
-
-```typescript
-export const accounts = authSchema.table(
-  'accounts',
-  {
-    userId: text('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    type: text('type').notNull(),
-    provider: text('provider').notNull(),
-    providerAccountId: text('provider_account_id').notNull(),
-    refresh_token: text('refresh_token'),
-    access_token: text('access_token'),
-    expires_at: integer('expires_at'),
-    token_type: text('token_type'),
-    scope: text('scope'),
-    id_token: text('id_token'),
-    session_state: text('session_state'),
-  },
-  account => ({
-    compoundKey: primaryKey({
-      columns: [account.provider, account.providerAccountId],
-    }),
-  })
-);
-```
-
-### Sessions Table
-
-```typescript
-export const sessions = authSchema.table('sessions', {
-  sessionToken: text('session_token').notNull().primaryKey(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  expires: timestamp('expires').notNull(),
-});
-```
-
-### Verification Tokens Table (for email verification)
-
-```typescript
-export const verificationTokens = authSchema.table(
-  'verification_tokens',
-  {
-    identifier: text('identifier').notNull(),
-    token: text('token').notNull(),
-    expires: timestamp('expires').notNull(),
-  },
-  vt => ({
-    compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
-  })
-);
-```
+- `users`: Stores user information and credentials
+- `accounts`: Manages OAuth provider connections
+- `sessions`: Handles user sessions
+- `verification_tokens`: Manages email verification tokens
 
 ## Authentication Flow
 
 ### Credential-based Authentication
 
-1. User submits username/email and password through a login form
-2. The credentials are sent to the Auth.js API route
-3. Auth.js calls the `authorize` function in the credentials provider
-4. The system looks up the user by email or username in the database
-5. If found, it verifies the password using bcrypt
-6. If verification succeeds, a JWT token is created and stored in a cookie
-7. The user is redirected to the callback URL or dashboard
+1. User submits credentials through login form
+2. System verifies credentials against database
+3. On success, creates JWT session
+4. User is redirected to callback URL or dashboard
 
 ### Session Management
 
-- The system uses JWT-based sessions (strategy: 'jwt')
-- Session data is stored in an encrypted cookie
-- The JWT contains user information and is refreshed automatically
-- Custom callbacks enhance the JWT and session objects with additional user data
+- Uses JWT-based sessions
+- Session data stored in encrypted cookie
+- Automatic JWT refresh
+- Custom callbacks for enhanced session data
 
 ## Configuration
 
@@ -176,9 +45,7 @@ The authentication configuration is defined in `src/lib/auth/auth-options.ts`:
 ```typescript
 export const authOptions = {
   adapter: DrizzleAdapter(db),
-  session: {
-    strategy: 'jwt' as const,
-  },
+  session: { strategy: 'jwt' },
   pages: {
     signIn: '/login',
     signOut: '/',
@@ -188,24 +55,21 @@ export const authOptions = {
   },
   providers: [
     CredentialsProvider({
-      // Configuration for email/password authentication
+      // Email/password configuration
     }),
-    // Social providers can be added here
+    // Social providers
   ],
   callbacks: {
-    // Custom callbacks for session and JWT handling
+    // Session and JWT handling
   },
 };
 ```
 
 ## Environment Variables
 
-The authentication system requires the following environment variables:
+Required environment variables:
 
 ```
-# Database
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres"
-
 # Auth
 NEXTAUTH_SECRET="your-secret-key-here"
 NEXT_PUBLIC_NEXTAUTH_URL="http://localhost:3000"
@@ -217,15 +81,9 @@ NEXT_PUBLIC_NEXTAUTH_URL="http://localhost:3000"
 # GITHUB_SECRET=""
 ```
 
-- `DATABASE_URL`: Connection string for the PostgreSQL database
-- `NEXTAUTH_SECRET`: A secret string used to encrypt cookies and tokens
-- `NEXT_PUBLIC_NEXTAUTH_URL`: The base URL of your application
-
 ## Usage in Components
 
 ### Client-Side Authentication
-
-To use authentication in client components:
 
 ```typescript
 'use client';
@@ -235,10 +93,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 export default function UserProfile() {
   const { data: session, status } = useSession();
 
-  if (status === 'loading') {
-    return <div>Loading...</div>;
-  }
-
+  if (status === 'loading') return <div>Loading...</div>;
   if (status === 'unauthenticated') {
     return (
       <div>
@@ -257,20 +112,7 @@ export default function UserProfile() {
 }
 ```
 
-To sign in with credentials:
-
-```typescript
-// Sign in with username or email
-signIn('credentials', {
-  email: usernameOrEmail, // This can be either username or email
-  password: password,
-  redirect: false,
-});
-```
-
 ### Server-Side Authentication
-
-To use authentication in server components:
 
 ```typescript
 import { getServerSession } from 'next-auth/next';
@@ -291,16 +133,15 @@ export default async function ServerComponent() {
 
 To add social authentication providers:
 
-1. Install the required packages
-2. Add the provider configuration to `authOptions`
-3. Add the required environment variables
+1. Install required packages
+2. Add provider configuration to `authOptions`
+3. Add required environment variables
 
-Example for adding Google authentication:
+Example for Google authentication:
 
 ```typescript
 import GoogleProvider from 'next-auth/providers/google';
 
-// In authOptions.providers array:
 GoogleProvider({
   clientId: process.env.GOOGLE_CLIENT_ID!,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -314,130 +155,15 @@ Password hashing and verification are handled by the `password.ts` utility:
 ```typescript
 import { hash, compare } from 'bcrypt';
 
-// Hash a password
 export async function hashPassword(password: string): Promise<string> {
   return hash(password, 10);
 }
 
-// Verify a password
 export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
   return compare(password, hashedPassword);
 }
 ```
 
-To create a new user with a hashed password:
-
-```typescript
-import { hashPassword } from '@/lib/auth/password';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
-import { v4 as uuidv4 } from 'uuid';
-
-export async function createUser(email: string, password: string, name?: string) {
-  const hashedPassword = await hashPassword(password);
-
-  return db.insert(users).values({
-    id: uuidv4(),
-    email,
-    password: hashedPassword,
-    name,
-  });
-}
-```
-
 ## Development Tools
 
-### Creating Test Users
-
-For development and testing purposes, the application includes a special API endpoint that allows you to quickly create test users. This API is **disabled in production** by default.
-
-#### API Endpoint
-
-```
-GET /api/dev/create-user?username=testuser
-```
-
-This will create a user with:
-
-- Username: `testuser`
-- Email: `testuser@example.com`
-- Password: `testuser`
-
-#### Usage
-
-You can create test users by making a GET request to the endpoint:
-
-```bash
-# Using curl
-curl "http://localhost:3000/api/dev/create-user?username=admin"
-
-# Using a browser
-# Simply navigate to http://localhost:3000/api/dev/create-user?username=admin
-```
-
-#### Response
-
-The API will return a JSON response with the created user details:
-
-```json
-{
-  "message": "User admin created successfully",
-  "userId": "uuid-of-the-user",
-  "email": "admin@example.com",
-  "username": "admin",
-  "password": "admin"
-}
-```
-
-If the user already exists, it will return:
-
-```json
-{
-  "message": "User admin already exists",
-  "userId": "uuid-of-the-user",
-  "email": "admin@example.com",
-  "username": "admin"
-}
-```
-
-#### Login with Test Users
-
-You can log in with the created test users using either:
-
-- The username (e.g., `admin`)
-- The email address (e.g., `admin@example.com`)
-
-Both will work with the password being the same as the username.
-
-#### Security Considerations
-
-This API is intended for development and testing only. It is automatically disabled in production environments. You can also manually disable it by setting the `DISABLE_DEV_API=true` environment variable.
-
-#### Environment Variables
-
-| Variable          | Description                                  | Default |
-| ----------------- | -------------------------------------------- | ------- |
-| `DISABLE_DEV_API` | Set to `true` to disable the development API | `false` |
-
----
-
-This documentation provides an overview of the current authentication system. As the project evolves, additional features like password reset, email verification, and role-based access control can be implemented.
-
-## Database Management with Drizzle Studio
-
-The project uses Drizzle Studio for database management. To run Drizzle Studio:
-
-```bash
-npm run db:studio
-```
-
-This will start Drizzle Studio at https://local.drizzle.studio, where you can:
-
-- View and edit database tables
-- Run SQL queries
-- Manage database schema
-- Visualize relationships between tables
-
-Note: Drizzle Studio is configured to connect to the local PostgreSQL database without SSL, which is appropriate for local development. For production environments, SSL should be enabled.
-
----
+- [Create Users](./DEV-API-CREATE-USER.md)
