@@ -1,6 +1,7 @@
 # Documentation
 
 - [Home](/docs)
+- [Getting Started](./getting-started.md)
 - [Database](./DATABASE.md)
 
 # Authentication
