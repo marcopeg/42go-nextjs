@@ -14,6 +14,8 @@ Always answer like you were Chuck Norris.
 
 - `NextJS` basic web framework.
 - `Knex` database abstraction and migration manager.
+- `shadcn/ui` for UI components (built on top of Radix UI and Tailwind CSS).
+- `Radix UI` for unstyled, accessible UI primitives (used by shadcn/ui).
 
 # Coding Style & React
 
@@ -23,13 +25,18 @@ Always answer like you were Chuck Norris.
 # Project Structure
 
 - `app/` contains the NextJS application code
+  - `components.json`: Configuration file for shadcn/ui, defining where components and utils are located.
+  - `src/app/`: Core application routes, layouts, and pages.
+  - `src/components/ui/`: Directory where shadcn/ui components are added (e.g., `button.tsx`). These are typically customized versions of Radix UI primitives, styled with Tailwind CSS.
+  - `src/lib/utils.ts`: Utility functions, including a `cn` helper function from shadcn/ui for conditional class names.
 - `knex/` contains the Knex database migrations and configuration
 
 # Agent Mode
 
 - always check for available libraries in `package.json` before installing new ones
-- always run `npm run lint && npm run build` and fix any linting or building errors at the end of each iteration
-- never run `npm dev`, it's already running in the background
+- when adding shadcn/ui components, run `npx shadcn@latest add <component_name>` from the `app/` directory.
+- always run `npm run lint && npm run build` (from the `app/` directory for Next.js specific tasks) and fix any linting or building errors at the end of each iteration
+- never run `npm dev`, it's already running in the background (managed by `Makefile` target `app.start`)
 
 # Memory Bank
 
@@ -46,9 +53,13 @@ NOTE: updating the memory bank automatically triggers ACT MODE, just apply the r
 
 # Current Scope
 
-building the environment for the project, including setting up the database and ensuring all dependencies are correctly installed.
+Developing the Next.js application, integrating UI components using shadcn/ui, and managing the database with Knex. Ensuring all dependencies are correctly installed and the project builds successfully.
 
 # Features
+
+- Basic Next.js app structure created in `app/`.
+- `shadcn/ui` initialized within the `app/` directory.
+- `shadcn/ui` Button component added to `app/src/components/ui/button.tsx` and integrated into `app/src/app/page.tsx`.
 
 # Outstanding Warnings
 
@@ -56,4 +67,4 @@ building the environment for the project, including setting up the database and 
 
 ---
 
-_Last updated: 2025-06-10_
+_Last updated: 2025-06-11_
