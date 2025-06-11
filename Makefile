@@ -33,15 +33,15 @@ clear: down next.clear
 	rm -rf .cache
 
 app.clear:
-	(cd app && rm -rf node_modules)
-	(cd app && rm -rf .next)
-	(cd app && rm -rf .cache)
+	rm -rf node_modules
+	rm -rf .next
+	rm -rf .cache
 
 app.install:
-	(cd app && npm install --legacy-peer-deps)
+	npm install --legacy-peer-deps
 
 app.start:
-	(cd app && npm run dev)
+	npm run dev
 
 app: app.install app.start
 

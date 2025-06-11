@@ -24,18 +24,17 @@ Always answer like you were Chuck Norris.
 
 # Project Structure
 
-- `app/` contains the NextJS application code
-  - `components.json`: Configuration file for shadcn/ui, defining where components and utils are located.
-  - `src/app/`: Core application routes, layouts, and pages.
-  - `src/components/ui/`: Directory where shadcn/ui components are added (e.g., `button.tsx`). These are typically customized versions of Radix UI primitives, styled with Tailwind CSS.
-  - `src/lib/utils.ts`: Utility functions, including a `cn` helper function from shadcn/ui for conditional class names.
+- `components.json`: Configuration file for shadcn/ui, defining where components and utils are located.
+- `src/app/`: Core application routes, layouts, and pages.
+- `src/components/ui/`: Directory where shadcn/ui components are added (e.g., `button.tsx`). These are typically customized versions of Radix UI primitives, styled with Tailwind CSS.
+- `src/lib/utils.ts`: Utility functions, including a `cn` helper function from shadcn/ui for conditional class names.
 - `knex/` contains the Knex database migrations and configuration
 
 # Agent Mode
 
 - always check for available libraries in `package.json` before installing new ones
-- when adding shadcn/ui components, run `npx shadcn@latest add <component_name>` from the `app/` directory.
-- always run `npm run lint && npm run build` (from the `app/` directory for Next.js specific tasks) and fix any linting or building errors at the end of each iteration
+- when adding shadcn/ui components, run `npx shadcn@latest add <component_name>` from the `a.pp/` directory.
+- always run `npm run lint && npm run build` (from the `./` directory for Next.js specific tasks) and fix any linting or building errors at the end of each iteration
 - never run `npm dev`, it's already running in the background (managed by `Makefile` target `app.start`)
 
 # Memory Bank
@@ -57,9 +56,9 @@ Developing the Next.js application, integrating UI components using shadcn/ui, a
 
 # Features
 
-- Basic Next.js app structure created in `app/`.
-- `shadcn/ui` initialized within the `app/` directory.
-- `shadcn/ui` Button component added to `app/src/components/ui/button.tsx` and integrated into `app/src/app/page.tsx`.
+- Basic Next.js app structure created in `./`.
+- `shadcn/ui` initialized within the `./` directory.
+- `shadcn/ui` Button component added to `./src/components/ui/button.tsx` and integrated into `./src/app/page.tsx`.
 
 # Outstanding Warnings
 
