@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-export interface RequestAppConfig {
-  origin: string;
-  // Future dynamic keys can be added here
-}
+import type { AppConfig } from "./AppConfig"; // Changed to relative path
 
 export async function middleware(request: NextRequest) {
   const hostHeader = request.headers.get("host");
@@ -22,7 +18,7 @@ export async function middleware(request: NextRequest) {
     determinedOrigin = nextJsDerivedOrigin;
   }
 
-  console.log("@@@@@@ Middleware: Host header:", hostHeader);
+  console.log("@@@@@@ Middleware: Host header:", determinedOrigin);
   //   console.log(
   //     "@@@@@@ Middleware: X-Forwarded-Proto header:",
   //     xForwardedProtoHeader
@@ -37,7 +33,7 @@ export async function middleware(request: NextRequest) {
   //     determinedOrigin
   //   );
 
-  const appConfig: RequestAppConfig = { origin: determinedOrigin };
+  const appConfig: AppConfig = { origin: determinedOrigin }; // Updated type annotation
 
   // Create new headers object and set the custom header
   const requestHeaders = new Headers(request.headers);

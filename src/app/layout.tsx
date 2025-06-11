@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { getRequestConfig } from "@/lib/config";
+import { AppConfigProvider } from "@/components/AppConfigProvider";
+import type { AppConfig } from "../AppConfig"; // Changed to relative path
 import "./globals.css";
-import { headers } from "next/headers";
-import { RequestAppConfig } from "@/middleware"; // Corrected to use @/ alias
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,37 +17,33 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headerList = await headers(); // Await the headers
-  const configHeader = headerList.get("X-Request-Config");
-  let appConfig: RequestAppConfig | null = null;
-  if (configHeader) {
+  const appConfig: AppConfig | null = await getRequestConfig();
+  let scriptInnerHTML: string | null = null;
+
+  if (appConfig) {
     try {
-      appConfig = JSON.parse(configHeader);
+      scriptInnerHTML = JSON.stringify(appConfig);
     } catch (error) {
-      console.error(
-        "Failed to parse X-Request-Config header in RootLayout:",
-        error
-      );
+      console.error("Failed to stringify appConfig in RootLayout:", error);
     }
   }
-
-  // The appConfig (including origin) is now primarily passed to pages/components
-  // via props if needed for SSR. The script tag is a fallback or for pure client-side needs.
 
   return (
     <html lang="en">
       <head>
-        {appConfig && (
+        {scriptInnerHTML && (
           <script
             id="__APP_CONFIG__"
             type="application/json"
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify(appConfig), // Still useful for client-side only components
+              __html: scriptInnerHTML,
             }}
           />
         )}
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <AppConfigProvider>{children}</AppConfigProvider>
+      </body>
     </html>
   );
 }
