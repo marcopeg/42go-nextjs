@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { AppConfig } from "../AppConfig"; // Changed to relative path
+import type { AppConfig } from "../AppConfig.type"; // Removed .ts
 
 export const AppConfigContext = createContext<AppConfig | null>(null);
 

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { getRequestConfig } from "@/lib/config";
+import type { AppConfig } from "../AppConfig.type"; // Removed .ts
 import { AppConfigProvider } from "@/components/AppConfigProvider";
-import type { AppConfig } from "../AppConfig"; // Changed to relative path
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -18,29 +18,16 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const appConfig: AppConfig | null = await getRequestConfig();
-  let scriptInnerHTML: string | null = null;
+  const setupNameForClient = appConfig?.name;
 
-  if (appConfig) {
-    try {
-      scriptInnerHTML = JSON.stringify(appConfig);
-    } catch (error) {
-      console.error("Failed to stringify appConfig in RootLayout:", error);
-    }
+  const htmlAttributes: { [key: string]: string | undefined } = { lang: "en" };
+  if (setupNameForClient) {
+    htmlAttributes["data-setup-name"] = setupNameForClient;
   }
 
   return (
-    <html lang="en">
-      <head>
-        {scriptInnerHTML && (
-          <script
-            id="__APP_CONFIG__"
-            type="application/json"
-            dangerouslySetInnerHTML={{
-              __html: scriptInnerHTML,
-            }}
-          />
-        )}
-      </head>
+    <html {...htmlAttributes}>
+      <head>{/* Script tag for __APP_SETUP_NAME__ removed */}</head>
       <body className={inter.className}>
         <AppConfigProvider>{children}</AppConfigProvider>
       </body>

@@ -25,10 +25,17 @@ Always answer like you were Chuck Norris.
 # Project Structure
 
 - `components.json`: Configuration file for shadcn/ui, defining where components and utils are located.
+- `knex/`: Contains the Knex database migrations and configuration.
 - `src/app/`: Core application routes, layouts, and pages.
-- `src/components/ui/`: Directory where shadcn/ui components are added (e.g., `button.tsx`). These are typically customized versions of Radix UI primitives, styled with Tailwind CSS.
+  - `src/app/layout.tsx`: Root layout, calls `getRequestConfig()` and injects `setupName` string into a `<script id="__APP_SETUP_NAME__">` tag for client-side hydration of `AppConfig`.
+- `src/components/ui/`: Directory where shadcn/ui components are added (e.g., `button.tsx`).
+- `src/components/AppConfigProvider.tsx`: Client component that reads `setupName` from the script tag in `layout.tsx`, retrieves the full `AppConfig` from the static `setups` dictionary (imported from `src/AppConfig.ts`), and provides it to client components via `AppConfigContext`.
+- `src/contexts/AppConfigContext.tsx`: Defines and provides the React Context for `AppConfig`.
 - `src/lib/utils.ts`: Utility functions, including a `cn` helper function from shadcn/ui for conditional class names.
-- `knex/` contains the Knex database migrations and configuration
+- `src/lib/config.ts`: Contains the server-side function `getRequestConfig()`, wrapped with `React.cache()`. This function reads the `X-Setup-Name-Resolved` header (set by middleware) and uses the `setupName` to retrieve the full `AppConfig` object from the static `setups` dictionary (in `src/AppConfig.ts`).
+- `src/middleware.ts`: Next.js middleware that determines the appropriate `SetupName` based on request properties (e.g., hostname, `x-setup-name` header). It then sets a new header (e.g., `X-Setup-Name-Resolved`) with the determined `setupName` string.
+- `src/AppConfig.type.ts`: Defines the `AppConfig` interface, the `SetupName` literal type (e.g., 'app1', 'app2', 'default'), and the `DEFAULT_SETUP_NAME` constant.
+- `src/AppConfig.ts`: Maintains a static dictionary (`setups`) that maps each `SetupName` to its corresponding full `AppConfig` object. It imports types from `src/AppConfig.type.ts`.
 
 # Agent Mode
 
@@ -44,7 +51,7 @@ This file (.github/copilot-instructions.md) serves as your memory bank to keep a
 When prompted by `update memory` or `update memory bank` do:
 
 1. review the current content of the Memory Bank
-2. review the current chat context for new relevant information  
+2. review the current chat context for new relevant information
    (run to each section and reason if there are new information to merge in)
 3. update the Memory Bank accordingly
 
@@ -52,17 +59,26 @@ NOTE: updating the memory bank automatically triggers ACT MODE, just apply the r
 
 # Current Scope
 
-Developing the Next.js application, integrating UI components using shadcn/ui, and managing the database with Knex. Ensuring all dependencies are correctly installed and the project builds successfully.
+Developing the Next.js application, integrating UI components using shadcn/ui, and managing the database with Knex. Implementing a dynamic configuration system. Ensuring all dependencies are correctly installed and the project builds successfully.
 
 # Features
 
 - Basic Next.js app structure created in `./`.
 - `shadcn/ui` initialized within the `./` directory.
 - `shadcn/ui` Button component added to `./src/components/ui/button.tsx` and integrated into `./src/app/page.tsx`.
+- **Dynamic `AppConfig` System:**
+  - Implemented a dynamic, request-specific configuration (`AppConfig`) system.
+  - The `AppConfig` interface, `SetupName` type (e.g., 'app1', 'default'), and `DEFAULT_SETUP_NAME` are defined in `src/AppConfig.type.ts`.
+  - Static configurations for each `SetupName` are stored in a `setups` dictionary in `src/AppConfig.ts`.
+  - Middleware (`src/middleware.ts`) resolves the `SetupName` based on request (hostname, `x-setup-name` header) and passes it via the `X-Setup-Name-Resolved` header.
+  - Server-side components use `getRequestConfig()` (from `src/lib/config.ts`) to get the `AppConfig` by reading the header and looking up in the `setups` dictionary.
+  - The root layout (`src/app/layout.tsx`) passes the resolved `setupName` string to the client via a script tag (`__APP_SETUP_NAME__`).
+  - Client-side components use `AppConfigProvider` (`src/components/AppConfigProvider.tsx`) which reads the `setupName` from the script tag, retrieves the full `AppConfig` from the static `setups` dictionary, and makes it available via React Context (`src/contexts/AppConfigContext.tsx`).
+  - This system avoids serializing the full `AppConfig` object in headers or script tags.
 
 # Outstanding Warnings
 
-[n/a] - No outstanding warnings
+[n/a] - No outstanding warnings (from build/lint).
 
 ---
 

@@ -1,21 +1,32 @@
 import { headers as getHeaders } from "next/headers";
 import { cache } from "react";
-import type { AppConfig } from "../AppConfig"; // Changed to relative path
+import {
+  type AppConfig,
+  type SetupName,
+  DEFAULT_SETUP_NAME,
+} from "../AppConfig.type"; // Removed .ts
+import { setups } from "../AppConfig"; // Removed .ts
 
 export const getRequestConfig = cache(async (): Promise<AppConfig | null> => {
-  console.log("@@@ Executing getRequestConfig");
-  const headerList = await getHeaders(); // Added await and used renamed import
-  const configHeader = headerList.get("X-Request-Config");
+  console.log("Executing getRequestConfig (setup name based)");
+  const headerList = await getHeaders();
+  const setupNameHeader = headerList.get("X-Setup-Name-Resolved");
 
-  if (!configHeader) {
-    console.error("X-Request-Config: header not found.");
-    return null;
+  if (!setupNameHeader) {
+    console.warn(
+      `X-Setup-Name-Resolved header not found, using default setup: ${DEFAULT_SETUP_NAME}`
+    );
+    return setups[DEFAULT_SETUP_NAME] || null;
   }
 
-  try {
-    return JSON.parse(configHeader);
-  } catch (error) {
-    console.error("X-Request-Config: parse failed:", error);
-    return null;
+  const setupName = setupNameHeader as SetupName;
+
+  if (setups[setupName]) {
+    return setups[setupName];
+  } else {
+    console.warn(
+      `No setup found for name: ${setupName}, using default: ${DEFAULT_SETUP_NAME}`
+    );
+    return setups[DEFAULT_SETUP_NAME] || null;
   }
 });

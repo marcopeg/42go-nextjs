@@ -1,45 +1,44 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import type { AppConfig } from "./AppConfig"; // Changed to relative path
+import { type SetupName, DEFAULT_SETUP_NAME } from "./AppConfig.type"; // Removed .ts
 
 export async function middleware(request: NextRequest) {
   const hostHeader = request.headers.get("host");
-  const xForwardedProtoHeader = request.headers.get("x-forwarded-proto");
-  const nextUrlProtocol = request.nextUrl.protocol; // Includes ':' e.g. 'http:'
-  const nextJsDerivedOrigin = request.nextUrl.origin;
+  const customSetupHeader = request.headers.get("x-setup-name");
 
-  const protocol = xForwardedProtoHeader || nextUrlProtocol.replace(/:$/, ""); // Ensure protocol doesn't have trailing ':'
+  let resolvedSetupName: SetupName = DEFAULT_SETUP_NAME;
 
-  let determinedOrigin: string;
-  if (hostHeader) {
-    determinedOrigin = `${protocol}://${hostHeader}`;
+  if (
+    customSetupHeader &&
+    (customSetupHeader === "app1" ||
+      customSetupHeader === "app2" ||
+      customSetupHeader === "default")
+  ) {
+    resolvedSetupName = customSetupHeader as SetupName;
+    console.log(
+      `@@@@@@ Middleware: Using setup name from x-setup-name header: ${resolvedSetupName}`
+    );
+  } else if (hostHeader) {
+    if (hostHeader.startsWith("app1.")) {
+      resolvedSetupName = "app1";
+    } else if (hostHeader.startsWith("app2.")) {
+      resolvedSetupName = "app2";
+    }
+    console.log(
+      `@@@@@@ Middleware: Derived setup name from host (${hostHeader}): ${resolvedSetupName}`
+    );
   } else {
-    // Fallback if host header is somehow missing
-    determinedOrigin = nextJsDerivedOrigin;
+    console.log(
+      `@@@@@@ Middleware: No host or x-setup-name header, using default setup name: ${resolvedSetupName}`
+    );
   }
 
-  console.log("@@@@@@ Middleware: Host header:", determinedOrigin);
-  //   console.log(
-  //     "@@@@@@ Middleware: X-Forwarded-Proto header:",
-  //     xForwardedProtoHeader
-  //   );
-  //   console.log("@@@@@@ Middleware: request.nextUrl.protocol:", nextUrlProtocol);
-  //   console.log(
-  //     "@@@@@@ Middleware: request.nextUrl.origin (Next.js derived):",
-  //     nextJsDerivedOrigin
-  //   );
-  //   console.log(
-  //     "@@@@@@ Middleware: Determined Origin for config:",
-  //     determinedOrigin
-  //   );
-
-  const appConfig: AppConfig = { origin: determinedOrigin }; // Updated type annotation
-
-  // Create new headers object and set the custom header
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("X-Request-Config", JSON.stringify(appConfig));
+  requestHeaders.set("X-Setup-Name-Resolved", resolvedSetupName);
+  console.log(
+    `@@@@@@ Middleware: Setting X-Setup-Name-Resolved header to: ${resolvedSetupName}`
+  );
 
-  // Return a new response with the modified request headers
   return NextResponse.next({
     request: {
       headers: requestHeaders,
