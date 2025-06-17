@@ -26,7 +26,7 @@ down:
 	docker-compose down -v 
 
 # New commands
-clear: down next.clear
+clear: down app.clear
 	docker-compose down -v
 	rm -rf node_modules
 	rm -rf .next

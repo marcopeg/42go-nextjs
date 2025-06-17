@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { AppConfigContext } from "@/contexts/AppConfigContext";
-import { type AppConfig, type AppName } from "@/AppConfig.type"; // Changed path
-import { setups, DEFAULT_APP_NAME } from "@/AppConfig"; // Changed path, added DEFAULT_APP_NAME
+import { type AppConfig, type AppName } from "@/AppConfig.type";
+import { availableApps, DEFAULT_APP } from "@/AppConfig"; // Renamed imports
 
 interface AppConfigProviderProps {
   children: React.ReactNode;
@@ -14,20 +14,18 @@ const AppConfigProvider: React.FC<AppConfigProviderProps> = ({ children }) => {
 
   useEffect(() => {
     console.log("AppConfigProvider: useEffect running");
-    const scriptTag = document.getElementById("__APP_NAME__"); // Updated script tag ID
-    let resolvedConfig: AppConfig | null = setups[DEFAULT_APP_NAME] || null;
+    const scriptTag = document.getElementById("__APP_NAME__");
+    let resolvedConfig: AppConfig | null = availableApps[DEFAULT_APP] || null; // Use new names
 
     if (scriptTag && scriptTag.textContent) {
       try {
-        // Assuming the script tag now contains the AppName directly as a string,
-        // not JSON.parse, consistent with how setupName was previously planned to be passed.
         const appNameFromScript = scriptTag.textContent as AppName;
         console.log(
           "AppConfigProvider: Found script tag, app name:",
           appNameFromScript
         );
-        if (setups[appNameFromScript]) {
-          resolvedConfig = setups[appNameFromScript];
+        if (availableApps[appNameFromScript]) {
+          resolvedConfig = availableApps[appNameFromScript]; // Use new names
           console.log(
             "AppConfigProvider: Config set from script tag app name:",
             resolvedConfig
@@ -39,16 +37,15 @@ const AppConfigProvider: React.FC<AppConfigProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error(
-          "AppConfigProvider: Failed to process __APP_NAME__ script content:", // Updated script tag ID in log
+          "AppConfigProvider: Failed to process __APP_NAME__ script content:",
           error
         );
       }
     } else {
-      // If the script tag isn't found, try to get appName from data attribute on html tag
       const appNameFromAttribute = document.documentElement.dataset
         .appName as AppName;
-      if (appNameFromAttribute && setups[appNameFromAttribute]) {
-        resolvedConfig = setups[appNameFromAttribute];
+      if (appNameFromAttribute && availableApps[appNameFromAttribute]) {
+        resolvedConfig = availableApps[appNameFromAttribute]; // Use new names
         console.log(
           "AppConfigProvider: Config set from html data-app-name attribute:",
           resolvedConfig

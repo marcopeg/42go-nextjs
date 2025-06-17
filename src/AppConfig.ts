@@ -1,6 +1,6 @@
 import type { AppConfig, AppName } from "./AppConfig.type.ts";
 
-export const setups = {
+export const availableApps = {
   app1: {
     name: "APP n1",
     origin: "http://app1.localhost:3000",
@@ -21,4 +21,4 @@ export const setups = {
   },
 } satisfies Record<string, AppConfig>;
 
-export const DEFAULT_APP_NAME: AppName = "default";
+export const DEFAULT_APP: AppName = "default";
