@@ -26,8 +26,12 @@ const AppConfigProvider: React.FC<AppConfigProviderProps> = ({ children }) => {
     const appNameFromAttribute = document.documentElement.dataset
       .appName as AppName;
 
-    if (appNameFromAttribute && availableApps[appNameFromAttribute]) {
-      resolvedConfig = availableApps[appNameFromAttribute];
+    if (
+      appNameFromAttribute &&
+      availableApps[appNameFromAttribute as keyof typeof availableApps]
+    ) {
+      resolvedConfig =
+        availableApps[appNameFromAttribute as keyof typeof availableApps];
       console.log(
         "AppConfigProvider: Config set from html data-app-name attribute:",
         resolvedConfig

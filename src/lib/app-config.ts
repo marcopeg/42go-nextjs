@@ -8,7 +8,7 @@ import {
   APP_HEADER_NAME,
 } from "../AppConfig";
 
-export const getAppName = cache(async (): Promise<AppName | null> => {
+export const getAppName = cache(async (): Promise<AppName> => {
   console.log("@@@@@ Executing getAppName() @@@@@");
   const headerList = await getHeaders();
   const appNameHeader = headerList.get(APP_HEADER_NAME);
@@ -24,9 +24,9 @@ export const getAppName = cache(async (): Promise<AppName | null> => {
     );
     return DEFAULT_APP;
   }
-  const appName = appNameHeader as AppName;
+  const appName = appNameHeader as keyof typeof availableApps;
   if (availableApps[appName]) {
-    return appName;
+    return appName as AppName;
   } else {
     if (DEFAULT_APP === null) {
       console.warn(
@@ -45,5 +45,5 @@ export const getAppConfig = cache(async (): Promise<AppConfig | null> => {
   console.log("@@@@@ Executing getAppConfig() @@@@@");
   const appName = await getAppName();
   if (!appName) return null;
-  return availableApps[appName] || null;
+  return availableApps[appName as keyof typeof availableApps] || null;
 });

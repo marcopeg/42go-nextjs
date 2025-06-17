@@ -17,7 +17,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const appName: AppName | null = await getAppName();
+  const appName: AppName = await getAppName();
 
   if (!appName) {
     return (
