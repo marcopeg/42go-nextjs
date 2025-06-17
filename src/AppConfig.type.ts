@@ -1,3 +1,5 @@
+import { setups } from "./AppConfig";
+
 export interface AppConfig {
   name: string;
   origin: string; // Common property
@@ -7,7 +9,6 @@ export interface AppConfig {
   // Add other common properties here
 }
 
-export type SetupName = "app1" | "app2" | "default";
+export type AppName = keyof typeof setups;
 
-// Export as a const value, not just a type
-export const DEFAULT_SETUP_NAME: SetupName = "default";
+// DEFAULT_SETUP_NAME will be moved to AppConfig.ts

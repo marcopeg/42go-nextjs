@@ -1,38 +1,42 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { type SetupName, DEFAULT_SETUP_NAME } from "./AppConfig.type";
+import { type AppName } from "./AppConfig.type";
+import { DEFAULT_APP_NAME, setups } from "./AppConfig"; // Corrected import path, added setups
 
 // New function to determine the setup name
-const getAppName = (request: NextRequest): SetupName => {
-  const customSetupHeader = request.headers.get("x-app-name"); // Changed header name
-  if (["app1", "app2", "default"].includes(customSetupHeader || "")) {
+const getAppName = (request: NextRequest): AppName => {
+  const customSetupHeader = request.headers.get("x-app-name");
+  if (customSetupHeader && setups[customSetupHeader as AppName]) {
     console.log(
-      `@@@@@@ getAppName: Using setup name from x-app-name header: ${customSetupHeader}` // Updated log
+      `@@@@@@ getAppName: Using setup name from x-app-name header: ${customSetupHeader}`
     );
-    return customSetupHeader as SetupName;
+    return customSetupHeader as AppName;
   }
 
   const hostHeader = request.headers.get("host");
-  if (["app1.", "app2."].some((prefix) => hostHeader?.startsWith(prefix))) {
-    console.log(
-      `@@@@@@ getAppName: Using setup name derived from host header: ${hostHeader}` // Updated log
-    );
-    return hostHeader?.substring(0, hostHeader.indexOf(".")) as SetupName;
+  if (hostHeader) {
+    const appNameFromHost = hostHeader.split(".")[0] as AppName;
+    if (setups[appNameFromHost]) {
+      console.log(
+        `@@@@@@ getAppName: Using setup name derived from host header: ${hostHeader}`
+      );
+      return appNameFromHost;
+    }
   }
 
   console.log(
-    `@@@@@@ getAppName: No specific setup found, using default: ${DEFAULT_SETUP_NAME}`
+    `@@@@@@ getAppName: No specific setup found, using default: ${DEFAULT_APP_NAME}`
   );
-  return DEFAULT_SETUP_NAME;
+  return DEFAULT_APP_NAME;
 };
 
 export async function middleware(request: NextRequest) {
-  const resolvedSetupName = getAppName(request);
+  const resolvedAppName = getAppName(request); // Corrected variable name
 
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("X-App-Name", resolvedSetupName); // Changed header name
+  requestHeaders.set("X-App-Name", resolvedAppName); // Changed header name & variable
   console.log(
-    `@@@@@@ Middleware: Setting X-App-Name header to: ${resolvedSetupName}` // Updated log
+    `@@@@@@ Middleware: Setting X-App-Name header to: ${resolvedAppName}` // Updated log & variable
   );
 
   return NextResponse.next({

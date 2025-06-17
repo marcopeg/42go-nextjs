@@ -1,6 +1,6 @@
-import type { AppConfig, SetupName } from "./AppConfig.type.ts";
+import type { AppConfig, AppName } from "./AppConfig.type.ts";
 
-export const setups: Record<SetupName, AppConfig> = {
+export const setups = {
   app1: {
     name: "APP n1",
     origin: "http://app1.localhost:3000",
@@ -19,4 +19,6 @@ export const setups: Record<SetupName, AppConfig> = {
     // featureFlags: { newUi: false },
     // logo: 'default_logo.svg'
   },
-};
+} satisfies Record<string, AppConfig>;
+
+export const DEFAULT_APP_NAME: AppName = "default";

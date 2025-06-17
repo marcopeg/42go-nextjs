@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { getRequestConfig } from "@/lib/config";
-import type { AppConfig } from "../AppConfig.type"; // Removed .ts
+import type { AppConfig } from "../AppConfig.type";
 import { AppConfigProvider } from "@/components/AppConfigProvider";
 import "./globals.css";
 
@@ -18,16 +18,21 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const appConfig: AppConfig | null = await getRequestConfig();
-  const setupNameForClient = appConfig?.name;
-
-  const htmlAttributes: { [key: string]: string | undefined } = { lang: "en" };
-  if (setupNameForClient) {
-    htmlAttributes["data-setup-name"] = setupNameForClient;
-  }
+  const appNameForClient = appConfig?.name; // Get the app name for client-side hydration
 
   return (
-    <html {...htmlAttributes}>
-      <head>{/* Script tag for __APP_SETUP_NAME__ removed */}</head>
+    <html lang="en">
+      <head>
+        {appNameForClient && (
+          <script
+            id="__APP_NAME__"
+            type="application/json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(appNameForClient),
+            }}
+          />
+        )}
+      </head>
       <body className={inter.className}>
         <AppConfigProvider>{children}</AppConfigProvider>
       </body>

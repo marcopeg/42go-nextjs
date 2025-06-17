@@ -2,12 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { AppConfigContext } from "@/contexts/AppConfigContext";
-import {
-  type AppConfig,
-  type SetupName,
-  DEFAULT_SETUP_NAME,
-} from "@/AppConfig.type"; // Changed path
-import { setups } from "@/AppConfig"; // Changed path
+import { type AppConfig, type AppName } from "@/AppConfig.type"; // Changed path
+import { setups, DEFAULT_APP_NAME } from "@/AppConfig"; // Changed path, added DEFAULT_APP_NAME
 
 interface AppConfigProviderProps {
   children: React.ReactNode;
@@ -18,39 +14,50 @@ const AppConfigProvider: React.FC<AppConfigProviderProps> = ({ children }) => {
 
   useEffect(() => {
     console.log("AppConfigProvider: useEffect running");
-    const scriptTag = document.getElementById("__APP_SETUP_NAME__");
-    let resolvedConfig: AppConfig | null = setups[DEFAULT_SETUP_NAME] || null;
+    const scriptTag = document.getElementById("__APP_NAME__"); // Updated script tag ID
+    let resolvedConfig: AppConfig | null = setups[DEFAULT_APP_NAME] || null;
 
     if (scriptTag && scriptTag.textContent) {
       try {
-        const setupNameFromScript = JSON.parse(
-          scriptTag.textContent
-        ) as SetupName;
+        // Assuming the script tag now contains the AppName directly as a string,
+        // not JSON.parse, consistent with how setupName was previously planned to be passed.
+        const appNameFromScript = scriptTag.textContent as AppName;
         console.log(
-          "AppConfigProvider: Found script tag, parsed setup name:",
-          setupNameFromScript
+          "AppConfigProvider: Found script tag, app name:",
+          appNameFromScript
         );
-        if (setups[setupNameFromScript]) {
-          resolvedConfig = setups[setupNameFromScript];
+        if (setups[appNameFromScript]) {
+          resolvedConfig = setups[appNameFromScript];
           console.log(
-            "AppConfigProvider: Config set from script tag setup name:",
+            "AppConfigProvider: Config set from script tag app name:",
             resolvedConfig
           );
         } else {
           console.warn(
-            `AppConfigProvider: No setup found for name '${setupNameFromScript}', using default.`
+            `AppConfigProvider: No setup found for name '${appNameFromScript}', using default.`
           );
         }
       } catch (error) {
         console.error(
-          "AppConfigProvider: Failed to parse __APP_SETUP_NAME__ script content:",
+          "AppConfigProvider: Failed to process __APP_NAME__ script content:", // Updated script tag ID in log
           error
         );
       }
     } else {
-      console.warn(
-        "AppConfigProvider: __APP_SETUP_NAME__ script tag not found or empty, using default config."
-      );
+      // If the script tag isn't found, try to get appName from data attribute on html tag
+      const appNameFromAttribute = document.documentElement.dataset
+        .appName as AppName;
+      if (appNameFromAttribute && setups[appNameFromAttribute]) {
+        resolvedConfig = setups[appNameFromAttribute];
+        console.log(
+          "AppConfigProvider: Config set from html data-app-name attribute:",
+          resolvedConfig
+        );
+      } else {
+        console.warn(
+          "AppConfigProvider: __APP_NAME__ script tag not found or empty, and no/invalid data-app-name attribute, using default config."
+        );
+      }
     }
     setConfig(resolvedConfig);
   }, []);
