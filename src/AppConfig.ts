@@ -7,7 +7,10 @@ export interface AppConfig {
   featureFlags?: Record<string, boolean>;
 }
 
-export const APP_HEADER_NAME = "X-App-Name"; // Header name for app identification
+/**
+ * Header name for app identification
+ */
+export const APP_HEADER_NAME = "X-App-Name";
 
 /**
  * Available applications with their configurations.

@@ -5,28 +5,32 @@ import {
   type AppName,
   availableApps,
   DEFAULT_APP,
+  APP_HEADER_NAME,
 } from "../AppConfig";
 
-export const getAppConfig = cache(async (): Promise<AppConfig | null> => {
-  console.log("@@@@@ Executing getAppConfig (app name based) @@@@@");
+export const getAppName = cache(async (): Promise<AppName> => {
+  console.log("@@@@@ Executing getAppName() @@@@@");
   const headerList = await getHeaders();
-  const appNameHeader = headerList.get("X-App-Name");
-
+  const appNameHeader = headerList.get(APP_HEADER_NAME);
   if (!appNameHeader) {
     console.warn(
-      `X-App-Name header not found, using default setup: ${DEFAULT_APP}` // Use new name
+      `X-App-Name header not found, using default setup: ${DEFAULT_APP}`
     );
-    return availableApps[DEFAULT_APP] || null; // Use new names
+    return DEFAULT_APP;
   }
-
   const appName = appNameHeader as AppName;
-
   if (availableApps[appName]) {
-    return availableApps[appName]; // Use new names
+    return appName;
   } else {
     console.warn(
-      `No setup found for name: ${appName}, using default: ${DEFAULT_APP}` // Use new name
+      `No setup found for name: ${appName}, using default: ${DEFAULT_APP}`
     );
-    return availableApps[DEFAULT_APP] || null; // Use new names
+    return DEFAULT_APP;
   }
+});
+
+export const getAppConfig = cache(async (): Promise<AppConfig | null> => {
+  console.log("@@@@@ Executing getAppConfig() @@@@@");
+  const appName = await getAppName();
+  return availableApps[appName] || null;
 });

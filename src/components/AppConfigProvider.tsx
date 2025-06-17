@@ -18,48 +18,24 @@ const AppConfigProvider: React.FC<AppConfigProviderProps> = ({ children }) => {
 
   useEffect(() => {
     console.log("AppConfigProvider: useEffect running");
-    const scriptTag = document.getElementById("__APP_NAME__");
-    let resolvedConfig: AppConfig | null = availableApps[DEFAULT_APP] || null; // Use new names
+    let resolvedConfig: AppConfig | null = availableApps[DEFAULT_APP] || null;
 
-    if (scriptTag && scriptTag.textContent) {
-      try {
-        const appNameFromScript = scriptTag.textContent as AppName;
-        console.log(
-          "AppConfigProvider: Found script tag, app name:",
-          appNameFromScript
-        );
-        if (availableApps[appNameFromScript]) {
-          resolvedConfig = availableApps[appNameFromScript]; // Use new names
-          console.log(
-            "AppConfigProvider: Config set from script tag app name:",
-            resolvedConfig
-          );
-        } else {
-          console.warn(
-            `AppConfigProvider: No setup found for name '${appNameFromScript}', using default.`
-          );
-        }
-      } catch (error) {
-        console.error(
-          "AppConfigProvider: Failed to process __APP_NAME__ script content:",
-          error
-        );
-      }
+    // Get app name from the data-app-name attribute on the html element
+    const appNameFromAttribute = document.documentElement.dataset
+      .appName as AppName;
+
+    if (appNameFromAttribute && availableApps[appNameFromAttribute]) {
+      resolvedConfig = availableApps[appNameFromAttribute];
+      console.log(
+        "AppConfigProvider: Config set from html data-app-name attribute:",
+        resolvedConfig
+      );
     } else {
-      const appNameFromAttribute = document.documentElement.dataset
-        .appName as AppName;
-      if (appNameFromAttribute && availableApps[appNameFromAttribute]) {
-        resolvedConfig = availableApps[appNameFromAttribute]; // Use new names
-        console.log(
-          "AppConfigProvider: Config set from html data-app-name attribute:",
-          resolvedConfig
-        );
-      } else {
-        console.warn(
-          "AppConfigProvider: __APP_NAME__ script tag not found or empty, and no/invalid data-app-name attribute, using default config."
-        );
-      }
+      console.warn(
+        "AppConfigProvider: No valid data-app-name attribute found, using default config."
+      );
     }
+
     setConfig(resolvedConfig);
   }, []);
 

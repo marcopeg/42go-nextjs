@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { getAppConfig } from "@/lib/app-config"; // Renamed from @/lib/config
-import type { AppConfig } from "../AppConfig"; // Updated import path
+import { getAppName } from "@/lib/app-config"; // Renamed from @/lib/config
+import type { AppName } from "../AppConfig"; // Updated import path
 import { AppConfigProvider } from "@/components/AppConfigProvider";
 import "./globals.css";
 
@@ -17,22 +17,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const appConfig: AppConfig | null = await getAppConfig();
-  const appNameForClient = appConfig?.name; // Get the app name for client-side hydration
+  const appName: AppName | null = await getAppName();
 
   return (
-    <html lang="en">
-      <head>
-        {appNameForClient && (
-          <script
-            id="__APP_NAME__"
-            type="application/json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify(appNameForClient),
-            }}
-          />
-        )}
-      </head>
+    <html lang="en" data-app-name={appName}>
+      <head></head>
       <body className={inter.className}>
         <AppConfigProvider>{children}</AppConfigProvider>
       </body>
