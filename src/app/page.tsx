@@ -1,9 +1,9 @@
-import { getRequestConfig } from "@/lib/config"; // Use getRequestConfig
-import type { AppConfig } from "../AppConfig"; // Updated import path
+import { getAppConfig } from "@/lib/app-config"; // Renamed from @/lib/config
+import type { AppConfig } from "../AppConfig";
 import OriginDisplay from "@/components/OriginDisplay";
 
 export default async function HomePage() {
-  const appConfig: AppConfig | null = await getRequestConfig(); // Use getRequestConfig
+  const appConfig: AppConfig | null = await getAppConfig(); // Renamed from getRequestConfig
 
   if (!appConfig) {
     return (

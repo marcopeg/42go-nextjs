@@ -5,10 +5,10 @@ import {
   type AppName,
   availableApps,
   DEFAULT_APP,
-} from "../AppConfig"; // Updated import path
+} from "../AppConfig";
 
-export const getRequestConfig = cache(async (): Promise<AppConfig | null> => {
-  console.log("Executing getRequestConfig (app name based)");
+export const getAppConfig = cache(async (): Promise<AppConfig | null> => {
+  console.log("@@@@@ Executing getAppConfig (app name based) @@@@@");
   const headerList = await getHeaders();
   const appNameHeader = headerList.get("X-App-Name");
 

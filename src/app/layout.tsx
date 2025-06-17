@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { getRequestConfig } from "@/lib/config";
+import { getAppConfig } from "@/lib/app-config"; // Renamed from @/lib/config
 import type { AppConfig } from "../AppConfig"; // Updated import path
 import { AppConfigProvider } from "@/components/AppConfigProvider";
 import "./globals.css";
@@ -17,7 +17,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const appConfig: AppConfig | null = await getRequestConfig();
+  const appConfig: AppConfig | null = await getAppConfig(); // Renamed from getRequestConfig
   const appNameForClient = appConfig?.name; // Get the app name for client-side hydration
 
   return (
