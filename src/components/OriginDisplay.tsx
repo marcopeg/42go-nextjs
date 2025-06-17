@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useAppConfig } from "@/contexts/AppConfigContext";
+import { useAppConfig } from "@/components/AppConfigProvider";
 
 const OriginDisplay: React.FC = () => {
   const appConfigFromContext = useAppConfig();

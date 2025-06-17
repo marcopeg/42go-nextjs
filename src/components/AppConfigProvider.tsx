@@ -1,13 +1,20 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { AppConfigContext } from "@/contexts/AppConfigContext";
+import React, { useEffect, useState, createContext, useContext } from "react";
 import {
   type AppConfig,
   type AppName,
   availableApps,
   DEFAULT_APP,
 } from "@/AppConfig"; // Updated import path
+
+// Context and hook unified here
+const AppConfigContext = createContext<AppConfig | null>(null);
+
+const useAppConfig = () => {
+  const context = useContext(AppConfigContext);
+  return context;
+};
 
 interface AppConfigProviderProps {
   children: React.ReactNode;
@@ -47,4 +54,4 @@ const AppConfigProvider: React.FC<AppConfigProviderProps> = ({ children }) => {
 };
 
 export default AppConfigProvider;
-export { AppConfigProvider };
+export { AppConfigProvider, AppConfigContext, useAppConfig };
