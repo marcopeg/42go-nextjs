@@ -30,15 +30,15 @@ export const DEFAULT_APP: AppName = null;
 export const availableApps = {
   app1: {
     name: "APP n1",
-    features: ["todos"],
+    features: ["todos:read"],
   },
   app2: {
     name: "APP n2",
-    features: ["adminPanel"],
+    features: ["adminPanel", "todos:write"],
   },
   default: {
     name: "DEFAULT APP",
-    features: ["todos"],
+    features: ["todos:*"],
   },
 } satisfies Record<string, AppConfigItem>;
 

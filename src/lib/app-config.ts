@@ -58,8 +58,19 @@ export const withAppConfig =
     if (!config) {
       return Response.json({ error: "app not found" }, { status: 404 });
     }
-    if (feature && (!config.features || !config.features.includes(feature))) {
-      return Response.json({ error: "feature not available" }, { status: 404 });
+    if (feature) {
+      const features = config.features || [];
+      const featureBase = feature.split(":")[0];
+      const hasFeature =
+        features.includes(feature) ||
+        features.includes(`${featureBase}:*`) ||
+        features.includes("*");
+      if (!hasFeature) {
+        return Response.json(
+          { error: "feature not available" },
+          { status: 404 }
+        );
+      }
     }
     return handler(config, req);
   };
