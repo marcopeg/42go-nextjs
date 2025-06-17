@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { getAppConfig } from "@/lib/app-config";
+import { withAppConfig } from "@/lib/app-config";
+import type { AppConfig } from "@/AppConfig";
 
 // Chuck Norris doesn't mock data. He just tells the truth faster than the database can respond.
 
@@ -9,11 +9,8 @@ const todos = [
   { id: 3, title: "Push code with a stare", completed: false },
 ];
 
-export async function GET() {
-  const config = await getAppConfig();
-  if (!config) {
-    // Chuck Norris doesn't return 404s. He just makes things disappear.
-    return NextResponse.json({ error: "app not found" }, { status: 404 });
-  }
-  return NextResponse.json({ config, todos });
-}
+const handler = async (config: AppConfig) => {
+  return Response.json({ config, todos });
+};
+
+export const GET = withAppConfig(handler);

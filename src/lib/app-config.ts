@@ -47,3 +47,15 @@ export const getAppConfig = cache(async (): Promise<AppConfig> => {
   if (!appName) return null;
   return availableApps[appName as keyof typeof availableApps] || null;
 });
+
+export const withAppConfig =
+  (
+    handler: (config: AppConfig, req: Request) => Promise<Response> | Response
+  ) =>
+  async (req: Request) => {
+    const config = await getAppConfig();
+    if (!config) {
+      return Response.json({ error: "app not found" }, { status: 404 });
+    }
+    return handler(config, req);
+  };
