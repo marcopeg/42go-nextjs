@@ -50,12 +50,16 @@ export const getAppConfig = cache(async (): Promise<AppConfig> => {
 
 export const withAppConfig =
   (
-    handler: (config: AppConfig, req: Request) => Promise<Response> | Response
+    handler: (config: AppConfig, req: Request) => Promise<Response> | Response,
+    feature?: string
   ) =>
   async (req: Request) => {
     const config = await getAppConfig();
     if (!config) {
       return Response.json({ error: "app not found" }, { status: 404 });
+    }
+    if (feature && (!config.features || !config.features.includes(feature))) {
+      return Response.json({ error: "feature not available" }, { status: 404 });
     }
     return handler(config, req);
   };

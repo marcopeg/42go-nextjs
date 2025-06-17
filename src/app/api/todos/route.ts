@@ -13,4 +13,4 @@ const handler = async (config: AppConfig) => {
   return Response.json({ config, todos });
 };
 
-export const GET = withAppConfig(handler);
+export const GET = withAppConfig(handler, "todos");

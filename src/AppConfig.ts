@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 export interface AppConfigItem {
   name: string;
   logo?: string;
-  featureFlags?: Record<string, boolean>;
+  features?: string[]; // List of enabled features for this app
 }
 
 export type AppConfig = AppConfigItem | null;
@@ -30,12 +30,15 @@ export const DEFAULT_APP: AppName = null;
 export const availableApps = {
   app1: {
     name: "APP n1",
+    features: ["todos"],
   },
   app2: {
     name: "APP n2",
+    features: ["adminPanel"],
   },
   default: {
     name: "DEFAULT APP",
+    features: ["todos"],
   },
 } satisfies Record<string, AppConfigItem>;
 
