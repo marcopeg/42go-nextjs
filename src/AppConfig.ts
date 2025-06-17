@@ -28,17 +28,17 @@ export const DEFAULT_APP: AppName = null;
  * Available applications with their configurations.
  */
 export const availableApps = {
+  default: {
+    features: ["todos:*"],
+    name: "DEFAULT APP",
+  },
   app1: {
-    name: "APP n1",
     features: ["todos:read"],
+    name: "APP n1",
   },
   app2: {
-    name: "APP n2",
     features: ["adminPanel", "todos:write"],
-  },
-  default: {
-    name: "DEFAULT APP",
-    features: ["todos:*"],
+    name: "APP n2",
   },
 } satisfies Record<string, AppConfigItem>;
 

@@ -19,6 +19,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const appName: AppName = await getAppName();
+  if (!appName) {
+    return (
+      <html lang="en">
+        <head></head>
+        <body className={inter.className}>{children}</body>
+      </html>
+    );
+  }
 
   return (
     <html lang="en" data-app-name={appName ?? undefined}>
