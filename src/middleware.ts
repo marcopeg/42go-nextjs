@@ -6,10 +6,16 @@ export async function middleware(request: NextRequest) {
   // Set the AppName header
   const resolvedAppName = await getAppName(request);
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set(APP_HEADER_NAME, resolvedAppName);
-  console.log(
-    `@@@@@@ Middleware: Setting ${APP_HEADER_NAME} header to: ${resolvedAppName}`
-  );
+  if (resolvedAppName) {
+    requestHeaders.set(APP_HEADER_NAME, resolvedAppName);
+    console.log(
+      `@@@@@@ Middleware: Setting ${APP_HEADER_NAME} header to: ${resolvedAppName}`
+    );
+  } else {
+    console.warn(
+      `@@@@@@ Middleware: No valid app name resolved, not setting ${APP_HEADER_NAME} header.`
+    );
+  }
 
   return NextResponse.next({
     request: {

@@ -35,7 +35,7 @@ export const availableApps = {
  * This is used when no specific app is identified.
  */
 export type AppName = keyof typeof availableApps;
-export const DEFAULT_APP: AppName = "default";
+export const DEFAULT_APP: AppName | null = null;
 
 /**
  * Dynamically determines the app name based on request headers or URL.
@@ -44,7 +44,9 @@ export const DEFAULT_APP: AppName = "default";
  * @param request NextRequest object from Next.js
  * @returns
  */
-export const getAppName = async (request: NextRequest): Promise<AppName> => {
+export const getAppName = async (
+  request: NextRequest
+): Promise<AppName | null> => {
   // Identify by header
   const customSetupHeader = request.headers.get(APP_HEADER_NAME);
   if (customSetupHeader && availableApps[customSetupHeader as AppName]) {
@@ -60,6 +62,12 @@ export const getAppName = async (request: NextRequest): Promise<AppName> => {
     }
   }
 
-  // Fallback to default app
+  if (hostHeader?.split(":")[0] === "localhost") {
+    return "default" as AppName; // Fallback for localhost
+  }
+
+  console.warn(`No valid app name found in headers or URL: ${hostHeader}`);
+
+  // Fallback to default app if defined, else null
   return DEFAULT_APP;
 };

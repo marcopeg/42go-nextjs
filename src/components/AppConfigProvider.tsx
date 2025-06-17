@@ -1,12 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, createContext, useContext } from "react";
-import {
-  type AppConfig,
-  type AppName,
-  availableApps,
-  DEFAULT_APP,
-} from "@/AppConfig"; // Updated import path
+import { type AppConfig, type AppName, availableApps } from "@/AppConfig"; // Updated import path
 
 // Context and hook unified here
 const AppConfigContext = createContext<AppConfig | null>(null);
@@ -25,7 +20,7 @@ const AppConfigProvider: React.FC<AppConfigProviderProps> = ({ children }) => {
 
   useEffect(() => {
     console.log("AppConfigProvider: useEffect running");
-    let resolvedConfig: AppConfig | null = availableApps[DEFAULT_APP] || null;
+    let resolvedConfig: AppConfig | null = null;
 
     // Get app name from the data-app-name attribute on the html element
     const appNameFromAttribute = document.documentElement.dataset
@@ -39,7 +34,7 @@ const AppConfigProvider: React.FC<AppConfigProviderProps> = ({ children }) => {
       );
     } else {
       console.warn(
-        "AppConfigProvider: No valid data-app-name attribute found, using default config."
+        "AppConfigProvider: No valid data-app-name attribute found, and no DEFAULT_APP set. Using null config."
       );
     }
 
