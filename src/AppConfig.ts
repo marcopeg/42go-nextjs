@@ -7,6 +7,8 @@ export interface AppConfig {
   featureFlags?: Record<string, boolean>;
 }
 
+export const APP_HEADER_NAME = "X-App-Name"; // Header name for app identification
+
 /**
  * Available applications with their configurations.
  */
@@ -39,9 +41,9 @@ export const DEFAULT_APP: AppName = "default";
  * @param request NextRequest object from Next.js
  * @returns
  */
-export const getAppName = (request: NextRequest): AppName => {
+export const getAppName = async (request: NextRequest): Promise<AppName> => {
   // Identify by header
-  const customSetupHeader = request.headers.get("x-app-name");
+  const customSetupHeader = request.headers.get(APP_HEADER_NAME);
   if (customSetupHeader && availableApps[customSetupHeader as AppName]) {
     return customSetupHeader as AppName;
   }

@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getAppName } from "./AppConfig"; // Updated import path
+import { getAppName, APP_HEADER_NAME } from "./AppConfig"; // Updated import path
 
 export async function middleware(request: NextRequest) {
-  const resolvedAppName = getAppName(request); // Corrected variable name
-
+  // Set the AppName header
+  const resolvedAppName = await getAppName(request);
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("X-App-Name", resolvedAppName); // Changed header name & variable
+  requestHeaders.set(APP_HEADER_NAME, resolvedAppName);
   console.log(
-    `@@@@@@ Middleware: Setting X-App-Name header to: ${resolvedAppName}` // Updated log & variable
+    `@@@@@@ Middleware: Setting ${APP_HEADER_NAME} header to: ${resolvedAppName}`
   );
 
   return NextResponse.next({

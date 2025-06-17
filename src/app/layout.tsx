@@ -17,7 +17,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const appConfig: AppConfig | null = await getAppConfig(); // Renamed from getRequestConfig
+  const appConfig: AppConfig | null = await getAppConfig();
   const appNameForClient = appConfig?.name; // Get the app name for client-side hydration
 
   return (
