@@ -41,7 +41,7 @@ export const getAppName = cache(async (): Promise<AppName> => {
   }
 });
 
-export const getAppConfig = cache(async (): Promise<AppConfig | null> => {
+export const getAppConfig = cache(async (): Promise<AppConfig> => {
   console.log("@@@@@ Executing getAppConfig() @@@@@");
   const appName = await getAppName();
   if (!appName) return null;

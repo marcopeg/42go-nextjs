@@ -4,7 +4,7 @@ import OriginDisplay from "@/components/OriginDisplay";
 import { notFound } from "next/navigation";
 
 export default async function HomePage() {
-  const appConfig: AppConfig | null = await getAppConfig(); // Renamed from getRequestConfig
+  const appConfig: AppConfig = await getAppConfig();
 
   if (!appConfig) {
     notFound();

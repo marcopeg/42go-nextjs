@@ -4,7 +4,7 @@ import React, { useEffect, useState, createContext, useContext } from "react";
 import { type AppConfig, type AppName, availableApps } from "@/AppConfig"; // Updated import path
 
 // Context and hook unified here
-const AppConfigContext = createContext<AppConfig | null>(null);
+const AppConfigContext = createContext<AppConfig>(null);
 
 const useAppConfig = () => {
   const context = useContext(AppConfigContext);
@@ -16,11 +16,11 @@ interface AppConfigProviderProps {
 }
 
 const AppConfigProvider: React.FC<AppConfigProviderProps> = ({ children }) => {
-  const [config, setConfig] = useState<AppConfig | null>(null);
+  const [config, setConfig] = useState<AppConfig>(null);
 
   useEffect(() => {
     console.log("AppConfigProvider: useEffect running");
-    let resolvedConfig: AppConfig | null = null;
+    let resolvedConfig: AppConfig = null;
 
     // Get app name from the data-app-name attribute on the html element
     const appNameFromAttribute = document.documentElement.dataset

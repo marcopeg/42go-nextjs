@@ -1,11 +1,12 @@
 import type { NextRequest } from "next/server";
 
-export interface AppConfig {
+export interface AppConfigItem {
   name: string;
   logo?: string;
   featureFlags?: Record<string, boolean>;
 }
 
+export type AppConfig = AppConfigItem | null;
 export type AppName = keyof typeof availableApps | null;
 
 /**
@@ -36,7 +37,7 @@ export const availableApps = {
   default: {
     name: "DEFAULT APP",
   },
-} satisfies Record<string, AppConfig>;
+} satisfies Record<string, AppConfigItem>;
 
 /**
  * Dynamically determines the app name based on request headers or URL.
