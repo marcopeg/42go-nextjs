@@ -19,25 +19,8 @@ export default async function RootLayout({
 }>) {
   const appName: AppName = await getAppName();
 
-  if (!appName) {
-    return (
-      <html lang="en">
-        <head></head>
-        <body>
-          <main className="flex min-h-screen flex-col items-center justify-center p-24">
-            <h1 className="text-3xl font-bold">404 - App Not Found</h1>
-            <p className="mt-4">
-              No valid application configuration was identified for this
-              request.
-            </p>
-          </main>
-        </body>
-      </html>
-    );
-  }
-
   return (
-    <html lang="en" data-app-name={appName}>
+    <html lang="en" data-app-name={appName ?? undefined}>
       <head></head>
       <body className={inter.className}>
         <AppConfigProvider>{children}</AppConfigProvider>
