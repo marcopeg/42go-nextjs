@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { getRequestConfig } from "@/lib/config";
-import type { AppConfig } from "../AppConfig.type";
+import type { AppConfig } from "../AppConfig"; // Updated import path
 import { AppConfigProvider } from "@/components/AppConfigProvider";
 import "./globals.css";
 

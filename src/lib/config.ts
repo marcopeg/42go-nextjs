@@ -1,7 +1,11 @@
 import { headers as getHeaders } from "next/headers";
 import { cache } from "react";
-import { type AppConfig, type AppName } from "../AppConfig.type";
-import { availableApps, DEFAULT_APP } from "../AppConfig"; // Renamed imports
+import {
+  type AppConfig,
+  type AppName,
+  availableApps,
+  DEFAULT_APP,
+} from "../AppConfig"; // Updated import path
 
 export const getRequestConfig = cache(async (): Promise<AppConfig | null> => {
   console.log("Executing getRequestConfig (app name based)");

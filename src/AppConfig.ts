@@ -1,24 +1,60 @@
-import type { AppConfig, AppName } from "./AppConfig.type.ts";
+import type { NextRequest } from "next/server";
 
+export interface AppConfig {
+  name: string;
+  origin: string; // Added missing origin property
+  logo?: string;
+  featureFlags?: Record<string, boolean>;
+}
+
+/**
+ * Available applications with their configurations.
+ */
 export const availableApps = {
   app1: {
     name: "APP n1",
-    origin: "http://app1.localhost:3000",
-    // featureFlags: { newUi: true },
-    // logo: 'app1_logo.svg'
+    origin: "http://app1.com",
   },
   app2: {
     name: "APP n2",
-    origin: "http://app2.localhost:3000",
-    // featureFlags: { newUi: false },
-    // logo: 'app2_logo.svg'
+    origin: "http://app2.com",
   },
   default: {
     name: "DEFAULT APP",
-    origin: "http://localhost:3000",
-    // featureFlags: { newUi: false },
-    // logo: 'default_logo.svg'
+    origin: "http://defaultapp.com",
   },
 } satisfies Record<string, AppConfig>;
 
+/**
+ * Default application name.
+ * This is used when no specific app is identified.
+ */
+export type AppName = keyof typeof availableApps;
 export const DEFAULT_APP: AppName = "default";
+
+/**
+ * Dynamically determines the app name based on request headers or URL.
+ * (used in middleware and other parts of the application)
+ *
+ * @param request NextRequest object from Next.js
+ * @returns
+ */
+export const getAppName = (request: NextRequest): AppName => {
+  // Identify by header
+  const customSetupHeader = request.headers.get("x-app-name");
+  if (customSetupHeader && availableApps[customSetupHeader as AppName]) {
+    return customSetupHeader as AppName;
+  }
+
+  // Identify by url
+  const hostHeader = request.headers.get("host");
+  if (hostHeader) {
+    const appNameFromHost = hostHeader.split(".")[0] as AppName;
+    if (availableApps[appNameFromHost]) {
+      return appNameFromHost;
+    }
+  }
+
+  // Fallback to default app
+  return DEFAULT_APP;
+};

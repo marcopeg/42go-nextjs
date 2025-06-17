@@ -1,34 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { type AppName } from "./AppConfig.type";
-import { DEFAULT_APP, availableApps } from "./AppConfig"; // Renamed imports
-
-// New function to determine the setup name
-const getAppName = (request: NextRequest): AppName => {
-  const customSetupHeader = request.headers.get("x-app-name");
-  if (customSetupHeader && availableApps[customSetupHeader as AppName]) {
-    console.log(
-      `@@@@@@ getAppName: Using setup name from x-app-name header: ${customSetupHeader}`
-    );
-    return customSetupHeader as AppName;
-  }
-
-  const hostHeader = request.headers.get("host");
-  if (hostHeader) {
-    const appNameFromHost = hostHeader.split(".")[0] as AppName;
-    if (availableApps[appNameFromHost]) {
-      console.log(
-        `@@@@@@ getAppName: Using setup name derived from host header: ${hostHeader}`
-      );
-      return appNameFromHost;
-    }
-  }
-
-  console.log(
-    `@@@@@@ getAppName: No specific setup found, using default: ${DEFAULT_APP}`
-  );
-  return DEFAULT_APP;
-};
+import { getAppName } from "./AppConfig"; // Updated import path
 
 export async function middleware(request: NextRequest) {
   const resolvedAppName = getAppName(request); // Corrected variable name

@@ -1,5 +1,5 @@
 import { getRequestConfig } from "@/lib/config"; // Use getRequestConfig
-import type { AppConfig } from "../AppConfig.type"; // Removed .ts
+import type { AppConfig } from "../AppConfig"; // Updated import path
 import OriginDisplay from "@/components/OriginDisplay";
 
 export default async function HomePage() {

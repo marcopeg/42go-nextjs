@@ -2,8 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { AppConfigContext } from "@/contexts/AppConfigContext";
-import { type AppConfig, type AppName } from "@/AppConfig.type";
-import { availableApps, DEFAULT_APP } from "@/AppConfig"; // Renamed imports
+import {
+  type AppConfig,
+  type AppName,
+  availableApps,
+  DEFAULT_APP,
+} from "@/AppConfig"; // Updated import path
 
 interface AppConfigProviderProps {
   children: React.ReactNode;
