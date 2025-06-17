@@ -10,11 +10,11 @@ import { setups } from "../AppConfig"; // Removed .ts
 export const getRequestConfig = cache(async (): Promise<AppConfig | null> => {
   console.log("Executing getRequestConfig (setup name based)");
   const headerList = await getHeaders();
-  const setupNameHeader = headerList.get("X-Setup-Name-Resolved");
+  const setupNameHeader = headerList.get("X-App-Name"); // Changed header name
 
   if (!setupNameHeader) {
     console.warn(
-      `X-Setup-Name-Resolved header not found, using default setup: ${DEFAULT_SETUP_NAME}`
+      `X-App-Name header not found, using default setup: ${DEFAULT_SETUP_NAME}` // Updated log
     );
     return setups[DEFAULT_SETUP_NAME] || null;
   }
