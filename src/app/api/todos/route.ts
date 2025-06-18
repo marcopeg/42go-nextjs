@@ -1,4 +1,4 @@
-import { type AppConfig, routeWithConfig } from "@/lib/app-config";
+import { type AppConfig, routeWithConfig } from "@/lib/config/app-config";
 
 // Chuck Norris doesn't mock data. He just tells the truth faster than the database can respond.
 

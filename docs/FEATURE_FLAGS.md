@@ -1,6 +1,6 @@
 # Feature Flags
 
-Your App supports **Feature Flags** for both App and API routes using HOC from the `@/lib/app-config-*` libraries.
+Your App supports **Feature Flags** for both App and API routes using HOC from the `@/lib/config/app-config-*` libraries.
 
 ## Available Flags
 
@@ -40,10 +40,10 @@ This is an opt-in activity that you have to do by applying HOC to your pages' co
 
 ### Protect a Page
 
-Apply the `pageWithConfig()` HOC from `@/lib/app-config-pages.tsx`:
+Apply the `pageWithConfig()` HOC from `@/lib/config/app-config-pages.tsx`:
 
 ```tsx
-import { type AppConfig, pageWithConfig } from "@/lib/app-config-pages";
+import { type AppConfig, pageWithConfig } from "@/lib/config/app-config-pages";
 
 const TodosPage = ({ config }: { config: AppConfig }) => (
   <div>{config.name}</div>
@@ -54,10 +54,10 @@ export default pageWithConfig(TodosPage);
 
 ### Protect a Route
 
-Apply the `routeWithConfig()` HOC from `@/lib/app-config.ts`:
+Apply the `routeWithConfig()` HOC from `@/lib/config/app-config.ts`:
 
 ```ts
-import { typeAppConfig, routeWithConfig } from "@/lib/app-config";
+import { typeAppConfig, routeWithConfig } from "@/lib/config/app-config";
 
 const getTodos = async (config: AppConfig) => {
   return Response.json({ success: true });

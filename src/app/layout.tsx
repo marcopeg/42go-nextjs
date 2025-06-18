@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Inter } from "next/font/google";
-import { type AppName, getAppName } from "@/lib/app-config"; // Renamed from @/lib/config
-import { AppConfigProvider } from "@/components/AppConfigProvider";
+import { type AppName, getAppName } from "@/lib/config/app-config"; // Renamed from @/lib/config
+import { AppConfigProvider } from "@/lib/config/AppConfigProvider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });

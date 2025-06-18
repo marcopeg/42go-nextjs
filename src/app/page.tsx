@@ -1,4 +1,4 @@
-import { type AppConfig, pageWithConfig } from "@/lib/app-config-pages";
+import { type AppConfig, pageWithConfig } from "@/lib/config/app-config-pages";
 import OriginDisplay from "@/components/OriginDisplay";
 
 const HomePage = ({ config }: { config: AppConfig }) => {
