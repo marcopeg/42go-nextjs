@@ -36,7 +36,7 @@ export const availableApps = {
       pages: ["*"],
       apis: ["*"],
     },
-    name: "APP n1",
+    name: "DEFAULT APP",
   },
   app1: {
     featureFlags: {
@@ -61,7 +61,7 @@ export const availableApps = {
  * @param request NextRequest object from Next.js
  * @returns
  */
-export const getAppName = async (request: NextRequest): Promise<AppName> => {
+export const matchAppName = async (request: NextRequest): Promise<AppName> => {
   // Identify by header
   const customSetupHeader = request.headers.get(APP_HEADER_NAME);
   if (

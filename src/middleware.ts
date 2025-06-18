@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getAppName, APP_HEADER_NAME } from "./AppConfig"; // Updated import path
+import { matchAppName, APP_HEADER_NAME } from "./AppConfig"; // Updated import path
 
 export async function middleware(request: NextRequest) {
   // Set the AppName header
-  const resolvedAppName = await getAppName(request);
+  const resolvedAppName = await matchAppName(request);
   const requestHeaders = new Headers(request.headers);
   if (resolvedAppName) {
     requestHeaders.set(APP_HEADER_NAME, resolvedAppName);
