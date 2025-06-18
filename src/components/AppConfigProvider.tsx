@@ -3,7 +3,9 @@
 import React, { useEffect, useState, createContext, useContext } from "react";
 import { type AppConfig, type AppName, availableApps } from "@/AppConfig"; // Updated import path
 
-// Context and hook unified here
+/**
+ * Context & Hook
+ */
 const AppConfigContext = createContext<AppConfig>(null);
 
 const useAppConfig = () => {
@@ -11,6 +13,9 @@ const useAppConfig = () => {
   return context;
 };
 
+/**
+ * Provider Component
+ */
 interface AppConfigProviderProps {
   children: React.ReactNode;
 }

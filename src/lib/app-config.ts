@@ -7,10 +7,11 @@ import {
   availableApps,
   DEFAULT_APP,
   APP_HEADER_NAME,
-} from "../AppConfig";
+} from "@/AppConfig";
+
+export type { AppConfig, AppName } from "@/AppConfig";
 
 export const getAppName = cache(async (): Promise<AppName> => {
-  console.log("@@@@@ Executing getAppName() @@@@@");
   const headerList = await getHeaders();
   const appNameHeader = headerList.get(APP_HEADER_NAME);
   if (!appNameHeader) {
@@ -43,7 +44,6 @@ export const getAppName = cache(async (): Promise<AppName> => {
 });
 
 export const getAppConfig = cache(async (): Promise<AppConfig> => {
-  console.log("@@@@@ Executing getAppConfig() @@@@@");
   const appName = await getAppName();
   if (!appName) return null;
   return availableApps[appName as keyof typeof availableApps] || null;

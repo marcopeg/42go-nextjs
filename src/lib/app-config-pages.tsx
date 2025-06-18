@@ -1,7 +1,9 @@
 import { type ComponentType } from "react";
+import type { AppConfig } from "@/AppConfig";
 import { notFound } from "next/navigation";
 import { getAppConfig } from "./app-config";
-import type { AppConfig } from "../AppConfig";
+
+export type { AppConfig, AppName } from "@/AppConfig";
 
 export const pageWithConfig = <P extends object>(
   PageComponent: ComponentType<P & { config: AppConfig }>,
