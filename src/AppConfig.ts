@@ -7,7 +7,6 @@ export interface AppConfigItem {
     pages: string[]; // List of pages available in this app
     apis: string[]; // List of API endpoints available in this app
   };
-  features?: string[]; // List of enabled features for this app
 }
 
 export type AppConfig = AppConfigItem | null;
@@ -32,12 +31,18 @@ export const DEFAULT_APP: AppName = null;
  * Available applications with their configurations.
  */
 export const availableApps = {
+  default: {
+    featureFlags: {
+      pages: ["*"],
+      apis: ["*"],
+    },
+    name: "APP n1",
+  },
   app1: {
     featureFlags: {
       pages: ["TodosPage"],
-      apis: ["todos:read"],
+      apis: ["getTodos"],
     },
-    features: ["TodosPage", "todos:read"],
     name: "APP n1",
   },
   app2: {
@@ -45,7 +50,6 @@ export const availableApps = {
       pages: [],
       apis: ["todos:write"],
     },
-    features: ["adminPanel", "todos:write"],
     name: "APP n2",
   },
 } satisfies Record<string, AppConfigItem>;

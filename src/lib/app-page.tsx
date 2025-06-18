@@ -23,12 +23,18 @@ export const pageWithConfig = <P extends object>(
     // Check a specific feature flag for the page
     // "*" means allowed by default
     if (pageToCheck && pageToCheck !== "*") {
-      const flags = config.featureFlags.pages;
+      const availableFlags = config.featureFlags.pages;
+
+      // Free for all:
+      if (availableFlags.includes("*")) {
+        return <PageComponent {...props} config={config} />;
+      }
+
       const featureBase = pageToCheck.split(":")[0];
       const hasFeature =
-        flags.includes(pageToCheck) ||
-        flags.includes(`${featureBase}:*`) ||
-        flags.includes("*");
+        availableFlags.includes(pageToCheck) ||
+        availableFlags.includes(`${featureBase}:*`) ||
+        availableFlags.includes("*");
       if (!hasFeature) {
         return notFound();
       }

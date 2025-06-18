@@ -49,23 +49,36 @@ export const getAppConfig = cache(async (): Promise<AppConfig> => {
   return availableApps[appName as keyof typeof availableApps] || null;
 });
 
-export const withAppConfig =
+export const routeWithConfig =
   (
     handler: (config: AppConfig, req: Request) => Promise<Response> | Response,
-    feature?: string
+    routeName?: string
   ) =>
   async (req: Request) => {
+    // Hard stop on missing configuration:
     const config = await getAppConfig();
     if (!config) {
       return Response.json({ error: "app not found" }, { status: 404 });
     }
-    if (feature) {
-      const features = config.features || [];
-      const featureBase = feature.split(":")[0];
+
+    // Retrieve the route's name from the handler's name:
+    const flagToCheck = routeName === undefined ? handler.name : routeName;
+
+    // Check a specific feature flag for the route:
+    // "*" means allowed by default
+    if (flagToCheck && flagToCheck !== "*") {
+      const availableFlags = config.featureFlags.apis;
+
+      // Free for all:
+      if (availableFlags.includes("*")) {
+        return handler(config, req);
+      }
+
+      const flagBase = flagToCheck.split(":")[0];
       const hasFeature =
-        features.includes(feature) ||
-        features.includes(`${featureBase}:*`) ||
-        features.includes("*");
+        availableFlags.includes(flagToCheck) ||
+        availableFlags.includes(`${flagBase}:*`) ||
+        availableFlags.includes("*");
       if (!hasFeature) {
         return Response.json(
           { error: "feature not available" },
@@ -73,5 +86,6 @@ export const withAppConfig =
         );
       }
     }
+
     return handler(config, req);
   };
