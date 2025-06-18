@@ -3,6 +3,10 @@ import type { NextRequest } from "next/server";
 export interface AppConfigItem {
   name: string;
   logo?: string;
+  featureFlags: {
+    pages: string[]; // List of pages available in this app
+    apis: string[]; // List of API endpoints available in this app
+  };
   features?: string[]; // List of enabled features for this app
 }
 
@@ -28,15 +32,19 @@ export const DEFAULT_APP: AppName = null;
  * Available applications with their configurations.
  */
 export const availableApps = {
-  default: {
-    features: ["todos:*"],
-    name: "DEFAULT APP",
-  },
   app1: {
-    features: ["todos:read"],
+    featureFlags: {
+      pages: ["TodosPage"],
+      apis: ["todos:read"],
+    },
+    features: ["TodosPage", "todos:read"],
     name: "APP n1",
   },
   app2: {
+    featureFlags: {
+      pages: [],
+      apis: ["todos:write"],
+    },
     features: ["adminPanel", "todos:write"],
     name: "APP n2",
   },

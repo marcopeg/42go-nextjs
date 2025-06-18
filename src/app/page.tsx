@@ -1,19 +1,15 @@
-import { getAppConfig } from "@/lib/app-config"; // Renamed from @/lib/config
+import { pageWithConfig } from "@/lib/app-page";
 import type { AppConfig } from "../AppConfig";
 import OriginDisplay from "@/components/OriginDisplay";
-import { notFound } from "next/navigation";
 
-export default async function HomePage() {
-  const appConfig: AppConfig = await getAppConfig();
-
-  if (!appConfig) {
-    notFound();
-  }
-
+const HomePage = ({ config }: { config: AppConfig }) => {
+  if (!config) return null;
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      hello {appConfig.name}!
+      hello {config.name}!
       <OriginDisplay />
     </main>
   );
-}
+};
+
+export default pageWithConfig(HomePage, "*");
