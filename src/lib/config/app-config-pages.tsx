@@ -7,7 +7,7 @@ export type { AppConfig, AppName } from "@/AppConfig";
 
 export const pageWithConfig = <P extends object>(
   PageComponent: ComponentType<P & { config: AppConfig }>,
-  pageName?: string
+  requiredFlags?: string
 ) => {
   const PageWithConfig = async (props: P) => {
     // Hard stop on missing configuration:
@@ -16,26 +16,25 @@ export const pageWithConfig = <P extends object>(
       return notFound();
     }
 
+    // Free for all:
+    const availableFlags = config.featureFlags.pages;
+    if (availableFlags.includes("*")) {
+      return <PageComponent {...props} config={config} />;
+    }
+
     // Retrieve the page name from the component's displayName or name
-    const pageToCheck =
-      pageName === undefined
+    const flagsToCheck =
+      requiredFlags === undefined
         ? PageComponent.displayName || PageComponent.name
-        : pageName;
+        : requiredFlags;
 
     // Check a specific feature flag for the page
     // "*" means allowed by default
-    if (pageToCheck && pageToCheck !== "*") {
-      const availableFlags = config.featureFlags.pages;
-
-      // Free for all:
-      if (availableFlags.includes("*")) {
-        return <PageComponent {...props} config={config} />;
-      }
-
-      const featureBase = pageToCheck.split(":")[0];
+    if (flagsToCheck && flagsToCheck !== "*") {
+      const flagBase = flagsToCheck.split(":")[0];
       const hasFeature =
-        availableFlags.includes(pageToCheck) ||
-        availableFlags.includes(`${featureBase}:*`) ||
+        availableFlags.includes(flagsToCheck) ||
+        availableFlags.includes(`${flagBase}:*`) ||
         availableFlags.includes("*");
       if (!hasFeature) {
         return notFound();
