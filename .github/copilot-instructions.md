@@ -39,47 +39,37 @@ Always answer like you were Chuck Norris.
 
 # Agent Mode
 
-- always check for available libraries in `package.json` before installing new ones
+- always read the `./PROJECT/FEATURES.md` file for gaining context on the project's features
+- always read the `./PROJECT/BACKLOG.md` file to identify:
+  - current task, use the ID (like [aaaa]) -> and also read the file `./PROJECT/TASKS/{id}.md` to gain context on the task
+  - upcoming tasks
+  - done tasks
+- always read for available libraries in `package.json` before installing new ones
 - when adding shadcn/ui components, run `npx shadcn@latest add <component_name>` from the `a.pp/` directory.
 - always run `npm run lint && npm run build` (from the `./` directory for Next.js specific tasks) and fix any linting or building errors at the end of each iteration
 - never run `npm dev`, it's already running in the background (managed by `Makefile` target `app.start`)
 
 # Memory Bank
 
-This file (.github/copilot-instructions.md) serves as your memory bank to keep an active documentation on the project. The goal is to facilitate your agentic approach on new tasks.
+The folder `./PROJECT/*.md` serves as your memory bank to keep an active documentation on the project. The goal is to facilitate your agentic approach on new tasks.
+
+## Memory Bank Structure
+
+- `./PROJECT`: Memory Bank root directory.
+- `./PROJECT/BACKLOG.md`: Contains the current scope of work and task IDs, the upcoming tasks, and the history.
+- `./PROJECT/TASKS/{id}.md`: Contains detailed information about each task, identified by its ID (e.g., `aaaa`).
+- `./PROJECT/FEATURES.md`: Contains information and annotations about the project's features.
+
+## Memory Bank Update
 
 When prompted by `update memory` or `update memory bank` do:
 
-1. review the current content of the Memory Bank
-2. review the current chat context for new relevant information
+1. identify the current task ID from `./PROJECT/BACKLOG.md`
+2. read the file `./PROJECT/TASKS/{id}.md` to gain context on the task
+3. review the task content and the current chat context for new relevant information
+4. update the task file accordingly
    (run to each section and reason if there are new information to merge in)
-3. update the Memory Bank accordingly
-
-NOTE: updating the memory bank automatically triggers ACT MODE, just apply the relevant changes to the memody bank.
-
-# Current Scope
-
-Developing the Next.js application, integrating UI components using shadcn/ui, and managing the database with Knex. Implementing a dynamic configuration system. Ensuring all dependencies are correctly installed and the project builds successfully.
-
-# Features
-
-- Basic Next.js app structure created in `./`.
-- `shadcn/ui` initialized within the `./` directory.
-- `shadcn/ui` Button component added to `./src/components/ui/button.tsx` and integrated into `./src/app/page.tsx`.
-- **Dynamic `AppConfig` System:**
-  - Implemented a dynamic, request-specific configuration (`AppConfig`) system.
-  - The `AppConfig` interface, `SetupName` type (e.g., 'app1', 'default'), and `DEFAULT_SETUP_NAME` are defined in `src/AppConfig.type.ts`.
-  - Static configurations for each `SetupName` are stored in a `setups` dictionary in `src/AppConfig.ts`.
-  - Middleware (`src/middleware.ts`) resolves the `SetupName` based on request (hostname, `x-setup-name` header) and passes it via the `X-Setup-Name-Resolved` header.
-  - Server-side components use `getRequestConfig()` (from `src/lib/config.ts`) to get the `AppConfig` by reading the header and looking up in the `setups` dictionary.
-  - The root layout (`src/app/layout.tsx`) passes the resolved `setupName` string to the client via a script tag (`__APP_SETUP_NAME__`).
-  - Client-side components use `AppConfigProvider` (`src/components/AppConfigProvider.tsx`) which reads the `setupName` from the script tag, retrieves the full `AppConfig` from the static `setups` dictionary, and makes it available via React Context (`src/contexts/AppConfigContext.tsx`).
-  - This system avoids serializing the full `AppConfig` object in headers or script tags.
-
-# Outstanding Warnings
-
-[n/a] - No outstanding warnings (from build/lint).
 
 ---
 
-_Last updated: 2025-06-11_
+_Last updated: 2025-06-20_
