@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Inter } from "next/font/google";
 import { type AppName, getAppName } from "@/lib/config/app-config"; // Renamed from @/lib/config
 import { AppConfigProvider } from "@/lib/config/AppConfigProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -28,18 +30,27 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" data-app-name={appName ?? undefined}>
+    <html
+      lang="en"
+      data-app-name={appName ?? undefined}
+      suppressHydrationWarning
+    >
       <head></head>
       <body className={inter.className}>
-        <nav className="w-full flex gap-4 p-4 border-b bg-gray-50 mb-6">
-          <Link href="/" className="font-semibold hover:underline">
-            Home
-          </Link>
-          <Link href="/todos" className="font-semibold hover:underline">
-            Todos
-          </Link>
-        </nav>
-        <AppConfigProvider>{children}</AppConfigProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <nav className="w-full flex gap-4 p-4 border-b bg-gray-50 dark:bg-gray-800 dark:text-white mb-6">
+            <Link href="/" className="font-semibold hover:underline">
+              Home
+            </Link>
+            <Link href="/todos" className="font-semibold hover:underline">
+              Todos
+            </Link>
+            <div className="ml-auto">
+              <ThemeToggle />
+            </div>
+          </nav>
+          <AppConfigProvider>{children}</AppConfigProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
