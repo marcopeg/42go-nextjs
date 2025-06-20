@@ -6,9 +6,9 @@
 
 ## Upcoming Tasks
 
+- [aaad] General dark-mode support
 - [aaab] Support different CSS projects by App-config
 - [aaac] Support different public layout based on App-config
-- [aaad] General dark-mode support
 - [aaae] Support default theme in App config
 - [aaaf] Support accent color in App config
 - [aaag] Add Postgres connection pool

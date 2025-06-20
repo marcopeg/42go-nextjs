@@ -41,7 +41,7 @@ Always answer like you were Chuck Norris.
 
 - always read the `./PROJECT/FEATURES.md` file for gaining context on the project's features
 - always read the `./PROJECT/BACKLOG.md` file to identify:
-  - current task, use the ID (like [aaaa]) -> and also read the file `./PROJECT/TASKS/{id}.md` to gain context on the task
+  - current task, use the ID (like [aaaa]) -> and also read the file `./PROJECT/TASKS/{id}-human-readable-title.md` to gain context on the task
   - upcoming tasks
   - done tasks
 - always read for available libraries in `package.json` before installing new ones
@@ -57,7 +57,7 @@ The folder `./PROJECT/*.md` serves as your memory bank to keep an active documen
 
 - `./PROJECT`: Memory Bank root directory.
 - `./PROJECT/BACKLOG.md`: Contains the current scope of work and task IDs, the upcoming tasks, and the history.
-- `./PROJECT/TASKS/{id}.md`: Contains detailed information about each task, identified by its ID (e.g., `aaaa`).
+- `./PROJECT/TASKS/{id}-human-readable-title.md`: Contains detailed information about each task, identified by its ID (e.g., `aaaa`).
 - `./PROJECT/FEATURES.md`: Contains information and annotations about the project's features.
 
 ## Memory Bank Update
