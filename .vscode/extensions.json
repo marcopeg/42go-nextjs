@@ -6,8 +6,7 @@
     "formulahendry.auto-rename-tag",
     "ms-vscode.vscode-typescript-next",
     "dsznajder.es7-react-js-snippets",
-    "christian-kohler.path-intellisense",
-    "streetsidesoftware.code-spell-checker"
+    "christian-kohler.path-intellisense"
   ],
   "unwantedRecommendations": []
 }

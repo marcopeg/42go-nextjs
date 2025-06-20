@@ -2,11 +2,10 @@
 
 ## Current Task
 
-- [aaaa] Initialize backlog
+- [aaad] General dark-mode support
 
 ## Upcoming Tasks
 
-- [aaad] General dark-mode support
 - [aaab] Support different CSS projects by App-config
 - [aaac] Support different public layout based on App-config
 - [aaae] Support default theme in App config
@@ -21,6 +20,7 @@
 
 ## Completed Tasks
 
+- [aaaa] Initialize backlog
 - [aaap] API routes ACL with App config feature flags
 - [aaaq] Page routes ACL with cApp config feature flags
 - [aaar] Identify App config by Request properties

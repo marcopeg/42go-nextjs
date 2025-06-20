@@ -70,6 +70,38 @@ When prompted by `update memory` or `update memory bank` do:
 4. update the task file accordingly
    (run to each section and reason if there are new information to merge in)
 
+## Execute Tasks from Memory Bank
+
+When prompted by `plan task` do:
+
+1. identify the current task ID from `./PROJECT/BACKLOG.md`
+2. read the file `./PROJECT/TASKS/{id}-human-readable-title.md` to gain context on the task
+3. read the file `./PROJECT/FEATURES.md` to gain context on the project's features
+4. read the file `./PROJECT/BACKLOG.md` to gain general context on the ongoing project
+5. plan the task by writing a detailed plan in the chat, including:
+   - the steps to complete the task
+   - the files to modify or create
+   - the libraries to use
+   - any additional considerations or dependencies
+6. write the plan in the task's file under `## Development Plan` section (create it if it doesn't exist)
+
+When prompted by `execute task` or `exec task` or `run task` do:
+
+1. identify the current task ID from `./PROJECT/BACKLOG.md`
+2. read the file `./PROJECT/TASKS/{id}-human-readable-title.md` to gain context on the task, in particulat the `## Development Plan` section
+3. read the file `./PROJECT/FEATURES.md` to gain context on the project's features
+4. read the file `./PROJECT/BACKLOG.md` to gain general context on the ongoing project
+5. work on the task by following the plan written in the task's file under `## Development Plan` section
+   - modify or create files as needed
+   - use the libraries and tools specified in the plan
+   - ensure to follow the coding style and conventions of the project
+   - run `npm run lint && npm run build` at the end of each iteration to check for errors
+6. update the task's file with the progress made, including:
+   - the files modified or created
+   - the libraries used
+   - any issues encountered and how they were resolved
+   - any additional notes or considerations
+
 ---
 
 _Last updated: 2025-06-20_
