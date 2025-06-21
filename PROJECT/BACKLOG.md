@@ -4,8 +4,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aaad] General dark-mode support
-
 ## Upcoming Tasks
 
 - [aaab] Support different CSS projects by App-config
@@ -24,6 +22,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [aaad] General dark-mode support
 - [aaaa] Initialize backlog
 - [aaap] API routes ACL with App config feature flags
 - [aaaq] Page routes ACL with cApp config feature flags
