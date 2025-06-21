@@ -1,10 +1,15 @@
 import type { NextRequest } from "next/server";
 import type { Metadata } from "next";
 
+export type ThemeValue = "light" | "dark" | "system";
+
 export interface AppConfigItem {
   name: string;
   logo?: string;
   meta?: Partial<Metadata>;
+  theme?: {
+    default?: ThemeValue;
+  };
   featureFlags: {
     pages: string[]; // List of pages available in this app
     apis: string[]; // List of API endpoints available in this app
@@ -39,6 +44,9 @@ export const availableApps = {
       apis: ["*"],
     },
     name: "DEFAULT APP",
+    theme: {
+      default: "system",
+    },
     meta: {
       title: "Default App - Chuck Norris Edition",
       description:
@@ -53,6 +61,9 @@ export const availableApps = {
       apis: ["getTodos"],
     },
     name: "APP n1",
+    theme: {
+      default: "dark",
+    },
     meta: {
       title: "App1 - Todo Master",
       description:
@@ -67,6 +78,9 @@ export const availableApps = {
       apis: ["todos:write"],
     },
     name: "APP n2",
+    theme: {
+      default: "light",
+    },
     meta: {
       title: "App2 - Write Operations",
       description:

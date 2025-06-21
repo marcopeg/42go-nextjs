@@ -5,16 +5,25 @@ import {
   ThemeProvider as NextThemesProvider,
   useTheme as useNextTheme,
 } from "next-themes";
+import type { ThemeValue } from "@/AppConfig";
 
-type ThemeProviderProps = Parameters<typeof NextThemesProvider>[0];
+type ThemeProviderProps = Parameters<typeof NextThemesProvider>[0] & {
+  appDefaultTheme?: ThemeValue;
+};
 
-export function ThemeProvider(props: ThemeProviderProps) {
+export function ThemeProvider({
+  appDefaultTheme,
+  ...props
+}: ThemeProviderProps) {
+  // Use app-specific default theme or fallback to "system"
+  const defaultTheme = appDefaultTheme || "system";
+
   return (
     <NextThemesProvider
       enableSystem
       disableTransitionOnChange
       attribute="class"
-      defaultTheme="system"
+      defaultTheme={defaultTheme}
       {...props}
     />
   );

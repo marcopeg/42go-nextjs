@@ -27,12 +27,19 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const appName: AppName = await getAppName();
+  const appConfig = await getAppConfig();
+
+  // Get the app-specific default theme
+  const appDefaultTheme = appConfig?.theme?.default;
+
   if (!appName) {
     return (
       <html lang="en">
         <head></head>
         <body className={inter.className}>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider appDefaultTheme={appDefaultTheme}>
+            {children}
+          </ThemeProvider>
         </body>
       </html>
     );
@@ -46,7 +53,7 @@ export default async function RootLayout({
     >
       <head></head>
       <body className={inter.className}>
-        <ThemeProvider>
+        <ThemeProvider appDefaultTheme={appDefaultTheme}>
           <nav className="w-full flex gap-4 p-4 border-b bg-gray-50 dark:bg-gray-800 dark:text-white mb-6">
             <Link href="/" className="font-semibold hover:underline">
               Home
