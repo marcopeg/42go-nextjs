@@ -4,11 +4,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aaas] Layout's metadata should come from the configuration
+- [aaae] Support default theme in App config
 
 ## Upcoming Tasks
 
-- [aaae] Support default theme in App config
 - [aaaf] Support accent color in App config
 - [aaab] Support different CSS projects by App-config
 - [aaac] Support different public layout based on App-config
@@ -23,6 +22,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [aaas] Layout's metadata should come from the configuration
 - [aaad] General dark-mode support
 - [aaaa] Initialize backlog
 - [aaap] API routes ACL with App config feature flags
