@@ -1,5 +1,7 @@
 # Project Backlog
 
+A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
+
 ## Current Task
 
 - [aaad] General dark-mode support
