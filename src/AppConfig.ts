@@ -1,8 +1,10 @@
 import type { NextRequest } from "next/server";
+import type { Metadata } from "next";
 
 export interface AppConfigItem {
   name: string;
   logo?: string;
+  meta?: Partial<Metadata>;
   featureFlags: {
     pages: string[]; // List of pages available in this app
     apis: string[]; // List of API endpoints available in this app
@@ -37,6 +39,13 @@ export const availableApps = {
       apis: ["*"],
     },
     name: "DEFAULT APP",
+    meta: {
+      title: "Default App - Chuck Norris Edition",
+      description:
+        "The default application that's tougher than a two-dollar steak",
+      keywords: ["nextjs", "default", "chuck-norris", "legendary"],
+      authors: [{ name: "Chuck Norris" }],
+    },
   },
   app1: {
     featureFlags: {
@@ -44,6 +53,13 @@ export const availableApps = {
       apis: ["getTodos"],
     },
     name: "APP n1",
+    meta: {
+      title: "App1 - Todo Master",
+      description:
+        "The ultimate todo application that gets things done faster than Chuck Norris kicks",
+      keywords: ["todos", "productivity", "app1", "tasks"],
+      authors: [{ name: "Chuck Norris", url: "https://chucknorris.com" }],
+    },
   },
   app2: {
     featureFlags: {
@@ -51,6 +67,13 @@ export const availableApps = {
       apis: ["todos:write"],
     },
     name: "APP n2",
+    meta: {
+      title: "App2 - Write Operations",
+      description:
+        "Specialized app for write operations, as powerful as Chuck Norris's beard",
+      keywords: ["write", "operations", "app2", "api"],
+      authors: [{ name: "Chuck Norris Team" }],
+    },
   },
 } satisfies Record<string, AppConfigItem>;
 
