@@ -8,6 +8,16 @@ This files contains brief explanation of the dependencies of the app.
 
 Full stack Typescript framework.
 
+## Tailwind
+
+🔗 https://tailwindcss.com/
+
+## ShadCN
+
+🔗 https://ui.shadcn.com/docs/installation
+
+**IMPORTANT:** when adding shadcn/ui components, run `npx shadcn@latest add <component_name>` from the `root` directory.
+
 ## next-themes
 
 🔗 https://github.com/pacocoursey/next-themes

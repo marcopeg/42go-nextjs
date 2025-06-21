@@ -4,12 +4,14 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
+- [aaas] Layout's metadata should come from the configuration
+
 ## Upcoming Tasks
 
-- [aaab] Support different CSS projects by App-config
-- [aaac] Support different public layout based on App-config
 - [aaae] Support default theme in App config
 - [aaaf] Support accent color in App config
+- [aaab] Support different CSS projects by App-config
+- [aaac] Support different public layout based on App-config
 - [aaag] Add Postgres connection pool
 - [aaah] Add login support with Passport library
 - [aaai] Add RBAC to the users system
@@ -17,7 +19,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aaam] Add social login: Facebook
 - [aaan] Add social login: Google
 - [aaao] Add social login: Apple
-- [aaas] Layout's metadata should come from the configuration
 - [aaat] Support i18n
 
 ## Completed Tasks
