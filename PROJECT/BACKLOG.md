@@ -19,6 +19,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aaam] Add social login: Facebook
 - [aaan] Add social login: Google
 - [aaao] Add social login: Apple
+- [aaas] Layout's metadata should come from the configuration
+- [aaat] Support i18n
 
 ## Completed Tasks
 
@@ -26,3 +28,5 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aaap] API routes ACL with App config feature flags
 - [aaaq] Page routes ACL with cApp config feature flags
 - [aaar] Identify App config by Request properties
+
+(LastID: aaat)

@@ -9,7 +9,15 @@ import {
 type ThemeProviderProps = Parameters<typeof NextThemesProvider>[0];
 
 export function ThemeProvider(props: ThemeProviderProps) {
-  return <NextThemesProvider {...props} />;
+  return (
+    <NextThemesProvider
+      enableSystem
+      disableTransitionOnChange
+      attribute="class"
+      defaultTheme="system"
+      {...props}
+    />
+  );
 }
 
 export const useTheme = () => {

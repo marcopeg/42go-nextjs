@@ -11,58 +11,6 @@ Support dark mode (light/dark theme) at Tailwind level.
 - [x] the user can switch theme with a UI control
 - [x] the user's choice is persisted in Local Storage
 
-## Development Plan
-
-### Steps to Complete the Task
-
-1. **Tailwind Configuration**:
-
-   - Update the Tailwind CSS configuration to support light and dark themes.
-   - Ensure the `darkMode` property is set to `class` for manual toggling.
-
-2. **UI Components**:
-
-   - Modify `src/components/ui/button.tsx` and other relevant components to support dark mode styling.
-   - Use the `cn` utility function from `src/lib/utils.ts` for conditional class names.
-
-3. **System Settings Integration**:
-
-   - Implement logic to detect the user's system theme settings using `window.matchMedia`.
-
-4. **Theme Toggle UI**:
-
-   - Add a theme toggle button to the app layout (`src/app/layout.tsx`).
-   - Use `shadcn/ui` components for the toggle button.
-
-5. **Persist User Choice**:
-
-   - Store the user's theme preference in Local Storage.
-   - Retrieve the preference on app load and apply the theme.
-
-6. **Testing**:
-   - Verify the theme switch functionality across all pages and components.
-   - Ensure the app respects system settings and persists user choice.
-
-### Files to Modify or Create
-
-- `tailwind.config.js`: Update for dark mode support.
-- `src/app/layout.tsx`: Add theme toggle UI and logic.
-- `src/components/ui/button.tsx`: Ensure dark mode compatibility.
-- `src/lib/utils.ts`: Enhance `cn` utility if needed.
-- Create a new context or utility for theme management.
-
-### Libraries to Use
-
-- Tailwind CSS (already integrated).
-- `shadcn/ui` for UI components.
-
-### Additional Considerations
-
-- Ensure accessibility for the theme toggle button.
-- Test on multiple browsers and devices.
-
-## Development Notes
-
 ### Implementation Summary
 
 1. **Tailwind Configuration:**
@@ -111,10 +59,3 @@ Support dark mode (light/dark theme) at Tailwind level.
 
 - Added `next-themes` package for theme management
 - Used existing `shadcn/ui` components for UI elements
-
-### Acceptance Criteria Status
-
-- [x] Light and dark mode themes are available for the app and UI components
-- [x] The app uses the user's system settings
-- [x] The user can switch theme with a UI control
-- [x] The user's choice is persisted in Local Storage
