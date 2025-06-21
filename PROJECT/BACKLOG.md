@@ -30,3 +30,4 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aaar] Identify App config by Request properties
 
 (LastID: aaat)
+(abcdefghijklmnopqrstuvwxyz)
