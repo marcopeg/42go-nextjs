@@ -5,7 +5,7 @@ import {
   type AppName,
   getAppName,
   getAppConfig,
-} from "@/lib/config/app-config"; // Renamed from @/lib/config
+} from "@/lib/config/app-config"; // Keep getAppConfig for generateMetadata
 import { AppConfigProvider } from "@/lib/config/AppConfigProvider";
 import { ThemeProvider } from "@/lib/config/ThemeProvider";
 import { ThemeToggle } from "@/lib/config/ThemeToggle";
@@ -29,21 +29,28 @@ export default async function RootLayout({
   const appName: AppName = await getAppName();
   const appConfig = await getAppConfig();
 
-  // Get the app-specific default theme
-  const appDefaultTheme = appConfig?.theme?.default;
+  console.log("@@@@@@ Layout: appName resolved to:", appName);
+  console.log("@@@@@@ Layout: appConfig resolved to:", appConfig);
 
   if (!appName) {
+    console.log("@@@@@@ Layout: No appName, rendering fallback layout");
     return (
       <html lang="en">
-        <head></head>
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.__APP_NAME__ = null;`,
+            }}
+          />
+        </head>
         <body className={inter.className}>
-          <ThemeProvider appDefaultTheme={appDefaultTheme}>
-            {children}
-          </ThemeProvider>
+          <ThemeProvider>{children}</ThemeProvider>
         </body>
       </html>
     );
   }
+
+  console.log("@@@@@@ Layout: Setting up app name for client:", appName);
 
   return (
     <html
@@ -51,22 +58,30 @@ export default async function RootLayout({
       data-app-name={appName ?? undefined}
       lang="en"
     >
-      <head></head>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__APP_NAME__ = ${JSON.stringify(appName)};`,
+          }}
+        />
+      </head>
       <body className={inter.className}>
-        <ThemeProvider appDefaultTheme={appDefaultTheme}>
-          <nav className="w-full flex gap-4 p-4 border-b bg-gray-50 dark:bg-gray-800 dark:text-white mb-6">
-            <Link href="/" className="font-semibold hover:underline">
-              Home
-            </Link>
-            <Link href="/todos" className="font-semibold hover:underline">
-              Todos
-            </Link>
-            <div className="ml-auto">
-              <ThemeToggle />
-            </div>
-          </nav>
-          <AppConfigProvider>{children}</AppConfigProvider>
-        </ThemeProvider>
+        <AppConfigProvider>
+          <ThemeProvider>
+            <nav className="w-full flex gap-4 p-4 border-b bg-gray-50 dark:bg-gray-800 dark:text-white mb-6">
+              <Link href="/" className="font-semibold hover:underline">
+                Home
+              </Link>
+              <Link href="/todos" className="font-semibold hover:underline">
+                Todos
+              </Link>
+              <div className="ml-auto">
+                <ThemeToggle />
+              </div>
+            </nav>
+            {children}
+          </ThemeProvider>
+        </AppConfigProvider>
       </body>
     </html>
   );

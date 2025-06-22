@@ -14,6 +14,13 @@ export type { AppConfig, AppName } from "@/AppConfig";
 export const getAppName = cache(async (): Promise<AppName> => {
   const headerList = await getHeaders();
   const appNameHeader = headerList.get(APP_HEADER_NAME);
+
+  console.log("@@@@@@ getAppName: Header value:", appNameHeader);
+  console.log(
+    "@@@@@@ getAppName: Available headers:",
+    Object.fromEntries(headerList.entries())
+  );
+
   if (!appNameHeader) {
     if (DEFAULT_APP === null) {
       console.warn(
@@ -28,6 +35,7 @@ export const getAppName = cache(async (): Promise<AppName> => {
   }
   const appName = appNameHeader as keyof typeof availableApps;
   if (availableApps[appName]) {
+    console.log("@@@@@@ getAppName: Found valid app config for:", appName);
     return appName as AppName;
   } else {
     if (DEFAULT_APP === null) {

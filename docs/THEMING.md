@@ -31,21 +31,29 @@ module.exports = {
 
 ### Theme Provider Setup
 
-The theme provider is configured in `src/lib/config/ThemeProvider.tsx`:
+The theme provider is configured in `src/lib/config/ThemeProvider.tsx` and integrates with the App Config system:
 
 ```tsx
-export function ThemeProvider(props: ThemeProviderProps) {
+export function ThemeProvider({
+  appDefaultTheme,
+  ...props
+}: ThemeProviderProps) {
+  // Use app-specific default theme or fallback to "system"
+  const defaultTheme = appDefaultTheme || "system";
+
   return (
     <NextThemesProvider
       enableSystem // Enable system theme detection
       disableTransitionOnChange // Prevent flash during transitions
       attribute="class" // Use class attribute for theme switching
-      defaultTheme="system" // Default to system preference
+      defaultTheme={defaultTheme} // App-configured default or system
       {...props}
     />
   );
 }
 ```
+
+**App Config Integration**: The ThemeProvider now accepts an `appDefaultTheme` prop that comes from the app's configuration, allowing different apps to have different default themes while maintaining user preference override capabilities.
 
 ## CSS Theme Variables
 
@@ -298,6 +306,50 @@ export function ThemeToggler() {
 ```
 
 ## Advanced Customization
+
+### App-Specific Default Themes
+
+Configure different default themes per app using the App Config system:
+
+```typescript
+// src/AppConfig.ts
+export const availableApps = {
+  marketing: {
+    name: "Marketing Site",
+    theme: {
+      default: "light", // Always starts with light theme
+    },
+    // ... other config
+  },
+  dashboard: {
+    name: "Admin Dashboard",
+    theme: {
+      default: "dark", // Always starts with dark theme
+    },
+    // ... other config
+  },
+  webapp: {
+    name: "Main App",
+    theme: {
+      default: "system", // Respects user's system preference
+    },
+    // ... other config
+  },
+} satisfies Record<string, AppConfigItem>;
+```
+
+**Theme Precedence**: The theme system follows this priority order:
+
+1. **User's saved preference** (localStorage) - highest priority
+2. **App's default theme** (from config) - if no user preference
+3. **System preference** - final fallback
+
+**Benefits**:
+
+- Each app can have its own visual identity
+- Marketing sites can enforce light themes for readability
+- Developer tools can default to dark themes for comfort
+- User preferences always take precedence when set
 
 ### Multiple Theme Support
 

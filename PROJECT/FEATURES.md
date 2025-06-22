@@ -27,21 +27,45 @@ Implemented a dynamic, request-specific configuration (`AppConfig`) system that 
 
 ## Dark Theme Support
 
-Comprehensive light/dark theme system implemented using `next-themes` library with enterprise-grade architecture.
+Comprehensive light/dark theme system implemented using `next-themes` library with enterprise-grade architecture and App Config integration.
 
 **Core Components:**
 
-- **Theme Provider Architecture**: Custom ThemeProvider component (`src/lib/config/ThemeProvider.tsx`) wraps the entire application, providing theme context with proper hydration handling.
+- **Theme Provider Architecture**: Custom ThemeProvider component (`src/lib/config/ThemeProvider.tsx`) wraps the entire application, providing theme context with proper hydration handling and App Config integration.
 - **Theme Toggle Component**: Dropdown-based theme switcher (`src/lib/config/ThemeToggle.tsx`) with Light, Dark, and System options.
+- **App Config Integration**: Support for app-specific default theme configuration through the App Config system.
 
 **Key Features:**
 
-- **Automatic System Detection**: Respects user's system preference by default, with seamless switching between light/dark modes.
-- **Theme Persistence**: User's theme choice is automatically saved to localStorage and persists across sessions.
-- **Hydration-Safe Implementation**: Proper handling of server-side rendering with targeted hydration warning suppression to prevent theme-related mismatches.
+- **App-Specific Default Themes**: Each app can configure its own default theme (`light`, `dark`, or `system`) via the App Config
+- **Smart Theme Precedence**: User preferences override app defaults, which override system preferences
+- **Automatic System Detection**: Respects user's system preference by default, with seamless switching between light/dark modes
+- **Theme Persistence**: User's theme choice is automatically saved to localStorage and persists across sessions
+- **Hydration-Safe Implementation**: Proper handling of server-side rendering with targeted hydration warning suppression to prevent theme-related mismatches
+- **Server-Side Theme Resolution**: Theme defaults are resolved server-side for optimal performance and reliability
 
 **Technical Implementation:**
 
-- **CSS Architecture**: Comprehensive theme variables using modern `oklch()` color space, with all shadcn/ui components properly themed.
-- **Tailwind Integration**: Class-based dark mode configuration (`darkMode: ["class"]`) for optimal Tailwind CSS compatibility.
-- **Performance Optimized**: Zero-flash theme transitions with proper mounting state handling.
+- **CSS Architecture**: Comprehensive theme variables using modern `oklch()` color space, with all shadcn/ui components properly themed
+- **Tailwind Integration**: Class-based dark mode configuration (`darkMode: ["class"]`) for optimal Tailwind CSS compatibility
+- **Performance Optimized**: Zero-flash theme transitions with proper mounting state handling
+- **Type-Safe Configuration**: Full TypeScript support for theme values (`"light" | "dark" | "system"`)
+
+**App Config Schema:**
+
+```typescript
+interface AppConfigItem {
+  theme?: {
+    default?: "light" | "dark" | "system";
+  };
+  // ... other properties
+}
+```
+
+**Example Usage:**
+
+Different apps can have different default themes:
+
+- Marketing site: defaults to `"light"` for readability
+- Developer dashboard: defaults to `"dark"` for comfort
+- General app: defaults to `"system"` for user preference
