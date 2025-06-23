@@ -124,11 +124,11 @@ export const matchAppName = async (request: NextRequest): Promise<AppName> => {
   }
 
   // EXAMPLE:
-  // localhost:3000 or localhost:4001
+  // localhost:3000 or localhost:4001 - only allow default for plain localhost
   if (hostHeader?.split(":")[0] === "localhost") {
-    return "default" as AppName; // Fallback for localhost
+    return "default" as AppName;
   }
 
-  // Fallback to default app if defined, else null
-  return DEFAULT_APP;
+  // Unknown host - return null to trigger 404
+  return null;
 };

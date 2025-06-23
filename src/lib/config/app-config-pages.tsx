@@ -1,52 +1,33 @@
-import { type ComponentType } from "react";
-import type { AppConfig } from "@/AppConfig";
 import { notFound } from "next/navigation";
 import { getAppConfig } from "./app-config";
+import { type AppConfigItem as AppConfig } from "@/AppConfig";
+export type { AppConfig };
 
-export type { AppConfig, AppName } from "@/AppConfig";
-
-export const pageWithConfig = <P extends object>(
-  PageComponent: ComponentType<P & { config: AppConfig }>,
+export async function pageWithConfig(
+  render: (config: AppConfig) => React.ReactNode,
   requiredFlags?: string
-) => {
-  const PageWithConfig = async (props: P) => {
-    // Hard stop on missing configuration:
-    const config = await getAppConfig();
-    if (!config) {
-      return notFound();
-    }
+) {
+  const config = await getAppConfig();
+  if (!config) {
+    return notFound();
+  }
 
-    // Free for all:
-    const availableFlags = config.featureFlags.pages;
-    if (availableFlags.includes("*")) {
-      return <PageComponent {...props} config={config} />;
-    }
+  const availableFlags = config.featureFlags.pages;
 
-    // Retrieve the page name from the component's displayName or name
-    const flagsToCheck =
-      requiredFlags === undefined
-        ? PageComponent.displayName || PageComponent.name
-        : requiredFlags;
+  // page-level override (*) or global wildcard
+  if (requiredFlags === "*" || availableFlags.includes("*")) {
+    return render(config);
+  }
 
-    // Check a specific feature flag for the page
-    // "*" means allowed by default
-    if (flagsToCheck && flagsToCheck !== "*") {
-      const flagBase = flagsToCheck.split(":")[0];
-      const hasFeature =
-        availableFlags.includes(flagsToCheck) ||
-        availableFlags.includes(`${flagBase}:*`) ||
-        availableFlags.includes("*");
-      if (!hasFeature) {
-        return notFound();
-      }
-    }
+  // specific flag check
+  const flagsToCheck = requiredFlags ?? render.name ?? "Page";
+  const flagBase = flagsToCheck.split(":")[0];
+  const hasFeature =
+    availableFlags.includes(flagsToCheck) ||
+    availableFlags.includes(`${flagBase}:*`);
+  if (!hasFeature) {
+    return notFound();
+  }
 
-    return <PageComponent {...props} config={config} />;
-  };
-
-  const displayName =
-    PageComponent.displayName || PageComponent.name || "Component";
-  PageWithConfig.displayName = `pageWithConfig(${displayName})`;
-
-  return PageWithConfig;
-};
+  return render(config);
+}

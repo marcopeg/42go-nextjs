@@ -15,12 +15,6 @@ export const getAppName = cache(async (): Promise<AppName> => {
   const headerList = await getHeaders();
   const appNameHeader = headerList.get(APP_HEADER_NAME);
 
-  console.log("@@@@@@ getAppName: Header value:", appNameHeader);
-  console.log(
-    "@@@@@@ getAppName: Available headers:",
-    Object.fromEntries(headerList.entries())
-  );
-
   if (!appNameHeader) {
     if (DEFAULT_APP === null) {
       console.warn(
@@ -33,18 +27,18 @@ export const getAppName = cache(async (): Promise<AppName> => {
     );
     return DEFAULT_APP;
   }
+
   const appName = appNameHeader as keyof typeof availableApps;
   if (availableApps[appName]) {
-    console.log("@@@@@@ getAppName: Found valid app config for:", appName);
     return appName as AppName;
   } else {
     if (DEFAULT_APP === null) {
-      console.warn(
+      console.error(
         `No setup found for name: ${appName}, and no DEFAULT_APP set. Returning null.`
       );
       return null;
     }
-    console.warn(
+    console.error(
       `No setup found for name: ${appName}, using default: ${DEFAULT_APP}`
     );
     return DEFAULT_APP;

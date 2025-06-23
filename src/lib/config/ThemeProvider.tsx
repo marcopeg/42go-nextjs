@@ -5,30 +5,13 @@ import {
   ThemeProvider as NextThemesProvider,
   useTheme as useNextTheme,
 } from "next-themes";
-import { useAppConfig } from "./AppConfigProvider";
-import type { ThemeValue } from "@/AppConfig";
+import { useAppConfig } from "./use-app-config";
 
 type ThemeProviderProps = Parameters<typeof NextThemesProvider>[0];
 
 export function ThemeProvider(props: ThemeProviderProps) {
   const appConfig = useAppConfig();
-
-  // Determine the default theme based on app config or fallback to "system"
-  const getDefaultTheme = (): ThemeValue => {
-    // During initial render, appConfig might be null while DOM is being read
-    if (appConfig?.theme?.default) {
-      return appConfig.theme.default;
-    }
-    // Safe fallback to system preference
-    return "system";
-  };
-
-  const defaultTheme = getDefaultTheme();
-  console.log(
-    "@@@@@@ ThemeProvider: defaultTheme resolved to:",
-    defaultTheme,
-    appConfig
-  );
+  const defaultTheme = appConfig?.theme?.default || "system";
 
   return (
     <NextThemesProvider
