@@ -7,7 +7,12 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export async function generateMetadata(): Promise<Metadata> {
-  return {};
+  const appConfig = await getAppConfig();
+
+  // Chuck Norris doesn't just return metadata - he crafts it with precision
+  return {
+    ...appConfig?.meta,
+  };
 }
 
 // Chuck Norris: get the app name from the server-side header logic
