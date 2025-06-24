@@ -8,24 +8,25 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export async function generateMetadata(): Promise<Metadata> {
+export const generateMetadata = async (): Promise<Metadata> => {
   const { config } = await getAppInfo();
-
   return config?.meta || {};
-}
+};
 
-export default async function RootLayout({
+const RootLayout = async ({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>) => {
   const { name, config } = await getAppInfo();
 
   // No app was found, so we render a minimal layout without the app name and nav.
   if (!name) {
     return (
       <html suppressHydrationWarning lang="en">
-        <head />
+        <head>
+          <InjectAppName name={name} />
+        </head>
         <body className={inter.className}>
           <ThemeProvider>{children}</ThemeProvider>
         </body>
@@ -47,4 +48,6 @@ export default async function RootLayout({
       </body>
     </html>
   );
-}
+};
+
+export default RootLayout;
