@@ -1,14 +1,11 @@
-import { getAppName } from "@/lib/config/app-config";
-
-const InjectAppName = async () => {
-  const appName = await getAppName();
-  return (
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `window.__APP_NAME__ = ${JSON.stringify(appName)};`,
-      }}
-    />
-  );
+type InjectAppNameProps = {
+  name: string;
 };
 
-export default InjectAppName;
+export const InjectAppName = ({ name }: InjectAppNameProps) => (
+  <script
+    dangerouslySetInnerHTML={{
+      __html: `window.__APP_NAME__ = ${JSON.stringify(name)};`,
+    }}
+  />
+);

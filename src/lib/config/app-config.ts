@@ -51,7 +51,15 @@ export const getAppConfig = cache(async (): Promise<AppConfig> => {
   return availableApps[appName as keyof typeof availableApps] || null;
 });
 
-export const routeWithConfig =
+export const getAppInfo = cache(
+  async (): Promise<{ name: AppName; config: AppConfig }> => {
+    const name = await getAppName();
+    const config = await getAppConfig();
+    return { name, config };
+  }
+);
+
+export const appRoute =
   (
     handler: (config: AppConfig, req: Request) => Promise<Response> | Response,
     requiredFlags?: string

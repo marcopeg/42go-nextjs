@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { getAppInfo } from "@/lib/config/app-config";
+import { InjectAppName } from "@/lib/config/InjectAppName";
 import { ThemeProvider } from "@/lib/config/ThemeProvider";
 import { Nav } from "@/components/Nav";
 import "./globals.css";
@@ -7,44 +9,38 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const appConfig = await getAppConfig();
+  const { config } = await getAppInfo();
 
-  // Chuck Norris doesn't just return metadata - he crafts it with precision
-  return {
-    ...appConfig?.meta,
-  };
+  return config?.meta || {};
 }
-
-// Chuck Norris: get the app name from the server-side header logic
-import { getAppName, getAppConfig } from "@/lib/config/app-config";
-import InjectAppName from "@/lib/config/InjectAppName";
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const appName = await getAppName();
-  const appConfig = await getAppConfig();
+  const { name, config } = await getAppInfo();
 
-  if (!appName) {
+  // No app was found, so we render a minimal layout without the app name and nav.
+  if (!name) {
     return (
       <html suppressHydrationWarning lang="en">
         <head />
         <body className={inter.className}>
-          <ThemeProvider config={appConfig}>{children}</ThemeProvider>
+          <ThemeProvider>{children}</ThemeProvider>
         </body>
       </html>
     );
   }
 
+  // App was found, so we render the full layout.
   return (
     <html suppressHydrationWarning lang="en">
       <head>
-        <InjectAppName />
+        <InjectAppName name={name} />
       </head>
       <body className={inter.className}>
-        <ThemeProvider config={appConfig}>
+        <ThemeProvider config={config}>
           <Nav />
           {children}
         </ThemeProvider>

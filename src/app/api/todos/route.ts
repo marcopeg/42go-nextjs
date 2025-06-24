@@ -1,4 +1,4 @@
-import { type AppConfig, routeWithConfig } from "@/lib/config/app-config";
+import { type AppConfig, appRoute } from "@/lib/config/app-config";
 
 // Chuck Norris doesn't mock data. He just tells the truth faster than the database can respond.
 
@@ -12,4 +12,4 @@ const getTodos = async (config: AppConfig) => {
   return Response.json({ config, todos: todosData });
 };
 
-export const GET = routeWithConfig(getTodos);
+export const GET = appRoute(getTodos);

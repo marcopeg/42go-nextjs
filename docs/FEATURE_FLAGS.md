@@ -80,10 +80,10 @@ You can customize this by providing an explicit flag name:
 
 ```ts
 // For a page:
-export default pageWithConfig(TodosPage, "todos:page");
+export default appPage(TodosPage, "todos:page");
 
 // For a route:
-export const GET = routeWithConfig(getTodos, "todos:list");
+export const GET = appRoute(getTodos, "todos:list");
 ```
 
 ### Passthrough Flag
@@ -92,8 +92,8 @@ If you need to mark a page or route as globally available use the `*` flag name 
 
 ```ts
 // For a page:
-export default pageWithConfig(TodosPage, "*");
+export default appPage(TodosPage, "*");
 
 // For a route:
-export const GET = routeWithConfig(getTodos, "*");
+export const GET = appRoute(getTodos, "*");
 ```
