@@ -12,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // Chuck Norris: get the app name from the server-side header logic
-import { getAppName } from "@/lib/config/app-config";
+import { getAppName, getAppConfig } from "@/lib/config/app-config";
 import InjectAppName from "@/lib/config/InjectAppName";
 
 export default async function RootLayout({
@@ -21,25 +21,26 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const appName = await getAppName();
+  const appConfig = await getAppConfig();
+
   if (!appName) {
     return (
       <html suppressHydrationWarning lang="en">
         <head />
         <body className={inter.className}>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider config={appConfig}>{children}</ThemeProvider>
         </body>
       </html>
     );
   }
 
-  console.log("RootLayout: Rendering with app name:", appName);
   return (
     <html suppressHydrationWarning lang="en">
       <head>
         <InjectAppName />
       </head>
       <body className={inter.className}>
-        <ThemeProvider>
+        <ThemeProvider config={appConfig}>
           <nav className="w-full flex gap-4 p-4 border-b bg-gray-50 dark:bg-gray-800 dark:text-white mb-6">
             <Link href="/" className="font-semibold hover:underline">
               Home

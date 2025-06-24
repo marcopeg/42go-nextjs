@@ -1,28 +1,24 @@
-"use client";
-
 import * as React from "react";
 import {
   ThemeProvider as NextThemesProvider,
   useTheme as useNextTheme,
 } from "next-themes";
-import { useAppConfig } from "./use-app-config";
+import type { AppConfig } from "./app-config";
 
-type ThemeProviderProps = Parameters<typeof NextThemesProvider>[0];
-
-export function ThemeProvider(props: ThemeProviderProps) {
-  const appConfig = useAppConfig();
-  const defaultTheme = appConfig?.theme?.default || "system";
-
-  return (
-    <NextThemesProvider
-      enableSystem
-      disableTransitionOnChange
-      attribute="class"
-      defaultTheme={defaultTheme}
-      {...props}
-    />
-  );
+interface ThemeProviderProps
+  extends Omit<Parameters<typeof NextThemesProvider>[0], "defaultTheme"> {
+  config?: AppConfig;
 }
+
+export const ThemeProvider = ({ config, ...props }: ThemeProviderProps) => (
+  <NextThemesProvider
+    enableSystem
+    disableTransitionOnChange
+    attribute="class"
+    defaultTheme={config?.theme?.default || "system"}
+    {...props}
+  />
+);
 
 export const useTheme = () => {
   const [mounted, setMounted] = React.useState(false);
