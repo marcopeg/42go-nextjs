@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/lib/config/ThemeProvider";
-import { ThemeToggle } from "@/lib/config/ThemeToggle";
+import { Nav } from "@/components/Nav";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -41,17 +40,7 @@ export default async function RootLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider config={appConfig}>
-          <nav className="w-full flex gap-4 p-4 border-b bg-gray-50 dark:bg-gray-800 dark:text-white mb-6">
-            <Link href="/" className="font-semibold hover:underline">
-              Home
-            </Link>
-            <Link href="/todos" className="font-semibold hover:underline">
-              Todos
-            </Link>
-            <div className="ml-auto">
-              <ThemeToggle />
-            </div>
-          </nav>
+          <Nav />
           {children}
         </ThemeProvider>
       </body>
