@@ -31,6 +31,8 @@ export default async function RootLayout({
       </html>
     );
   }
+
+  console.log("RootLayout: Rendering with app name:", appName);
   return (
     <html suppressHydrationWarning lang="en">
       <head>
