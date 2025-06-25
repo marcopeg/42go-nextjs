@@ -4,11 +4,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aaau] Implement public layout
+- [aaaf] Support accent color in App config
 
 ## Upcoming Tasks
 
-- [aaaf] Support accent color in App config
 - [aaab] Support different CSS projects by App-config
 - [aaac] Support different public layout based on App-config
 - [aaag] Add Postgres connection pool
@@ -23,6 +22,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [aaau] Implement public layout
 - [aaae] Support default theme in App config
 - [aaas] Layout's metadata should come from the configuration
 - [aaad] General dark-mode support
