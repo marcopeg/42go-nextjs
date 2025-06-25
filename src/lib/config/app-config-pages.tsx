@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { getAppConfig } from "./app-config";
 import { type AppConfigItem as AppConfig } from "@/AppConfig";
 export type { AppConfig };
@@ -10,7 +10,7 @@ export function appPage<P extends object>(
   const AppPageWrapper = async (props: P) => {
     const config = await getAppConfig();
     if (!config) {
-      return notFound();
+      redirect("/not-found");
     }
 
     const availableFlags = config.featureFlags.pages;
@@ -31,7 +31,7 @@ export function appPage<P extends object>(
       availableFlags.includes(flagsToCheck) ||
       availableFlags.includes(`${flagBase}:*`);
     if (!hasFeature) {
-      return notFound();
+      redirect("/not-found");
     }
 
     return <PageComponent {...props} />;
@@ -50,7 +50,7 @@ export async function pageWithConfig(
 ) {
   const config = await getAppConfig();
   if (!config) {
-    return notFound();
+    redirect("/not-found");
   }
 
   const availableFlags = config.featureFlags.pages;
@@ -67,7 +67,7 @@ export async function pageWithConfig(
     availableFlags.includes(flagsToCheck) ||
     availableFlags.includes(`${flagBase}:*`);
   if (!hasFeature) {
-    return notFound();
+    redirect("/not-found");
   }
 
   return render(config);
