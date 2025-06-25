@@ -4,6 +4,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
+- [aaau] Implement public layout
+
 ## Upcoming Tasks
 
 - [aaaf] Support accent color in App config
@@ -17,6 +19,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aaan] Add social login: Google
 - [aaao] Add social login: Apple
 - [aaat] Support i18n
+- [aaau] Implement public layout
 
 ## Completed Tasks
 
@@ -28,5 +31,5 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aaaq] Page routes ACL with cApp config feature flags
 - [aaar] Identify App config by Request properties
 
-(LastID: aaat)
+(LastID: aaau)
 (abcdefghijklmnopqrstuvwxyz)
