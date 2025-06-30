@@ -4,6 +4,7 @@ import { getAppInfo } from "@/lib/config/app-config";
 import { InjectAppName } from "@/lib/config/InjectAppName";
 import { ThemeProvider } from "@/lib/config/ThemeProvider";
 import "./globals.css";
+import "./tailwind.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
