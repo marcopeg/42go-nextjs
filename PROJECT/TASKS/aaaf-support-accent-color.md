@@ -36,7 +36,7 @@ I expect also that the foreground OR background of items that implement the acce
 
 ## Implementation
 
-- Introduced optional theme sheets in `public/themes/`, e.g. `public/themes/app2.css` (or `global-app2.css`), containing only the CSS vars overrides like:
+- Introduced optional theme sheets in `public/themes/`, e.g. `public/themes/app2.css`, containing only the CSS vars overrides like:
   ```css
   /* BEGIN App2 override */
   :root {
