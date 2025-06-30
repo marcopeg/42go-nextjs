@@ -3,9 +3,14 @@ type InjectAppNameProps = {
 };
 
 export const InjectAppName = ({ name }: InjectAppNameProps) => (
-  <script
-    dangerouslySetInnerHTML={{
-      __html: `window.__APP_NAME__ = ${JSON.stringify(name ?? null)};`,
-    }}
-  />
+  <>
+    {name && name !== "default" && (
+      <link rel="stylesheet" href={`/themes/${name}.css`} />
+    )}
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `window.__APP_NAME__ = ${JSON.stringify(name ?? null)};`,
+      }}
+    />
+  </>
 );

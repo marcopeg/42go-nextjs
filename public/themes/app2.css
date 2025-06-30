@@ -1,0 +1,9 @@
+/* BEGIN: App2 custom theme override - sets red background. Remove this file to disable. */
+:root {
+  /* --background: red; */
+  --background: oklch(88.074% 0.05461 18.141);
+}
+.dark {
+  --background: oklch(37.817% 0.0415 19.125);
+}
+/* END: App2 custom theme override */
