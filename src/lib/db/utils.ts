@@ -1,9 +1,16 @@
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-require("dotenv").config({ path: "./.env" });
+import { Knex } from "knex";
 
-// We can't use the TS version directly here because knex CLI doesn't run it through a compiler
-// We will duplicate the logic for now.
-const parseConnectionString = (connString) => {
+// Add this to your `knexfile.js`:
+//
+// const { parseConnectionString } = require('./src/lib/db/utils');
+//
+// module.exports = {
+//   development: {
+//     ...parseConnectionString(process.env.DBSTRING),
+//   },
+// };
+
+export const parseConnectionString = (connString: string): Knex.Config => {
   if (!connString) {
     throw new Error("DBSTRING environment variable is not set");
   }
@@ -18,7 +25,7 @@ const parseConnectionString = (connString) => {
         client: "pg",
         connection: {
           host: url.hostname,
-          port: Number(url.port) || 5432,
+          port: Number(url.port),
           user: url.username,
           password: url.password,
           database: url.pathname.slice(1),
@@ -31,7 +38,7 @@ const parseConnectionString = (connString) => {
         client: "mysql2",
         connection: {
           host: url.hostname,
-          port: Number(url.port) || 3306,
+          port: Number(url.port),
           user: url.username,
           password: url.password,
           database: url.pathname.slice(1),
@@ -43,7 +50,7 @@ const parseConnectionString = (connString) => {
         client: "mssql",
         connection: {
           server: url.hostname,
-          port: Number(url.port) || 1433,
+          port: Number(url.port),
           user: url.username,
           password: url.password,
           database: url.pathname.slice(1),
@@ -65,46 +72,4 @@ const parseConnectionString = (connString) => {
     default:
       throw new Error(`Unsupported database client: ${client}`);
   }
-};
-
-const connectionConfig = parseConnectionString(process.env.DBSTRING || "");
-
-/**
- * Knex configuration file - PostgreSQL Only
- * @type { Object.<string, import("knex").Knex.Config> }
- */
-module.exports = {
-  development: {
-    ...connectionConfig,
-    migrations: {
-      directory: "./knex/migrations",
-    },
-    seeds: {
-      directory: "./knex/seeds",
-    },
-  },
-
-  test: {
-    ...connectionConfig,
-    migrations: {
-      directory: "./knex/migrations",
-    },
-    seeds: {
-      directory: "./knex/seeds",
-    },
-  },
-
-  production: {
-    ...connectionConfig,
-    migrations: {
-      directory: "./knex/migrations",
-    },
-    seeds: {
-      directory: "./knex/seeds",
-    },
-    pool: {
-      min: 2,
-      max: 10,
-    },
-  },
 };
