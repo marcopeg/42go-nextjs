@@ -6,27 +6,20 @@ We are already using Knex in the migrations so I'd say this is good enough as an
 
 # Acceptance Criteria
 
-- [ ] It should be easy to switch database tecnologies if I start over a new project
-- [ ] Connection details should be passed as environment variables
-- [ ] Connection details env variables should be checked and validated at boot time
+- [x] It should be easy to switch database tecnologies if I start over a new project
+- [x] Connection details should be passed as environment variables
+- [x] Connection details env variables should be checked and validated at boot time
 
-## Development Plan (Revised)
+## Implementation Summary
 
-1.  **Environment Variable:**
+This task was completed by implementing a robust, centralized database connection system using Knex.js.
 
-    - Create a `.env.example` file and define one single environment variable: `DBSTRING`.
-    - Add examples for PostgreSQL, MariaDB, SQL Server, and SQLite connection strings.
-    - Create a `.env` file for local development.
+1.  **Environment Configuration**: Introduced a single `DBSTRING` environment variable to control the database connection. Created `.env.example` with templates for PostgreSQL, MariaDB, MySQL, SQL Server, and SQLite, and a local `.env` file for development.
 
-2.  **Database Connection Utility:**
+2.  **Connection Utility**: Created a dedicated database module at `src/lib/db/`. The `utils.ts` file contains a `parseConnectionString` function that automatically determines the correct Knex client and connection parameters from the `DBSTRING`. The `index.ts` file exports a `getDB` function that provides a singleton Knex instance, ensuring only one connection pool is created.
 
-    - Create a new directory `src/lib/db/` to house our database logic.
-    - Inside, `src/lib/db/index.ts` will hold the singleton Knex instance, initialized by parsing the `DBSTRING`.
-    - A new utility file, `src/lib/db/utils.ts`, will contain the `parseConnectionString` function. This function will dissect the `DBSTRING` to determine the correct Knex client and connection details.
+3.  **Knex Integration**: The main `knexfile.js` was updated to use the `parseConnectionString` utility, ensuring that migrations and seeds use the same database connection as the application.
 
-3.  **Knex Configuration:**
+4.  **API Integration**: Created a new `todos` table via a Knex migration and refactored the API route at `src/app/api/todos/route.ts` to fetch data from this table using the new `getDB` connection pool.
 
-    - Update the `knexfile.js` to use the new `parseConnectionString` utility. This ensures that our migrations and seeds are as tough and ready as our application code.
-
-4.  **API Integration:**
-    - Refactor the `src/app/api/todos/route.ts` to use the new database connection from `src/lib/db`.
+This setup allows for easy switching between supported SQL databases without changing any code, simply by updating the `DBSTRING` environment variable.
