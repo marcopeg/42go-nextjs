@@ -4,11 +4,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aaav] Implement Button component
-
 ## Upcoming Tasks
 
-- [aaab] Support different CSS projects by App-config
 - [aaac] Support different public layout based on App-config
 - [aaag] Add Postgres connection pool
 - [aaah] Add login support with Passport library
@@ -22,6 +19,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [aaab] Support different CSS projects by App-config
+- [aaav] Implement Button component
 - [aaaf] Support accent color in App config
 - [aaau] Implement public layout
 - [aaae] Support default theme in App config

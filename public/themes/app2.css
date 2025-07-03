@@ -1,5 +1,9 @@
 :root {
-  /* --background: oklch(88.074% 0.05461 18.141); */
+  --primary: oklch(59.328% 0.18696 253.814); /* Darker, still bold */
+  --primary-foreground: oklch(99% 0.01 250);
+
+  --secondary: oklch(75% 0.16 40); /* Warm, energetic amber */
+  --secondary-foreground: oklch(20% 0.02 40);
 }
 .dark {
   /* --background: oklch(37.817% 0.0415 19.125); */
