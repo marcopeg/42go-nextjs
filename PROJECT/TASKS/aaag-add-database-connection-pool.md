@@ -23,3 +23,8 @@ This task was completed by implementing a robust, centralized database connectio
 4.  **API Integration**: Created a new `todos` table via a Knex migration and refactored the API route at `src/app/api/todos/route.ts` to fetch data from this table using the new `getDB` connection pool.
 
 This setup allows for easy switching between supported SQL databases without changing any code, simply by updating the `DBSTRING` environment variable.
+
+## Task Done
+
+- Updated `docs/DATABASE.md` with additional documentation for advanced pool tuning via environment variables and JSON configuration overrides.
+- Verified lint and build pass with no errors.

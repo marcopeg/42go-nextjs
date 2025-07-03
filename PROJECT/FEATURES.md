@@ -69,3 +69,58 @@ Different apps can have different default themes:
 - Marketing site: defaults to `"light"` for readability
 - Developer dashboard: defaults to `"dark"` for comfort
 - General app: defaults to `"system"` for user preference
+
+## Database Connection Pool
+
+Robust, flexible database connection system using Knex.js with support for multiple SQL databases and advanced configuration options.
+
+**Core Architecture:**
+
+- **Single Environment Variable**: All database connections managed through a single `DBSTRING` environment variable
+- **Multi-Database Support**: Automatic client detection and configuration for PostgreSQL, MariaDB/MySQL, SQL Server, and SQLite
+- **Layered Configuration**: Three-tier configuration system with increasing specificity
+- **Singleton Pattern**: Single database connection pool shared across the entire application
+
+**Supported Databases:**
+
+- **PostgreSQL**: `postgres://user:password@host:port/database`
+- **MariaDB/MySQL**: `mariadb://` or `mysql://` connection strings
+- **SQL Server**: `mssql://user:password@host:port/database`
+- **SQLite**: `sqlite://./path/to/database.sqlite3`
+
+**Configuration Layers:**
+
+1. **Base Configuration**: Parsed from `DBSTRING` environment variable with automatic client selection
+2. **Pool Tuning**: Optional environment variables for connection pool optimization:
+   - `DB_POOL_MIN`: Minimum connections in pool
+   - `DB_POOL_MAX`: Maximum connections in pool
+   - `DB_POOL_IDLE_TIMEOUT`: Idle timeout in milliseconds
+3. **JSON Overrides**: Optional `knex.config.json` file for advanced Knex configuration with deep merge support
+
+**Technical Implementation:**
+
+- **Connection Parser**: `src/lib/db/utils.ts` contains `parseConnectionString()` function that handles URL parsing, client detection, and configuration merging
+- **Singleton Database**: `src/lib/db/index.ts` exports `getDB()` function providing a shared Knex instance
+- **Migration Integration**: `knexfile.js` uses the same connection logic for CLI compatibility
+- **Type Safety**: Full TypeScript support with proper Knex configuration typing
+
+**Key Features:**
+
+- **Zero-Configuration Switching**: Change databases by updating a single environment variable
+- **Development Flexibility**: Easy switching between different database engines during development
+- **Production Ready**: Connection pooling and advanced configuration options for production deployments
+- **Migration Compatibility**: Seamless integration with Knex migration and seeding system
+- **Error Handling**: Graceful fallback and warning system for configuration issues
+
+**Example Usage:**
+
+```typescript
+// In any API route or server component
+import { getDB } from "@/lib/db";
+
+export async function GET() {
+  const db = getDB();
+  const todos = await db("todos").select();
+  return Response.json({ todos });
+}
+```

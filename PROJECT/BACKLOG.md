@@ -4,7 +4,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aaag] Add Database connection pool
+- ~~[aaag] Add Database connection pool~~
 
 ## Upcoming Tasks
 
@@ -19,6 +19,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [aaag] Add Database connection pool
 - [aaac] Support different public layout based on App-config
 - [aaab] Support different CSS projects by App-config
 - [aaav] Implement Button component
