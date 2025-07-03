@@ -4,11 +4,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- ~~[aaag] Add Database connection pool~~
+- [aaah] Add login support
 
 ## Upcoming Tasks
 
-- [aaah] Add login support with Passport library
 - [aaai] Add RBAC to the users system
 - [aaal] Add social login: GitHub
 - [aaam] Add social login: Facebook
