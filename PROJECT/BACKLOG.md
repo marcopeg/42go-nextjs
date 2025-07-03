@@ -4,9 +4,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
+- [aaac] Support different public layout based on App-config
+
 ## Upcoming Tasks
 
-- [aaac] Support different public layout based on App-config
 - [aaag] Add Postgres connection pool
 - [aaah] Add login support with Passport library
 - [aaai] Add RBAC to the users system
