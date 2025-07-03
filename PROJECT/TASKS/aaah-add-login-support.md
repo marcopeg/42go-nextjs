@@ -48,21 +48,19 @@ This task requires implementing a robust authentication system using NextAuth.js
 
 2. **Database Schema Enhancement**
 
-   - Leverage existing users table or create if needed
-   - NextAuth.js adapter will automatically create required tables:
-     - `accounts` - OAuth provider accounts
-     - `sessions` - User sessions
-     - `verification_tokens` - Email verification and magic links
-   - Add custom tables for enhanced features:
-     - `user_profiles` - Extended user information
-     - `otp_tokens` - Custom OTP implementation for SMS
+   - ✅ **Existing Schema Perfect**: The existing `auth` schema migration (`20240320_auth.js`) is fully compatible with NextAuth.js
+   - ✅ **All Required Tables Present**: `users`, `accounts`, `sessions`, `verification_tokens`
+   - ✅ **Enhanced Features**: Already includes `password` field and audit timestamps
+   - **Additional Tables to Create**:
+     - `auth.otp_tokens` - Custom SMS OTP implementation
+     - `auth.user_profiles` - Extended user information (optional)
 
 3. **Core Authentication Services**
    - Create `src/lib/auth/` directory structure
-   - Configure NextAuth.js with our Knex adapter
-   - Implement custom providers for username/password
-   - Create user management utilities
-   - Configure session management with database storage
+   - Configure NextAuth.js with custom Knex adapter pointing to `auth` schema
+   - Leverage existing database schema (no migration needed!)
+   - Implement custom credentials provider using existing `password` field
+   - Configure session management with existing tables
 
 ### Phase 3: Strategy Implementation
 
@@ -159,13 +157,13 @@ This task requires implementing a robust authentication system using NextAuth.js
 
 - `src/lib/auth/auth-config.ts` - NextAuth.js configuration
 - `src/lib/auth/providers/` - Custom provider implementations
-- `src/lib/auth/adapters/knex-adapter.ts` - Enhanced Knex adapter configuration
+- `src/lib/auth/adapters/knex-adapter.ts` - Custom Knex adapter for `auth` schema
 - `src/lib/auth/utils.ts` - Authentication utilities
 - `src/components/auth/` - Authentication UI components
 - `src/app/api/auth/[...nextauth]/route.ts` - NextAuth.js API routes
 - `src/app/api/auth/register/route.ts` - Custom registration endpoint
 - `src/app/api/auth/otp/` - Custom OTP endpoints
-- `knex/migrations/[timestamp]_nextauth_tables.js` - NextAuth.js database schema
+- `knex/migrations/[timestamp]_add_otp_tokens.js` - Additional OTP table (optional)
 
 **Modified Files:**
 
@@ -173,6 +171,10 @@ This task requires implementing a robust authentication system using NextAuth.js
 - `src/middleware.ts` - Add NextAuth.js middleware
 - `package.json` - Add NextAuth.js dependencies
 - `src/app/layout.tsx` - Add NextAuth.js SessionProvider
+
+**Existing Schema (No Changes Needed):**
+
+- ✅ `knex/migrations/20240320_auth.js` - Already perfect for NextAuth.js!
 
 ### Environment Variables Required:
 
