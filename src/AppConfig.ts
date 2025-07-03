@@ -1,5 +1,8 @@
 import type { NextRequest } from "next/server";
 import type { Metadata } from "next";
+import type { ComponentType, ReactNode } from "react";
+
+import { App1PublicLayout } from "@/components/App1PublicLayout";
 
 export type ThemeValue = "light" | "dark" | "system";
 
@@ -9,6 +12,7 @@ export interface AppConfigItem {
   meta?: Partial<Metadata>;
   theme?: {
     default?: ThemeValue;
+    PublicLayout?: ComponentType<{ children: ReactNode }>;
   };
   featureFlags: {
     pages: string[]; // List of pages available in this app
@@ -63,6 +67,7 @@ export const availableApps = {
     name: "APP n1",
     theme: {
       default: "dark",
+      PublicLayout: App1PublicLayout,
     },
     meta: {
       title: "App1 - Todo Master",

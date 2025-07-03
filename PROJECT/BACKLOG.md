@@ -4,8 +4,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aaac] Support different public layout based on App-config
-
 ## Upcoming Tasks
 
 - [aaag] Add Postgres connection pool
@@ -20,6 +18,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [aaac] Support different public layout based on App-config
 - [aaab] Support different CSS projects by App-config
 - [aaav] Implement Button component
 - [aaaf] Support accent color in App config

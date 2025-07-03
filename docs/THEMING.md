@@ -471,4 +471,80 @@ const { theme, setTheme } = useTheme();
 // Theme persistence handled automatically
 ```
 
-This theming system provides a robust, maintainable, and user-friendly approach to theme management in your Next.js application.
+## App-Specific Public Layouts
+
+Beyond just colors, you can provide entirely different public-facing layouts for each app. This allows for significant structural changes, such as a narrow blog-style layout for one app and a wide, dashboard-style layout for another.
+
+This is controlled by the `theme.PublicLayout` property in the App Config.
+
+**Configuration:**
+
+1.  **Create your custom layout component:**
+    This should be a standard React component that accepts `children`.
+
+    ```tsx
+    // src/components/MyCustomLayout/index.tsx
+    import { ReactNode } from "react";
+
+    export const MyCustomLayout = ({ children }: { children: ReactNode }) => (
+      <div className="my-custom-styles">
+        <header>Custom Header</header>
+        <main>{children}</main>
+        <footer>Custom Footer</footer>
+      </div>
+    );
+
+    export default MyCustomLayout;
+    ```
+
+2.  **Update `AppConfig.ts`:**
+    Import your new layout and assign it to the `PublicLayout` property for the desired app.
+
+    ```typescript
+    // src/AppConfig.ts
+    import { MyCustomLayout } from "@/components/MyCustomLayout";
+    // ... other imports
+
+    export interface AppConfigItem {
+      // ...
+      theme?: {
+        default?: ThemeValue;
+        PublicLayout?: React.ComponentType<{ children: React.ReactNode }>;
+      };
+      // ...
+    }
+
+    export const availableApps = {
+      appWithCustomLayout: {
+        name: "Special App",
+        theme: {
+          PublicLayout: MyCustomLayout,
+        },
+        // ... other config
+      },
+      anotherApp: {
+        name: "Standard App",
+        // No PublicLayout, will use the default one
+      },
+    } satisfies Record<string, AppConfigItem>;
+    ```
+
+**How it Works:**
+
+The root public layout at `src/app/(public)/layout.tsx` automatically checks for this configuration property.
+
+```tsx
+// src/app/(public)/layout.tsx
+import { PublicLayout } from "@/components/PublicLayout";
+import { getAppConfig } from "@/lib/config/app-config";
+
+export default async function PublicRouteLayout({ children }) {
+  const config = await getAppConfig();
+  // Use the custom layout if provided, otherwise fall back to the default
+  const LayoutComponent = config?.theme?.PublicLayout || PublicLayout;
+
+  return <LayoutComponent>{children}</LayoutComponent>;
+}
+```
+
+If `theme.PublicLayout` is defined for the current app, that component will be used to wrap the public pages. If it's not defined, the system gracefully falls back to the default `PublicLayout` component. This provides powerful customization with a safe default.

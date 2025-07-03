@@ -95,11 +95,17 @@ When prompted by `execute task` or `exec task` or `run task` do:
    - use the libraries and tools specified in the plan
    - ensure to follow the coding style and conventions of the project
    - run `npm run lint && npm run build` at the end of each iteration to check for errors
-7. update the task's file with the progress made, including:
+
+When prompted by `task done` or `done task` do:
+
+1. update the task's file with the progress made, including:
    - the files modified or created
    - the libraries used
    - any issues encountered and how they were resolved
    - any additional notes or considerations
+2. if needed, update # `./PROJECT/FEATURES.md` with any new features or changes made during the task
+3. if needed, update the file `./PROJECT/DEPENDENCIES.md` to document any new dependencies added during the task
+4. move the task to completed in `./PROJECT/BACKLOG.md`
 
 ---
 
