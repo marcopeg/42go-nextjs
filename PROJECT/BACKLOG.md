@@ -4,6 +4,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
+- [aaav] Add `ARCHITECTURE.md` to the Memory Bank
+
 ## Upcoming Tasks
 
 - [aaah] Add login support
@@ -14,9 +16,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aaao] Add social login: Apple
 - [aaat] Support i18n
 - [aaau] Implement public layout
-- [aaav] Add `ARCHITECTURE.md` to the Memory Bank
 
-(LastID: aaau)
+(LastID: aaav)
 
 ## Completed Tasks
 
