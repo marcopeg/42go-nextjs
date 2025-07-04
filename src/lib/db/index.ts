@@ -1,5 +1,5 @@
 import knex, { Knex } from "knex";
-import { parseConnectionString } from "./utils";
+import { createKnexConfig } from "./utils";
 
 let db: Knex | null = null;
 
@@ -8,11 +8,11 @@ export const getDB = () => {
     return db;
   }
 
-  if (!process.env.DBSTRING) {
-    throw new Error("DBSTRING environment variable is not set");
+  if (!process.env.PGSTRING) {
+    throw new Error("PGSTRING environment variable is not set");
   }
 
-  const knexConfig = parseConnectionString(process.env.DBSTRING);
+  const knexConfig = createKnexConfig(process.env.PGSTRING);
 
   db = knex(knexConfig);
 

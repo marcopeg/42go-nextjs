@@ -4,148 +4,80 @@ import path from "path";
 
 // Add this to your `knexfile.js`:
 //
-// const { parseConnectionString } = require('./src/lib/db/utils');
+// const { createKnexConfig } = require('./src/lib/db/utils');
 //
 // module.exports = {
 //   development: {
-//     ...parseConnectionString(process.env.DBSTRING),
+//     ...createKnexConfig(process.env.PGSTRING),
 //   },
 // };
 
-type AnyObject = Record<string, unknown>;
-
-const isObject = (item: unknown): item is AnyObject => {
-  return !!item && typeof item === "object" && !Array.isArray(item);
-};
-
-const mergeDeep = (target: AnyObject, ...sources: AnyObject[]): AnyObject => {
-  if (!sources.length) {
-    return target;
-  }
-  const source = sources.shift();
-
-  if (isObject(target) && isObject(source)) {
-    for (const key in source) {
-      if (isObject(source[key])) {
-        if (!target[key] || !isObject(target[key])) {
-          target[key] = {};
-        }
-        target[key] = mergeDeep(
-          target[key] as AnyObject,
-          source[key] as AnyObject
-        );
-      } else {
-        target[key] = source[key];
-      }
-    }
-  }
-
-  return mergeDeep(target, ...sources);
-};
-
-export const parseConnectionString = (
+export const createKnexConfig = (
   connString: string | undefined
 ): Knex.Config => {
   if (!connString) {
-    throw new Error("DBSTRING environment variable is not set");
+    throw new Error("PGSTRING environment variable is not set");
   }
 
   const url = new URL(connString);
   const client = url.protocol.slice(0, -1);
 
-  let baseConfig: Knex.Config;
+  // Only PostgreSQL is supported
+  if (client !== "postgres" && client !== "postgresql") {
+    throw new Error(
+      `Only PostgreSQL is supported. Use postgres:// or postgresql:// connection strings.`
+    );
+  }
 
-  switch (client) {
-    case "postgres":
-    case "postgresql":
-      baseConfig = {
-        client: "pg",
-        connection: {
-          host: url.hostname,
-          port: Number(url.port),
-          user: url.username,
-          password: url.password,
-          database: url.pathname.slice(1),
-        },
+  let baseConfig: Knex.Config = {
+    client: "pg",
+    connection: {
+      host: url.hostname,
+      port: Number(url.port) || 5432,
+      user: url.username,
+      password: url.password,
+      database: url.pathname.slice(1),
+    },
+  };
+
+  // Layer 2: Environment Variables for Pool (PGPOOL format: "min,max,idleTimeoutMillis")
+  const pgPool = process.env.PGPOOL;
+  if (pgPool) {
+    const poolParams = pgPool.split(",").map((p) => p.trim());
+    if (poolParams.length >= 2) {
+      const pool: Knex.PoolConfig = {
+        min: parseInt(poolParams[0], 10),
+        max: parseInt(poolParams[1], 10),
       };
-      break;
-
-    case "mariadb":
-    case "mysql":
-      baseConfig = {
-        client: "mysql2",
-        connection: {
-          host: url.hostname,
-          port: Number(url.port),
-          user: url.username,
-          password: url.password,
-          database: url.pathname.slice(1),
-        },
-      };
-      break;
-
-    case "sqlserver":
-      baseConfig = {
-        client: "mssql",
-        connection: {
-          server: url.hostname,
-          port: Number(url.port),
-          user: url.username,
-          password: url.password,
-          database: url.pathname.slice(1),
-          options: {
-            encrypt: process.env.NODE_ENV === "production",
-          },
-        },
-      };
-      break;
-
-    case "sqlite":
-      baseConfig = {
-        client: "sqlite3",
-        connection: {
-          filename: url.pathname,
-        },
-        useNullAsDefault: true,
-      };
-      break;
-
-    default:
-      throw new Error(`Unsupported database client: ${client}`);
+      if (poolParams[2]) {
+        pool.idleTimeoutMillis = parseInt(poolParams[2], 10);
+      }
+      baseConfig.pool = pool;
+    }
   }
 
-  // Layer 2: Environment Variables for Pool
-  const pool: Knex.PoolConfig = {};
-  if (process.env.DB_POOL_MIN) {
-    pool.min = parseInt(process.env.DB_POOL_MIN, 10);
-  }
-  if (process.env.DB_POOL_MAX) {
-    pool.max = parseInt(process.env.DB_POOL_MAX, 10);
-  }
-  if (process.env.DB_POOL_IDLE_TIMEOUT) {
-    pool.idleTimeoutMillis = parseInt(process.env.DB_POOL_IDLE_TIMEOUT, 10);
-  }
-
-  let config = baseConfig;
-  if (Object.keys(pool).length > 0) {
-    config.pool = pool;
-  }
-
-  // Layer 3: JSON Configuration File
+  // Layer 3: JSON Configuration File (simple merge for most Knex config cases)
   const jsonConfigPath = path.resolve(process.cwd(), "knex.config.json");
   if (fs.existsSync(jsonConfigPath)) {
     try {
       const jsonConfigString = fs.readFileSync(jsonConfigPath, "utf-8");
       const jsonConfig = JSON.parse(jsonConfigString);
-      config = mergeDeep(
-        config as AnyObject,
-        jsonConfig as AnyObject
-      ) as Knex.Config;
+
+      // Simple merge - works well for most Knex configuration scenarios
+      // For nested objects like pool, we merge them specifically
+      baseConfig = {
+        ...baseConfig,
+        ...jsonConfig,
+        // Handle pool config specially since it's the most commonly overridden nested object
+        ...(jsonConfig.pool && baseConfig.pool
+          ? { pool: { ...baseConfig.pool, ...jsonConfig.pool } }
+          : {}),
+      };
     } catch (error) {
       // A true warrior doesn't let a config error stop him, but he acknowledges it.
       console.warn("Could not read or parse knex.config.json:", error);
     }
   }
 
-  return config;
+  return baseConfig;
 };

@@ -55,11 +55,11 @@ Full stack Typescript framework.
 
 **Version**: ^3.1.0
 
-**Purpose**: SQL query builder and migration manager providing a unified interface for multiple database engines.
+**Purpose**: SQL query builder and migration manager providing a unified interface for PostgreSQL database operations.
 
 **Key Features**:
 
-- Multi-database support (PostgreSQL, MariaDB/MySQL, SQL Server, SQLite)
+- PostgreSQL-focused database abstraction
 - Schema migration and seeding system
 - Connection pooling and transaction support
 - Promise-based query interface
@@ -69,7 +69,7 @@ Full stack Typescript framework.
 
 - Mature and battle-tested SQL abstraction layer
 - Excellent migration system for database schema management
-- Support for multiple SQL databases with unified API
+- Perfect for PostgreSQL-focused applications
 - Active community and comprehensive documentation
 - Perfect fit for serverless and traditional deployment models
 
@@ -82,15 +82,31 @@ Full stack Typescript framework.
 
 **Related Database Packages**:
 
-- **pg** (^8.16.0): PostgreSQL client driver
-- **mysql2** (^3.14.1): MySQL/MariaDB client driver
-- **sqlite3** (^5.1.7): SQLite3 client driver
-- **better-sqlite3** (^12.2.0): High-performance SQLite3 driver
-- **tedious** (^18.6.1): SQL Server client driver
+- **pg** (^8.16.0): PostgreSQL client driver (production dependency)
+- **pg-query-stream** (^4.10.3): Streaming query support for large PostgreSQL result sets
+
+**Build Configuration**:
+
+Instead of installing unused database drivers, we use the official Next.js solution:
+
+```typescript
+// next.config.ts
+const nextConfig: NextConfig = {
+  serverExternalPackages: ["knex"],
+};
+```
+
+**Why This Solution**:
+
+- **Official**: Uses documented Next.js approach for external packages
+- **Clean**: No need to install unused database drivers
+- **Maintainable**: Leverages official Next.js recommendations
+- **Performance**: Prevents Next.js from bundling all Knex dialects
+- **Future-proof**: Follows official guidelines
 
 **Project Configuration**:
 
-- Single `DBSTRING` environment variable for database connection
-- Optional pool tuning via `DB_POOL_*` environment variables
+- Single `PGSTRING` environment variable for PostgreSQL connection
+- Optional pool tuning via `PGPOOL` environment variable (comma-separated: min,max,idleTimeoutMillis)
 - Advanced configuration via optional `knex.config.json` file
-- Automatic client detection based on connection string protocol
+- PostgreSQL-only support with automatic connection string parsing

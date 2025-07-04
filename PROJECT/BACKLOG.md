@@ -4,8 +4,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aaav] Simplify db support to Postgres
-
 ## Upcoming Tasks
 
 - [aaah] Add login support
@@ -16,9 +14,13 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aaao] Add social login: Apple
 - [aaat] Support i18n
 - [aaau] Implement public layout
+- [aaav] Add `ARCHITECTURE.md` to the Memory Bank
+
+(LastID: aaau)
 
 ## Completed Tasks
 
+- [aaav] Simplify db support to Postgres
 - [aaag] Add Database connection pool
 - [aaac] Support different public layout based on App-config
 - [aaab] Support different CSS projects by App-config
@@ -32,6 +34,3 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aaap] API routes ACL with App config feature flags
 - [aaaq] Page routes ACL with cApp config feature flags
 - [aaar] Identify App config by Request properties
-
-(LastID: aaau)
-(abcdefghijklmnopqrstuvwxyz)

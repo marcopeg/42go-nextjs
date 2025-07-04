@@ -1,58 +1,40 @@
 # Database Management
 
-This project uses **Knex.js** as a SQL query builder and migration manager. It provides a unified interface to communicate with several different database engines.
+This project uses **Knex.js** as a SQL query builder and migration manager with **PostgreSQL** as the only supported database engine.
 
-## Connecting to a Database
+## Connecting to PostgreSQL
 
 All database configuration is handled through a single environment variable:
 
 ```
-DBSTRING
+PGSTRING
 ```
 
-To connect your application to a database, simply set this variable in your `.env` file. The system will automatically parse the connection string and use the correct database client.
-
-### Supported Databases & Connection Strings
-
-Here are the supported databases and examples of their connection strings:
-
-- **PostgreSQL**
-
-  ```
-  DBSTRING="postgres://user:password@host:port/database"
-  ```
-
-- **MariaDB / MySQL**
-
-  ```
-  DBSTRING="mariadb://user:password@host:port/database"
-  DBSTRING="mysql://user:password@host:port/database"
-  ```
-
-- **Microsoft SQL Server**
-
-  ```
-  DBSTRING="mssql://user:password@host:port/database"
-  ```
-
-- **SQLite**
-  ```
-  DBSTRING="sqlite://./path/to/your/database.sqlite3"
-  ```
-
-## Advanced Connection Configuration
-
-You can fine-tune your database connection pool without touching code by setting these optional environment variables in your `.env` file:
+To connect your application to PostgreSQL, simply set this variable in your `.env` file:
 
 ```bash
-DB_POOL_MIN=2         # Minimum number of connections in the pool
-DB_POOL_MAX=10        # Maximum number of connections in the pool
-DB_POOL_IDLE_TIMEOUT=30000  # How long (ms) a connection can be idle before being closed
+PGSTRING="postgres://user:password@host:port/database"
 ```
 
-These values will be automatically picked up on startup and merged with the core connection settings.
+The system will automatically parse the connection string and configure the PostgreSQL client.
 
-## JSON Configuration Overrides
+## Connection Pool Configuration
+
+You can fine-tune your database connection pool by setting an optional environment variable:
+
+```bash
+PGPOOL="2,10,30000"  # min,max,idleTimeoutMillis
+```
+
+This single variable configures:
+
+- **Minimum connections**: 2
+- **Maximum connections**: 10
+- **Idle timeout**: 30000ms (30 seconds)
+
+If `PGPOOL` is not set, Knex will use its default pool settings.
+
+## Advanced Configuration
 
 For more advanced or custom settings, add a `knex.config.json` file at the project root. Any valid Knex configuration you place here will be deep-merged into the final runtime config:
 
@@ -67,8 +49,6 @@ For more advanced or custom settings, add a `knex.config.json` file at the proje
   "debug": true
 }
 ```
-
-If `knex.config.json` exists, it is parsed and merged _after_ the environment variables, so you have full control over every Knex option.
 
 ## Migrations & Seeding
 
@@ -111,4 +91,14 @@ const getTodos = async () => {
 export const GET = appRoute(getTodos);
 ```
 
-The `getDB()` function returns a fully configured Knex instance, complete with connection pooling and any JSON overrides. No manual connect/disconnect needed.
+The `getDB()` function returns a fully configured Knex instance with PostgreSQL, complete with connection pooling and any JSON overrides. No manual connect/disconnect needed.
+
+## Environment Variables Summary
+
+```bash
+# Required
+PGSTRING="postgres://user:password@host:port/database"
+
+# Optional
+PGPOOL="2,10,30000"  # min,max,idleTimeoutMillis
+```

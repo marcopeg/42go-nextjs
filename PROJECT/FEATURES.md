@@ -70,47 +70,39 @@ Different apps can have different default themes:
 - Developer dashboard: defaults to `"dark"` for comfort
 - General app: defaults to `"system"` for user preference
 
-## Database Connection Pool
+## PostgreSQL Database Integration
 
-Robust, flexible database connection system using Knex.js with support for multiple SQL databases and advanced configuration options.
+Streamlined, PostgreSQL-focused database connection system using Knex.js with simplified configuration and robust connection pooling.
 
 **Core Architecture:**
 
-- **Single Environment Variable**: All database connections managed through a single `DBSTRING` environment variable
-- **Multi-Database Support**: Automatic client detection and configuration for PostgreSQL, MariaDB/MySQL, SQL Server, and SQLite
-- **Layered Configuration**: Three-tier configuration system with increasing specificity
+- **Single Environment Variable**: All database connections managed through `PGSTRING` environment variable
+- **PostgreSQL-Only Support**: Focused, simplified database configuration for PostgreSQL
+- **Flexible Pool Configuration**: Optional `PGPOOL` environment variable for connection pool tuning
 - **Singleton Pattern**: Single database connection pool shared across the entire application
 
-**Supported Databases:**
+**Configuration System:**
 
-- **PostgreSQL**: `postgres://user:password@host:port/database`
-- **MariaDB/MySQL**: `mariadb://` or `mysql://` connection strings
-- **SQL Server**: `mssql://user:password@host:port/database`
-- **SQLite**: `sqlite://./path/to/database.sqlite3`
-
-**Configuration Layers:**
-
-1. **Base Configuration**: Parsed from `DBSTRING` environment variable with automatic client selection
-2. **Pool Tuning**: Optional environment variables for connection pool optimization:
-   - `DB_POOL_MIN`: Minimum connections in pool
-   - `DB_POOL_MAX`: Maximum connections in pool
-   - `DB_POOL_IDLE_TIMEOUT`: Idle timeout in milliseconds
-3. **JSON Overrides**: Optional `knex.config.json` file for advanced Knex configuration with deep merge support
+- **Base Configuration**: Parsed from `PGSTRING` environment variable with PostgreSQL client
+- **Pool Tuning**: Optional `PGPOOL` environment variable with comma-separated values: `min,max,idleTimeoutMillis`
+- **JSON Overrides**: Optional `knex.config.json` file for advanced Knex configuration with deep merge support
 
 **Technical Implementation:**
 
-- **Connection Parser**: `src/lib/db/utils.ts` contains `parseConnectionString()` function that handles URL parsing, client detection, and configuration merging
+- **Connection Parser**: `src/lib/db/utils.ts` contains `parseConnectionString()` function that handles PostgreSQL URL parsing and configuration merging
 - **Singleton Database**: `src/lib/db/index.ts` exports `getDB()` function providing a shared Knex instance
 - **Migration Integration**: `knexfile.js` uses the same connection logic for CLI compatibility
 - **Type Safety**: Full TypeScript support with proper Knex configuration typing
+- **Next.js Integration**: Uses official `serverExternalPackages: ['knex']` configuration to prevent bundling issues
 
 **Key Features:**
 
-- **Zero-Configuration Switching**: Change databases by updating a single environment variable
-- **Development Flexibility**: Easy switching between different database engines during development
+- **Simplified Configuration**: Single `PGSTRING` variable for all database connections
 - **Production Ready**: Connection pooling and advanced configuration options for production deployments
 - **Migration Compatibility**: Seamless integration with Knex migration and seeding system
-- **Error Handling**: Graceful fallback and warning system for configuration issues
+- **Error Handling**: Clear error messages for PostgreSQL-only setup
+- **Flexible Pool Management**: Simple comma-separated pool configuration via `PGPOOL`
+- **Official Next.js Solution**: No webpack hacks, uses documented Next.js approach
 
 **Example Usage:**
 
@@ -123,4 +115,14 @@ export async function GET() {
   const todos = await db("todos").select();
   return Response.json({ todos });
 }
+```
+
+**Environment Configuration:**
+
+```bash
+# Required
+PGSTRING="postgres://user:password@host:port/database"
+
+# Optional
+PGPOOL="2,10,30000"  # min,max,idleTimeoutMillis
 ```
