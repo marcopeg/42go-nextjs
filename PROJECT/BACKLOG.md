@@ -4,10 +4,11 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aaah] Add login support
+- [aaav] Simplify db support to Postgres
 
 ## Upcoming Tasks
 
+- [aaah] Add login support
 - [aaai] Add RBAC to the users system
 - [aaal] Add social login: GitHub
 - [aaam] Add social login: Facebook
