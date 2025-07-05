@@ -118,7 +118,7 @@ For testing purposes, the following mock credentials are configured:
 
 1. **New Files**:
 
-   - `src/pages/api/auth/[...nextauth].ts` - NextAuth.js configuration
+   - `src/app/api/auth/[...nextauth]/route.ts` - NextAuth.js configuration (App Router)
    - `src/app/(public)/login/page.tsx` - Login form page (moved to public layout)
    - `src/app/dashboard/page.tsx` - Protected dashboard page
    - `src/components/Providers.tsx` - Session and theme provider wrapper
@@ -214,3 +214,154 @@ For testing purposes, the following mock credentials are configured:
 3. **Session Persistence**: Consider database session strategy for production
 4. **Security Enhancements**: Add CSRF protection, rate limiting, and secure headers
 5. **UI/UX Improvements**: Enhance login/dashboard styling with existing theme system
+
+## JWT Strategy Deep Dive & Authentication Architecture
+
+### Overview
+
+Extended discussion and implementation of JWT-based authentication with NextAuth.js, including exploration of dual-token patterns and session management strategies.
+
+### JWT Storage and Management
+
+**Current Implementation:**
+
+- JWT stored as HTTP-only cookie (`next-auth.session-token`)
+- Cookie managed automatically by NextAuth.js
+- XSS-safe storage (JavaScript cannot access)
+- Automatic renewal and expiration handling
+
+**Session Configuration:**
+
+```typescript
+session: {
+  strategy: "jwt",
+  maxAge: 30 * 24 * 60 * 60, // 30 days total session
+  updateAge: 30 * 60,        // Refresh every 30 minutes
+}
+```
+
+### Dual Token Pattern Analysis
+
+**Explored Alternative:** Dual-token architecture (short access + long refresh tokens)
+
+- **Access Token**: 5-minute JWT for API calls
+- **Refresh Token**: 30-day token for renewal only
+- **Benefits**: Enhanced security through short exposure windows
+- **Drawbacks**: Complex manual implementation required
+
+**Library Comparison for Dual Tokens:**
+
+1. **NextAuth.js**: ❌ Single JWT only, no built-in dual token support
+2. **Passport.js**: ❌ JWT validation only, requires custom dual token implementation
+3. **jose**: ✅ Modern JWT library, but only handles token operations (no auth flows)
+4. **Auth0/Supabase**: ✅ Full dual token support, but external dependency
+
+**Decision**: Stick with NextAuth.js single JWT approach
+
+- **Reasoning**: Provides complete authentication ecosystem (social login, magic links, etc.)
+- **Trade-off**: Accept single JWT limitation for comprehensive feature set
+- **Future**: Can implement custom dual tokens alongside NextAuth.js if needed
+
+### Session Refresh Strategy
+
+**Auto-Refresh Mechanism:**
+
+- Token automatically refreshes every 30 minutes
+- User stays logged in for up to 30 days
+- Backend validation possible during refresh
+
+**User Experience Scenario:**
+
+```
+User logs in → JWT created (30-day expiry)
+User sleeps 10 hours → Token older than 30 minutes
+User opens app → Auto-refresh triggered
+jwt() callback runs → Backend validation opportunity
+If user active → New token issued, seamless login
+If subscription expired → return null, automatic logout
+```
+
+**Backend Integration Point:**
+
+```typescript
+async jwt({ token, user }) {
+  // On refresh - validate user status
+  if (token.id) {
+    // Check subscription, account status, etc.
+    const isUserActive = await checkUserStatus(token.id);
+    if (!isUserActive) {
+      return null; // Forces logout
+    }
+  }
+  return token;
+}
+```
+
+### App Router Migration
+
+**Issue Fixed:** Moved NextAuth from outdated Pages Router to modern App Router
+
+- **Old**: `pages/api/auth/[...nextauth].ts` (Pages Router pattern)
+- **New**: `src/app/api/auth/[...nextauth]/route.ts` (App Router pattern)
+- **Changes**: Export pattern changed from default export to named GET/POST exports
+- **Benefit**: Consistent with modern Next.js 13+ architecture
+
+### Security Considerations
+
+**JWT Security Features:**
+
+- HTTP-only cookies prevent XSS attacks
+- Automatic token rotation every 30 minutes
+- Configurable expiration times
+- Server-side validation during refresh
+- Secure cookie flags in production
+
+**Session Validation:**
+
+- Real-time user status checking during token refresh
+- Graceful logout for deactivated users
+- No manual token management required
+- Seamless user experience when active
+
+### Alternative Libraries Considered
+
+**jose (Modern JWT Library):**
+
+- ✅ TypeScript-first, Next.js optimized
+- ✅ Web Crypto APIs, lightweight
+- ❌ Only JWT operations, no authentication flows
+- **Use Case**: Perfect for custom dual-token implementation
+
+**Passport.js:**
+
+- ✅ Flexible, modular strategies
+- ✅ Large ecosystem of authentication methods
+- ❌ Requires manual session management
+- ❌ No built-in dual token support
+- **Use Case**: Custom authentication with full control
+
+**Auth0/Supabase (Hosted Solutions):**
+
+- ✅ Complete authentication solution
+- ✅ Built-in dual token support
+- ✅ Enterprise features out-of-the-box
+- ❌ External dependency and potential costs
+- **Use Case**: Production apps needing enterprise auth
+
+### Final Architecture Decision
+
+**Chosen Approach**: NextAuth.js with optimized JWT configuration
+
+- **Session Duration**: 30 days maximum
+- **Refresh Interval**: 30 minutes
+- **Storage**: HTTP-only cookies
+- **Validation**: Server-side refresh callbacks
+- **Future-Proofing**: Can add dual tokens later if needed
+
+**Rationale**:
+
+- Comprehensive authentication ecosystem
+- Social login and magic link support ready
+- Secure JWT implementation out-of-the-box
+- Easy backend integration during refresh
+- Maintains development velocity while providing enterprise-grade security
