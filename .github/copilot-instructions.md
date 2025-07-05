@@ -77,7 +77,8 @@ When prompted by `plan task` ok `k1` do:
 3. Write the plan in the **Current Task**'s file under `## Development Plan` section (create it if it doesn't exist)
 
 EXPLICIT TASK ID:
-If the prompt contains an explicit TaskID, use that ID to identify the task file in `./PROJECT/TASKS/{id}-human-readable-title.md`. Move the task to the **Current Task** section in `./PROJECT/BACKLOG.md` if it is not already there.
+If the prompt contains an explicit TaskID, use that ID to identify the task file in `./PROJECT/TASKS/{id}-human-readable-title.md`.
+Move the task to the **Current Task** section in `./PROJECT/BACKLOG.md` if it is not already there.
 
 LINK TASK:
 If you need to create the task's file, then add the link to it at the end of the backlog's entry as: [🔗](./TASKS/{file-name-with-extension})

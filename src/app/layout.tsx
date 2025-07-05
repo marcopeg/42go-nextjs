@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { getAppInfo } from "@/lib/config/app-config";
 import { InjectAppName } from "@/lib/config/InjectAppName";
-import { ThemeProvider } from "@/lib/config/ThemeProvider";
+import { Providers } from "@/components/Providers";
 import "./globals.css";
 import "./tailwind.css";
 
@@ -26,7 +26,7 @@ const RootLayout = async ({
         <InjectAppName name={name} />
       </head>
       <body className={inter.className}>
-        <ThemeProvider config={config}>{children}</ThemeProvider>
+        <Providers config={config}>{children}</Providers>
       </body>
     </html>
   );
