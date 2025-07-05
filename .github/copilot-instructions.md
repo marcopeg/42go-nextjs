@@ -152,7 +152,7 @@ When prompted by `create task: {task}` or `new task: {task}` or `k4: {task}` do:
    - task description and goals
    - `# Acceptance Criteria` - a checklist (`- [ ] {criteria}`) of what needs to be done for the task to be considered complete
 4. Append the new task to the **Upcoming Tasks** section in `./PROJECT/BACKLOG.md` with the following format:
-   - `- [{NewID}] {human-readable-title}`
+   - `- [{NewID}] {human-readable-title}` [🔗](./TASKS/{NewID}-{human-readable-title}.md)
 
 # CLI Usage
 
