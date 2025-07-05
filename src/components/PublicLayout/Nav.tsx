@@ -12,6 +12,9 @@ export const Nav = () => {
       <Link href="/todos" className="font-semibold hover:underline">
         Todos
       </Link>
+      <Link href="/login" className="font-semibold hover:underline">
+        Login
+      </Link>
       <div className="ml-auto">
         <ThemeToggle />
       </div>

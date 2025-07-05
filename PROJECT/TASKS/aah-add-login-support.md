@@ -119,12 +119,13 @@ For testing purposes, the following mock credentials are configured:
 1. **New Files**:
 
    - `src/pages/api/auth/[...nextauth].ts` - NextAuth.js configuration
-   - `src/app/login/page.tsx` - Login form page
+   - `src/app/(public)/login/page.tsx` - Login form page (moved to public layout)
    - `src/app/dashboard/page.tsx` - Protected dashboard page
    - `src/components/Providers.tsx` - Session and theme provider wrapper
 
 2. **Modified Files**:
    - `src/app/layout.tsx` - Added session provider integration
+   - `src/components/PublicLayout/Nav.tsx` - Added login navigation link
    - `package.json` - Added next-auth dependency
 
 ### Libraries Used
@@ -179,6 +180,32 @@ For testing purposes, the following mock credentials are configured:
 - **Decision**: Used `useSession` hook for dashboard authentication
 - **Reasoning**: Better user experience with real-time session updates
 - **Alternative**: Server-side validation available via `getServerSession`
+
+### Navigation Integration
+
+- **Decision**: Moved login page to public layout and added navigation link
+- **Reasoning**: Provides consistent user experience with existing public pages
+- **Implementation**: Added login link to `Nav.tsx` component for easy access
+
+### Public Layout Integration
+
+- **Decision**: Moved login page from `/login` to `/(public)/login`
+- **Reasoning**: Integrates with existing public layout system and theming
+- **Benefit**: Login page now uses consistent navigation and styling
+
+## Recent Updates
+
+### Navigation Enhancement
+
+- Added "Login" link to the public navigation in `src/components/PublicLayout/Nav.tsx`
+- Moved login page to `src/app/(public)/login/page.tsx` to use public layout
+- Removed standalone login page to maintain consistent routing structure
+
+### Access Denied Improvements
+
+- Added countdown timer (5 seconds) for automatic redirect to login page
+- Included manual login link for immediate user action
+- Enhanced UI with clear messaging and visual feedback for unauthenticated users
 
 ## Next Steps
 
