@@ -6,7 +6,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Upcoming Tasks
 
-- [aah] Add login support
+- [aah] Add login support [🔗](./TASKS/aah-add-login-support.md)
 - [aai] Add RBAC to the users system
 - [aal] Add social login: GitHub
 - [aam] Add social login: Facebook
@@ -19,18 +19,18 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
-- [aaj] Add `ARCHITECTURE.md` to the Memory Bank
-- [aaw] Simplify db support to Postgres
-- [aag] Add Database connection pool
-- [aac] Support different public layout based on App-config
+- [aaj] Add `ARCHITECTURE.md` to the Memory Bank [🔗](./TASKS/aaj-add-architecture-md-to-the-memory-bank.md)
+- [aaw] Simplify db support to Postgres [🔗](./TASKS/aaw-simplify-db-support-to-postgres.md)
+- [aag] Add Database connection pool [🔗](./TASKS/aag-add-database-connection-pool.md)
+- [aac] Support different public layout based on App-config [🔗](./TASKS/aac-support-different-public-layout-based-on-app-config.md)
 - [aab] Support different CSS projects by App-config
-- [aav] Implement Button component
-- [aaf] Support accent color in App config
-- [aau] Implement public layout
-- [aae] Support default theme in App config
-- [aas] Layout's metadata should come from the configuration
-- [aad] General dark-mode support
-- [aaa] Initialize backlog
+- [aav] Implement Button component [🔗](./TASKS/aav-implement-button-component.md)
+- [aaf] Support accent color in App config [🔗](./TASKS/aaf-support-accent-color.md
+- [aau] Implement public layout [🔗](./TASKS/aau-implement-public-layout.md)
+- [aae] Support default theme in App config [🔗](./TASKS/aae-default-theme-from-config.md)
+- [aas] Layout's metadata should come from the configuration [🔗](./TASKS/aas-layout-medatada-from-config.md)
+- [aad] General dark-mode support [🔗](./TASKS/aad-general-dark-mode-support.md)
+- [aaa] Initialize backlog [🔗](./TASKS/aaa-initialize-backlog.md)
 - [aap] API routes ACL with App config feature flags
 - [aaq] Page routes ACL with cApp config feature flags
 - [aar] Identify App config by Request properties
