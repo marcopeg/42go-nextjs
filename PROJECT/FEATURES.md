@@ -126,3 +126,98 @@ PGSTRING="postgres://user:password@host:port/database"
 # Optional
 PGPOOL="2,10,30000"  # min,max,idleTimeoutMillis
 ```
+
+## JWT-Based Authentication System
+
+Comprehensive authentication system built with NextAuth.js, featuring JWT tokens, automatic session refresh, and enterprise-grade security patterns.
+
+**Core Architecture:**
+
+- **NextAuth.js Integration**: Complete authentication solution with credentials provider
+- **JWT Session Strategy**: Stateless authentication with HTTP-only cookie storage
+- **Automatic Token Refresh**: 30-minute refresh intervals with 30-day maximum session duration
+- **App Router Compliance**: Modern Next.js 13+ structure with proper API route patterns
+
+**Authentication Flow:**
+
+- **Login Process**: Credentials validation through NextAuth.js with secure JWT generation
+- **Session Management**: HTTP-only cookies prevent XSS attacks, automatic session validation
+- **Token Refresh**: Server-side refresh callbacks enable real-time user status validation
+- **Logout Handling**: Clean session termination with configurable redirect URLs
+
+**Security Features:**
+
+- **HTTP-Only Cookies**: JWT stored in secure, HTTP-only cookies inaccessible to JavaScript
+- **Regular Token Rotation**: 30-minute refresh intervals minimize exposure windows
+- **Session Validation Hooks**: Server-side callbacks for subscription/account status checking
+- **Graceful Expiration**: Automatic logout with user-friendly messaging and redirects
+
+**User Experience:**
+
+- **Seamless Authentication**: Automatic session management without manual token handling
+- **Access Denied Handling**: Clear messaging with countdown timer and manual login links
+- **Navigation Integration**: Login/logout options integrated into public layout navigation
+- **Loading States**: Proper loading indicators during authentication state changes
+
+**Technical Implementation:**
+
+- **Configuration**: Centralized auth options in `src/lib/auth/authOptions.ts`
+- **API Routes**: App Router-compliant NextAuth handler at `src/app/api/auth/[...nextauth]/route.ts`
+- **Session Provider**: React context integration with existing theme system
+- **Protected Routes**: Dashboard with client-side session validation using `useSession` hook
+
+**File Structure:**
+
+```
+src/
+├── lib/auth/
+│   └── authOptions.ts              # NextAuth.js configuration
+├── app/
+│   ├── api/auth/[...nextauth]/
+│   │   └── route.ts                # NextAuth API handler
+│   ├── (public)/login/
+│   │   └── page.tsx                # Login form with public layout
+│   └── dashboard/
+│       └── page.tsx                # Protected dashboard page
+└── components/
+    └── Providers.tsx               # Session + theme provider wrapper
+```
+
+**Session Configuration:**
+
+```typescript
+session: {
+  strategy: "jwt",
+  maxAge: 30 * 24 * 60 * 60, // 30 days maximum
+  updateAge: 30 * 60,         // Refresh every 30 minutes
+}
+```
+
+**Authentication Credentials (Development):**
+
+- **Username**: `aaa`
+- **Password**: `aaa`
+
+**Backend Integration Ready:**
+
+The JWT refresh callback includes hooks for real-time user validation:
+
+```typescript
+async jwt({ token, user }) {
+  // On token refresh - validate user status
+  if (token.id) {
+    const isUserActive = await checkUserStatus(token.id);
+    if (!isUserActive) {
+      return null; // Automatic logout
+    }
+  }
+  return token;
+}
+```
+
+**Key Benefits:**
+
+- **Enterprise Security**: Industry-standard JWT implementation with automatic refresh
+- **Developer Experience**: Zero-configuration session management with NextAuth.js
+- **Production Ready**: HTTP-only cookies, token rotation, and graceful error handling
+- **Extensible**: Ready for social login, magic links, and custom authentication providers

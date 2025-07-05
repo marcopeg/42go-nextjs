@@ -110,3 +110,80 @@ const nextConfig: NextConfig = {
 - Optional pool tuning via `PGPOOL` environment variable (comma-separated: min,max,idleTimeoutMillis)
 - Advanced configuration via optional `knex.config.json` file
 - PostgreSQL-only support with automatic connection string parsing
+
+## NextAuth.js
+
+🔗 https://next-auth.js.org/
+
+**Version**: ^4.24.11
+
+**Purpose**: Complete authentication solution for Next.js applications with JWT support, multiple providers, and enterprise-grade security.
+
+**Key Features**:
+
+- JWT and database session strategies
+- 50+ built-in authentication providers (Google, GitHub, etc.)
+- Credentials provider for custom authentication
+- Automatic session management and refresh
+- TypeScript support with proper typing
+- App Router and Pages Router compatibility
+
+**Why Chosen**:
+
+- Industry standard for Next.js authentication
+- Comprehensive feature set including social login, magic links
+- Built-in security best practices (CSRF protection, secure cookies)
+- Excellent documentation and active community
+- Zero-configuration setup with sensible defaults
+- Perfect for rapid development while maintaining enterprise security
+
+**Integration**:
+
+- Configuration in `src/lib/auth/authOptions.ts`
+- API handler at `src/app/api/auth/[...nextauth]/route.ts`
+- Session provider integration in `src/components/Providers.tsx`
+- React hooks via `useSession` for client-side authentication
+
+**Session Strategy**:
+
+Currently configured for JWT sessions with:
+
+- 30-day maximum session duration
+- 30-minute automatic token refresh
+- HTTP-only cookie storage for security
+- Server-side validation callbacks for real-time user status checking
+
+**Authentication Flow**:
+
+```typescript
+// Login validation (development)
+credentials: {
+  username: "aaa",
+  password: "aaa"
+}
+
+// Session configuration
+session: {
+  strategy: "jwt",
+  maxAge: 30 * 24 * 60 * 60, // 30 days
+  updateAge: 30 * 60,         // 30 minutes
+}
+```
+
+**Security Features**:
+
+- HTTP-only cookies prevent XSS attacks
+- Automatic CSRF protection
+- Token rotation with configurable intervals
+- Secure session validation and expiration
+- Ready for backend integration during token refresh
+
+**Future Extensibility**:
+
+Ready for expansion to include:
+
+- Social login providers (GitHub, Google, Facebook, Apple)
+- Magic link authentication
+- Database session strategy
+- Role-based access control (RBAC)
+- Multi-factor authentication (MFA)

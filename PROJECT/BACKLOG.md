@@ -4,8 +4,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aah] Add login support [🔗](./TASKS/aah-add-login-support.md)
-
 ## Upcoming Tasks
 
 - [aai] Add RBAC to the users system
@@ -20,6 +18,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [aah] Add login support [🔗](./TASKS/aah-add-login-support.md)
 - [aaj] Add `ARCHITECTURE.md` to the Memory Bank [🔗](./TASKS/aaj-add-architecture-md-to-the-memory-bank.md)
 - [aaw] Simplify db support to Postgres [🔗](./TASKS/aaw-simplify-db-support-to-postgres.md)
 - [aag] Add Database connection pool [🔗](./TASKS/aag-add-database-connection-pool.md)
