@@ -151,7 +151,6 @@ When prompted by `create task: {task}` or `new task: {task}` or `k4: {task}` do:
    - `# {title} [{NewID}]`
    - task description and goals
    - `# Acceptance Criteria` - a checklist (`- [ ] {criteria}`) of what needs to be done for the task to be considered complete
-   - `# Development Plan` - a detailed plan for the task, if that is explicitly included in the prompt, else create the empty section
 4. Append the new task to the **Upcoming Tasks** section in `./PROJECT/BACKLOG.md` with the following format:
    - `- [{NewID}] {human-readable-title}`
 
