@@ -1,4 +1,4 @@
-# Implement Public Layout - aaau
+# Implement Public Layout [aau]
 
 Simplify the root layout by moving Nav and other UI responsibilities into a dedicated component that might be used as Page's wrapper instead.
 

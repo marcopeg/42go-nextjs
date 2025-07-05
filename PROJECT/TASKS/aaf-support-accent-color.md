@@ -1,4 +1,4 @@
-# Support Accent Color
+# Support Accent Color [aaf]
 
 I would like to set the accent color as part of the app's configuration:
 

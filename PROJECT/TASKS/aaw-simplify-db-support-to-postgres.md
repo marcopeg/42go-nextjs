@@ -1,4 +1,4 @@
-# Simplify db support to Postgres
+# Simplify db support to Postgres [aaw]
 
 Who am I kidding?
 

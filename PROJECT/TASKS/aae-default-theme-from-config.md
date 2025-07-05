@@ -1,4 +1,4 @@
-# Support default theme in App config
+# Support default theme in App config [aae]
 
 Right now the theme defaults to the system preferences unless the user changes it. In such a case, the preference it is stored in the Local Storage.
 

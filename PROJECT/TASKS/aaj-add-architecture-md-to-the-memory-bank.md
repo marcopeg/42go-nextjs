@@ -1,4 +1,4 @@
-# Add `ARCHITECTURE.md` to the Memory Bank [aaav]
+# Add `ARCHITECTURE.md` to the Memory Bank [aaj]
 
 We have introduced a new _Memory Bank_ document called `ARCHITECTURE.md` that should contain relevant architectural decisions and list best practices that the LLM should follow.
 

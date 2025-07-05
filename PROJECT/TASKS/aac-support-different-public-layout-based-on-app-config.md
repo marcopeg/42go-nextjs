@@ -1,4 +1,4 @@
-# Support different public layout based on App-config [aaac]
+# Support different public layout based on App-config [aac]
 
 The idea is to allow the AppConfig to define a `theme.PublicLayout` that references an imported layout component and defaults to the `components/PublicLayout`.
 

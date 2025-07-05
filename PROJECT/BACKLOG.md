@@ -6,31 +6,31 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Upcoming Tasks
 
-- [aaah] Add login support
-- [aaai] Add RBAC to the users system
-- [aaal] Add social login: GitHub
-- [aaam] Add social login: Facebook
-- [aaan] Add social login: Google
-- [aaao] Add social login: Apple
-- [aaat] Support i18n
-- [aaau] Implement public layout
+- [aah] Add login support
+- [aai] Add RBAC to the users system
+- [aal] Add social login: GitHub
+- [aam] Add social login: Facebook
+- [aan] Add social login: Google
+- [aao] Add social login: Apple
+- [aat] Support i18n
+- [aau] Implement public layout
 
 (LastID: aaav)
 
 ## Completed Tasks
 
-- [aaav] Add `ARCHITECTURE.md` to the Memory Bank
-- [aaav] Simplify db support to Postgres
-- [aaag] Add Database connection pool
-- [aaac] Support different public layout based on App-config
-- [aaab] Support different CSS projects by App-config
-- [aaav] Implement Button component
-- [aaaf] Support accent color in App config
-- [aaau] Implement public layout
-- [aaae] Support default theme in App config
-- [aaas] Layout's metadata should come from the configuration
-- [aaad] General dark-mode support
-- [aaaa] Initialize backlog
-- [aaap] API routes ACL with App config feature flags
-- [aaaq] Page routes ACL with cApp config feature flags
-- [aaar] Identify App config by Request properties
+- [aaj] Add `ARCHITECTURE.md` to the Memory Bank
+- [aaw] Simplify db support to Postgres
+- [aag] Add Database connection pool
+- [aac] Support different public layout based on App-config
+- [aab] Support different CSS projects by App-config
+- [aav] Implement Button component
+- [aaf] Support accent color in App config
+- [aau] Implement public layout
+- [aae] Support default theme in App config
+- [aas] Layout's metadata should come from the configuration
+- [aad] General dark-mode support
+- [aaa] Initialize backlog
+- [aap] API routes ACL with App config feature flags
+- [aaq] Page routes ACL with cApp config feature flags
+- [aar] Identify App config by Request properties

@@ -1,4 +1,4 @@
-# Layout's metadata should come from the configuration
+# Layout's metadata should come from the configuration [aas]
 
 The main layout `src/app/layout.tsx` exports a static object to set the page's metadata:
 

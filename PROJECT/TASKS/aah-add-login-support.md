@@ -1,4 +1,4 @@
-# Add login support with NextAuth.js library [aaah]
+# Add login support with NextAuth.js library [aah]
 
 We need to implement a way to support different login strategies:
 

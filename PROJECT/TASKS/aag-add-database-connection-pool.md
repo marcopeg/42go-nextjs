@@ -1,4 +1,4 @@
-# Add Database connection pool [aaag]
+# Add Database connection pool [aag]
 
 Add a way to connect to a database from the API endpoints.
 
