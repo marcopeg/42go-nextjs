@@ -15,7 +15,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aat] Support i18n
 - [aau] Implement public layout
 
-(LastID: aaav)
+(LastID: aaz)
 
 ## Completed Tasks
 
