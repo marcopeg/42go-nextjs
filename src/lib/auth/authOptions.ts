@@ -1,5 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcrypt";
+import { getDB } from "../db";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -14,16 +16,42 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Mock validation logic
-        if (credentials.username === "aaa" && credentials.password === "aaa") {
-          return {
-            id: "1",
-            name: "John Doe",
-            email: "john.doe@example.com",
-          };
-        }
+        try {
+          // Get database connection
+          const db = getDB();
 
-        return null;
+          // Query for user by username (case-insensitive)
+          const user = await db("auth.users")
+            .where(db.raw("LOWER(name) = LOWER(?)", [credentials.username]))
+            .first();
+
+          if (!user) {
+            // User not found - return null without revealing this info
+            return null;
+          }
+
+          // Verify password using bcrypt
+          const isValidPassword = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          if (!isValidPassword) {
+            // Invalid password - return null
+            return null;
+          }
+
+          // Return user object for NextAuth session
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+          };
+        } catch (error) {
+          // Log error for debugging but don't expose details to client
+          console.error("Authentication error:", error);
+          return null;
+        }
       },
     }),
   ],
@@ -37,7 +65,7 @@ export const authOptions: NextAuthOptions = {
     signOut: "/logout",
     error: "/error",
     verifyRequest: "/verify-request",
-    newUser: "/dashboard",
+    newUser: "/signup",
   },
   callbacks: {
     async jwt({ token, user }) {

@@ -12,62 +12,71 @@ Implement database-backed authentication by connecting the NextAuth.js credentia
 
 ## Development Plan
 
-### Objective
+### Current State Analysis
 
-Replace the mock authentication system with a real database-backed authentication that:
+**What's Already There:**
 
-1. Seeds test users with hashed passwords
-2. Authenticates users against the database
-3. Uses proper password hashing/verification
+- Database seeds are already creating `john` and `jane` users with hashed passwords ✓
+- bcrypt dependency is installed ✓
+- Database connection utilities are ready ✓
+- NextAuth is configured but using mock authentication
 
-### Steps
+**What Needs Implementation:**
 
-1. **Update User Seeds**:
+- Mock authentication logic in `authOptions.ts` needs replacement
+- No database queries in the credentials provider
+- Users exist in DB but authentication doesn't use them
 
-   - Modify the existing seed file to include john and jane users
-   - Ensure passwords are properly hashed using bcrypt
-   - Both users should have username as password (john/john, jane/jane)
+### The Implementation Plan
 
-2. **Install Required Dependencies**:
+#### Phase 1: Database Query Implementation
 
-   - Ensure bcrypt is available for password hashing/verification
-   - Check if we need any additional database query utilities
+1. **Modify `authOptions.ts`** to query the database instead of using mock logic
+2. **Import database utilities** and bcrypt for password verification
+3. **Implement user lookup** by username/email from `auth.users` table
+4. **Add proper password verification** using bcrypt.compare()
 
-3. **Update NextAuth Configuration**:
+#### Phase 2: Error Handling & Security
 
-   - Modify the credentials provider in `authOptions.ts`
-   - Replace mock authentication with database queries
-   - Implement proper password verification using bcrypt
-   - Query the `auth.users` table for authentication
+1. **Implement robust error handling** for database connection issues
+2. **Ensure password security** - no logging of sensitive data
+3. **Add case-insensitive lookup** for usernames/emails
+4. **Maintain existing session structure** and JWT handling
 
-4. **Database Query Integration**:
+#### Phase 3: Testing & Validation
 
-   - Use existing database connection utilities
-   - Implement user lookup by email or username
-   - Ensure proper error handling for database operations
-
-5. **Testing**:
-   - Test login with john/john credentials
-   - Test login with jane/jane credentials
-   - Verify mock authentication is completely removed
-   - Ensure proper error handling for invalid credentials
+1. **Test with john/john credentials**
+2. **Test with jane/jane credentials**
+3. **Verify mock authentication is completely removed**
+4. **Test invalid credentials handling**
 
 ### Files to Modify
 
-- `knex/seeds/20240522_init_auth_data.js` - Add john and jane users
 - `src/lib/auth/authOptions.ts` - Replace mock auth with database queries
-- `package.json` - Ensure bcrypt dependency is available
 
 ### Libraries Used
 
-- **bcrypt**: For password hashing and verification
-- **knex**: For database queries (already available)
-- **uuid**: For generating user IDs (already in seeds)
+- **bcrypt** - Already installed, for password verification
+- **knex** - Already configured, for database queries
+- **uuid** - Already used in seeds for user IDs
 
-### Considerations
+### Implementation Details
 
-- Use proper error handling for database connection issues
-- Ensure passwords are never logged or exposed
-- Follow existing database schema and patterns
-- Maintain session handling and JWT token structure
-- Consider case-insensitive email/username lookup
+#### Database Authentication Flow
+
+```
+1. User submits username/password
+2. Query auth.users table for user by username (case-insensitive)
+3. If user found, verify password using bcrypt.compare()
+4. If valid, return user object for NextAuth session
+5. If invalid, return null (NextAuth handles error display)
+```
+
+#### Security Considerations
+
+- Database queries should be fast and efficient
+- Error messages should be vague for security (no user enumeration)
+- Session handling stays intact - NextAuth handles that
+- Case-insensitive lookups prevent user frustration
+- Proper TypeScript types for database responses
+- No logging of passwords or sensitive data
