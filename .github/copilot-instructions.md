@@ -76,37 +76,33 @@ When prompted by `plan task` ok `k1` do:
    - any additional considerations or dependencies
 3. Write the plan in the **Current Task**'s file under `## Development Plan` section (create it if it doesn't exist)
 
-### Update Memory Bank
-
-When prompted by `update memory` or `update memory bank` or `k9` do:
-
-1. read the file `./PROJECT/BACKLOG.md` to gain general context on the ongoing project
-2. identify the current task ID from `./PROJECT/BACKLOG.md`
-3. read the file `./PROJECT/TASKS/{id}-human-readable-title.md` to gain context on the task and its goal and acceptance criteria
-4. review the task content and the current chat context for new relevant information
-5. update the task file accordingly
-   (run to each section and reason if there are new information to merge in)
-6. if needed, update `./PROJECT/ARCHITECTURE.md` with any new architectural decisions or best practices established during the task
-7. if needed, update `./PROJECT/FEATURES.md` with any new features or changes made during the task
-8. if needed, update file `./PROJECT/DEPENDENCIES.md` to document any new dependencies added during the task
-
-### Execute Current Task
+## Execute Current Task
 
 When prompted by `execute task` or `exec task` or `run task` or `k2` do:
 
-1. read the file `./PROJECT/BACKLOG.md` to gain general context on the ongoing project
-2. identify the current task ID from `./PROJECT/BACKLOG.md`
-3. read the file `./PROJECT/TASKS/{id}-human-readable-title.md` to gain context on the task, in particulat the `## Development Plan` section
-4. read the file `./PROJECT/ARCHITECTURE.md` to gain context on architectural decisions and best practices
-5. read the file `./PROJECT/FEATURES.md` to gain context on what has been implemented in the project
-6. read the file `./PROJECT/DEPENDENCIES.md` to gain context on the libraries used in the project
-7. work on the task by following the plan written in the task's file under `## Development Plan` section
+1. Reload the **Memory Bank** context (see `Load Context` command)
+2. work on the task by following the plan written in the task's file under `## Development Plan` section
    - modify or create files as needed
    - use the libraries and tools specified in the plan
    - ensure to follow the coding style and conventions of the project
-   - run `npm run lint && npm run build` at the end of each iteration to check for errors
+   - run `npm run lint && npm run build` at the end of each iteration that modify code to check for errors, and iterate until there are no linting or building errors
+3. if you encounter any issues or need to make decisions, document them in the task's file under `## Issues Encountered` section
+   - explain the issue, how you resolved it, and any considerations made
+   - if you need to make a decision, document it in the task's file under `## Architectural Decisions` section
+   - if you need to make a change to the plan, update the `## Development Plan` section accordingly
+4. if you need to install new libraries or tools, document them in the task's file under `## Libraries Used` section
+   - explain why the library was chosen, how it was used, and any considerations made
+   - if the library is not already documented in `./PROJECT/DEPENDENCIES.md`, add it to that file as well
+5. if you need to make changes to the architecture or best practices, document them in the task's file under `## Architectural Decisions` section
+   - explain the decision, why it was made, and any considerations made
+   - if the decision is not already documented in `./PROJECT/ARCHITECTURE.md`, add it to that file as well
+6. document your progress in the task's file under `## Progress` section
+   - write a summary of what has been done, what is left to do, and any issues encountered
+   - if you need to stop working on the task, document the current state and what needs to be done next
+7. if you need to ask questions or get clarification, do so in the chat
+   - provide as much context as possible to help the user understand the task and the current state
 
-### Complete or Document Current Task
+## Complete or Document Current Task
 
 When prompted by `task done` or `done task` or `document task` or `k3` do:
 
@@ -115,14 +111,53 @@ When prompted by `task done` or `done task` or `document task` or `k3` do:
    - the libraries used
    - any issues encountered and how they were resolved
    - any additional notes or considerations
-2. if needed, update `./PROJECT/ARCHITECTURE.md` with any new architectural decisions or best practices established during the task
-3. if needed, update `./PROJECT/FEATURES.md` with any new features or changes made during the task
-4. if needed, update file `./PROJECT/DEPENDENCIES.md` to document any new dependencies added during the task
-5. move the task to completed in `./PROJECT/BACKLOG.md`
+2. update the **Memory Bank** files as needed:
+   - if the task introduced new architectural decisions or best practices, update `./PROJECT/ARCHITECTURE.md`
+   - if the task added new features or changed existing ones, update `./PROJECT/FEATURES.md`
+   - if the task added new dependencies or libraries, update `./PROJECT/DEPENDENCIES.md`
+3. move the task to the completed section in `./PROJECT/BACKLOG.md`
+4. analyze the `docs/` folder for any documentation that needs to be updated or created
+   - if the task introduced new features or changes, update the documentation accordingly
+   - if the task requires new documentation, create it in the `docs/` folder
+5. if the task is not complete, update the `## Development Plan` section with the next steps to take
+
+## Update Memory Bank
+
+When prompted by `update memory` or `update memory bank` or `k9` do:
+
+1. Reload the **Memory Bank** context (see `Load Context` command)
+2. review the task content and the current chat context for new relevant information
+3. update the **Memory Bank** files as needed:
+   - if the task introduced new architectural decisions or best practices, update `./PROJECT/ARCHITECTURE.md`
+   - if the task added new features or changed existing ones, update `./PROJECT/FEATURES.md`
+   - if the task added new dependencies or libraries, update `./PROJECT/DEPENDENCIES.md`
+4. analyze the `docs/` folder for any documentation that needs to be updated or created
+   - if the task introduced new features or changes, update the documentation accordingly
+   - if the task requires new documentation, create it in the `docs/` folder
+5. if the task is not complete, update the `## Development Plan` section with the next steps to take
+
+## Create New Task
+
+When prompted by `create task: {task}` or `new task: {task}` or `k4: {task}` do:
+
+1. Calculate the next task ID based on the last ID in `./PROJECT/BACKLOG.md`
+   - Identify the last id from `(LastID: xxx)`
+   - Increment the last ID by one, e.g., if the last ID is `aav`, the next ID will be `aaw`
+   - Update the `(LastID: xxx)` line in `./PROJECT/BACKLOG.md` with the new ID
+2. Calculate the task's title, file name, and description from the content provided in the prompt
+   - Use the task description to create a human-readable title
+   - Format the task file name as `{NewID}-human-readable-title.md`
+3. Create a new task file in `./PROJECT/TASKS/{NewID}-{human-readable-title}.md` with the following sections:
+   - `# {title} [{NewID}]`
+   - task description and goals
+   - `# Acceptance Criteria` - a checklist (`- [ ] {criteria}`) of what needs to be done for the task to be considered complete
+   - `# Development Plan` - a detailed plan for the task, if that is explicitly included in the prompt, else create the empty section
+4. Append the new task to the **Upcoming Tasks** section in `./PROJECT/BACKLOG.md` with the following format:
+   - `- [{NewID}] {human-readable-title}`
 
 # CLI Usage
 
-- run `npm run lint && npm run build` (from the `./` directory for Next.js specific tasks) and fix any linting or building errors at the end of each iteration
+- run `npm run lint && npm run build` (from the `./` directory for Next.js specific tasks) and fix any linting or building errors at the end of each - only if you modified code
 - never run `npm dev`, it's already running in the background (managed by `Makefile` target `app.start`)
 
 ---
