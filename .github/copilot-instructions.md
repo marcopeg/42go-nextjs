@@ -64,11 +64,11 @@ Behavioral constraints:
 - Only pull the context into memory
 - Do not re-explain what you learn
 
-### Plan Current Task
+## Plan Current Task
 
 When prompted by `plan task` ok `k1` do:
 
-1. Refresh the memory by running `load context` command
+1. Reload the **Memory Bank** context (see `Load Context` command)
 2. Plan the task by writing a detailed plan in the chat. Take as much time as you need to think, and interact with the user prompting questions to get a complete set of information. Focus on:
    - the steps to complete the task
    - the files to modify or create
