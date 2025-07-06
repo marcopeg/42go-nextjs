@@ -19,6 +19,7 @@ const RootLayout = async ({
   children: React.ReactNode;
 }>) => {
   const { name, config } = await getAppInfo();
+  const themeDefault = config?.theme?.default;
 
   return (
     <html suppressHydrationWarning lang="en">
@@ -26,7 +27,7 @@ const RootLayout = async ({
         <InjectAppName name={name} />
       </head>
       <body className={inter.className}>
-        <Providers config={config}>{children}</Providers>
+        <Providers defaultTheme={themeDefault}>{children}</Providers>
       </body>
     </html>
   );

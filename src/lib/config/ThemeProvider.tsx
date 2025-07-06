@@ -3,19 +3,22 @@ import {
   ThemeProvider as NextThemesProvider,
   useTheme as useNextTheme,
 } from "next-themes";
-import type { AppConfig } from "./app-config";
+import type { ThemeValue } from "@/AppConfig";
 
 interface ThemeProviderProps
   extends Omit<Parameters<typeof NextThemesProvider>[0], "defaultTheme"> {
-  config?: AppConfig;
+  defaultTheme?: ThemeValue;
 }
 
-export const ThemeProvider = ({ config, ...props }: ThemeProviderProps) => (
+export const ThemeProvider = ({
+  defaultTheme,
+  ...props
+}: ThemeProviderProps) => (
   <NextThemesProvider
     enableSystem
     disableTransitionOnChange
     attribute="class"
-    defaultTheme={config?.theme?.default || "system"}
+    defaultTheme={defaultTheme || "system"}
     {...props}
   />
 );

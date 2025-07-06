@@ -2,17 +2,17 @@
 
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/lib/config/ThemeProvider";
-import { AppConfig } from "@/AppConfig";
+import { ThemeValue } from "@/AppConfig";
 
 interface ProvidersProps {
   children: React.ReactNode;
-  config: AppConfig;
+  defaultTheme?: ThemeValue;
 }
 
-export function Providers({ children, config }: ProvidersProps) {
+export function Providers({ children, defaultTheme }: ProvidersProps) {
   return (
     <SessionProvider>
-      <ThemeProvider config={config}>{children}</ThemeProvider>
+      <ThemeProvider defaultTheme={defaultTheme}>{children}</ThemeProvider>
     </SessionProvider>
   );
 }
