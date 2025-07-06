@@ -4,13 +4,12 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-No current task - ready for next assignment
+- [aan] Add social login: Google
 
 ## Upcoming Tasks
 
-- [aan] Add social login: Google
-- [aam] Add social login: Facebook
-- [aao] Add social login: Apple
+- [abi] Refactor login code (improve modularization) [🔗](./TASKS/abi-refactor-login-code-improve-modularization.md)
+- [abj] Make each login strategy conditional based on environment variables [🔗](./TASKS/abj-make-login-strategy-conditional-on-env-vars.md)
 - [abb] Implement Dynamic Authentication Strategy [🔗](./TASKS/abb-implement-dynamic-authentication-strategy.md)
 - [aai] Add RBAC to the users system
 - [aat] Support i18n
@@ -20,8 +19,12 @@ No current task - ready for next assignment
 - [abf] Optimize Route Groups Documentation [🔗](./TASKS/abf-optimize-route-groups-documentation.md)
 - [abg] Optimize Feature Flags Documentation [🔗](./TASKS/abg-optimize-feature-flags-documentation.md)
 - [abh] Optimize App Config Documentation [🔗](./TASKS/abh-optimize-app-config-documentation.md)
+- [abl] Add social login: LinkedIn [🔗](./TASKS/abl-add-social-login-linkedin.md)
+- [abk] Add social login: X [🔗](./TASKS/abk-add-social-login-x.md)
+- [aam] Add social login: Facebook
+- [aao] Add social login: Apple
 
-(LastID: abh)
+(LastID: abl)
 
 ## Completed Tasks
 
