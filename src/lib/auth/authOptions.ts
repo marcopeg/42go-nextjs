@@ -12,6 +12,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
+        // Missing credentials - return null
         if (!credentials || !credentials.username || !credentials.password) {
           return null;
         }
@@ -20,13 +21,13 @@ export const authOptions: NextAuthOptions = {
           // Get database connection
           const db = getDB();
 
-          // Query for user by username (case-insensitive)
+          // Query for user by username (case-insensitive using PostgreSQL ILIKE)
           const user = await db("auth.users")
-            .where(db.raw("LOWER(name) = LOWER(?)", [credentials.username]))
+            .where("name", "ilike", credentials.username)
             .first();
 
+          // User not found - return null without revealing this info
           if (!user) {
-            // User not found - return null without revealing this info
             return null;
           }
 
@@ -36,8 +37,8 @@ export const authOptions: NextAuthOptions = {
             user.password
           );
 
+          // Invalid password - return null
           if (!isValidPassword) {
-            // Invalid password - return null
             return null;
           }
 
