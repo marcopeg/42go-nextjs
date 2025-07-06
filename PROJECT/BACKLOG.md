@@ -15,8 +15,13 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aao] Add social login: Apple
 - [aat] Support i18n
 - [aau] Implement public layout
+- [abd] Optimize Database Documentation [🔗](./TASKS/abd-optimize-database-documentation.md)
+- [abe] Optimize Theming Documentation [🔗](./TASKS/abe-optimize-theming-documentation.md)
+- [abf] Optimize Route Groups Documentation [🔗](./TASKS/abf-optimize-route-groups-documentation.md)
+- [abg] Optimize Feature Flags Documentation [🔗](./TASKS/abg-optimize-feature-flags-documentation.md)
+- [abh] Optimize App Config Documentation [🔗](./TASKS/abh-optimize-app-config-documentation.md)
 
-(LastID: abc)
+(LastID: abh)
 
 ## Completed Tasks
 
