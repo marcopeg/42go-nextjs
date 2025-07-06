@@ -53,16 +53,24 @@ This structure is intended to be recursive: A very complex component can be simp
 **Core Strategy**:
 
 - **Session Management**: JWT tokens for stateless authentication (30-day max, 30-minute refresh)
-- **Multi-Provider Support**: Credentials (username/password) + OAuth (GitHub, future: Google, Facebook)
-- **Account Linking**: Email-based user matching across authentication providers
+- **Multi-Provider Support**: Credentials (username/password) + OAuth (GitHub, Google) with extensible architecture
+- **Account Linking**: Email-based user matching across all authentication providers
 - **Database Design**: Separation of user profiles (`auth.users`) and provider accounts (`auth.accounts`)
 
 **OAuth Integration**:
 
-- **Provider Setup**: GitHub OAuth 2.0 with minimal scopes (`read:user user:email`)
+- **Provider Setup**: GitHub OAuth 2.0 and Google OAuth 2.0/OpenID Connect with minimal scopes
 - **Account Linking Logic**: Automatic linking for existing users, new user creation for first-time OAuth
 - **Token Storage**: OAuth access/refresh tokens stored securely in database for API access
 - **Error Handling**: Comprehensive OAuth error management with user-friendly messages
+- **User Experience**: Account selection prompts, consistent UI patterns, loading state management
+
+**Multi-Provider Authentication**:
+
+- **GitHub OAuth**: Scopes (`read:user user:email`), profile mapping, account linking
+- **Google OAuth**: Scopes (`openid profile email`), OpenID Connect, account selection prompts
+- **Credentials**: bcrypt hashing, case-insensitive login, user enumeration protection
+- **Account Unification**: Email-based linking allows users to authenticate via any linked provider
 
 **Security Features**:
 

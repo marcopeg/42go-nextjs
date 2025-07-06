@@ -3,12 +3,14 @@
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { GitHubIcon } from "@/components/ui/icons/github";
+import { GoogleIcon } from "@/components/ui/icons/google";
 import { AuthError } from "@/components/auth/AuthError";
 import { useState } from "react";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGitHubLoading, setIsGitHubLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -50,6 +52,18 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    try {
+      await signIn("google", {
+        callbackUrl: "/dashboard",
+      });
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+      setIsGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="login-page max-w-md mx-auto mt-8 p-6">
       <h1 className="text-2xl font-bold text-center mb-6">Sign In</h1>
@@ -58,10 +72,10 @@ export default function LoginPage() {
       <AuthError />
 
       {/* OAuth Section */}
-      <div className="mb-6">
+      <div className="mb-6 space-y-3">
         <Button
           onClick={handleGitHubSignIn}
-          disabled={isGitHubLoading || isLoading}
+          disabled={isGitHubLoading || isGoogleLoading || isLoading}
           variant="outline"
           className="w-full h-11 flex items-center justify-center gap-3 border-2 hover:bg-gray-50 dark:hover:bg-gray-800"
         >
@@ -71,6 +85,20 @@ export default function LoginPage() {
             <GitHubIcon size={20} />
           )}
           {isGitHubLoading ? "Connecting..." : "Continue with GitHub"}
+        </Button>
+
+        <Button
+          onClick={handleGoogleSignIn}
+          disabled={isGoogleLoading || isGitHubLoading || isLoading}
+          variant="outline"
+          className="w-full h-11 flex items-center justify-center gap-3 border-2 hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
+          {isGoogleLoading ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100"></div>
+          ) : (
+            <GoogleIcon size={20} />
+          )}
+          {isGoogleLoading ? "Connecting..." : "Continue with Google"}
         </Button>
       </div>
 
@@ -100,7 +128,7 @@ export default function LoginPage() {
             id="username"
             name="username"
             required
-            disabled={isLoading || isGitHubLoading}
+            disabled={isLoading || isGitHubLoading || isGoogleLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50"
             placeholder="Enter your username"
           />
@@ -118,7 +146,7 @@ export default function LoginPage() {
             id="password"
             name="password"
             required
-            disabled={isLoading || isGitHubLoading}
+            disabled={isLoading || isGitHubLoading || isGoogleLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50"
             placeholder="Enter your password"
           />
@@ -126,7 +154,7 @@ export default function LoginPage() {
 
         <Button
           type="submit"
-          disabled={isLoading || isGitHubLoading}
+          disabled={isLoading || isGitHubLoading || isGoogleLoading}
           className="w-full h-11"
         >
           {isLoading ? (

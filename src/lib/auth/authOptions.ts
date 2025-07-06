@@ -1,6 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GitHubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
 import { getDB } from "../db";
 
@@ -56,6 +57,27 @@ export const authOptions: NextAuthOptions = {
           name: profile.name || profile.login,
           email: profile.email,
           image: profile.avatar_url,
+        };
+      },
+    }),
+    // Google OAuth Provider
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // Configure Google scope for OpenID Connect
+      authorization: {
+        params: {
+          scope: "openid profile email",
+          prompt: "select_account", // Always show account selection
+        },
+      },
+      // Map Google profile to our user schema
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
         };
       },
     }),
@@ -125,8 +147,8 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account }) {
-      // OAuth sign-in logic
-      if (account?.provider === "github") {
+      // OAuth sign-in logic (GitHub, Google, etc.)
+      if (account?.provider === "github" || account?.provider === "google") {
         try {
           const db = getDB();
 
@@ -136,16 +158,16 @@ export const authOptions: NextAuthOptions = {
             .first();
 
           if (existingUser) {
-            // User exists - link GitHub account if not already linked
+            // User exists - link OAuth account if not already linked
             const existingAccount = await db("auth.accounts")
               .where({
-                provider: "github",
+                provider: account.provider,
                 provider_account_id: account.providerAccountId,
               })
               .first();
 
             if (!existingAccount) {
-              // Link GitHub account to existing user
+              // Link OAuth account to existing user
               await db("auth.accounts").insert({
                 user_id: existingUser.id,
                 type: account.type,
@@ -161,7 +183,7 @@ export const authOptions: NextAuthOptions = {
               });
             }
 
-            // Update user profile with latest GitHub data
+            // Update user profile with latest OAuth data
             await db("auth.users")
               .where("id", existingUser.id)
               .update({
@@ -183,12 +205,12 @@ export const authOptions: NextAuthOptions = {
               name: user.name,
               email: user.email,
               image: user.image,
-              email_verified: new Date(), // GitHub emails are verified
+              email_verified: new Date(), // OAuth emails are verified
               created_at: new Date(),
               updated_at: new Date(),
             });
 
-            // Create GitHub account link
+            // Create OAuth account link
             await db("auth.accounts").insert({
               user_id: newUserId,
               type: account.type,
@@ -209,7 +231,7 @@ export const authOptions: NextAuthOptions = {
 
           return true;
         } catch (error) {
-          console.error("GitHub OAuth sign-in error:", error);
+          console.error(`${account?.provider} OAuth sign-in error:`, error);
           return false;
         }
       }

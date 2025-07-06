@@ -55,8 +55,8 @@ PostgreSQL client driver used by Knex
 Authentication solution for Next.js  
 **Integration**: `src/lib/auth/authOptions.ts`  
 **Config**: JWT sessions, 30-day max, 30-minute refresh, HTTP-only cookies  
-**Providers**: Credentials (bcrypt), GitHub OAuth 2.0  
-**Features**: Account linking, OAuth token storage, comprehensive error handling
+**Providers**: Credentials (bcrypt), GitHub OAuth 2.0, Google OAuth 2.0 / OpenID Connect  
+**Features**: Multi-provider account linking, OAuth token storage, comprehensive error handling, account selection prompts
 
 ### bcrypt
 
