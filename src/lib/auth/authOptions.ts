@@ -3,6 +3,39 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { getDB } from "../db";
 
+// Extend NextAuth's session type to include our custom user fields
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      // Add more fields as needed
+      // roles?: string[];
+      // permissions?: string[];
+    };
+  }
+
+  // Extend the User interface with our AuthUser type
+  interface User {
+    id: string;
+    name: string;
+    email: string;
+  }
+}
+
+declare module "next-auth/jwt" {
+  // Extend the JWT interface with our token type
+  interface JWT {
+    id: string;
+    email: string;
+    name: string;
+    // Add more fields as needed
+    // roles?: string[];
+    // permissions?: string[];
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -90,16 +123,10 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token && session.user) {
-        // Extend the session user object with id
-        (
-          session.user as {
-            id?: string;
-            name?: string | null;
-            email?: string | null;
-          }
-        ).id = token.id as string;
-        session.user.email = token.email as string;
-        session.user.name = token.name as string;
+        // Now we have proper typing - no casting needed!
+        session.user.id = token.id;
+        session.user.email = token.email;
+        session.user.name = token.name;
       }
       return session;
     },
