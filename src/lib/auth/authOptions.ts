@@ -1,5 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GitHubProvider from "next-auth/providers/github";
 import bcrypt from "bcrypt";
 import { getDB } from "../db";
 
@@ -38,6 +39,27 @@ declare module "next-auth/jwt" {
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    // GitHub OAuth Provider
+    GitHubProvider({
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      // Configure GitHub scope to get user profile and email
+      authorization: {
+        params: {
+          scope: "read:user user:email",
+        },
+      },
+      // Map GitHub profile to our user schema
+      profile(profile) {
+        return {
+          id: profile.id.toString(),
+          name: profile.name || profile.login,
+          email: profile.email,
+          image: profile.avatar_url,
+        };
+      },
+    }),
+    // Credentials Provider (existing)
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -102,6 +124,99 @@ export const authOptions: NextAuthOptions = {
     newUser: "/signup",
   },
   callbacks: {
+    async signIn({ user, account }) {
+      // OAuth sign-in logic
+      if (account?.provider === "github") {
+        try {
+          const db = getDB();
+
+          // Check if user exists by email
+          const existingUser = await db("auth.users")
+            .where("email", user.email!)
+            .first();
+
+          if (existingUser) {
+            // User exists - link GitHub account if not already linked
+            const existingAccount = await db("auth.accounts")
+              .where({
+                provider: "github",
+                provider_account_id: account.providerAccountId,
+              })
+              .first();
+
+            if (!existingAccount) {
+              // Link GitHub account to existing user
+              await db("auth.accounts").insert({
+                user_id: existingUser.id,
+                type: account.type,
+                provider: account.provider,
+                provider_account_id: account.providerAccountId,
+                access_token: account.access_token,
+                refresh_token: account.refresh_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+                session_state: account.session_state,
+              });
+            }
+
+            // Update user profile with latest GitHub data
+            await db("auth.users")
+              .where("id", existingUser.id)
+              .update({
+                name: user.name || existingUser.name,
+                image: user.image || existingUser.image,
+                updated_at: new Date(),
+              });
+
+            // Set user.id to existing user for JWT token
+            user.id = existingUser.id;
+          } else {
+            // New user - create user profile
+            const newUserId = `usr_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2)}`;
+
+            await db("auth.users").insert({
+              id: newUserId,
+              name: user.name,
+              email: user.email,
+              image: user.image,
+              email_verified: new Date(), // GitHub emails are verified
+              created_at: new Date(),
+              updated_at: new Date(),
+            });
+
+            // Create GitHub account link
+            await db("auth.accounts").insert({
+              user_id: newUserId,
+              type: account.type,
+              provider: account.provider,
+              provider_account_id: account.providerAccountId,
+              access_token: account.access_token,
+              refresh_token: account.refresh_token,
+              expires_at: account.expires_at,
+              token_type: account.token_type,
+              scope: account.scope,
+              id_token: account.id_token,
+              session_state: account.session_state,
+            });
+
+            // Set user.id for JWT token
+            user.id = newUserId;
+          }
+
+          return true;
+        } catch (error) {
+          console.error("GitHub OAuth sign-in error:", error);
+          return false;
+        }
+      }
+
+      // Allow credentials sign-in (existing logic)
+      return true;
+    },
     async jwt({ token, user }) {
       // Initial login - store user data
       if (user) {

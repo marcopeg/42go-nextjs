@@ -4,7 +4,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aal] Add social login: GitHub
+- [aal] Add social login: GitHub [🔗](./TASKS/aal-add-social-login-github.md)
 
 ## Upcoming Tasks
 
