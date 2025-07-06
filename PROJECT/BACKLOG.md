@@ -4,13 +4,12 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [abc] Optimize Memory Bank for LLM Consumption [🔗](./TASKS/abc-optimize-memory-bank-for-llm-consumption.md)
+- [aal] Add social login: GitHub
 
 ## Upcoming Tasks
 
 - [abb] Implement Dynamic Authentication Strategy [🔗](./TASKS/abb-implement-dynamic-authentication-strategy.md)
 - [aai] Add RBAC to the users system
-- [aal] Add social login: GitHub
 - [aam] Add social login: Facebook
 - [aan] Add social login: Google
 - [aao] Add social login: Apple
@@ -21,6 +20,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [abc] Optimize Memory Bank for LLM Consumption [🔗](./TASKS/abc-optimize-memory-bank-for-llm-consumption.md)
 - [aba] Use Database Users Table to Authenticate Users [🔗](./TASKS/aba-use-database-users-table-to-authenticate.md)
 - [aah] Add login support [🔗](./TASKS/aah-add-login-support.md)
 - [aaj] Add `ARCHITECTURE.md` to the Memory Bank [🔗](./TASKS/aaj-add-architecture-md-to-the-memory-bank.md)
