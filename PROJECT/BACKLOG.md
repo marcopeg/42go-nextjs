@@ -8,6 +8,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Upcoming Tasks
 
+- [abb] Implement Dynamic Authentication Strategy [🔗](./TASKS/abb-implement-dynamic-authentication-strategy.md)
 - [aai] Add RBAC to the users system
 - [aal] Add social login: GitHub
 - [aam] Add social login: Facebook
@@ -16,7 +17,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aat] Support i18n
 - [aau] Implement public layout
 
-(LastID: aba)
+(LastID: abb)
 
 ## Completed Tasks
 
