@@ -46,6 +46,31 @@ Complex components may have multiple internal Presentation Components or Custom 
 
 This structure is intended to be recursive: A very complex component can be simplified into a structure of sub-components that follow the same pattern.
 
+### 4. Authentication Architecture
+
+**Pattern**: JWT-first with OAuth integration and database persistence
+
+**Core Strategy**:
+
+- **Session Management**: JWT tokens for stateless authentication (30-day max, 30-minute refresh)
+- **Multi-Provider Support**: Credentials (username/password) + OAuth (GitHub, future: Google, Facebook)
+- **Account Linking**: Email-based user matching across authentication providers
+- **Database Design**: Separation of user profiles (`auth.users`) and provider accounts (`auth.accounts`)
+
+**OAuth Integration**:
+
+- **Provider Setup**: GitHub OAuth 2.0 with minimal scopes (`read:user user:email`)
+- **Account Linking Logic**: Automatic linking for existing users, new user creation for first-time OAuth
+- **Token Storage**: OAuth access/refresh tokens stored securely in database for API access
+- **Error Handling**: Comprehensive OAuth error management with user-friendly messages
+
+**Security Features**:
+
+- **Password Security**: bcrypt hashing for credential authentication
+- **Session Security**: HTTP-only cookies, automatic rotation, secure headers
+- **OAuth Security**: Server-side token management, CSRF protection via NextAuth.js
+- **Account Protection**: Prevents duplicate account linking, handles email conflicts gracefully
+
 ## Tech Stack Decisions
 
 **Framework**: Next.js 14+ with App Router, TypeScript, React 18+

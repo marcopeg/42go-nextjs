@@ -42,6 +42,15 @@
 **Features**: Case-insensitive login, user enumeration protection, optimized queries
 **Database**: `auth.users` table with bcrypt passwords, existing seed data (john/john, jane/jane)
 
+### GitHub OAuth Integration
+
+**Capability**: Social login with GitHub OAuth 2.0 provider
+**Implementation**: NextAuth.js GitHub provider with account linking strategy
+**Features**: Automatic account linking by email, JWT session compatibility, secure token storage
+**Database**: `auth.accounts` table for OAuth provider links, `auth.users` for unified profiles
+**Security**: Minimal OAuth scopes (`read:user user:email`), server-side token management
+**UI**: Modern login interface with loading states and comprehensive error handling
+
 ### Feature Flag System
 
 **Capability**: Granular page and API route control per app
