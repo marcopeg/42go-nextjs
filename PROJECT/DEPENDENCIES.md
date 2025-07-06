@@ -1,218 +1,90 @@
 # Dependencies
 
-This files contains brief explanation of the dependencies of the app.
+Essential libraries and their integration context in the 42Go Next project.
 
-## NextJS
+## Core Framework
 
-🔗 https://nextjs.org/
+### Next.js
 
-Full stack Typescript framework.
+🔗 https://nextjs.org/  
+**Purpose**: Full-stack TypeScript framework with App Router
+**Integration**: Project foundation with SSR, routing, and build optimization
 
-## Tailwind
+### TypeScript
 
-🔗 https://tailwindcss.com/
+**Purpose**: Complete type safety across client and server
+**Integration**: Strict type checking, interfaces, and compile-time validation
 
-## ShadCN
+## UI & Styling
 
-🔗 https://ui.shadcn.com/docs/installation
+### Tailwind CSS
 
-**IMPORTANT:** when adding shadcn/ui components, run `npx shadcn@latest add <component_name>` from the `root` directory.
+🔗 https://tailwindcss.com/  
+**Purpose**: Utility-first CSS framework
+**Integration**: `darkMode: ["class"]` configuration for theme system
 
-## next-themes
+### shadcn/ui
 
-🔗 https://github.com/pacocoursey/next-themes
+🔗 https://ui.shadcn.com/  
+**Purpose**: Accessible components built on Radix UI primitives
+**Integration**: `src/components/ui/`, install via `npx shadcn@latest add <component>`
+**Key**: Run from project root, fully themed automatically
 
-**Version**: ^0.4.6
+### next-themes (^0.4.6)
 
-**Purpose**: Robust theme management for Next.js applications with perfect support for SSR/SSG.
+🔗 https://github.com/pacocoursey/next-themes  
+**Purpose**: SSR-safe theme management with localStorage persistence
+**Integration**: `ThemeProvider` with AppConfig defaults, class-based switching
+**Why**: Industry standard, hydration-safe, perfect Tailwind integration
 
-**Key Features**:
+## Database & Backend
 
-- Automatic system theme detection
-- Theme persistence via localStorage
-- Hydration-safe theme switching
-- TypeScript support
-- Zero-config setup with sensible defaults
+### Knex.js (^3.1.0)
 
-**Why Chosen**:
+🔗 https://knexjs.org/  
+**Purpose**: PostgreSQL query builder and migration system
+**Integration**: Singleton pattern via `getDB()`, migrations in `./knex/`
+**Configuration**: `PGSTRING` + optional `PGPOOL`, `serverExternalPackages: ["knex"]`
+**Why**: PostgreSQL-focused, excellent migrations, Next.js compatible
 
-- Industry standard for Next.js theme management
-- Excellent SSR/hydration handling prevents flash of incorrect theme
-- Lightweight and performant
-- Active maintenance and community support
-- Perfect integration with Tailwind CSS class-based dark mode
+### pg (^8.16.0)
 
-**Integration**:
+**Purpose**: PostgreSQL client driver (production dependency)
+**Integration**: Used by Knex for database connections
 
-- Used in `src/lib/config/ThemeProvider.tsx` as the core theme provider
-- Configured with class-based theme switching (`attribute="class"`)
-- Integrated with Tailwind's `darkMode: ["class"]` configuration
-- Provides theme context throughout the application via React Context
+## Authentication
 
-## Knex.js
+### NextAuth.js (^4.24.11)
 
-🔗 https://knexjs.org/
+🔗 https://next-auth.js.org/  
+**Purpose**: Enterprise authentication with JWT sessions
+**Integration**: `src/lib/auth/authOptions.ts`, automatic session management
+**Configuration**: 30-day max, 30-minute refresh, HTTP-only cookies
+**Why**: Industry standard, extensible (social login ready), zero-config security
 
-**Version**: ^3.1.0
+### bcrypt
 
-**Purpose**: SQL query builder and migration manager providing a unified interface for PostgreSQL database operations.
+**Purpose**: Password hashing and verification
+**Integration**: Database authentication in NextAuth credentials provider
 
-**Key Features**:
+### @types/bcrypt
 
-- PostgreSQL-focused database abstraction
-- Schema migration and seeding system
-- Connection pooling and transaction support
-- Promise-based query interface
-- TypeScript support
+**Purpose**: TypeScript definitions for bcrypt
+**Integration**: Dev dependency for type-safe password operations
 
-**Why Chosen**:
+## Development
 
-- Mature and battle-tested SQL abstraction layer
-- Excellent migration system for database schema management
-- Perfect for PostgreSQL-focused applications
-- Active community and comprehensive documentation
-- Perfect fit for serverless and traditional deployment models
+### ESLint
 
-**Integration**:
+**Purpose**: Code quality and consistency
+**Integration**: Custom config with arrow function preferences, absolute imports
 
-- Database connection configuration in `src/lib/db/utils.ts`
-- Singleton connection pool via `src/lib/db/index.ts`
-- Migration files in `./knex/migrations/`
-- CLI configuration in `knexfile.js`
+---
 
-**Related Database Packages**:
+**Dependency Philosophy**: Prefer mature, well-maintained libraries with excellent TypeScript support and Next.js integration. Avoid experimental packages in favor of industry standards.
 
-- **pg** (^8.16.0): PostgreSQL client driver (production dependency)
-- **pg-query-stream** (^4.10.3): Streaming query support for large PostgreSQL result sets
+**Installation Notes**:
 
-**Build Configuration**:
-
-Instead of installing unused database drivers, we use the official Next.js solution:
-
-```typescript
-// next.config.ts
-const nextConfig: NextConfig = {
-  serverExternalPackages: ["knex"],
-};
-```
-
-**Why This Solution**:
-
-- **Official**: Uses documented Next.js approach for external packages
-- **Clean**: No need to install unused database drivers
-- **Maintainable**: Leverages official Next.js recommendations
-- **Performance**: Prevents Next.js from bundling all Knex dialects
-- **Future-proof**: Follows official guidelines
-
-**Project Configuration**:
-
-- Single `PGSTRING` environment variable for PostgreSQL connection
-- Optional pool tuning via `PGPOOL` environment variable (comma-separated: min,max,idleTimeoutMillis)
-- Advanced configuration via optional `knex.config.json` file
-- PostgreSQL-only support with automatic connection string parsing
-
-## NextAuth.js
-
-🔗 https://next-auth.js.org/
-
-**Version**: ^4.24.11
-
-**Purpose**: Complete authentication solution for Next.js applications with JWT support, multiple providers, and enterprise-grade security.
-
-**Key Features**:
-
-- JWT and database session strategies
-- 50+ built-in authentication providers (Google, GitHub, etc.)
-- Credentials provider for custom authentication
-- Automatic session management and refresh
-- TypeScript support with proper typing
-- App Router and Pages Router compatibility
-
-**Why Chosen**:
-
-- Industry standard for Next.js authentication
-- Comprehensive feature set including social login, magic links
-- Built-in security best practices (CSRF protection, secure cookies)
-- Excellent documentation and active community
-- Zero-configuration setup with sensible defaults
-- Perfect for rapid development while maintaining enterprise security
-
-**Integration**:
-
-- Configuration in `src/lib/auth/authOptions.ts`
-- API handler at `src/app/api/auth/[...nextauth]/route.ts`
-- Session provider integration in `src/components/Providers.tsx`
-- React hooks via `useSession` for client-side authentication
-
-**Session Strategy**:
-
-Currently configured for JWT sessions with:
-
-- 30-day maximum session duration
-- 30-minute automatic token refresh
-- HTTP-only cookie storage for security
-- Server-side validation callbacks for real-time user status checking
-
-**Authentication Flow**:
-
-```typescript
-// Login validation (development)
-credentials: {
-  username: "aaa",
-  password: "aaa"
-}
-
-// Session configuration
-session: {
-  strategy: "jwt",
-  maxAge: 30 * 24 * 60 * 60, // 30 days
-  updateAge: 30 * 60,         // 30 minutes
-}
-```
-
-**Security Features**:
-
-- HTTP-only cookies prevent XSS attacks
-- Automatic CSRF protection
-- Token rotation with configurable intervals
-- Secure session validation and expiration
-- Ready for backend integration during token refresh
-
-**Future Extensibility**:
-
-Ready for expansion to include:
-
-- Social login providers (GitHub, Google, Facebook, Apple)
-- Magic link authentication
-- Database session strategy
-- Role-based access control (RBAC)
-- Multi-factor authentication (MFA)
-
-## @types/bcrypt
-
-🔗 https://www.npmjs.com/package/@types/bcrypt
-
-**Version**: Latest
-
-**Purpose**: TypeScript type definitions for the bcrypt library.
-
-**Key Features**:
-
-- Complete TypeScript definitions for bcrypt functions
-- Proper typing for hash(), compare(), and salt generation
-- Async and sync method signatures
-- Integration with bcrypt password hashing functionality
-
-**Why Chosen**:
-
-- Required for TypeScript compilation with bcrypt
-- Provides IntelliSense and type safety for password operations
-- Standard TypeScript definitions package
-- Maintained by DefinitelyTyped community
-
-**Integration**:
-
-- Used in `src/lib/auth/authOptions.ts` for password verification
-- Enables type-safe bcrypt operations in authentication flow
-- Provides proper autocomplete for bcrypt methods
-- Required dev dependency for TypeScript builds
+- shadcn/ui: Always run from project root
+- Database: PostgreSQL-only focus, no multi-database complexity
+- Authentication: JWT-first, extensible for future social providers

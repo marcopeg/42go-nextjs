@@ -1,321 +1,72 @@
 # Features
 
-## Basic Next.js Setup
+## Core Platform Capabilities
 
-- Basic Next.js app structure created in `./`.
-- `shadcn/ui` initialized within the `./` directory.
-- `shadcn/ui` Button component added to `./src/components/ui/button.tsx` and integrated into `./src/app/page.tsx`.
+### Dynamic Multi-App Configuration
 
-## Dynamic AppConfig System
+**Capability**: Request-based app resolution enabling multiple SaaS applications from single codebase
+**Implementation**: `src/AppConfig.ts` with middleware-driven app matching
+**Benefits**: Dynamic configuration per request, no performance overhead, server-side validation
+**Architecture details**: See [ARCHITECTURE.md](./ARCHITECTURE.md#multi-app-configuration-system)
+**Usage guide**: See [docs/APP_CONFIG.md](../docs/APP_CONFIG.md)
 
-Implemented a dynamic, request-specific configuration (`AppConfig`) system that allows for multi-tenant or multi-environment setups.
+### Enterprise Theme System
 
-**Architecture:**
+**Capability**: App-specific default themes with user preference override
+**Implementation**: `next-themes` with AppConfig integration via `ThemeProvider`
+**Features**: Light/dark/system themes, SSR-safe, localStorage persistence, zero-flash transitions
+**Theme precedence**: User preference → App default → System preference
+**Comprehensive guide**: See [docs/THEMING.md](../docs/THEMING.md)
 
-- The `AppConfig` interface, `SetupName` type (e.g., 'app1', 'default'), and `DEFAULT_SETUP_NAME` are defined in `src/AppConfig.type.ts`.
-- Static configurations for each `SetupName` are stored in a `setups` dictionary in `src/AppConfig.ts`.
-- Middleware (`src/middleware.ts`) resolves the `SetupName` based on request (hostname, `x-setup-name` header) and passes it via the `X-Setup-Name-Resolved` header.
-- Server-side components use `getRequestConfig()` (from `src/lib/config.ts`) to get the `AppConfig` by reading the header and looking up in the `setups` dictionary.
-- The root layout (`src/app/layout.tsx`) passes the resolved `setupName` string to the client via a script tag (`__APP_SETUP_NAME__`).
-- Client-side components use `AppConfigProvider` (`src/components/AppConfigProvider.tsx`) which reads the `setupName` from the script tag, retrieves the full `AppConfig` from the static `setups` dictionary, and makes it available via React Context (`src/contexts/AppConfigContext.tsx`).
+### PostgreSQL Database Integration
 
-**Benefits:**
+**Capability**: Production-ready database layer with connection pooling
+**Implementation**: Knex.js with PostgreSQL-only focus, singleton pattern
+**Configuration**: `PGSTRING` (required), `PGPOOL` (optional pool tuning)  
+**Features**: Migration system, TypeScript support, Next.js optimization
+**Usage guide**: See [docs/DATABASE.md](../docs/DATABASE.md)
 
-- This system avoids serializing the full `AppConfig` object in headers or script tags.
-- Enables dynamic configuration per request without performance overhead.
-- Maintains clean separation between server and client configuration access.
+## Authentication & Security
 
-## Dark Theme Support
+### JWT-Based Authentication
 
-Comprehensive light/dark theme system implemented using `next-themes` library with enterprise-grade architecture and App Config integration.
+**Capability**: NextAuth.js with JWT sessions and automatic refresh
+**Implementation**: HTTP-only cookies, 30-minute refresh, 30-day max duration
+**Features**: Automatic session management, graceful expiration, extensible for social login
+**Security**: XSS protection, token rotation, session validation hooks
 
-**Core Components:**
+### Database-Backed Authentication
 
-- **Theme Provider Architecture**: Custom ThemeProvider component (`src/lib/config/ThemeProvider.tsx`) wraps the entire application, providing theme context with proper hydration handling and App Config integration.
-- **Theme Toggle Component**: Dropdown-based theme switcher (`src/lib/config/ThemeToggle.tsx`) with Light, Dark, and System options.
-- **App Config Integration**: Support for app-specific default theme configuration through the App Config system.
+**Capability**: Production authentication with PostgreSQL user storage
+**Implementation**: NextAuth.js credentials provider with bcrypt hashing
+**Features**: Case-insensitive login, user enumeration protection, optimized queries
+**Database**: `auth.users` table with bcrypt passwords, existing seed data (john/john, jane/jane)
 
-**Key Features:**
+### Feature Flag System
 
-- **App-Specific Default Themes**: Each app can configure its own default theme (`light`, `dark`, or `system`) via the App Config
-- **Smart Theme Precedence**: User preferences override app defaults, which override system preferences
-- **Automatic System Detection**: Respects user's system preference by default, with seamless switching between light/dark modes
-- **Theme Persistence**: User's theme choice is automatically saved to localStorage and persists across sessions
-- **Hydration-Safe Implementation**: Proper handling of server-side rendering with targeted hydration warning suppression to prevent theme-related mismatches
-- **Server-Side Theme Resolution**: Theme defaults are resolved server-side for optimal performance and reliability
+**Capability**: Granular page and API route control per app
+**Implementation**: App-specific `featureFlags.pages` and `featureFlags.apis` arrays
+**Features**: Wildcard (`*`) support, server-side validation, middleware enforcement
+**Usage guide**: See [docs/FEATURE_FLAGS.md](../docs/FEATURE_FLAGS.md)
 
-**Technical Implementation:**
+## UI & Development
 
-- **CSS Architecture**: Comprehensive theme variables using modern `oklch()` color space, with all shadcn/ui components properly themed
-- **Tailwind Integration**: Class-based dark mode configuration (`darkMode: ["class"]`) for optimal Tailwind CSS compatibility
-- **Performance Optimized**: Zero-flash theme transitions with proper mounting state handling
-- **Type-Safe Configuration**: Full TypeScript support for theme values (`"light" | "dark" | "system"`)
+### Component Architecture
 
-**App Config Schema:**
+**Capability**: Container/Presentation/Logic separation with shadcn/ui integration
+**Implementation**: Folder-organized components with TypeScript support
+**Features**: Accessible Radix UI primitives, theme integration, component CLI
+**Standards**: Arrow functions, absolute imports, strict TypeScript
 
-```typescript
-interface AppConfigItem {
-  theme?: {
-    default?: "light" | "dark" | "system";
-  };
-  // ... other properties
-}
-```
+### Development Tooling
 
-**Example Usage:**
+**Capability**: ESLint, build optimization, database migrations
+**Implementation**: Next.js 14+ with App Router, TypeScript, Tailwind CSS
+**CLI**: `npm run lint && npm run build`, `npm run migrate`, `npx shadcn@latest add`
+**Never**: `npm dev` (use `make app.start`)
 
-Different apps can have different default themes:
+---
 
-- Marketing site: defaults to `"light"` for readability
-- Developer dashboard: defaults to `"dark"` for comfort
-- General app: defaults to `"system"` for user preference
+**Feature Integration**: All features work together through the AppConfig system, enabling different feature sets per application while maintaining shared infrastructure.
 
-## PostgreSQL Database Integration
-
-Streamlined, PostgreSQL-focused database connection system using Knex.js with simplified configuration and robust connection pooling.
-
-**Core Architecture:**
-
-- **Single Environment Variable**: All database connections managed through `PGSTRING` environment variable
-- **PostgreSQL-Only Support**: Focused, simplified database configuration for PostgreSQL
-- **Flexible Pool Configuration**: Optional `PGPOOL` environment variable for connection pool tuning
-- **Singleton Pattern**: Single database connection pool shared across the entire application
-
-**Configuration System:**
-
-- **Base Configuration**: Parsed from `PGSTRING` environment variable with PostgreSQL client
-- **Pool Tuning**: Optional `PGPOOL` environment variable with comma-separated values: `min,max,idleTimeoutMillis`
-- **JSON Overrides**: Optional `knex.config.json` file for advanced Knex configuration with deep merge support
-
-**Technical Implementation:**
-
-- **Connection Parser**: `src/lib/db/utils.ts` contains `parseConnectionString()` function that handles PostgreSQL URL parsing and configuration merging
-- **Singleton Database**: `src/lib/db/index.ts` exports `getDB()` function providing a shared Knex instance
-- **Migration Integration**: `knexfile.js` uses the same connection logic for CLI compatibility
-- **Type Safety**: Full TypeScript support with proper Knex configuration typing
-- **Next.js Integration**: Uses official `serverExternalPackages: ['knex']` configuration to prevent bundling issues
-
-**Key Features:**
-
-- **Simplified Configuration**: Single `PGSTRING` variable for all database connections
-- **Production Ready**: Connection pooling and advanced configuration options for production deployments
-- **Migration Compatibility**: Seamless integration with Knex migration and seeding system
-- **Error Handling**: Clear error messages for PostgreSQL-only setup
-- **Flexible Pool Management**: Simple comma-separated pool configuration via `PGPOOL`
-- **Official Next.js Solution**: No webpack hacks, uses documented Next.js approach
-
-**Example Usage:**
-
-```typescript
-// In any API route or server component
-import { getDB } from "@/lib/db";
-
-export async function GET() {
-  const db = getDB();
-  const todos = await db("todos").select();
-  return Response.json({ todos });
-}
-```
-
-**Environment Configuration:**
-
-```bash
-# Required
-PGSTRING="postgres://user:password@host:port/database"
-
-# Optional
-PGPOOL="2,10,30000"  # min,max,idleTimeoutMillis
-```
-
-## JWT-Based Authentication System
-
-Comprehensive authentication system built with NextAuth.js, featuring JWT tokens, automatic session refresh, and enterprise-grade security patterns.
-
-**Core Architecture:**
-
-- **NextAuth.js Integration**: Complete authentication solution with credentials provider
-- **JWT Session Strategy**: Stateless authentication with HTTP-only cookie storage
-- **Automatic Token Refresh**: 30-minute refresh intervals with 30-day maximum session duration
-- **App Router Compliance**: Modern Next.js 13+ structure with proper API route patterns
-
-**Authentication Flow:**
-
-- **Login Process**: Credentials validation through NextAuth.js with secure JWT generation
-- **Session Management**: HTTP-only cookies prevent XSS attacks, automatic session validation
-- **Token Refresh**: Server-side refresh callbacks enable real-time user status validation
-- **Logout Handling**: Clean session termination with configurable redirect URLs
-
-**Security Features:**
-
-- **HTTP-Only Cookies**: JWT stored in secure, HTTP-only cookies inaccessible to JavaScript
-- **Regular Token Rotation**: 30-minute refresh intervals minimize exposure windows
-- **Session Validation Hooks**: Server-side callbacks for subscription/account status checking
-- **Graceful Expiration**: Automatic logout with user-friendly messaging and redirects
-
-**User Experience:**
-
-- **Seamless Authentication**: Automatic session management without manual token handling
-- **Access Denied Handling**: Clear messaging with countdown timer and manual login links
-- **Navigation Integration**: Login/logout options integrated into public layout navigation
-- **Loading States**: Proper loading indicators during authentication state changes
-
-**Technical Implementation:**
-
-- **Configuration**: Centralized auth options in `src/lib/auth/authOptions.ts`
-- **API Routes**: App Router-compliant NextAuth handler at `src/app/api/auth/[...nextauth]/route.ts`
-- **Session Provider**: React context integration with existing theme system
-- **Protected Routes**: Dashboard with client-side session validation using `useSession` hook
-
-**File Structure:**
-
-```
-src/
-├── lib/auth/
-│   └── authOptions.ts              # NextAuth.js configuration
-├── app/
-│   ├── api/auth/[...nextauth]/
-│   │   └── route.ts                # NextAuth API handler
-│   ├── (public)/login/
-│   │   └── page.tsx                # Login form with public layout
-│   └── dashboard/
-│       └── page.tsx                # Protected dashboard page
-└── components/
-    └── Providers.tsx               # Session + theme provider wrapper
-```
-
-**Session Configuration:**
-
-```typescript
-session: {
-  strategy: "jwt",
-  maxAge: 30 * 24 * 60 * 60, // 30 days maximum
-  updateAge: 30 * 60,         // Refresh every 30 minutes
-}
-```
-
-**Authentication Credentials (Development):**
-
-- **Username**: `aaa`
-- **Password**: `aaa`
-
-**Backend Integration Ready:**
-
-The JWT refresh callback includes hooks for real-time user validation:
-
-```typescript
-async jwt({ token, user }) {
-  // On token refresh - validate user status
-  if (token.id) {
-    const isUserActive = await checkUserStatus(token.id);
-    if (!isUserActive) {
-      return null; // Automatic logout
-    }
-  }
-  return token;
-}
-```
-
-**Key Benefits:**
-
-- **Enterprise Security**: Industry-standard JWT implementation with automatic refresh
-- **Developer Experience**: Zero-configuration session management with NextAuth.js
-- **Production Ready**: HTTP-only cookies, token rotation, and graceful error handling
-- **Extensible**: Ready for social login, magic links, and custom authentication providers
-
-## Database-Backed Authentication System
-
-Production-ready authentication system with NextAuth.js credentials provider connected to PostgreSQL database, featuring bcrypt password hashing, case-insensitive lookups, and comprehensive TypeScript typing.
-
-**Core Architecture:**
-
-- **Database Integration**: NextAuth.js credentials provider queries PostgreSQL `auth.users` table
-- **Password Security**: bcrypt hashing and verification with secure salt rounds
-- **PostgreSQL Optimization**: Case-insensitive username lookup using native ILIKE operator
-- **TypeScript Safety**: Module augmentation extending NextAuth interfaces for type safety
-- **Enterprise Security**: Secure error handling preventing user enumeration attacks
-
-**Authentication Flow:**
-
-```
-1. User submits credentials → 
-2. Database query with case-insensitive username lookup →
-3. bcrypt password verification against stored hash →
-4. User object returned for JWT session creation →
-5. Session maintained with existing NextAuth infrastructure
-```
-
-**Key Features:**
-
-- **Real Database Authentication**: Replaces mock authentication with production PostgreSQL queries
-- **Case-Insensitive Login**: Users can login with any username case (john, JOHN, John)
-- **Optimized Queries**: PostgreSQL ILIKE operator for performance over LOWER() functions
-- **Type Safety**: Complete TypeScript interfaces for Session, User, and JWT objects
-- **Security by Design**: No password logging, vague error messages, proper connection pooling
-
-**Database Integration:**
-
-- **User Table**: Connects to existing `auth.users` table with hashed passwords
-- **Connection Pool**: Uses existing database connection utilities from `src/lib/db`
-- **Seed Data**: john/jane test users with bcrypt-hashed passwords already available
-- **Schema Compatibility**: Works with existing authentication database structure
-
-**TypeScript Implementation:**
-
-```typescript
-// Module augmentation for NextAuth types
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      name: string;
-      email: string;
-    };
-  }
-  interface User {
-    id: string;
-    name: string;
-    email: string;
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    id: string;
-    email: string;
-    name: string;
-  }
-}
-```
-
-**Security Features:**
-
-- **bcrypt Password Hashing**: Industry-standard password security with salt rounds
-- **PostgreSQL ILIKE**: Optimized case-insensitive queries without function overhead
-- **Error Handling**: Database errors logged server-side, generic messages to client
-- **User Enumeration Protection**: Same response for invalid users and invalid passwords
-- **Connection Security**: Proper database connection pooling and error recovery
-
-**Performance Optimizations:**
-
-- **Native PostgreSQL Operations**: ILIKE operator instead of LOWER() function calls
-- **Connection Pooling**: Reuses existing database connection infrastructure
-- **Type Safety**: Eliminates runtime type checking overhead with compile-time types
-- **Minimal Queries**: Single database lookup per authentication attempt
-
-**Files Modified:**
-
-- **`src/lib/auth/authOptions.ts`**: Database authentication implementation
-- **`package.json`**: Added @types/bcrypt dependency for TypeScript support
-
-**Dependencies:**
-
-- **bcrypt**: Password hashing and verification (already installed)
-- **@types/bcrypt**: TypeScript definitions for bcrypt
-- **knex**: Database queries using existing connection utilities
-- **PostgreSQL**: Database backend with ILIKE operator support
-
-**Testing Credentials:**
-
-- **john/john**: Test user with bcrypt-hashed password
-- **jane/jane**: Test user with bcrypt-hashed password
-- **Case variations**: All username cases accepted (JOHN, john, John, etc.)
+_For detailed implementation guides, see the `docs/` directory._

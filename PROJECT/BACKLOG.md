@@ -4,7 +4,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-No current task - ready for next assignment
+- [abc] Optimize Memory Bank for LLM Consumption [🔗](./TASKS/abc-optimize-memory-bank-for-llm-consumption.md)
 
 ## Upcoming Tasks
 
@@ -17,7 +17,7 @@ No current task - ready for next assignment
 - [aat] Support i18n
 - [aau] Implement public layout
 
-(LastID: abb)
+(LastID: abc)
 
 ## Completed Tasks
 

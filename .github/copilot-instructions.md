@@ -63,6 +63,7 @@ Behavioral constraints:
 
 - Only pull the context into memory
 - Do not re-explain what you learn
+- Do not change anythin in the codebase or the Memory Bank
 
 ## Plan Current Task
 
