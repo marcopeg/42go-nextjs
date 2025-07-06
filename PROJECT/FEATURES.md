@@ -221,3 +221,101 @@ async jwt({ token, user }) {
 - **Developer Experience**: Zero-configuration session management with NextAuth.js
 - **Production Ready**: HTTP-only cookies, token rotation, and graceful error handling
 - **Extensible**: Ready for social login, magic links, and custom authentication providers
+
+## Database-Backed Authentication System
+
+Production-ready authentication system with NextAuth.js credentials provider connected to PostgreSQL database, featuring bcrypt password hashing, case-insensitive lookups, and comprehensive TypeScript typing.
+
+**Core Architecture:**
+
+- **Database Integration**: NextAuth.js credentials provider queries PostgreSQL `auth.users` table
+- **Password Security**: bcrypt hashing and verification with secure salt rounds
+- **PostgreSQL Optimization**: Case-insensitive username lookup using native ILIKE operator
+- **TypeScript Safety**: Module augmentation extending NextAuth interfaces for type safety
+- **Enterprise Security**: Secure error handling preventing user enumeration attacks
+
+**Authentication Flow:**
+
+```
+1. User submits credentials → 
+2. Database query with case-insensitive username lookup →
+3. bcrypt password verification against stored hash →
+4. User object returned for JWT session creation →
+5. Session maintained with existing NextAuth infrastructure
+```
+
+**Key Features:**
+
+- **Real Database Authentication**: Replaces mock authentication with production PostgreSQL queries
+- **Case-Insensitive Login**: Users can login with any username case (john, JOHN, John)
+- **Optimized Queries**: PostgreSQL ILIKE operator for performance over LOWER() functions
+- **Type Safety**: Complete TypeScript interfaces for Session, User, and JWT objects
+- **Security by Design**: No password logging, vague error messages, proper connection pooling
+
+**Database Integration:**
+
+- **User Table**: Connects to existing `auth.users` table with hashed passwords
+- **Connection Pool**: Uses existing database connection utilities from `src/lib/db`
+- **Seed Data**: john/jane test users with bcrypt-hashed passwords already available
+- **Schema Compatibility**: Works with existing authentication database structure
+
+**TypeScript Implementation:**
+
+```typescript
+// Module augmentation for NextAuth types
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  }
+  interface User {
+    id: string;
+    name: string;
+    email: string;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    email: string;
+    name: string;
+  }
+}
+```
+
+**Security Features:**
+
+- **bcrypt Password Hashing**: Industry-standard password security with salt rounds
+- **PostgreSQL ILIKE**: Optimized case-insensitive queries without function overhead
+- **Error Handling**: Database errors logged server-side, generic messages to client
+- **User Enumeration Protection**: Same response for invalid users and invalid passwords
+- **Connection Security**: Proper database connection pooling and error recovery
+
+**Performance Optimizations:**
+
+- **Native PostgreSQL Operations**: ILIKE operator instead of LOWER() function calls
+- **Connection Pooling**: Reuses existing database connection infrastructure
+- **Type Safety**: Eliminates runtime type checking overhead with compile-time types
+- **Minimal Queries**: Single database lookup per authentication attempt
+
+**Files Modified:**
+
+- **`src/lib/auth/authOptions.ts`**: Database authentication implementation
+- **`package.json`**: Added @types/bcrypt dependency for TypeScript support
+
+**Dependencies:**
+
+- **bcrypt**: Password hashing and verification (already installed)
+- **@types/bcrypt**: TypeScript definitions for bcrypt
+- **knex**: Database queries using existing connection utilities
+- **PostgreSQL**: Database backend with ILIKE operator support
+
+**Testing Credentials:**
+
+- **john/john**: Test user with bcrypt-hashed password
+- **jane/jane**: Test user with bcrypt-hashed password
+- **Case variations**: All username cases accepted (JOHN, john, John, etc.)

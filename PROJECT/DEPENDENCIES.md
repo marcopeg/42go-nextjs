@@ -187,3 +187,32 @@ Ready for expansion to include:
 - Database session strategy
 - Role-based access control (RBAC)
 - Multi-factor authentication (MFA)
+
+## @types/bcrypt
+
+🔗 https://www.npmjs.com/package/@types/bcrypt
+
+**Version**: Latest
+
+**Purpose**: TypeScript type definitions for the bcrypt library.
+
+**Key Features**:
+
+- Complete TypeScript definitions for bcrypt functions
+- Proper typing for hash(), compare(), and salt generation
+- Async and sync method signatures
+- Integration with bcrypt password hashing functionality
+
+**Why Chosen**:
+
+- Required for TypeScript compilation with bcrypt
+- Provides IntelliSense and type safety for password operations
+- Standard TypeScript definitions package
+- Maintained by DefinitelyTyped community
+
+**Integration**:
+
+- Used in `src/lib/auth/authOptions.ts` for password verification
+- Enables type-safe bcrypt operations in authentication flow
+- Provides proper autocomplete for bcrypt methods
+- Required dev dependency for TypeScript builds

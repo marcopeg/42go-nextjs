@@ -4,7 +4,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aba] Use Database Users Table to Authenticate Users [🔗](./TASKS/aba-use-database-users-table-to-authenticate.md)
+No current task - ready for next assignment
 
 ## Upcoming Tasks
 
@@ -21,6 +21,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [aba] Use Database Users Table to Authenticate Users [🔗](./TASKS/aba-use-database-users-table-to-authenticate.md)
 - [aah] Add login support [🔗](./TASKS/aah-add-login-support.md)
 - [aaj] Add `ARCHITECTURE.md` to the Memory Bank [🔗](./TASKS/aaj-add-architecture-md-to-the-memory-bank.md)
 - [aaw] Simplify db support to Postgres [🔗](./TASKS/aaw-simplify-db-support-to-postgres.md)
