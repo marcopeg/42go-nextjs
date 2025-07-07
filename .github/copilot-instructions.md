@@ -48,9 +48,29 @@ This section of the backlog contains the completed tasks that have been worked o
 
 # Commands & Shortcuts
 
+## Create New Task
+
+When prompted by `create task: {task}` or `new task: {task}` or `k0: {task}` do:
+
+1. Calculate the next task ID based on the last ID in `./PROJECT/BACKLOG.md`
+   - Identify the last id from `(LastID: xxx)`
+   - Increment the last ID by one, e.g., if the last ID is `aav`, the next ID will be `aaw`
+   - Update the `(LastID: xxx)` line in `./PROJECT/BACKLOG.md` with the new ID
+2. Calculate the task's title, file name, and description from the content provided in the prompt
+   - Use the task description to create a human-readable title
+   - Format the task file name as `{NewID}-human-readable-title.md`
+3. Create a new task file in `./PROJECT/TASKS/{NewID}-{human-readable-title}.md` with the following sections:
+   - `# {title} [{NewID}]`
+   - task description and goals
+   - `# Acceptance Criteria` - a checklist (`- [ ] {criteria}`) of what needs to be done for the task to be considered complete
+4. Append the new task at the end of the **Upcoming Tasks** section in `./PROJECT/BACKLOG.md` with the following format:
+   - `- [{NewID}] {human-readable-title}` [🔗](./TASKS/{NewID}-{human-readable-title}.md)
+
+NOTE: if the **current task** is empty, move the task to the **Current Task** section in `./PROJECT/BACKLOG.md` as well.
+
 ## Load Context
 
-When prompted by `load context` or `load memory` or `refresh context` or `refresh memory` or `k0` do:
+When prompted by `load context` or `load memory` or `refresh context` or `refresh memory` or `k8` do:
 
 1. Identify & read the **Current Task**:
    - read the file `./PROJECT/BACKLOG.md` to gain general context on the ongoing project
@@ -146,23 +166,16 @@ When prompted by `update memory` or `update memory bank` or `k9` do:
    - if the task requires new documentation, create it in the `docs/` folder
 5. if the task is not complete, update the `## Development Plan` section with the next steps to take
 
-## Create New Task
+## Help
 
-When prompted by `create task: {task}` or `new task: {task}` or `k4: {task}` do:
+When prompted by `help` or `h` output a simple table of the available commands and shortcuts.
 
-1. Calculate the next task ID based on the last ID in `./PROJECT/BACKLOG.md`
-   - Identify the last id from `(LastID: xxx)`
-   - Increment the last ID by one, e.g., if the last ID is `aav`, the next ID will be `aaw`
-   - Update the `(LastID: xxx)` line in `./PROJECT/BACKLOG.md` with the new ID
-2. Calculate the task's title, file name, and description from the content provided in the prompt
-   - Use the task description to create a human-readable title
-   - Format the task file name as `{NewID}-human-readable-title.md`
-3. Create a new task file in `./PROJECT/TASKS/{NewID}-{human-readable-title}.md` with the following sections:
-   - `# {title} [{NewID}]`
-   - task description and goals
-   - `# Acceptance Criteria` - a checklist (`- [ ] {criteria}`) of what needs to be done for the task to be considered complete
-4. Append the new task to the **Upcoming Tasks** section in `./PROJECT/BACKLOG.md` with the following format:
-   - `- [{NewID}] {human-readable-title}` [🔗](./TASKS/{NewID}-{human-readable-title}.md)
+The order of the commands is:
+
+- Working: k1, k2, k3
+- IDE: k0, k8, k9, h
+
+Produce 2 separated tables to maximize readability.
 
 # CLI Usage
 
