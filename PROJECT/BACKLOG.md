@@ -4,7 +4,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- No current task assigned
+- [abm] Support social login from different app configuration [🔗](./TASKS/abm-support-social-login-different-app-configuration.md)
 
 ## Upcoming Tasks
 
@@ -24,7 +24,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aam] Add social login: Facebook
 - [aao] Add social login: Apple
 
-(LastID: abl)
+(LastID: abm)
 
 ## Completed Tasks
 
