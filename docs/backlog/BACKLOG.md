@@ -4,11 +4,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [abo] Production build [🔗](./tasks/abo-production-build.md)
+- [aai] Add RBAC to the users system [🔗](./tasks/aai-add-rbac.md)
 
 ## Upcoming Tasks
 
-- [aai] Add RBAC to the users system
 - [aat] Support i18n
 - [aau] Implement public layout
 - [abd] Optimize Database Documentation [🔗](./tasks/abd-optimize-database-documentation.md)
@@ -26,6 +25,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [abo] Production build [🔗](./tasks/abo-production-build.md) ✅ COMPLETE - Optimized Docker builds with Next.js standalone output and production deployment automation
 - [abm] Support social login from different app configuration [🔗](./tasks/abm-support-social-login-different-app-configuration.md) ✅ COMPLETE - Multi-app OAuth with per-app provider configuration and frontend filtering
 - [abj] Make each login strategy conditional based on environment variables [🔗](./archive/abj-make-login-strategy-conditional-on-env-vars.md) ✅ COMPLETE - Completed by task [abm]
 - [abi] Refactor login code (improve modularization) [🔗](./archive/abi-refactor-login-code-improve-modularization.md) ✅ COMPLETE - Completed by task [abm]

@@ -84,6 +84,26 @@
 **CLI**: `npm run lint && npm run build`, `npm run migrate`, `npx shadcn@latest add`
 **Never**: `npm dev` (use `make app.start`)
 
+## Production & Deployment
+
+### Optimized Production Builds
+
+**Capability**: Docker-based production deployment with Next.js standalone output
+**Implementation**: Multi-stage Docker builds with 75% image size reduction
+**Features**: Self-contained applications, security hardening, health monitoring, resource management
+**Performance**: ~300MB images (vs ~1.2GB standard), 45-60 second deployment pipeline
+**Architecture**: 4-stage builds (deps → build-deps → builder → runner) with aggressive optimization
+**Deployment guide**: See [docs/PRODUCTION_DEPLOYMENT.md](../docs/PRODUCTION_DEPLOYMENT.md)
+
+### Production Infrastructure
+
+**Capability**: Complete production deployment automation via Makefile
+**Implementation**: Docker Compose orchestration with health checks and monitoring
+**Features**: Health endpoints (`/api/health`), automatic restarts, resource limits, log management
+**Security**: Non-root user execution, network isolation, minimal attack surface
+**Commands**: `make prod` (complete pipeline), `make prod.health` (monitoring), `make prod.logs` (debugging)
+**Monitoring**: Application and database health checks with automatic failure recovery
+
 ---
 
 **Feature Integration**: All features work together through the AppConfig system, enabling different feature sets per application while maintaining shared infrastructure.

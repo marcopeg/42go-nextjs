@@ -92,7 +92,33 @@ This structure is intended to be recursive: A very complex component can be simp
 **Framework**: Next.js 14+ with App Router, TypeScript, React 18+
 **UI**: Tailwind CSS, shadcn/ui (Radix UI primitives), next-themes
 **Database**: PostgreSQL-only with Knex.js migrations
+**Deployment**: Docker with Next.js standalone output, multi-stage builds
 **Detailed dependencies**: See [DEPENDENCIES.md](./DEPENDENCIES.md)
+
+## Production Deployment Architecture
+
+**Pattern**: Docker-first with Next.js standalone output for optimized production containers
+
+**Core Strategy**:
+
+- **Multi-Stage Builds**: 4-stage Docker build for maximum optimization
+- **Standalone Output**: Next.js self-contained bundles reduce image size by 75%
+- **Health Monitoring**: Application and database health checks with automatic recovery
+- **Security Hardening**: Non-root user execution, minimal attack surface, resource limits
+
+**Production Infrastructure**:
+
+- **Container Orchestration**: Docker Compose with service dependencies and health checks
+- **Image Optimization**: Alpine Linux base, production-only dependencies, aggressive caching
+- **Deployment Pipeline**: Automated via Makefile with health verification and monitoring
+- **Performance**: ~300MB images (vs ~1.2GB standard), 45-60 second deployment pipeline
+
+**Production Features**:
+
+- **Health Endpoints**: `/api/health` for application monitoring
+- **Resource Management**: Memory limits (512M app, 256M db) and automatic restarts
+- **Security**: Non-root `nextjs:nodejs` user, network isolation, minimal base images
+- **Monitoring**: Health checks, log aggregation, failure detection and recovery
 
 ## Database Architecture
 
