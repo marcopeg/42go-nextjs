@@ -4,7 +4,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- No current task
+- [abo] Production build [🔗](./tasks/abo-production-build.md)
 
 ## Upcoming Tasks
 
@@ -22,7 +22,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aao] Add social login: Apple
 - [abn] Migrate to Prisma ORM
 
-(LastID: abn)
+(LastID: abo)
 
 ## Completed Tasks
 
