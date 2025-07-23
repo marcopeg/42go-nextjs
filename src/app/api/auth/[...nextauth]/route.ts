@@ -1,6 +1,37 @@
 import NextAuth from "next-auth";
-import { authOptions } from "@/lib/auth/authOptions";
+import type { NextRequest } from "next/server";
+import { setNextAuthUrl } from "@/lib/auth/utils/set-nextauth-url";
+import { getProviders } from "@/lib/auth/providers/get-providers";
+import { signIn, jwt, session } from "@/lib/auth/callbacks";
 
-const handler = NextAuth(authOptions);
+async function handler(
+  req: NextRequest,
+  context: { params: Promise<{ nextauth: string[] }> }
+) {
+  // Dynamic login origing
+  await setNextAuthUrl(req);
 
-export { handler as GET, handler as POST };
+  // console.log(providers);
+  const providers = await getProviders();
+
+  return NextAuth(req, context, {
+    providers,
+    session: {
+      strategy: "jwt",
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      updateAge: 30 * 60, // 30 minutes
+    },
+    pages: {
+      signIn: "/login",
+      signOut: "/logout",
+      error: "/error",
+      verifyRequest: "/verify-request",
+      newUser: "/signup",
+    },
+    callbacks: { signIn, jwt, session },
+  });
+}
+
+export const GET = handler;
+
+export const POST = GET;

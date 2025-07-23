@@ -57,6 +57,14 @@ This structure is intended to be recursive: A very complex component can be simp
 - **Account Linking**: Email-based user matching across all authentication providers
 - **Database Design**: Separation of user profiles (`auth.users`) and provider accounts (`auth.accounts`)
 
+**Multi-App OAuth Configuration**:
+
+- **Per-App Provider Selection**: Each AppConfig defines which OAuth providers to enable (`auth.providers` array)
+- **Multi-Client Support**: Same OAuth provider with different client credentials per app
+- **Dynamic Provider Building**: Request-aware NextAuth configuration via `getProviders()` function
+- **Frontend Filtering**: Login UI shows only configured providers for current app
+- **Environment-Based Credentials**: Secure credential mapping (e.g., `APP1_GITHUB_CLIENT_ID`, `APP2_GOOGLE_CLIENT_ID`)
+
 **OAuth Integration**:
 
 - **Provider Setup**: GitHub OAuth 2.0 and Google OAuth 2.0/OpenID Connect with minimal scopes

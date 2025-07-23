@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import type { Metadata } from "next";
 import type { ComponentType, ReactNode } from "react";
+import type { AuthProviderArray } from "@/lib/auth/providers/types";
 
 import { App1PublicLayout } from "@/components/App1PublicLayout";
 
@@ -13,6 +14,9 @@ export interface AppConfigItem {
   theme?: {
     default?: ThemeValue;
     PublicLayout?: ComponentType<{ children: ReactNode }>;
+  };
+  auth?: {
+    providers: AuthProviderArray;
   };
   featureFlags: {
     pages: string[]; // List of pages available in this app
@@ -51,6 +55,30 @@ export const availableApps = {
     theme: {
       default: "system",
     },
+    auth: {
+      providers: [
+        {
+          type: "credentials" as const,
+          config: {},
+        },
+
+        {
+          type: "github" as const,
+          config: {
+            clientId: process.env.GITHUB_CLIENT_ID!,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+          },
+        },
+        {
+          type: "google" as const,
+          config: {
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            prompt: "select_account",
+          },
+        },
+      ],
+    },
     meta: {
       title: "Default App - Chuck Norris Edition",
       description:
@@ -69,6 +97,21 @@ export const availableApps = {
       default: "dark",
       PublicLayout: App1PublicLayout,
     },
+    auth: {
+      providers: [
+        {
+          type: "credentials" as const,
+          config: {},
+        },
+        {
+          type: "github" as const,
+          config: {
+            clientId: process.env.APP1_GITHUB_CLIENT_ID!,
+            clientSecret: process.env.APP1_GITHUB_CLIENT_SECRET!,
+          },
+        },
+      ],
+    },
     meta: {
       title: "App1 - Todo Master",
       description:
@@ -85,6 +128,18 @@ export const availableApps = {
     name: "APP n2",
     theme: {
       default: "light",
+    },
+    auth: {
+      providers: [
+        {
+          type: "google" as const,
+          config: {
+            clientId: process.env.APP2_GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.APP2_GOOGLE_CLIENT_SECRET!,
+            prompt: "select_account",
+          },
+        },
+      ],
     },
     meta: {
       title: "App2 - Write Operations",

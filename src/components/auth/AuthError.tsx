@@ -1,3 +1,5 @@
+"use client";
+
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -10,7 +12,7 @@ export function AuthError({ className }: AuthErrorProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const errorParam = searchParams.get("error");
+    const errorParam = searchParams?.get("error");
     if (errorParam) {
       switch (errorParam) {
         case "OAuthSignin":

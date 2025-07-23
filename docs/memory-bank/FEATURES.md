@@ -51,15 +51,15 @@
 **Security**: Minimal OAuth scopes (`read:user user:email`), server-side token management
 **UI**: Modern login interface with loading states and comprehensive error handling
 
-### Google OAuth Integration
+### Multi-App OAuth Integration
 
-**Capability**: Social login with Google OAuth 2.0 / OpenID Connect provider
-**Implementation**: NextAuth.js Google provider with email-based account linking strategy
-**Features**: Account selection prompt, automatic email-based linking, JWT session compatibility
-**Database**: Uses existing `auth.accounts` and `auth.users` tables with zero schema changes
-**Security**: Minimal OAuth scopes (`openid profile email`), secure token storage, server-side management
-**UI**: Google-branded button with official colors, consistent loading states, accessibility support
-**Account Management**: Cross-provider account linking, seamless provider switching, unified user profiles
+**Capability**: Per-app OAuth provider configuration with multi-client support
+**Implementation**: Dynamic NextAuth configuration via AppConfig-driven provider building
+**Features**: App-specific provider selection, separate OAuth credentials, frontend filtering, environment-based configuration
+**Security**: Separate OAuth applications per app, secure credential management, HTTPS-only production flows
+**UI**: Login interface shows only configured providers per app, consistent OAuth branding
+**Account Management**: Email-based linking across providers, unified user profiles, seamless provider switching
+**Setup guide**: See [docs/MULTI_APP_OAUTH_SETUP.md](../docs/MULTI_APP_OAUTH_SETUP.md)
 
 ### Feature Flag System
 
