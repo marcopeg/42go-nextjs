@@ -26,6 +26,32 @@
 **Features**: Migration system, TypeScript support, Next.js optimization
 **Usage guide**: See [docs/DATABASE.md](../docs/DATABASE.md)
 
+## UI & Layout System
+
+### Public Layout System
+
+**Capability**: Modular, responsive public layout for landing pages and marketing sites
+**Implementation**: `/src/components/layouts/public/` with Header, Footer, and PublicLayout components
+**Features**: App-specific layout customization, mobile-first responsive design, SSR-ready
+**Customization**: Each AppConfig can define custom `theme.PublicLayout` component
+**Components**: Header with branding, Footer with links/utilities, responsive navigation
+
+### CMS-Driven Page System
+
+**Capability**: Type-safe, configuration-driven content management for dynamic pages
+**Implementation**: Page component with extensible content block architecture
+**Features**: Dynamic routing, metadata integration, extensible block system
+**Content Blocks**: TextBlock, HeroBlock, DemoBlock with type-safe rendering
+**Architecture**: Centralized types in `/src/components/Page/types.ts`
+
+### Dynamic Routing System
+
+**Capability**: Automatic page generation from configuration without explicit route files
+**Implementation**: Catch-all route `[...slug]/page.tsx` with URL-to-config mapping
+**Features**: Case-insensitive routing, metadata generation, feature flag integration
+**URL Mapping**: `/foo/bar-beer` → `"foo/bar-beer"` config key lookup
+**404 Handling**: Automatic fallback when no configuration found
+
 ## Authentication & Security
 
 ### JWT-Based Authentication
@@ -61,7 +87,15 @@
 **Account Management**: Email-based linking across providers, unified user profiles, seamless provider switching
 **Setup guide**: See [docs/MULTI_APP_OAUTH_SETUP.md](../docs/MULTI_APP_OAUTH_SETUP.md)
 
-### Feature Flag System
+### Enhanced Feature Flag System
+
+**Capability**: URL-based dynamic feature flag calculation for config-driven pages
+**Implementation**: Enhanced `appPage` wrapper with `"url!"` syntax and middleware support
+**Features**: Dynamic flag calculation from URL, consistent with page routing logic
+**Usage**: `appPage(Component, "url!")` automatically checks feature flags based on current URL
+**Integration**: Middleware sets `x-pathname` header, wrapper calculates flags dynamically
+
+### Configuration-Based Feature Flags
 
 **Capability**: Granular page and API route control per app
 **Implementation**: App-specific `featureFlags.pages` and `featureFlags.apis` arrays

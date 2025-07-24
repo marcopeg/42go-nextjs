@@ -46,7 +46,52 @@ Complex components may have multiple internal Presentation Components or Custom 
 
 This structure is intended to be recursive: A very complex component can be simplified into a structure of sub-components that follow the same pattern.
 
-### 4. Authentication Architecture
+### 4. Layout Architecture
+
+**Pattern**: Modular layout system with configuration-driven public layouts
+
+**Public Layout System**:
+
+- **Modular Structure**: `/src/components/layouts/public/` with Header, Footer, and PublicLayout components
+- **App-Specific Layouts**: Each AppConfig can define custom `theme.PublicLayout` component
+- **Responsive Design**: Mobile-first approach with proper alignment and accessibility
+- **SSR-Ready**: Full server-side rendering support for SEO and performance
+
+### 5. CMS Architecture
+
+**Pattern**: Type-safe, configuration-driven content management with dynamic routing
+
+**Core Components**:
+
+- **Page Component**: Renders CMS content blocks from configuration (`/src/components/Page/`)
+- **Content Blocks**: Extensible block system (TextBlock, HeroBlock, DemoBlock, etc.)
+- **Type System**: Centralized CMS types in single source of truth (`Page/types.ts`)
+- **Dynamic Routing**: Catch-all route `[...slug]/page.tsx` for config-driven pages
+
+**URL-to-Config Mapping**:
+
+- Simple path preservation: `/foo/bar-beer` → `"foo/bar-beer"` config key
+- Case-insensitive lookup for better UX
+- Consistent between routing and feature flag systems
+
+**Metadata Integration**:
+
+- Dynamic page titles and descriptions from CMS configuration
+- SEO-friendly metadata generation via Next.js `generateMetadata`
+- Per-page metadata override support
+
+### 6. Feature Flag Enhancement
+
+**Pattern**: URL-based dynamic feature flag calculation
+
+**URL-Based Flags**:
+
+- **Special Syntax**: `appPage(Component, "url!")` triggers URL-based calculation
+- **Middleware Integration**: `x-pathname` header provides current URL to wrapper
+- **Dynamic Calculation**: `/foo/bar` → checks for `"foo/bar"` in `featureFlags.pages`
+- **Consistency**: Same URL→key logic as CMS page routing
+
+### 7. Authentication Architecture
 
 **Pattern**: JWT-first with OAuth integration and database persistence
 

@@ -1,4 +1,4 @@
-import { PublicLayout } from "@/components/PublicLayout";
+import PublicLayout from "@/components/layouts/public";
 import { getAppConfig } from "@/lib/config/app-config";
 
 export default async function PublicRouteLayout({

@@ -4,7 +4,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [abp] Add Public layout [🔗](./tasks/abp-public-layout.md)
+- [abq] Add App layout [🔗](./tasks/abq-app-layout.md)
 
 ## Upcoming Tasks
 
@@ -27,6 +27,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [abp] Add Public layout [🔗](./tasks/abp-public-layout.md) ✅ COMPLETE - Advanced public layout with CMS system, dynamic routing, and URL-based feature flags
 - [abo] Production build [🔗](./tasks/abo-production-build.md) ✅ COMPLETE - Optimized Docker builds with Next.js standalone output and production deployment automation
 - [abm] Support social login from different app configuration [🔗](./tasks/abm-support-social-login-different-app-configuration.md) ✅ COMPLETE - Multi-app OAuth with per-app provider configuration and frontend filtering
 - [abj] Make each login strategy conditional based on environment variables [🔗](./archive/abj-make-login-strategy-conditional-on-env-vars.md) ✅ COMPLETE - Completed by task [abm]

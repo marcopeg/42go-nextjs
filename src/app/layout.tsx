@@ -21,14 +21,20 @@ const RootLayout = async ({
   const { name, config } = await getAppInfo();
   const themeDefault = config?.theme?.default;
 
+  // Conditionally render the app's body based on a recognised configuration
+  // TODO: redirect to a default app?
+  const body = name ? (
+    <Providers defaultTheme={themeDefault}>{children}</Providers>
+  ) : (
+    <Providers defaultTheme={themeDefault}>not found</Providers>
+  );
+
   return (
     <html suppressHydrationWarning lang="en">
       <head>
         <InjectAppName name={name} />
       </head>
-      <body className={inter.className}>
-        <Providers defaultTheme={themeDefault}>{children}</Providers>
-      </body>
+      <body className={inter.className}>{body}</body>
     </html>
   );
 };

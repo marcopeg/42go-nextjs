@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { getAppConfig } from "./app-config";
 import { type AppConfigItem as AppConfig } from "@/AppConfig";
 export type { AppConfig };
@@ -21,11 +22,30 @@ export function appPage<P extends object>(
     }
 
     // specific flag check
-    const flagsToCheck =
-      requiredFlags ??
-      PageComponent.displayName ??
-      PageComponent.name ??
-      "Page";
+    let flagsToCheck: string;
+
+    if (requiredFlags === "url!") {
+      // Calculate flagsToCheck from current URL using middleware-set header
+      const headersList = await headers();
+      const pathname =
+        headersList.get("x-pathname") || headersList.get("x-url") || "/";
+
+      // Extract path segments and convert to configKey format
+      // /foo/bar -> "foo/bar"
+      const pathSegments = pathname
+        .replace(/^\//, "")
+        .split("/")
+        .filter(Boolean);
+      flagsToCheck = pathSegments.join("/").toLowerCase() || "HomePage";
+    } else {
+      // Use provided flags or component name as fallback
+      flagsToCheck =
+        requiredFlags ??
+        PageComponent.displayName ??
+        PageComponent.name ??
+        "Page";
+    }
+
     const flagBase = flagsToCheck.split(":")[0];
     const hasFeature =
       availableFlags.includes(flagsToCheck) ||

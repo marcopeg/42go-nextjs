@@ -97,3 +97,26 @@ export default appPage(TodosPage, "*");
 // For a route:
 export const GET = appRoute(getTodos, "*");
 ```
+
+### URL-Based Flag
+
+For dynamic pages that should check feature flags based on the current URL path, use the special `"url!"` flag:
+
+```ts
+// For a catch-all or dynamic page:
+export default appPage(DynamicPage, "url!");
+```
+
+When using `"url!"`, the feature flag is automatically calculated from the current URL:
+
+- `/about` → checks for `"about"` flag
+- `/foo/bar` → checks for `"foo/bar"` flag
+- `/foo/bar-beer` → checks for `"foo/bar-beer"` flag
+
+This is especially useful for:
+
+- Catch-all routes like `[...slug]/page.tsx`
+- CMS-driven pages where the URL determines the content
+- Dynamic routing based on configuration
+
+The URL-based flag uses the same path-to-key conversion as your page configuration, ensuring consistency between routing and feature flag checking.

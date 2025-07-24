@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import type { Metadata } from "next";
 import type { ComponentType, ReactNode } from "react";
 import type { AuthProviderArray } from "@/lib/auth/providers/types";
+import type { Pages } from "@/components/Page/types";
 
 import { App1PublicLayout } from "@/components/App1PublicLayout";
 
@@ -22,6 +23,7 @@ export interface AppConfigItem {
     pages: string[]; // List of pages available in this app
     apis: string[]; // List of API endpoints available in this app
   };
+  pages?: Pages; // CMS pages configuration
 }
 
 export type AppConfig = AppConfigItem | null;
@@ -86,10 +88,62 @@ export const availableApps = {
       keywords: ["nextjs", "default", "chuck-norris", "legendary"],
       authors: [{ name: "Chuck Norris" }],
     },
+    pages: {
+      HomePage: {
+        items: [
+          {
+            type: "hero",
+            title: "Welcome to the Default App",
+            subtitle: "Powered by Chuck Norris",
+            // backgroundImage: "/images/hero-bg.jpg",
+          },
+          // {
+          //   type: "demo",
+          //   title: "Button Playground by Chuck Norris 🥋",
+          //   description:
+          //     "Testing all button variants and combinations - Chuck Norris style!",
+          // },
+          {
+            type: "text",
+            content: "First text here",
+          },
+          {
+            type: "text",
+            content: "Second text here",
+          },
+        ],
+      },
+      about: {
+        meta: {
+          title: "About Us",
+          description: "Learn more about our legendary app",
+        },
+        items: [
+          {
+            type: "hero",
+            title: "About Us",
+            subtitle: "Powered by the legendary force of Chuck Norris",
+          },
+          {
+            type: "text",
+            content:
+              "This is a dynamically generated about page from the CMS configuration. Chuck Norris doesn't need an about page - his reputation speaks for itself.",
+          },
+        ],
+      },
+      pricing: {
+        items: [
+          {
+            type: "text",
+            content: "Pricing information coming soon!",
+          },
+        ],
+      },
+    },
   },
   app1: {
     featureFlags: {
-      pages: ["TodosPage"],
+      pages: ["todos"],
       apis: ["getTodos"],
     },
     name: "APP n1",
@@ -122,7 +176,7 @@ export const availableApps = {
   },
   app2: {
     featureFlags: {
-      pages: [],
+      pages: ["todos", "about"],
       apis: ["todos:write"],
     },
     name: "APP n2",
@@ -147,6 +201,24 @@ export const availableApps = {
         "Specialized app for write operations, as powerful as Chuck Norris's beard",
       keywords: ["write", "operations", "app2", "api"],
       authors: [{ name: "Chuck Norris Team" }],
+    },
+    pages: {
+      HomePage: {
+        items: [
+          {
+            type: "hero",
+            title: "Welcome to App2",
+          },
+        ],
+      },
+      about: {
+        items: [
+          {
+            type: "hero",
+            title: "About App2",
+          },
+        ],
+      },
     },
   },
 } satisfies Record<string, AppConfigItem>;

@@ -6,6 +6,7 @@ export async function middleware(request: NextRequest) {
   // Set the AppName header
   const resolvedAppName = await matchAppName(request);
   const requestHeaders = new Headers(request.headers);
+
   if (resolvedAppName) {
     requestHeaders.set(APP_HEADER_NAME, resolvedAppName);
     console.log(
@@ -16,6 +17,9 @@ export async function middleware(request: NextRequest) {
       `@@@@@@ Middleware: No valid app name resolved, not setting ${APP_HEADER_NAME} header.`
     );
   }
+
+  // Set the pathname header for URL-based feature flag checking
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
 
   return NextResponse.next({
     request: {
