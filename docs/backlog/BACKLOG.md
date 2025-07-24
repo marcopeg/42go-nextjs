@@ -4,10 +4,12 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aai] Add RBAC to the users system [🔗](./tasks/aai-add-rbac.md)
+- [abp] Add Public layout [🔗](./tasks/abp-public-layout.md)
 
 ## Upcoming Tasks
 
+- [abq] Add App layout [🔗](./tasks/abq-app-layout.md)
+- [aai] Add RBAC to the users system [🔗](./tasks/aai-add-rbac.md)
 - [aat] Support i18n
 - [aau] Implement public layout
 - [abd] Optimize Database Documentation [🔗](./tasks/abd-optimize-database-documentation.md)
@@ -21,7 +23,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aao] Add social login: Apple
 - [abn] Migrate to Prisma ORM
 
-(LastID: abo)
+(LastID: abq)
 
 ## Completed Tasks
 
