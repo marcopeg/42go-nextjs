@@ -4,10 +4,12 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [abq] Add App layout [🔗](./tasks/abq-app-layout.md)
+- [abr] Import Hero block [🔗](./tasks/abr-import-hero-block.md)
 
 ## Upcoming Tasks
 
+- [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
+- [abt] Import subscribe block [🔗](./tasks/abt-import-subscribe-block.md)
 - [abq] Add App layout [🔗](./tasks/abq-app-layout.md)
 - [aai] Add RBAC to the users system [🔗](./tasks/aai-add-rbac.md)
 - [aat] Support i18n
@@ -23,13 +25,14 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aao] Add social login: Apple
 - [abn] Migrate to Prisma ORM
 
-(LastID: abq)
+(LastID: abu)
 
 ## Completed Tasks
 
-- [abp] Add Public layout [🔗](./tasks/abp-public-layout.md) ✅ COMPLETE - Advanced public layout with CMS system, dynamic routing, and URL-based feature flags
-- [abo] Production build [🔗](./tasks/abo-production-build.md) ✅ COMPLETE - Optimized Docker builds with Next.js standalone output and production deployment automation
-- [abm] Support social login from different app configuration [🔗](./tasks/abm-support-social-login-different-app-configuration.md) ✅ COMPLETE - Multi-app OAuth with per-app provider configuration and frontend filtering
+- [abu] Import dark-mode background color [🔗](./archive/abu-import-dark-mode-background.md)
+- [abp] Add Public layout [🔗](./archive/abp-public-layout.md) ✅ COMPLETE - Advanced public layout with CMS system, dynamic routing, and URL-based feature flags
+- [abo] Production build [🔗](./archive/abo-production-build.md) ✅ COMPLETE - Optimized Docker builds with Next.js standalone output and production deployment automation
+- [abm] Support social login from different app configuration [🔗](./archive/abm-support-social-login-different-app-configuration.md) ✅ COMPLETE - Multi-app OAuth with per-app provider configuration and frontend filtering
 - [abj] Make each login strategy conditional based on environment variables [🔗](./archive/abj-make-login-strategy-conditional-on-env-vars.md) ✅ COMPLETE - Completed by task [abm]
 - [abi] Refactor login code (improve modularization) [🔗](./archive/abi-refactor-login-code-improve-modularization.md) ✅ COMPLETE - Completed by task [abm]
 - [abb] Implement Dynamic Authentication Strategy [🔗](./archive/abb-implement-dynamic-authentication-strategy.md) ✅ COMPLETE - Completed by task [abm]
