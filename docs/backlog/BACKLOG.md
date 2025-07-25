@@ -4,8 +4,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [abr] Import Hero block [🔗](./tasks/abr-import-hero-block.md)
-
 ## Upcoming Tasks
 
 - [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
@@ -29,6 +27,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [abr] Import Hero block [🔗](./archive/abr-import-hero-block.md)
 - [abu] Import dark-mode background color [🔗](./archive/abu-import-dark-mode-background.md)
 - [abp] Add Public layout [🔗](./archive/abp-public-layout.md) ✅ COMPLETE - Advanced public layout with CMS system, dynamic routing, and URL-based feature flags
 - [abo] Production build [🔗](./archive/abo-production-build.md) ✅ COMPLETE - Optimized Docker builds with Next.js standalone output and production deployment automation

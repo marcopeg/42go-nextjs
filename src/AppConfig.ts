@@ -2,9 +2,12 @@ import type { NextRequest } from "next/server";
 import type { Metadata } from "next";
 import type { ComponentType, ReactNode } from "react";
 import type { AuthProviderArray } from "@/lib/auth/providers/types";
-import type { Pages } from "@/components/Page/types";
+import type { Pages } from "@/components/Page";
+import { HomePage } from "@/config/home-page";
+import { AboutPage } from "./config/about-page";
+import { PricingPage } from "./config/pricing-page";
 
-import { App1PublicLayout } from "@/components/App1PublicLayout";
+// import { App1PublicLayout } from "@/components/App1PublicLayout";
 
 export type ThemeValue = "light" | "dark" | "system";
 
@@ -89,56 +92,9 @@ export const availableApps = {
       authors: [{ name: "Chuck Norris" }],
     },
     pages: {
-      HomePage: {
-        items: [
-          {
-            type: "hero",
-            title: "Welcome to the Default App",
-            subtitle: "Powered by Chuck Norris",
-            // backgroundImage: "/images/hero-bg.jpg",
-          },
-          // {
-          //   type: "demo",
-          //   title: "Button Playground by Chuck Norris 🥋",
-          //   description:
-          //     "Testing all button variants and combinations - Chuck Norris style!",
-          // },
-          {
-            type: "text",
-            content: "First text here",
-          },
-          {
-            type: "text",
-            content: "Second text here",
-          },
-        ],
-      },
-      about: {
-        meta: {
-          title: "About Us",
-          description: "Learn more about our legendary app",
-        },
-        items: [
-          {
-            type: "hero",
-            title: "About Us",
-            subtitle: "Powered by the legendary force of Chuck Norris",
-          },
-          {
-            type: "text",
-            content:
-              "This is a dynamically generated about page from the CMS configuration. Chuck Norris doesn't need an about page - his reputation speaks for itself.",
-          },
-        ],
-      },
-      pricing: {
-        items: [
-          {
-            type: "text",
-            content: "Pricing information coming soon!",
-          },
-        ],
-      },
+      HomePage,
+      about: AboutPage,
+      pricing: PricingPage,
     },
   },
   app1: {
@@ -149,7 +105,7 @@ export const availableApps = {
     name: "APP n1",
     theme: {
       default: "dark",
-      PublicLayout: App1PublicLayout,
+      // PublicLayout: App1PublicLayout,
     },
     auth: {
       providers: [
@@ -172,6 +128,11 @@ export const availableApps = {
         "The ultimate todo application that gets things done faster than Chuck Norris kicks",
       keywords: ["todos", "productivity", "app1", "tasks"],
       authors: [{ name: "Chuck Norris", url: "https://chucknorris.com" }],
+    },
+    pages: {
+      HomePage,
+      about: AboutPage,
+      pricing: PricingPage,
     },
   },
   app2: {
@@ -203,22 +164,9 @@ export const availableApps = {
       authors: [{ name: "Chuck Norris Team" }],
     },
     pages: {
-      HomePage: {
-        items: [
-          {
-            type: "hero",
-            title: "Welcome to App2",
-          },
-        ],
-      },
-      about: {
-        items: [
-          {
-            type: "hero",
-            title: "About App2",
-          },
-        ],
-      },
+      HomePage,
+      about: AboutPage,
+      pricing: PricingPage,
     },
   },
 } satisfies Record<string, AppConfigItem>;
