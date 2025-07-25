@@ -1,100 +1,88 @@
-"use client";
-
 import React from "react";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
 import type { AppConfig } from "@/lib/config/app-config";
 
 type AppTitleProps = {
-  className?: string;
-  showIcon?: boolean;
-  showSubtitle?: boolean;
-  showTitle?: boolean;
-  iconOnly?: boolean;
-  appConfig?: AppConfig;
+  config: AppConfig;
 };
 
-export function AppTitle({
-  className,
-  showIcon = true,
-  showSubtitle = true,
-  showTitle = true,
-  iconOnly = false,
-  appConfig,
-}: AppTitleProps) {
-  if (!appConfig) {
-    return (
-      <div className={cn("flex items-center gap-2", className)}>
-        <div className="h-6 w-6 rounded-md bg-accent text-accent-foreground flex items-center justify-center font-semibold text-sm">
-          ?
-        </div>
-        {!iconOnly && <span className="font-bold">Loading...</span>}
-      </div>
-    );
-  }
+export function AppTitle({ config }: AppTitleProps) {
+  if (!config) return null;
 
-  const { name: title, logo: icon } = appConfig;
-  const subtitle = appConfig.meta?.description || "";
+  // Extract toolbar config with fallbacks
+  const toolbarConfig = config.public?.toolbar;
+  const title = toolbarConfig?.title || config.name;
+  const subtitle = toolbarConfig?.subtitle || "";
+  const icon = toolbarConfig?.icon || config.logo;
 
-  // Determine if the icon is a component or a string (URL/path)
+  // Calculate display rules from config
+  const showTitle = !!title;
+  const showSubtitle = !!subtitle;
+  const showIcon = !!icon;
+
+  // Determine icon type
+  const IconComponent =
+    typeof icon === "function" || (typeof icon === "object" && icon !== null)
+      ? (icon as React.ComponentType<{ className?: string }>)
+      : null;
   const iconIsUrl = typeof icon === "string";
 
   // Get first letter of title for fallback
   const firstLetter = title?.charAt(0).toUpperCase() || "A";
 
-  // For icon-only display, we need a simpler layout
-  if (iconOnly) {
+  // Render icon element
+  const renderIcon = () => {
+    if (!showIcon) return null;
+
+    // Icon is a React component (Lucide icon)
+    if (IconComponent) {
+      return <IconComponent className="h-6 w-6" />;
+    }
+
+    // Icon is a URL/path to an image
+    if (iconIsUrl) {
+      return (
+        <div className="h-6 w-6 relative">
+          <Image
+            src={icon as string}
+            alt={`${title} logo`}
+            fill
+            className="object-contain"
+          />
+        </div>
+      );
+    }
+
+    // Fallback to first letter of title
     return (
-      <div className={cn("flex justify-center items-center", className)}>
-        {iconIsUrl && (
-          <div className="h-6 w-6 relative">
-            <Image
-              src={icon as string}
-              alt={`${title} logo`}
-              fill
-              className="object-contain"
-            />
-          </div>
-        )}
-        {!iconIsUrl && (
-          <div className="h-6 w-6 rounded-md bg-accent text-accent-foreground flex items-center justify-center font-semibold text-sm">
-            {firstLetter}
-          </div>
+      <div className="h-6 w-6 rounded-md bg-accent text-accent-foreground flex items-center justify-center font-semibold text-sm">
+        {firstLetter}
+      </div>
+    );
+  };
+
+  // Render title and subtitle
+  const renderText = () => {
+    const textElement = (
+      <div className="flex flex-col">
+        {showTitle && <span className="font-bold">{title}</span>}
+        {showSubtitle && subtitle && (
+          <span className="text-xs text-muted-foreground">{subtitle}</span>
         )}
       </div>
     );
-  }
+
+    return textElement;
+  };
+
+  // Regular layout with icon and text
+  const iconContent = renderIcon();
+  const textContent = renderText();
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      {showIcon && (
-        <>
-          {iconIsUrl && (
-            <div className="h-6 w-6 relative">
-              <Image
-                src={icon as string}
-                alt={`${title} logo`}
-                fill
-                className="object-contain"
-              />
-            </div>
-          )}
-          {!iconIsUrl && (
-            <div className="h-6 w-6 rounded-md bg-accent text-accent-foreground flex items-center justify-center font-semibold text-sm">
-              {firstLetter}
-            </div>
-          )}
-        </>
-      )}
-
-      {!iconOnly && (
-        <div className="flex flex-col">
-          {showTitle && <span className="font-bold">{title}</span>}
-          {showSubtitle && subtitle && (
-            <span className="text-xs text-muted-foreground">{subtitle}</span>
-          )}
-        </div>
-      )}
+    <div className="flex items-center gap-2">
+      {iconContent}
+      {textContent}
     </div>
   );
 }

@@ -9,5 +9,5 @@ export default async function PublicRouteLayout({
   const config = await getAppConfig();
   const LayoutComponent = config?.theme?.PublicLayout || PublicLayout;
 
-  return <LayoutComponent>{children}</LayoutComponent>;
+  return <LayoutComponent config={config}>{children}</LayoutComponent>;
 }

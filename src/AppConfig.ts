@@ -6,18 +6,29 @@ import type { Pages } from "@/components/Page";
 import { HomePage } from "@/config/home-page";
 import { AboutPage } from "./config/about-page";
 import { PricingPage } from "./config/pricing-page";
+import { Zap, CheckSquare } from "lucide-react";
 
 // import { App1PublicLayout } from "@/components/App1PublicLayout";
 
 export type ThemeValue = "light" | "dark" | "system";
 
+export interface ToolbarConfig {
+  title?: string;
+  subtitle?: string;
+  icon?: string | ComponentType<{ className?: string }>;
+  href?: string;
+}
+
 export interface AppConfigItem {
   name: string;
-  logo?: string;
+  logo?: string | ComponentType<{ className?: string }>;
   meta?: Partial<Metadata>;
   theme?: {
     default?: ThemeValue;
     PublicLayout?: ComponentType<{ children: ReactNode }>;
+  };
+  public?: {
+    toolbar?: ToolbarConfig;
   };
   auth?: {
     providers: AuthProviderArray;
@@ -57,8 +68,17 @@ export const availableApps = {
       apis: ["*"],
     },
     name: "DEFAULT APP",
+    logo: Zap,
     theme: {
       default: "system",
+    },
+    public: {
+      toolbar: {
+        title: "Chuck Norris Edition",
+        subtitle: "Tougher than a two-dollar steak",
+        // icon: Zap,
+        // href: "/", // this is the default value
+      },
     },
     auth: {
       providers: [
@@ -107,6 +127,14 @@ export const availableApps = {
       default: "dark",
       // PublicLayout: App1PublicLayout,
     },
+    public: {
+      toolbar: {
+        title: "Todo Master",
+        subtitle: "Get things done faster",
+        icon: CheckSquare,
+        href: "/",
+      },
+    },
     auth: {
       providers: [
         {
@@ -143,6 +171,12 @@ export const availableApps = {
     name: "APP n2",
     theme: {
       default: "light",
+    },
+    public: {
+      toolbar: {
+        title: "", // Empty title to test fallback to app name
+        subtitle: "Write Operations",
+      },
     },
     auth: {
       providers: [

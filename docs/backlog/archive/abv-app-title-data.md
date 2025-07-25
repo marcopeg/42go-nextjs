@@ -83,32 +83,28 @@ Regarding the icon, it should be easy to change it to an icon from a standard li
 **Final Implementation:**
 
 1. **Extended AppConfig Type System**
-
    - Added `ToolbarConfig` interface with `title`, `subtitle`, `icon`, and `href` properties
    - Extended `AppConfigItem` with `public.toolbar` configuration
    - Updated `logo` property to support both string and ComponentType
    - Full TypeScript support for icon components
 
 2. **Direct Icon Import Strategy**
-
    - Imported specific Lucide icons: `Zap`, `CheckSquare`
    - Zero bundle bloat - only imports needed icons
    - Tree-shaking friendly approach
    - Removed unused `icon-resolver.ts` utility
 
 3. **Production-Ready AppTitle Component**
-
    - Uses `appConfig.public?.toolbar` data with proper fallbacks
-   - **Title fallback**: `toolbar.title` → `appConfig.name`
+   - **Title fallback**: `toolbar.title` → `appConfig.name` 
    - **Subtitle**: Only shows if `toolbar.subtitle` exists (not empty)
    - **Icon support**: React Component → URL → `config.logo` → skip
    - **Icon detection**: Handles both function and object React components
    - **SEO-compliant**: Header component uses `toolbar.href` for Link wrapper
 
 4. **Configuration Examples**
-
    - **default app**: Uses `Zap` icon in `logo`, custom title/subtitle in toolbar
-   - **app1**: Uses `CheckSquare` icon directly in toolbar config
+   - **app1**: Uses `CheckSquare` icon directly in toolbar config  
    - **app2**: Omits icon completely (tests fallback behavior)
 
 5. **Testing & Validation**
@@ -122,23 +118,19 @@ Regarding the icon, it should be easy to change it to an icon from a standard li
 ### Technical Highlights:
 
 **Icon Resolution Logic:**
-
 ```tsx
-const IconComponent =
-  typeof icon === "function" || (typeof icon === "object" && icon !== null)
-    ? (icon as React.ComponentType<{ className?: string }>)
-    : null;
+const IconComponent = (typeof icon === "function" || (typeof icon === "object" && icon !== null)) 
+  ? icon as React.ComponentType<{ className?: string }> 
+  : null;
 ```
 
 **Fallback Chain:**
-
 - Icon: `toolbar.icon` → `config.logo` → skip
 - Title: `toolbar.title` → `config.name`
 - Subtitle: `toolbar.subtitle` → skip if empty
 - Link: `toolbar.href` → Header provides navigation
 
 **Bundle Optimization:**
-
 - Direct imports: `import { Zap, CheckSquare } from "lucide-react"`
 - No dynamic resolution overhead
 - Tree-shaking removes unused icons
