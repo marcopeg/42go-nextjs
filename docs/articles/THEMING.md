@@ -2,6 +2,13 @@
 
 This document provides comprehensive guidance on customizing the light and dark themes in this Next.js application.
 
+- Architecture Overview
+- Theme Configuration
+- CSS Theme Variables
+- Setup the App's default theme
+- Customize the App primary color
+-
+
 ## Architecture Overview
 
 The theming system is built on three core technologies:
@@ -10,50 +17,20 @@ The theming system is built on three core technologies:
 2. **Tailwind CSS** - Utility-first CSS framework with built-in dark mode support
 3. **CSS Custom Properties** - Dynamic theme variables
 
-## Theme Configuration
+### Relevant Files:
 
-### Tailwind Configuration
+- `tailwind.config.js`
+- `@/lib/config/ThemeProvider.tsx`
+- `@/app/globals.css`  
+   _lists the default values and available themes_
 
-The dark mode is configured in `tailwind.config.js`:
+### Why class-based?
 
-```javascript
-module.exports = {
-  darkMode: ["class"], // Class-based dark mode
-  // ... rest of config
-};
-```
-
-**Why class-based?** This approach uses a `.dark` class on the HTML element to toggle dark mode, providing:
+This approach uses a `.dark` class on the HTML element to toggle dark mode, providing:
 
 - Better performance than media query approach
 - User control over theme selection
 - Perfect SSR compatibility
-
-### Theme Provider Setup
-
-The theme provider is configured in `src/lib/config/ThemeProvider.tsx` and integrates with the App Config system:
-
-```tsx
-export function ThemeProvider({
-  appDefaultTheme,
-  ...props
-}: ThemeProviderProps) {
-  // Use app-specific default theme or fallback to "system"
-  const defaultTheme = appDefaultTheme || "system";
-
-  return (
-    <NextThemesProvider
-      enableSystem // Enable system theme detection
-      disableTransitionOnChange // Prevent flash during transitions
-      attribute="class" // Use class attribute for theme switching
-      defaultTheme={defaultTheme} // App-configured default or system
-      {...props}
-    />
-  );
-}
-```
-
-**App Config Integration**: The ThemeProvider now accepts an `appDefaultTheme` prop that comes from the app's configuration, allowing different apps to have different default themes while maintaining user preference override capabilities.
 
 ## CSS Theme Variables
 
