@@ -4,10 +4,11 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
+- [aca] Render docs [🔗](./tasks/aca-render-docs.md)
 
 ## Upcoming Tasks
 
+- [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
 - [abx] Improve user's menu [🔗](./tasks/abx-improve-user-menu.md)
 - [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
 - [abt] Import subscribe block [🔗](./tasks/abt-import-subscribe-block.md)
@@ -26,7 +27,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aao] Add social login: Apple
 - [abn] Migrate to Prisma ORM
 
-(LastID: abz)
+(LastID: aca)
 
 ## Completed Tasks
 
