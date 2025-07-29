@@ -29,8 +29,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aam] Add social login: Facebook
 - [aao] Add social login: Apple
 - [abn] Migrate to Prisma ORM
+- [acg] Import features block
+- [ach] Create a Markdown block
 
-(LastID: acf)
+(LastID: ach)
 
 ## Completed Tasks
 

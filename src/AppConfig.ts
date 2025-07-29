@@ -37,6 +37,9 @@ export interface AppConfigItem {
     pages: string[]; // List of pages available in this app
     apis: string[]; // List of API endpoints available in this app
   };
+  match?: {
+    url?: string | string[]; // Regexp string(s) to match host
+  };
   pages?: Pages; // CMS pages configuration
   docs?: {
     source?: string; // Path to the documentation source
@@ -89,7 +92,6 @@ export const availableApps = {
           type: "credentials" as const,
           config: {},
         },
-
         {
           type: "github" as const,
           config: {
@@ -114,6 +116,9 @@ export const availableApps = {
       keywords: ["nextjs", "default", "chuck-norris", "legendary"],
       authors: [{ name: "Chuck Norris" }],
     },
+    match: {
+      url: ["^localhost:3000$"],
+    },
     pages: {
       HomePage,
       about: AboutPage,
@@ -128,6 +133,9 @@ export const availableApps = {
     featureFlags: {
       pages: ["todos", "docs"],
       apis: ["getTodos"],
+    },
+    match: {
+      url: ["^app1\\.localhost:3000$", "^app1\\.mydomain.com$"],
     },
     theme: {
       default: "dark",
@@ -178,6 +186,9 @@ export const availableApps = {
       apis: ["todos:write"],
     },
     name: "APP n2",
+    match: {
+      url: ["^app2\\.localhost:3000$", "^app2\\.mydomain.com$"],
+    },
     theme: {
       default: "light",
     },
@@ -232,24 +243,25 @@ export const matchAppName = async (request: NextRequest): Promise<AppName> => {
     return customSetupHeader as AppName;
   }
 
-  // EXAMPLE:
-  // app1.localhost or app2.localhost
+  // Match by Host Header
+  // config.match.url
   const hostHeader = request.headers.get("host");
-  if (hostHeader) {
-    const appNameFromHost = hostHeader.split(".")[0];
-    if (
-      appNameFromHost &&
-      appNameFromHost !== "null" &&
-      availableApps[appNameFromHost as keyof typeof availableApps]
-    ) {
-      return appNameFromHost as AppName;
+  for (const [appKey, appConfig] of Object.entries(availableApps)) {
+    if (appConfig.match?.url) {
+      const urlPatterns = Array.isArray(appConfig.match.url)
+        ? appConfig.match.url
+        : [appConfig.match.url];
+      for (const pattern of urlPatterns) {
+        try {
+          const regex = new RegExp(pattern);
+          if (hostHeader && regex.test(hostHeader)) {
+            return appKey as AppName; // First positive match exits like Chuck Norris
+          }
+        } catch {
+          // Chuck Norris doesn't catch errors, but TypeScript does
+        }
+      }
     }
-  }
-
-  // EXAMPLE:
-  // localhost:3000 or localhost:4001 - only allow default for plain localhost
-  if (hostHeader?.split(":")[0] === "localhost") {
-    return "default" as AppName;
   }
 
   // Unknown host - return null to trigger 404
