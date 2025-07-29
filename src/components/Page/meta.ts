@@ -8,6 +8,6 @@ import { getAppConfig } from "@/lib/config/app-config";
  */
 export const getPageMeta = async (pageId: string) => {
   const config = await getAppConfig();
-  const pageData = config?.pages?.[pageId];
+  const pageData = config?.public?.pages?.[pageId];
   return pageData?.meta || config?.public?.meta || {};
 };

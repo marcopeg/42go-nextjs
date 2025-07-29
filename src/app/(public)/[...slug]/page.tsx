@@ -23,7 +23,7 @@ const DynamicPage = async ({ params }: DynamicPageProps) => {
 
   // Get the page id from the current url
   const pageId = slug.join("/").toLowerCase();
-  const pageData = config?.pages?.[pageId];
+  const pageData = config?.public?.pages?.[pageId];
 
   // Conditionally render the page's data
   if (!pageData) notFound();

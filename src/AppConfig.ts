@@ -30,6 +30,7 @@ export interface AppConfigItem {
   public?: {
     toolbar?: ToolbarConfig;
     meta?: Partial<Metadata>;
+    pages?: Pages; // CMS pages configuration
   };
   auth?: {
     providers: AuthProviderArray;
@@ -41,7 +42,7 @@ export interface AppConfigItem {
   match?: {
     url?: string | string[]; // Regexp string(s) to match host
   };
-  pages?: Pages; // CMS pages configuration
+  // pages moved to public.pages
   docs?: {
     source?: string; // Path to the documentation source
   };
@@ -93,6 +94,11 @@ export const availableApps = {
         keywords: ["nextjs", "default", "chuck-norris", "legendary"],
         authors: [{ name: "Chuck Norris" }],
       },
+      pages: {
+        HomePage,
+        about: AboutPage,
+        pricing: PricingPage,
+      },
     },
     auth: {
       providers: [
@@ -119,11 +125,6 @@ export const availableApps = {
     },
     match: {
       url: ["^localhost:3000$"],
-    },
-    pages: {
-      HomePage,
-      about: AboutPage,
-      pricing: PricingPage,
     },
     docs: {
       source: "/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default",
@@ -156,6 +157,11 @@ export const availableApps = {
         keywords: ["todos", "productivity", "app1", "tasks"],
         authors: [{ name: "Chuck Norris", url: "https://chucknorris.com" }],
       },
+      pages: {
+        HomePage,
+        about: AboutPage,
+        pricing: PricingPage,
+      },
     },
     auth: {
       providers: [
@@ -171,11 +177,6 @@ export const availableApps = {
           },
         },
       ],
-    },
-    pages: {
-      HomePage,
-      about: AboutPage,
-      pricing: PricingPage,
     },
     docs: {
       source: "/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default",
@@ -205,6 +206,11 @@ export const availableApps = {
         keywords: ["write", "operations", "app2", "api"],
         authors: [{ name: "Chuck Norris Team" }],
       },
+      pages: {
+        HomePage,
+        about: AboutPage,
+        pricing: PricingPage,
+      },
     },
     auth: {
       providers: [
@@ -217,11 +223,6 @@ export const availableApps = {
           },
         },
       ],
-    },
-    pages: {
-      HomePage,
-      about: AboutPage,
-      pricing: PricingPage,
     },
   },
 } satisfies Record<string, AppConfigItem>;

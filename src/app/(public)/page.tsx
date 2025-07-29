@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const HomePage = async () => {
   const { config } = await getAppInfo();
-  return <Page name="HomePage" data={config?.pages?.HomePage} />;
+  return <Page name="HomePage" data={config?.public?.pages?.HomePage} />;
 };
 
 export default appPage(HomePage, "*");
