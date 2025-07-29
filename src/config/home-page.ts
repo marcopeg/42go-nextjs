@@ -8,13 +8,13 @@ export const HomePage: Page = {
       subtitle: "Powered by **Chuck Norris** himself",
       actions: [
         {
-          label: "Join Us!",
+          label: "Buy",
           href: "/login",
           style: "primary",
         },
         {
-          label: "Learn More",
-          href: "/about",
+          label: "Read the Docs",
+          href: "/docs",
           style: "secondary",
         },
       ],

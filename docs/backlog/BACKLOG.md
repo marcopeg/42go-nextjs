@@ -8,6 +8,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Upcoming Tasks
 
+- [acb] Move `config.pages` to `config.public.pages`
+- [acd] Move `config.docs` to `config.public.docs`
+- [ace] Move `config.meta` to `config.public.meta`
+- [acf] Add `config.match.url` to receive a regexp [🔗](./tasks/acf-config-match-url.md)
 - [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
 - [abx] Improve user's menu [🔗](./tasks/abx-improve-user-menu.md)
 - [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
@@ -27,7 +31,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aao] Add social login: Apple
 - [abn] Migrate to Prisma ORM
 
-(LastID: aca)
+(LastID: acf)
 
 ## Completed Tasks
 

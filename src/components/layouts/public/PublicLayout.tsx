@@ -11,9 +11,7 @@ export function PublicLayout({ children, config }: PublicLayoutProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header config={config} />
-      <main className="flex-1 w-full flex justify-center">
-        <div className="w-full max-w-4xl px-4 sm:px-6">{children}</div>
-      </main>
+      <main className="flex-1 w-full">{children}</main>
       <Footer />
     </div>
   );

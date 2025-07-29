@@ -38,6 +38,9 @@ export interface AppConfigItem {
     apis: string[]; // List of API endpoints available in this app
   };
   pages?: Pages; // CMS pages configuration
+  docs?: {
+    source?: string; // Path to the documentation source
+  };
 }
 
 export type AppConfig = AppConfigItem | null;
@@ -116,13 +119,16 @@ export const availableApps = {
       about: AboutPage,
       pricing: PricingPage,
     },
+    docs: {
+      source: "/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default",
+    },
   },
   app1: {
+    name: "APP n1",
     featureFlags: {
-      pages: ["todos"],
+      pages: ["todos", "docs"],
       apis: ["getTodos"],
     },
-    name: "APP n1",
     theme: {
       default: "dark",
       // PublicLayout: App1PublicLayout,
@@ -162,10 +168,13 @@ export const availableApps = {
       about: AboutPage,
       pricing: PricingPage,
     },
+    docs: {
+      source: "/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default",
+    },
   },
   app2: {
     featureFlags: {
-      pages: ["todos", "about"],
+      pages: ["_todos", "about"],
       apis: ["todos:write"],
     },
     name: "APP n2",
