@@ -8,11 +8,11 @@ export const getDB = () => {
     return db;
   }
 
-  if (!process.env.PGSTRING) {
-    throw new Error("PGSTRING environment variable is not set");
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL environment variable is not set");
   }
 
-  const knexConfig = createKnexConfig(process.env.PGSTRING);
+  const knexConfig = createKnexConfig(process.env.DATABASE_URL);
 
   db = knex(knexConfig);
 

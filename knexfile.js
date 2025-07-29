@@ -3,7 +3,7 @@ require("dotenv").config({ path: "./.env" });
 
 const createKnexConfig = (connString) => {
   if (!connString) {
-    throw new Error("PGSTRING environment variable is not set");
+    throw new Error("DATABASE_URL environment variable is not set");
   }
 
   const url = new URL(connString);
@@ -43,7 +43,7 @@ const createKnexConfig = (connString) => {
   };
 };
 
-const connectionConfig = createKnexConfig(process.env.PGSTRING || "");
+const connectionConfig = createKnexConfig(process.env.DATABASE_URL || "");
 
 /**
  * Knex configuration file - PostgreSQL Only
