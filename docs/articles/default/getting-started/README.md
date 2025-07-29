@@ -15,6 +15,30 @@ After all, vibe coding is cool and let me move fast. But it generates code that 
 
 Here are the main principles that lead the development of this boilerplate:
 
+# Development Environment
+
+Once you get [access to the codebase](/buy), clone it locally:
+
+```bash
+git clone https://github.com/marcopeg/42go-next-multi
+```
+
+> You only need [NodeJS 18+](https://nodejs.org) to create your project.
+
+Next, you need to setup a PostgreSQL database.
+
+**Via Docker:**
+
+```bash
+make db
+```
+
+[get more info](./db-docker.md)
+
+**Via NeonDB:**
+
+[get more info](./db-neon.md)
+
 # Dynamic Configuration
 
 [[to be completed]]
