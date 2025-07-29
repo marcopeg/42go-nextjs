@@ -4,11 +4,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [acb] Move `config.pages` to `config.public.pages`
+- [acl] Simplify boot for new developers [🔗](./tasks/acl-simplify-boot.md)
 
 ## Upcoming Tasks
 
-- [acd] Move `config.docs` to `config.public.docs`
 - [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
 - [abx] Improve user's menu [🔗](./tasks/abx-improve-user-menu.md)
 - [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
@@ -30,12 +29,13 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [acg] Import features block
 - [ach] Create a Markdown block
 - [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
-- [acl] Simplify boot for new developers [🔗](./tasks/acl-simplify-boot.md)
 
 (LastID: aci)
 
 ## Completed Tasks
 
+- [acd] Move `config.docs` to `config.public.docs` [🔗](./tasks/acd-move-config-docs-to-config-public-docs.md)
+- [acb] Move `config.pages` to `config.public.pages`
 - [ace] Move `config.meta` to `config.public.meta`
 - [acf] Add `config.match.url` to receive a regexp [🔗](./tasks/acf-config-match-url.md)
 - [aca] Render docs [🔗](./tasks/aca-render-docs.md)

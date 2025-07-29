@@ -227,9 +227,9 @@ export interface DocMetadata {
 
 export async function getDocContent(slug: string): Promise<string | null> {
   const config = await getAppConfig();
-  const docsDirectory = config?.docs?.source;
+  const docsDirectory = config?.public?.docs?.source;
   if (!docsDirectory) {
-    throw new Error("config.docs.source is missing");
+    throw new Error("config.public.docs.source is missing");
   }
 
   const normalizedSlug = slug.replace(/\//g, path.sep);
@@ -269,9 +269,9 @@ export async function getDocContent(slug: string): Promise<string | null> {
 
 export async function getDoc(slug: string): Promise<DocFile | null> {
   const config = await getAppConfig();
-  const docsDirectory = config?.docs?.source;
+  const docsDirectory = config?.public?.docs?.source;
   if (!docsDirectory) {
-    throw new Error("config.docs.source is missing");
+    throw new Error("config.public.docs.source is missing");
   }
 
   // Check cache first
@@ -395,9 +395,9 @@ export function normalizeDocLabel(slug: string): string {
 
 export async function getAllDocs(): Promise<string[]> {
   const config = await getAppConfig();
-  const docsDirectory = config?.docs?.source;
+  const docsDirectory = config?.public?.docs?.source;
   if (!docsDirectory) {
-    throw new Error("config.docs.source is missing");
+    throw new Error("config.public.docs.source is missing");
   }
 
   const docs: string[] = [];
@@ -484,9 +484,9 @@ let sidebarCache: {
 // Get sidebar content with caching
 export async function getSidebar(): Promise<string | null> {
   const config = await getAppConfig();
-  const docsDirectory = config?.docs?.source;
+  const docsDirectory = config?.public?.docs?.source;
   if (!docsDirectory) {
-    throw new Error("config.docs.source is missing");
+    throw new Error("config.public.docs.source is missing");
   }
 
   // Skip cache if configured to do so

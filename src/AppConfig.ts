@@ -31,6 +31,9 @@ export interface AppConfigItem {
     toolbar?: ToolbarConfig;
     meta?: Partial<Metadata>;
     pages?: Pages; // CMS pages configuration
+    docs?: {
+      source?: string; // Path to the documentation source
+    };
   };
   auth?: {
     providers: AuthProviderArray;
@@ -43,9 +46,7 @@ export interface AppConfigItem {
     url?: string | string[]; // Regexp string(s) to match host
   };
   // pages moved to public.pages
-  docs?: {
-    source?: string; // Path to the documentation source
-  };
+  // docs moved to public.docs
 }
 
 export type AppConfig = AppConfigItem | null;
@@ -71,22 +72,18 @@ export const DEFAULT_APP: AppName = null;
  */
 export const availableApps = {
   default: {
+    name: "DEFAULT APP",
+    match: {
+      url: ["^localhost:3000$"],
+    },
     featureFlags: {
       pages: ["*"],
       apis: ["*"],
     },
-    name: "DEFAULT APP",
-    logo: Zap,
     theme: {
       default: "system",
     },
     public: {
-      toolbar: {
-        title: "Chuck Norris Edition",
-        subtitle: "Tougher than a two-dollar steak",
-        // icon: Zap,
-        // href: "/", // this is the default value
-      },
       meta: {
         title: "Default App - Chuck Norris Edition",
         description:
@@ -94,10 +91,19 @@ export const availableApps = {
         keywords: ["nextjs", "default", "chuck-norris", "legendary"],
         authors: [{ name: "Chuck Norris" }],
       },
+      toolbar: {
+        title: "Chuck Norris Edition",
+        subtitle: "Tougher than a two-dollar steak",
+        icon: Zap,
+        // href: "/", // this is the default value
+      },
       pages: {
         HomePage,
         about: AboutPage,
         pricing: PricingPage,
+      },
+      docs: {
+        source: "/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default",
       },
     },
     auth: {
@@ -123,33 +129,21 @@ export const availableApps = {
         },
       ],
     },
-    match: {
-      url: ["^localhost:3000$"],
-    },
-    docs: {
-      source: "/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default",
-    },
   },
   app1: {
     name: "APP n1",
+    match: {
+      url: ["^app1\\.localhost:3000$", "^app1\\.mydomain.com$"],
+    },
     featureFlags: {
       pages: ["todos", "docs"],
       apis: ["getTodos"],
-    },
-    match: {
-      url: ["^app1\\.localhost:3000$", "^app1\\.mydomain.com$"],
     },
     theme: {
       default: "dark",
       // PublicLayout: App1PublicLayout,
     },
     public: {
-      toolbar: {
-        title: "Todo Master",
-        subtitle: "Get things done faster",
-        icon: CheckSquare,
-        href: "/",
-      },
       meta: {
         title: "App1 - Todo Master",
         description:
@@ -157,10 +151,19 @@ export const availableApps = {
         keywords: ["todos", "productivity", "app1", "tasks"],
         authors: [{ name: "Chuck Norris", url: "https://chucknorris.com" }],
       },
+      toolbar: {
+        title: "Todo Master",
+        subtitle: "Get things done faster",
+        icon: CheckSquare,
+        href: "/",
+      },
       pages: {
         HomePage,
         about: AboutPage,
         pricing: PricingPage,
+      },
+      docs: {
+        source: "/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default",
       },
     },
     auth: {
@@ -178,33 +181,30 @@ export const availableApps = {
         },
       ],
     },
-    docs: {
-      source: "/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default",
-    },
   },
   app2: {
-    featureFlags: {
-      pages: ["_todos", "about"],
-      apis: ["todos:write"],
-    },
     name: "APP n2",
     match: {
       url: ["^app2\\.localhost:3000$", "^app2\\.mydomain.com$"],
+    },
+    featureFlags: {
+      pages: ["todos", "about"],
+      apis: ["todos:write"],
     },
     theme: {
       default: "light",
     },
     public: {
-      toolbar: {
-        title: "", // Empty title to test fallback to app name
-        subtitle: "Write Operations",
-      },
       meta: {
         title: "App2 - Write Operations",
         description:
           "Specialized app for write operations, as powerful as Chuck Norris's beard",
         keywords: ["write", "operations", "app2", "api"],
         authors: [{ name: "Chuck Norris Team" }],
+      },
+      toolbar: {
+        title: "", // Empty title to test fallback to app name
+        subtitle: "Write Operations",
       },
       pages: {
         HomePage,
