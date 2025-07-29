@@ -1,0 +1,24 @@
+# Generic files
+.DS_Store
+.github
+.vscode
+*.log
+
+# Cache folders
+node_modules
+.next
+
+# Ignore build output
+build
+dist
+out
+
+# Ignore environment files
+.env
+.env*
+
+
+.vscode
+.vscode-test
+.vscode-test-*
+

@@ -16,6 +16,19 @@ const createKnexConfig = (connString) => {
     );
   }
 
+  // Parse search params into options
+  const options = {};
+  let ssl = false;
+  url.searchParams.forEach((value, key) => {
+    options[key] = value;
+    if (key === "sslmode" && value === "require") {
+      ssl = { rejectUnauthorized: true };
+    }
+    if (key === "channel_binding" && value === "require") {
+      // pg supports channel_binding, but Knex doesn't need to set anything special
+    }
+  });
+
   return {
     client: "pg",
     connection: {
@@ -24,6 +37,8 @@ const createKnexConfig = (connString) => {
       user: url.username,
       password: url.password,
       database: url.pathname.slice(1),
+      ...options,
+      ...(ssl ? { ssl } : {}),
     },
   };
 };

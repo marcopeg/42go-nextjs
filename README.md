@@ -1,4 +1,31 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) project.
+
+## Requirements
+
+- Node 18+
+- Postgres Database
+
+## Setup Postgres
+
+### Local Postgres with Docker
+
+```bash
+make boot
+```
+
+### Get a Free NeonDB
+
+You can quickly [create a temporary Postgres database here](https://neon.new/):
+
+```bash
+npx neondb
+```
+
+Copy the connection string into `.env`:
+
+```bash
+PGSTRING=xxx
+```
 
 ## Getting Started
 
