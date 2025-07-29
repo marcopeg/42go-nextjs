@@ -9,5 +9,5 @@ import { getAppConfig } from "@/lib/config/app-config";
 export const getPageMeta = async (pageId: string) => {
   const config = await getAppConfig();
   const pageData = config?.pages?.[pageId];
-  return pageData?.meta || config?.meta || {};
+  return pageData?.meta || config?.public?.meta || {};
 };

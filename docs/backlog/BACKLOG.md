@@ -4,11 +4,11 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
+- [acb] Move `config.pages` to `config.public.pages`
+
 ## Upcoming Tasks
 
-- [acb] Move `config.pages` to `config.public.pages`
 - [acd] Move `config.docs` to `config.public.docs`
-- [ace] Move `config.meta` to `config.public.meta`
 - [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
 - [abx] Improve user's menu [🔗](./tasks/abx-improve-user-menu.md)
 - [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
@@ -30,11 +30,13 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [acg] Import features block
 - [ach] Create a Markdown block
 - [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
+- [acl] Simplify boot for new developers [🔗](./tasks/acl-simplify-boot.md)
 
 (LastID: aci)
 
 ## Completed Tasks
 
+- [ace] Move `config.meta` to `config.public.meta`
 - [acf] Add `config.match.url` to receive a regexp [🔗](./tasks/acf-config-match-url.md)
 - [aca] Render docs [🔗](./tasks/aca-render-docs.md)
 - [abv] Fix AppTitle's with config data source [🔗](./archive/abv-app-title-data.md) ✅ COMPLETE - Dynamic AppTitle with toolbar config, Lucide icons, proper fallbacks, and optimized bundle

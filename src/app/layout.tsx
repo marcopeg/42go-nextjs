@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const generateMetadata = async (): Promise<Metadata> => {
   const { config } = await getAppInfo();
-  return config?.meta || {};
+  return config?.public?.meta || {};
 };
 
 const RootLayout = async ({

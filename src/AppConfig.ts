@@ -22,13 +22,14 @@ export interface ToolbarConfig {
 export interface AppConfigItem {
   name: string;
   logo?: string | ComponentType<{ className?: string }>;
-  meta?: Partial<Metadata>;
+  // meta moved to public.meta
   theme?: {
     default?: ThemeValue;
     PublicLayout?: ComponentType<{ children: ReactNode }>;
   };
   public?: {
     toolbar?: ToolbarConfig;
+    meta?: Partial<Metadata>;
   };
   auth?: {
     providers: AuthProviderArray;
@@ -85,6 +86,13 @@ export const availableApps = {
         // icon: Zap,
         // href: "/", // this is the default value
       },
+      meta: {
+        title: "Default App - Chuck Norris Edition",
+        description:
+          "The default application that's tougher than a two-dollar steak",
+        keywords: ["nextjs", "default", "chuck-norris", "legendary"],
+        authors: [{ name: "Chuck Norris" }],
+      },
     },
     auth: {
       providers: [
@@ -108,13 +116,6 @@ export const availableApps = {
           },
         },
       ],
-    },
-    meta: {
-      title: "Default App - Chuck Norris Edition",
-      description:
-        "The default application that's tougher than a two-dollar steak",
-      keywords: ["nextjs", "default", "chuck-norris", "legendary"],
-      authors: [{ name: "Chuck Norris" }],
     },
     match: {
       url: ["^localhost:3000$"],
@@ -148,6 +149,13 @@ export const availableApps = {
         icon: CheckSquare,
         href: "/",
       },
+      meta: {
+        title: "App1 - Todo Master",
+        description:
+          "The ultimate todo application that gets things done faster than Chuck Norris kicks",
+        keywords: ["todos", "productivity", "app1", "tasks"],
+        authors: [{ name: "Chuck Norris", url: "https://chucknorris.com" }],
+      },
     },
     auth: {
       providers: [
@@ -163,13 +171,6 @@ export const availableApps = {
           },
         },
       ],
-    },
-    meta: {
-      title: "App1 - Todo Master",
-      description:
-        "The ultimate todo application that gets things done faster than Chuck Norris kicks",
-      keywords: ["todos", "productivity", "app1", "tasks"],
-      authors: [{ name: "Chuck Norris", url: "https://chucknorris.com" }],
     },
     pages: {
       HomePage,
@@ -197,6 +198,13 @@ export const availableApps = {
         title: "", // Empty title to test fallback to app name
         subtitle: "Write Operations",
       },
+      meta: {
+        title: "App2 - Write Operations",
+        description:
+          "Specialized app for write operations, as powerful as Chuck Norris's beard",
+        keywords: ["write", "operations", "app2", "api"],
+        authors: [{ name: "Chuck Norris Team" }],
+      },
     },
     auth: {
       providers: [
@@ -209,13 +217,6 @@ export const availableApps = {
           },
         },
       ],
-    },
-    meta: {
-      title: "App2 - Write Operations",
-      description:
-        "Specialized app for write operations, as powerful as Chuck Norris's beard",
-      keywords: ["write", "operations", "app2", "api"],
-      authors: [{ name: "Chuck Norris Team" }],
     },
     pages: {
       HomePage,
