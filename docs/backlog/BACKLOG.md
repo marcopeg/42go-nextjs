@@ -4,8 +4,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [acf] Add `config.match.url` to receive a regexp [🔗](./tasks/acf-config-match-url.md)
-
 ## Upcoming Tasks
 
 - [acb] Move `config.pages` to `config.public.pages`
@@ -31,11 +29,13 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [abn] Migrate to Prisma ORM
 - [acg] Import features block
 - [ach] Create a Markdown block
+- [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
 
-(LastID: ach)
+(LastID: aci)
 
 ## Completed Tasks
 
+- [acf] Add `config.match.url` to receive a regexp [🔗](./tasks/acf-config-match-url.md)
 - [aca] Render docs [🔗](./tasks/aca-render-docs.md)
 - [abv] Fix AppTitle's with config data source [🔗](./archive/abv-app-title-data.md) ✅ COMPLETE - Dynamic AppTitle with toolbar config, Lucide icons, proper fallbacks, and optimized bundle
 - [abr] Import Hero block [🔗](./archive/abr-import-hero-block.md)
