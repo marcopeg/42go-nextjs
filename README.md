@@ -5,12 +5,14 @@ This is a [Next.js](https://nextjs.org) project.
 - Node 18+
 - Postgres Database
 
-## Setup Postgres
+## Prepare PostgreSQL
 
 ### Local Postgres with Docker
 
+If you have [Docker](https://docker.com) you can start and initialize your local db with one single command:
+
 ```bash
-make boot
+make db
 ```
 
 ### Get a Free NeonDB
@@ -27,7 +29,13 @@ Copy the connection string into `.env`:
 PGSTRING=xxx
 ```
 
-## Getting Started
+Run the initialization script:
+
+```bash
+make db.init
+```
+
+## Start the Development Server
 
 First, run the development server:
 
@@ -43,7 +51,7 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+You can start editing the App's configuration by modifying `@/AppConfig.ts`.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

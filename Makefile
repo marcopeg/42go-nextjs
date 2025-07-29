@@ -134,3 +134,17 @@ migrate.status:
 
 seed:
 	npx knex seed:run
+
+db.start:
+	@echo "Starting PostgreSQL database..."
+	@docker-compose up -d db
+
+db.wait:
+	@sleep 10
+
+db.init:
+	@echo "Initializing database..."
+	@npx knex migrate:latest && npx knex seed:run
+
+db: db.start db.wait db.init
+	@echo "Database is ready!"
