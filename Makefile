@@ -146,5 +146,5 @@ db.init:
 	@echo "Initializing database..."
 	@npx knex migrate:latest && npx knex seed:run
 
-db: db.start db.wait db.init
+db: app.install db.start db.wait db.init
 	@echo "Database is ready!"
