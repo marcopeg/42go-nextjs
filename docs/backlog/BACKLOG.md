@@ -4,7 +4,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [acl] Simplify boot for new developers [🔗](./tasks/acl-simplify-boot.md)
+- [ach] Create a Markdown block [🔗](./tasks/ach-create-markdown-block.md)
 
 ## Upcoming Tasks
 
@@ -28,13 +28,13 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aao] Add social login: Apple
 - [abn] Migrate to Prisma ORM
 - [acg] Import features block
-- [ach] Create a Markdown block
 - [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
 
 (LastID: acm)
 
 ## Completed Tasks
 
+- [acl] Simplify boot for new developers [🔗](./tasks/acl-simplify-boot.md)
 - [acd] Move `config.docs` to `config.public.docs` [🔗](./tasks/acd-move-config-docs-to-config-public-docs.md)
 - [acb] Move `config.pages` to `config.public.pages`
 - [ace] Move `config.meta` to `config.public.meta`
