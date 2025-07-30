@@ -4,7 +4,11 @@ This is a [Next.js](https://nextjs.org) boilerplate that lets you **create and e
 
 ## Quick Start
 
-Here is the plan to a smooth quick start
+> ⚡️ You can run this project in **GitHub Codespaces** ⚡️
+
+---
+
+Here is the plan to a smooth quick start:
 
 1. Node 18+ is available on your machine
 2. You have the connection string to a running Postgres database
@@ -15,7 +19,10 @@ Here is the plan to a smooth quick start
 
 ### 1. Setup NodeJS
 
-Follow a tutorial for your architecture on [NodeJS](https://nodejs.org) website.
+Follow a tutorial for your architecture:
+
+- [Setup Node on Windows](https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows)
+- [Setup Node on Linux/Mac](https://github.com/nvm-sh/nvm)
 
 ### 2. Prepare PostgreSQL
 
@@ -109,8 +116,15 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-# Deploy on Vercel
+## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Relevant Tutorials
+
+- [Setup Node on Windows](https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows)
+- [Setup Node on Linux/Mac](https://github.com/nvm-sh/nvm)
+- [Setup Copilot on VSCode](https://code.visualstudio.com/docs/copilot/setup)
+- [Setup Docker with Colima on Mac](https://marcopeg.com/ditching-docker-desktop/)
