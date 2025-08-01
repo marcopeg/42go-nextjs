@@ -5,7 +5,7 @@
 # Features
 
 - [Multi-App Configuration](./multiple-apps/README.md)
-- [Composable Pages](./pages/README.md)
+- [Composable Pages](./composable-pages/README.md)
 - [Documentation Project](./docs/README.md)
 - [Login & Accounts](./login/README.md)
 

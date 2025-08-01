@@ -1,4 +1,4 @@
-import type { Page } from "@/components/Page";
+import type { Page } from "@/42go/components/pages";
 
 export const AboutPage: Page = {
   meta: {

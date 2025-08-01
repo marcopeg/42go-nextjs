@@ -1,4 +1,6 @@
-import type { Page } from "@/components/Page";
+import type { Page } from "@/42go/components/pages";
+
+const Foo = ({ name }: { name: string }) => <div>Hello, {name}!</div>;
 
 export const HomePage: Page = {
   items: [
@@ -18,6 +20,18 @@ export const HomePage: Page = {
           style: "secondary",
         },
       ],
+    },
+    {
+      type: "component",
+      component: Foo,
+      props: {
+        name: "42go",
+      },
+    },
+    {
+      type: "component",
+      component: () => "faa",
+      // props: {},
     },
     {
       type: "markdown",

@@ -1,7 +1,8 @@
 import type { Page, Block } from "./types";
-import HeroBlock from "./content/HeroBlock";
-import DemoBlock from "./content/DemoBlock";
-import MarkdownBlock from "./content/MarkdownBlock";
+import HeroBlock from "./blocks/HeroBlock";
+import DemoBlock from "./blocks/DemoBlock";
+import MarkdownBlock from "./blocks/MarkdownBlock";
+import ComponentBlock from "./blocks/ComponentBlock";
 
 interface PageProps {
   data?: Page | null;
@@ -20,6 +21,10 @@ function renderComponent(component: Block, index: number) {
       // Pass details as 'data' prop for uniformity
       return <MarkdownBlock key={index} data={component} />;
 
+    case "component":
+      // Use the default export from ComponentBlock
+      return <ComponentBlock key={index} data={component} />;
+
     default:
       return (
         <div
@@ -32,7 +37,7 @@ function renderComponent(component: Block, index: number) {
   }
 }
 
-export default function Page({ data, name }: PageProps) {
+export const ComposablePage = ({ data, name }: PageProps) => {
   // Handle null/undefined data
   if (!data) {
     // Show warning in development
@@ -74,4 +79,4 @@ export default function Page({ data, name }: PageProps) {
       </div>
     </div>
   );
-}
+};

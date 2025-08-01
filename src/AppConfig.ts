@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import type { Metadata } from "next";
 import type { ComponentType, ReactNode } from "react";
 import type { AuthProviderArray } from "@/lib/auth/providers/types";
-import type { Pages } from "@/components/Page";
+import type { Pages } from "@/42go/components/pages";
 import { HomePage } from "@/config/home-page";
 import { AboutPage } from "./config/about-page";
 import { PricingPage } from "./config/pricing-page";
@@ -106,7 +106,7 @@ export const availableApps = {
         pricing: PricingPage,
       },
       docs: {
-        source: "/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default",
+        source: "./contents/default/docs",
         cache: {
           duration: -1, // No expiration
         },

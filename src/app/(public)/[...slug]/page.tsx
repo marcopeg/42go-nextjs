@@ -1,8 +1,7 @@
 import { getAppInfo } from "@/lib/config/app-config";
-import { appPage } from "@/lib/config/app-config-pages";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import Page, { getPageMeta } from "@/components/Page";
+import Page, { getPageMeta } from "@/42go/components/pages";
 
 interface DynamicPageProps {
   params: Promise<{
@@ -31,4 +30,4 @@ const DynamicPage = async ({ params }: DynamicPageProps) => {
 };
 
 // The dynamic page is protected as a feature flag by its url slug
-export default appPage(DynamicPage, "url!");
+export default DynamicPage;
