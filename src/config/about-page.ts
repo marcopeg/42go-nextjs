@@ -19,8 +19,8 @@ export const AboutPage: Page = {
       ],
     },
     {
-      type: "text",
-      content:
+      type: "markdown",
+      source:
         "This is a dynamically generated about page from the CMS configuration. Chuck Norris doesn't need an about page - his reputation speaks for itself.",
     },
   ],

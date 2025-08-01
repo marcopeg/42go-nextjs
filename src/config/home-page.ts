@@ -20,18 +20,22 @@ export const HomePage: Page = {
       ],
     },
     {
-      type: "demo",
-      title: "Button Playground by Chuck Norris 🥋",
-      description:
-        "Testing all button variants and combinations - Chuck Norris style!",
+      type: "markdown",
+      source: "This is a **Markdown Block** rendered.",
     },
     {
-      type: "text",
-      content: "First text here",
+      type: "markdown",
+      path: "/Users/marcopeg/dv/marcopeg/42go-next/test/fixtures/markdown-block-01.md",
     },
     {
-      type: "text",
-      content: "Second text here",
+      type: "markdown",
+      path: "test/fixtures/markdown-block-01.md",
     },
+    // {
+    //   type: "demo",
+    //   title: "Button Playground by Chuck Norris 🥋",
+    //   description:
+    //     "Testing all button variants and combinations - Chuck Norris style!",
+    // },
   ],
 };

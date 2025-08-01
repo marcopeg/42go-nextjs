@@ -370,9 +370,9 @@ When prompted with `help {command}` or `h {command}`, output the command's descr
 
 # CLI Usage
 
-- run `npm run lint && npm run build` (from the `./` directory for Next.js specific tasks) and fix any linting or building errors at the end of each - only if you modified code
+- run `npm run qa` (from the `./` directory for Next.js specific tasks) and fix any linting or building errors at the end of each - only if you modified code
 - never run `npm dev`, it's already running in the background (managed by `Makefile` target `app.start`)
 
 ---
 
-_Last updated: 2025-06-21_
+_Last updated: 2025-08-01_

@@ -4,15 +4,12 @@ import React from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
-interface CustomCodeBlockProps {
+interface SourceCodeProps {
   language: string;
   children: string;
 }
 
-export default function CustomCodeBlock({
-  language,
-  children,
-}: CustomCodeBlockProps) {
+export function SourceCode({ language, children }: SourceCodeProps) {
   return (
     <div className="my-4 rounded-md overflow-hidden dark:border dark:border-neutral-600">
       <SyntaxHighlighter

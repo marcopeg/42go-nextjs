@@ -33,6 +33,9 @@ export interface AppConfigItem {
     pages?: Pages; // CMS pages configuration
     docs?: {
       source?: string; // Path to the documentation source
+      cache?: {
+        duration?: number; // Cache duration in ms (-1 for no cache, 0 for no expiration, >0 for specific duration)
+      };
     };
   };
   auth?: {
@@ -104,6 +107,9 @@ export const availableApps = {
       },
       docs: {
         source: "/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default",
+        cache: {
+          duration: -1, // No expiration
+        },
       },
     },
     auth: {

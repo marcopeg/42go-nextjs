@@ -4,8 +4,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [ach] Create a Markdown block [🔗](./tasks/ach-create-markdown-block.md)
-
 ## Upcoming Tasks
 
 - [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
@@ -34,6 +32,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [ach] Create a Markdown block [🔗](./tasks/ach-create-markdown-block.md)
 - [acl] Simplify boot for new developers [🔗](./tasks/acl-simplify-boot.md)
 - [acd] Move `config.docs` to `config.public.docs` [🔗](./tasks/acd-move-config-docs-to-config-public-docs.md)
 - [acb] Move `config.pages` to `config.public.pages`

@@ -1,7 +1,7 @@
 import type { Page, Block } from "./types";
-import TextBlock from "./content/TextBlock";
 import HeroBlock from "./content/HeroBlock";
 import DemoBlock from "./content/DemoBlock";
+import MarkdownBlock from "./content/MarkdownBlock";
 
 interface PageProps {
   data?: Page | null;
@@ -10,14 +10,15 @@ interface PageProps {
 
 function renderComponent(component: Block, index: number) {
   switch (component.type) {
-    case "text":
-      return <TextBlock key={index} data={component} />;
-
     case "hero":
       return <HeroBlock key={index} data={component} />;
 
     case "demo":
       return <DemoBlock key={index} data={component} />;
+
+    case "markdown":
+      // Pass details as 'data' prop for uniformity
+      return <MarkdownBlock key={index} data={component} />;
 
     default:
       return (

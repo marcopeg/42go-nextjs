@@ -1,6 +1,6 @@
 ---
 title: Getting Started
-description: Develop multiple projects from a single NextJS codebase
+excerpt: Develop multiple projects from a single NextJS codebase
 date: 2025-04-08
 author: Marco Pegoraro
 ---
@@ -14,6 +14,10 @@ This was my personal pain point when considering to buy or create a _NextJS_ boi
 After all, vibe coding is cool and let me move fast. But it generates code that is far from being modular and portable!
 
 Here are the main principles that lead the development of this boilerplate:
+
+- hej
+- hoho
+- huhu
 
 # Development Environment
 
