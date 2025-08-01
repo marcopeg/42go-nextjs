@@ -4,6 +4,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
+- [acq] Create Basic UI POC for User Dashboard [🔗](./tasks/acq-create-basic-ui-poc-user-dashboard.md)
+
 ## Upcoming Tasks
 
 - [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
@@ -28,10 +30,13 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [acg] Import features block
 - [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
 
-(LastID: acm)
+(LastID: acq)
 
 ## Completed Tasks
 
+- [acp] Create Custom Terms and Conditions [🔗](./tasks/acp-create-custom-terms-conditions.md)
+- [aco] Create Custom Landing Page for Calendar Config [🔗](./tasks/aco-create-custom-landing-page-calendar.md)
+- [acn] Create Calendar App Config [🔗](./tasks/acn-create-calendar-app-config.md) ✅ COMPLETE - Calendar app config, custom fuchsia theme, credentials auth only
 - [ach] Create a Markdown block [🔗](./tasks/ach-create-markdown-block.md)
 - [acl] Simplify boot for new developers [🔗](./tasks/acl-simplify-boot.md)
 - [acd] Move `config.docs` to `config.public.docs` [🔗](./tasks/acd-move-config-docs-to-config-public-docs.md)

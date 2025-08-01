@@ -6,7 +6,7 @@ import type { Pages } from "@/components/Page";
 import { HomePage } from "@/config/home-page";
 import { AboutPage } from "./config/about-page";
 import { PricingPage } from "./config/pricing-page";
-import { Zap, CheckSquare } from "lucide-react";
+import { Zap, CheckSquare, CalendarCheck } from "lucide-react";
 
 // import { App1PublicLayout } from "@/components/App1PublicLayout";
 
@@ -227,6 +227,74 @@ export const availableApps = {
             clientSecret: process.env.APP2_GOOGLE_CLIENT_SECRET!,
             prompt: "select_account",
           },
+        },
+      ],
+    },
+  },
+  calendar: {
+    name: "CalendarPro",
+    match: {
+      url: ["^calendar\\.localhost:3000$", "^calendar\\.mydomain.com$"],
+    },
+    featureFlags: {
+      pages: ["CalendarPage"],
+      apis: [""],
+    },
+    theme: {
+      default: "light",
+    },
+    public: {
+      meta: {
+        title: "Calendar Pro - Schedule Like a Pro",
+        description:
+          "Professional calendar application that organizes your time with the precision of Chuck Norris's timing",
+        keywords: [
+          "calendar",
+          "scheduling",
+          "productivity",
+          "time-management",
+          "events",
+        ],
+        authors: [{ name: "Calendar Pro Team" }],
+      },
+      toolbar: {
+        title: "Calendar Pro",
+        subtitle: "Schedule Like a Pro",
+        icon: CalendarCheck,
+        href: "/",
+      },
+      pages: {
+        HomePage: {
+          items: [
+            {
+              type: "hero",
+              title: "**Welcome to Calendar Pro**",
+              subtitle: "keep track of your time like Chuck Norris",
+              actions: [
+                {
+                  label: "Try it Now",
+                  href: "/login",
+                  style: "primary",
+                },
+              ],
+            },
+          ],
+        },
+        terms: {
+          items: [
+            {
+              type: "markdown",
+              path: "./contents/calendar/terms.md",
+            },
+          ],
+        },
+      },
+    },
+    auth: {
+      providers: [
+        {
+          type: "credentials" as const,
+          config: {},
         },
       ],
     },
