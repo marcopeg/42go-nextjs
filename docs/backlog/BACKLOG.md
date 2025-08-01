@@ -7,9 +7,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 ## Upcoming Tasks
 
 - [acz] Document Getting started with README's information
-- [acv] Document Pages/hero
-- [acu] Document Pages/markdown
-- [acs] Document Markdown component and types
 - [acr] Create an "clientAppPage" that applies feature flags to a client page
 - [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
 - [acm] docs: Parse relative url in articles
@@ -37,6 +34,9 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [acv] Document Pages/hero
+- [acu] Document Pages/markdown
+- [acs] Document Markdown component and types
 - [act] Implement & document custom component in Pages
 - [acq] Create Basic UI POC for User Dashboard [🔗](./archive/acq-create-basic-ui-poc-user-dashboard.md)
 - [acp] Create Custom Terms and Conditions [🔗](./archive/acp-create-custom-terms-conditions.md)
