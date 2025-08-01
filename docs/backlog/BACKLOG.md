@@ -4,8 +4,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [acq] Create Basic UI POC for User Dashboard [🔗](./tasks/acq-create-basic-ui-poc-user-dashboard.md)
-
 ## Upcoming Tasks
 
 - [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
@@ -34,16 +32,17 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
-- [acp] Create Custom Terms and Conditions [🔗](./tasks/acp-create-custom-terms-conditions.md)
-- [aco] Create Custom Landing Page for Calendar Config [🔗](./tasks/aco-create-custom-landing-page-calendar.md)
-- [acn] Create Calendar App Config [🔗](./tasks/acn-create-calendar-app-config.md) ✅ COMPLETE - Calendar app config, custom fuchsia theme, credentials auth only
-- [ach] Create a Markdown block [🔗](./tasks/ach-create-markdown-block.md)
-- [acl] Simplify boot for new developers [🔗](./tasks/acl-simplify-boot.md)
-- [acd] Move `config.docs` to `config.public.docs` [🔗](./tasks/acd-move-config-docs-to-config-public-docs.md)
+- [acq] Create Basic UI POC for User Dashboard [🔗](./archive/acq-create-basic-ui-poc-user-dashboard.md)
+- [acp] Create Custom Terms and Conditions [🔗](./archive/acp-create-custom-terms-conditions.md)
+- [aco] Create Custom Landing Page for Calendar Config [🔗](./archive/aco-create-custom-landing-page-calendar.md)
+- [acn] Create Calendar App Config [🔗](./archive/acn-create-calendar-app-config.md) ✅ COMPLETE - Calendar app config, custom fuchsia theme, credentials auth only
+- [ach] Create a Markdown block [🔗](./archive/ach-create-markdown-block.md)
+- [acl] Simplify boot for new developers [🔗](./archive/acl-simplify-boot.md)
+- [acd] Move `config.docs` to `config.public.docs` [🔗](./archive/acd-move-config-docs-to-config-public-docs.md)
 - [acb] Move `config.pages` to `config.public.pages`
 - [ace] Move `config.meta` to `config.public.meta`
-- [acf] Add `config.match.url` to receive a regexp [🔗](./tasks/acf-config-match-url.md)
-- [aca] Render docs [🔗](./tasks/aca-render-docs.md)
+- [acf] Add `config.match.url` to receive a regexp [🔗](./archive/acf-config-match-url.md)
+- [aca] Render docs [🔗](./archive/aca-render-docs.md)
 - [abv] Fix AppTitle's with config data source [🔗](./archive/abv-app-title-data.md) ✅ COMPLETE - Dynamic AppTitle with toolbar config, Lucide icons, proper fallbacks, and optimized bundle
 - [abr] Import Hero block [🔗](./archive/abr-import-hero-block.md)
 - [abu] Import dark-mode background color [🔗](./archive/abu-import-dark-mode-background.md)
