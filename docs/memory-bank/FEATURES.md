@@ -143,3 +143,89 @@
 **Feature Integration**: All features work together through the AppConfig system, enabling different feature sets per application while maintaining shared infrastructure.
 
 _For detailed implementation guides, see the `docs/` directory._
+
+### 1. Multi-App Configuration System
+
+**Pattern**: Request-based app resolution with server/client configuration bridge
+
+**Key Components**:
+
+- `src/AppConfig.ts` - App configurations and matching logic
+- `src/middleware.ts` - Request interception and app resolution via `X-App-Name` header
+- Server components read header, client uses script tag + React Context
+
+**Benefits**: Avoids config serialization, enables dynamic multi-tenant apps, server-side validation
+
+### 2. Feature Flag Architecture
+
+**Pattern**: App-specific page and API route control via configuration whitelists
+
+**Implementation**:
+
+- `featureFlags.pages` and `featureFlags.apis` arrays per app
+- Supports wildcard (`*`) or specific route lists
+- Server-side validation in middleware
+
+### 5. CMS Architecture
+
+**Pattern**: Type-safe, configuration-driven content management with dynamic routing
+
+**Core Components**:
+
+- **Page Component**: Renders CMS content blocks from configuration (`/src/components/Page/`)
+- **Content Blocks**: Extensible block system (TextBlock, HeroBlock, DemoBlock, etc.)
+- **Type System**: Centralized CMS types in single source of truth (`Page/types.ts`)
+- **Dynamic Routing**: Catch-all route `[...slug]/page.tsx` for config-driven pages
+
+**URL-to-Config Mapping**:
+
+- Simple path preservation: `/foo/bar-beer` → `"foo/bar-beer"` config key
+- Case-insensitive lookup for better UX
+- Consistent between routing and feature flag systems
+
+**Metadata Integration**:
+
+- Dynamic page titles and descriptions from CMS configuration
+- SEO-friendly metadata generation via Next.js `generateMetadata`
+- Per-page metadata override support
+
+### 7. Authentication Architecture
+
+**Pattern**: JWT-first with OAuth integration and database persistence
+
+**Core Strategy**:
+
+- **Session Management**: JWT tokens for stateless authentication (30-day max, 30-minute refresh)
+- **Multi-Provider Support**: Credentials (username/password) + OAuth (GitHub, Google) with extensible architecture
+- **Account Linking**: Email-based user matching across all authentication providers
+- **Database Design**: Separation of user profiles (`auth.users`) and provider accounts (`auth.accounts`)
+
+**Multi-App OAuth Configuration**:
+
+- **Per-App Provider Selection**: Each AppConfig defines which OAuth providers to enable (`auth.providers` array)
+- **Multi-Client Support**: Same OAuth provider with different client credentials per app
+- **Dynamic Provider Building**: Request-aware NextAuth configuration via `getProviders()` function
+- **Frontend Filtering**: Login UI shows only configured providers for current app
+- **Environment-Based Credentials**: Secure credential mapping (e.g., `APP1_GITHUB_CLIENT_ID`, `APP2_GOOGLE_CLIENT_ID`)
+
+**OAuth Integration**:
+
+- **Provider Setup**: GitHub OAuth 2.0 and Google OAuth 2.0/OpenID Connect with minimal scopes
+- **Account Linking Logic**: Automatic linking for existing users, new user creation for first-time OAuth
+- **Token Storage**: OAuth access/refresh tokens stored securely in database for API access
+- **Error Handling**: Comprehensive OAuth error management with user-friendly messages
+- **User Experience**: Account selection prompts, consistent UI patterns, loading state management
+
+**Multi-Provider Authentication**:
+
+- **GitHub OAuth**: Scopes (`read:user user:email`), profile mapping, account linking
+- **Google OAuth**: Scopes (`openid profile email`), OpenID Connect, account selection prompts
+- **Credentials**: bcrypt hashing, case-insensitive login, user enumeration protection
+- **Account Unification**: Email-based linking allows users to authenticate via any linked provider
+
+**Security Features**:
+
+- **Password Security**: bcrypt hashing for credential authentication
+- **Session Security**: HTTP-only cookies, automatic rotation, secure headers
+- **OAuth Security**: Server-side token management, CSRF protection via NextAuth.js
+- **Account Protection**: Prevents duplicate account linking, handles email conflicts gracefully

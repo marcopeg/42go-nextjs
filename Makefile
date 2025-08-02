@@ -44,7 +44,7 @@ app.start:
 	npm run dev
 
 app: app.install app.start
-
+qa: npm run qa
 
 ###
 ### Production Tasks

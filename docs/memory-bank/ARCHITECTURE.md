@@ -1,32 +1,88 @@
 # Architecture Documentation
 
-This document defines the core architectural decisions, patterns, and constraints for the 42Go Next project - a multi-tenant NextJS boilerplate supporting dynamic configuration, theming, and RBAC control.
+This document defines the core architectural decisions, patterns, and constraints for the 42Go Next project—a multi-tenant Next.js boilerplate supporting dynamic configuration, theming, and RBAC control.
 
-## Core Architectural Patterns
+## Tech Stack Decisions
 
-### 1. Multi-App Configuration System
+**Language**: TypeScript with Arrow Functions, NodeJS 20+
+**Framework**: Next.js 15+ with App Router, React 19+
+**UI**: Tailwind CSS, shadcn/ui (Radix UI primitives), next-themes
+**Database**: PostgreSQL-only with Knex.js migrations and app driver
+**Deployment**: Docker with Next.js standalone output, multi-stage builds with `Dockerfile` for containerization
 
-**Pattern**: Request-based app resolution with server/client configuration bridge
+## Project Structure
 
-**Key Components**:
+```text
+├── contents/                        # Markdown docs/content for all apps
+├── docs/                            # Implementation guides & documentation
+│   ├── memory-bank/                 # Memory bank documentation (architecture, features, dependencies)
+│   ├── articles/                    # Project articles
+│   └── backlog/                     # Task backlog and archive
+├── knex/                            # Database migrations and seeds
+├── public/                          # Static assets & theme CSS
+├── src/
+│   ├── AppConfig.ts                 # Multi-app configuration
+│   ├── middleware.ts                # Request interception & app resolution
+│   ├── 42go/                        # Boilerplate folder with reusable files & components
+│   │   ├── components/              # Boilerplate components & visual utilities
+│   │   │   ├── Markdown/            # Main markdown rendering tool (all rendering logic)
+│   │   │   ├── docs/                # Support components for DocumentationProject feature
+│   │   │   └── pages/               # Support components for DynamicPages feature
+│   │   └── lib/                     # Utility functions
+│   │       ├── docs/                # Support logic for DocumentationProject feature
+│   │       ├── cache/               # File caching utilities
+│   │       ├── fs/                  # Filesystem helpers
+│   │       └── md/                  # Markdown utilities
+│   ├── app/                         # Next.js app router structure
+        - docs/*                     # Default routes for DocumentationProjec
+│   ├── components/                  # Reusable components (folder-organized)
+│   │   └── ui/                      # shadcn/ui components
+│   └── lib/                         # Utility libraries
+│       ├── db/                      # Postgres utilities
+│       ├── auth/                    # Auth utilities
+│       └── config/                  # Multi-app utilities
+```
 
-- `src/AppConfig.ts` - App configurations and matching logic
-- `src/middleware.ts` - Request interception and app resolution via `X-App-Name` header
-- Server components read header, client uses script tag + React Context
+## Coding Best Practices
 
-**Benefits**: Avoids config serialization, enables dynamic multi-tenant apps, server-side validation
+### Arrow Functions
 
-### 2. Feature Flag Architecture
+Always favor **arrow functions** `() => {}` instead of the `function () {}` version.
 
-**Pattern**: App-specific page and API route control via configuration whitelists
+### Export Pattern
 
-**Implementation**:
+Whenever is possible, favor explicit exports:
 
-- `featureFlags.pages` and `featureFlags.apis` arrays per app
-- Supports wildcard (`*`) or specific route lists
-- Server-side validation in middleware
+```ts
+// ✅ Favor this pattern:
+export const Foo = () => {};
+```
 
-### 3. Component Architecture
+instead of defaults:
+
+```ts
+// ❌ Avoid this pattern whenever possible:
+const Foo = () => {};
+export default Foo;
+```
+
+### Import Pattern
+
+Aabsolute imports with `@/` alias.
+
+```ts
+// ✅ Favor this pattern:
+import FooBar from "@/components/FooBar";
+```
+
+instead of defaults:
+
+```ts
+// ❌ Avoid this pattern whenever possible:
+import FooBar from "../../../components/FooBar";
+```
+
+### React Component Architecture
 
 **Pattern**: Container/Presentation/Logic separation
 
@@ -34,11 +90,13 @@ This document defines the core architectural decisions, patterns, and constraint
 
 ```
 ComponentName/
-├── index.ts                 # Export
+├── index.ts                 # Export interface
 ├── ComponentName.tsx        # Container
 ├── ComponentNameUI.tsx      # Presentation
 └── useComponentName.ts      # Logic hook
 ```
+
+**Exports**: Export as `export { ComponentName as default} from './ComponentName';`
 
 **Guidelines**: Use full structure for complex components, simplified for presentational only.
 
@@ -46,41 +104,20 @@ Complex components may have multiple internal Presentation Components or Custom 
 
 This structure is intended to be recursive: A very complex component can be simplified into a structure of sub-components that follow the same pattern.
 
-### 4. Layout Architecture
+## Environment
 
-**Pattern**: Modular layout system with configuration-driven public layouts
+- documentation example in `.env.example`
+- validate at startup (still missing)
+- provide fallbacks values
 
-**Public Layout System**:
+## Database Architecture
 
-- **Modular Structure**: `/src/components/layouts/public/` with Header, Footer, and PublicLayout components
-- **App-Specific Layouts**: Each AppConfig can define custom `theme.PublicLayout` component
-- **Responsive Design**: Mobile-first approach with proper alignment and accessibility
-- **SSR-Ready**: Full server-side rendering support for SEO and performance
+**Design**: PostgreSQL-first, single database, schema-based isolation
+**Configuration**: `DATABASE_URL` (required), `PGPOOL` (optional pool tuning)
+**Access**: Singleton `getDB()` from `src/lib/db`, Knex migrations in `./knex/`
+**Usage details**: See [docs/DATABASE.md](../docs/DATABASE.md)
 
-### 5. CMS Architecture
-
-**Pattern**: Type-safe, configuration-driven content management with dynamic routing
-
-**Core Components**:
-
-- **Page Component**: Renders CMS content blocks from configuration (`/src/components/Page/`)
-- **Content Blocks**: Extensible block system (TextBlock, HeroBlock, DemoBlock, etc.)
-- **Type System**: Centralized CMS types in single source of truth (`Page/types.ts`)
-- **Dynamic Routing**: Catch-all route `[...slug]/page.tsx` for config-driven pages
-
-**URL-to-Config Mapping**:
-
-- Simple path preservation: `/foo/bar-beer` → `"foo/bar-beer"` config key
-- Case-insensitive lookup for better UX
-- Consistent between routing and feature flag systems
-
-**Metadata Integration**:
-
-- Dynamic page titles and descriptions from CMS configuration
-- SEO-friendly metadata generation via Next.js `generateMetadata`
-- Per-page metadata override support
-
-### 6. Feature Flag Enhancement
+## Feature Flags
 
 **Pattern**: URL-based dynamic feature flag calculation
 
@@ -91,86 +128,20 @@ This structure is intended to be recursive: A very complex component can be simp
 - **Dynamic Calculation**: `/foo/bar` → checks for `"foo/bar"` in `featureFlags.pages`
 - **Consistency**: Same URL→key logic as CMS page routing
 
-### 7. Authentication Architecture
+**Route Control**: App-specific page/API whitelists in configuration
+**Security**: Server-side validation, client protection, middleware enforcement
+**Usage patterns**: See [docs/FEATURE_FLAGS.md](../docs/FEATURE_FLAGS.md)
 
-**Pattern**: JWT-first with OAuth integration and database persistence
+## Layouts
 
-**Core Strategy**:
+**Pattern**: Modular layout system with configuration-driven public layouts
 
-- **Session Management**: JWT tokens for stateless authentication (30-day max, 30-minute refresh)
-- **Multi-Provider Support**: Credentials (username/password) + OAuth (GitHub, Google) with extensible architecture
-- **Account Linking**: Email-based user matching across all authentication providers
-- **Database Design**: Separation of user profiles (`auth.users`) and provider accounts (`auth.accounts`)
+**Public Layout System**:
 
-**Multi-App OAuth Configuration**:
-
-- **Per-App Provider Selection**: Each AppConfig defines which OAuth providers to enable (`auth.providers` array)
-- **Multi-Client Support**: Same OAuth provider with different client credentials per app
-- **Dynamic Provider Building**: Request-aware NextAuth configuration via `getProviders()` function
-- **Frontend Filtering**: Login UI shows only configured providers for current app
-- **Environment-Based Credentials**: Secure credential mapping (e.g., `APP1_GITHUB_CLIENT_ID`, `APP2_GOOGLE_CLIENT_ID`)
-
-**OAuth Integration**:
-
-- **Provider Setup**: GitHub OAuth 2.0 and Google OAuth 2.0/OpenID Connect with minimal scopes
-- **Account Linking Logic**: Automatic linking for existing users, new user creation for first-time OAuth
-- **Token Storage**: OAuth access/refresh tokens stored securely in database for API access
-- **Error Handling**: Comprehensive OAuth error management with user-friendly messages
-- **User Experience**: Account selection prompts, consistent UI patterns, loading state management
-
-**Multi-Provider Authentication**:
-
-- **GitHub OAuth**: Scopes (`read:user user:email`), profile mapping, account linking
-- **Google OAuth**: Scopes (`openid profile email`), OpenID Connect, account selection prompts
-- **Credentials**: bcrypt hashing, case-insensitive login, user enumeration protection
-- **Account Unification**: Email-based linking allows users to authenticate via any linked provider
-
-**Security Features**:
-
-- **Password Security**: bcrypt hashing for credential authentication
-- **Session Security**: HTTP-only cookies, automatic rotation, secure headers
-- **OAuth Security**: Server-side token management, CSRF protection via NextAuth.js
-- **Account Protection**: Prevents duplicate account linking, handles email conflicts gracefully
-
-## Tech Stack Decisions
-
-**Framework**: Next.js 14+ with App Router, TypeScript, React 18+
-**UI**: Tailwind CSS, shadcn/ui (Radix UI primitives), next-themes
-**Database**: PostgreSQL-only with Knex.js migrations
-**Deployment**: Docker with Next.js standalone output, multi-stage builds
-**Detailed dependencies**: See [DEPENDENCIES.md](./DEPENDENCIES.md)
-
-## Production Deployment Architecture
-
-**Pattern**: Docker-first with Next.js standalone output for optimized production containers
-
-**Core Strategy**:
-
-- **Multi-Stage Builds**: 4-stage Docker build for maximum optimization
-- **Standalone Output**: Next.js self-contained bundles reduce image size by 75%
-- **Health Monitoring**: Application and database health checks with automatic recovery
-- **Security Hardening**: Non-root user execution, minimal attack surface, resource limits
-
-**Production Infrastructure**:
-
-- **Container Orchestration**: Docker Compose with service dependencies and health checks
-- **Image Optimization**: Alpine Linux base, production-only dependencies, aggressive caching
-- **Deployment Pipeline**: Automated via Makefile with health verification and monitoring
-- **Performance**: ~300MB images (vs ~1.2GB standard), 45-60 second deployment pipeline
-
-**Production Features**:
-
-- **Health Endpoints**: `/api/health` for application monitoring
-- **Resource Management**: Memory limits (512M app, 256M db) and automatic restarts
-- **Security**: Non-root `nextjs:nodejs` user, network isolation, minimal base images
-- **Monitoring**: Health checks, log aggregation, failure detection and recovery
-
-## Database Architecture
-
-**Design**: PostgreSQL-first, single database, schema-based isolation
-**Configuration**: `PGSTRING` (required), `PGPOOL` (optional pool tuning)
-**Access**: Singleton `getDB()` from `src/lib/db`, Knex migrations in `./knex/`
-**Usage details**: See [docs/DATABASE.md](../docs/DATABASE.md)
+- **Modular Structure**: `/src/components/layouts/public/` with Header, Footer, and PublicLayout components
+- **App-Specific Layouts**: Each AppConfig can define custom `theme.PublicLayout` component
+- **Responsive Design**: Mobile-first approach with proper alignment and accessibility
+- **SSR-Ready**: Full server-side rendering support for SEO and performance
 
 ## Theme Management
 
@@ -179,37 +150,13 @@ This structure is intended to be recursive: A very complex component can be simp
 **Precedence**: User preference → App default → System preference
 **Implementation details**: See [docs/THEMING.md](../docs/THEMING.md)
 
-## Feature Flags & Security
+## Logging
 
-**Route Control**: App-specific page/API whitelists in configuration
-**Security**: Server-side validation, client protection, middleware enforcement
-**Usage patterns**: See [docs/FEATURE_FLAGS.md](../docs/FEATURE_FLAGS.md)
+[[missing details about logging examples and best practices]]
 
-## Development Standards
+## Monitoring
 
-**Code Style**: Arrow functions, absolute imports with `@/` alias, strict TypeScript
-**Component Pattern**: Always use folder organization for Open/Closed Principle
-**Error Handling**: Consistent API responses, error boundaries, input validation
-**Environment**: Document in `.env.example`, validate at startup, provide fallbacks
-
-## Project Structure
-
-```
-├── PROJECT/              # Memory bank documentation
-├── docs/                 # Detailed implementation guides
-├── knex/                 # Database migrations and seeds
-├── src/
-│   ├── AppConfig.ts      # Multi-app configuration
-│   ├── middleware.ts     # Request interception and app resolution
-│   ├── app/              # Next.js app router structure
-│   ├── components/       # Reusable components (folder-organized)
-│   │   └── ui/           # shadcn/ui components
-│   └── lib/              # Utility libraries
-│       ├── db/           # Postgres related utilites
-│       ├── auth/         # Auth related utilities
-│       └── config/       # Multi-app related utilities
-└── public/               # Static assets and theme CSS
-```
+[[missing details about healthcheck api and maybe OpenTelemetry?]]
 
 ## Architectural Constraints
 
@@ -221,12 +168,20 @@ This structure is intended to be recursive: A very complex component can be simp
 
 ## CLI Integration
 
-**Development**: `npm run lint && npm run build` (never `npm dev`, use `make app.start`)
-**Database**: `npm run migrate` for schema changes
-**Components**: `npx shadcn@latest add <component>` from project root
+This project is mainly a Node app with `npm` or `pnpm` or `yarn` scripts in `package.json`.
+
+A `Makefile` interface is available and strongly encouraged as default mean of executing scripts.
+
+- `make db`: starts and initializes a local Postgres instance using Docker
+- `make db.init`: initializes the Postgres instance using `DATABASE_URL` from `.env`
+- `make migrate`: applies any new migration
+- `make seed`: re-applies the seed script
+- `make app`: installs dependencies and start the development server
+- `make qa`: apply linting and builds the NextJS solution (useful as last step of a feature development)
+- `npx shadcn@latest add <component>` to add a new ShadCN component
 
 ---
 
 **Architectural Philosophy**: Favor explicit configuration over convention, server-side validation over client trust, type safety over runtime flexibility.
 
-_Last Updated: July 6, 2025_
+_Last Updated: August 2nd, 2025_
