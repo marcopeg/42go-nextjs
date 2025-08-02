@@ -4,11 +4,12 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
+- [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
+
 ## Upcoming Tasks
 
 - [acz] Document Getting started with README's information
 - [acr] Create an "clientAppPage" that applies feature flags to a client page
-- [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
 - [acm] docs: Parse relative url in articles
 - [abx] Improve user's menu [🔗](./tasks/abx-improve-user-menu.md)
 - [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)

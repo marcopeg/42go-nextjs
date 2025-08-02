@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { AppConfig } from "@/lib/config/app-config";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { AppTitle } from "./AppTitle";
+import { HeaderLinks } from "./HeaderLinks";
 
 export async function Header({ config }: { config: AppConfig }) {
   const toolbarHref = config?.public?.toolbar?.href || "/";
@@ -15,7 +16,10 @@ export async function Header({ config }: { config: AppConfig }) {
               <AppTitle config={config} />
             </Link>
           </div>
-          <UserMenu />
+          <div className="flex items-center gap-4">
+            <HeaderLinks links={config?.public?.toolbar?.links} />
+            <UserMenu />
+          </div>
         </div>
       </div>
     </header>
