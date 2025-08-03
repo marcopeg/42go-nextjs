@@ -8,6 +8,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Upcoming Tasks
 
+- [acx] Abstract configurable components [🔗](./tasks/acx-abstract-configurable-components.md)
 - [acz] Document Getting started with README's information
 - [acr] Create an "clientAppPage" that applies feature flags to a client page
 - [acm] docs: Parse relative url in articles
