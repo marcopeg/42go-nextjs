@@ -1,5 +1,5 @@
-import PublicLayout from "@/components/layouts/public";
-import { getAppConfig } from "@/lib/config/app-config";
+import PublicLayout from "@/42go/layouts/public";
+import { getAppConfig } from "@/42go/config/app-config";
 
 export default async function PublicRouteLayout({
   children,

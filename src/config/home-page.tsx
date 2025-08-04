@@ -1,4 +1,4 @@
-import type { Page } from "@/42go/components/pages";
+import type { Page } from "@/42go/components/DynamicPage";
 
 const Foo = ({ name }: { name: string }) => <div>Hello, {name}!</div>;
 
@@ -7,15 +7,15 @@ export const HomePage: Page = {
     {
       type: "hero",
       title: "Build Your SaaS **Faster**\nWith Our **AI-Friendly** Starter Kit",
-      subtitle: "Powered by **Chuck Norris** himself",
+      subtitle: "NextJS, Tailwind CSS, and 🤖",
       actions: [
         {
           label: "Buy",
-          href: "/login",
+          href: "/buy",
           style: "primary",
         },
         {
-          label: "Read the Docs",
+          label: "Quick Start",
           href: "/docs",
           style: "secondary",
         },

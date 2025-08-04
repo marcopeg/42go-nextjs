@@ -1,4 +1,4 @@
-import type { AppConfig } from "@/lib/config/app-config";
+import type { AppConfig } from "@/42go/config/app-config";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 

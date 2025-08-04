@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/42go/utils/utils";
 import type { WeirdCalendarProps, MonthInfo, DayInfo } from "./types";
 
 const MONTH_NAMES = [

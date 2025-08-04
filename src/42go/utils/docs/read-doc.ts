@@ -1,4 +1,4 @@
-import { getAppConfig } from "@/lib/config/app-config";
+import { getAppConfig } from "@/42go/config/app-config";
 
 import { read, type MDFile } from "../md";
 import { getSlug } from "./get-slug";

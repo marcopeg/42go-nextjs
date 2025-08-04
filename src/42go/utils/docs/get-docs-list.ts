@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getAppConfig } from "@/lib/config/app-config";
+import { getAppConfig } from "@/42go/config/app-config";
 import { scanDir } from "../md";
 import { getSlug } from "./get-slug";
 

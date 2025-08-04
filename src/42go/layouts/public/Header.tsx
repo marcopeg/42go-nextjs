@@ -1,6 +1,5 @@
 import Link from "next/link";
-import type { AppConfig } from "@/lib/config/app-config";
-import { UserMenu } from "@/components/auth/UserMenu";
+import type { AppConfig } from "@/42go/config/app-config";
 import { AppTitle } from "./AppTitle";
 import { HeaderLinks } from "./HeaderLinks";
 
@@ -16,10 +15,7 @@ export async function Header({ config }: { config: AppConfig }) {
               <AppTitle config={config} />
             </Link>
           </div>
-          <div className="flex items-center gap-4">
-            <HeaderLinks links={config?.public?.toolbar?.links} />
-            <UserMenu />
-          </div>
+          <HeaderLinks links={config?.public?.toolbar?.links} />
         </div>
       </div>
     </header>

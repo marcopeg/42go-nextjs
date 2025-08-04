@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/42go/utils/utils";
 import { useEffect, useRef, useState } from "react";
 
 interface ScrollAnimationProps {

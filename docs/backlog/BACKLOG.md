@@ -4,21 +4,19 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
+- [abq] Add App layout [🔗](./tasks/abq-app-layout.md)
 
 ## Upcoming Tasks
 
-- [acx] Abstract configurable components [🔗](./tasks/acx-abstract-configurable-components.md)
+- [acj] Next standalone has `.env` file [🔗](./tasks/acj-next-standalone.md)
 - [acz] Document Getting started with README's information
 - [acr] Create an "clientAppPage" that applies feature flags to a client page
-- [acm] docs: Parse relative url in articles
+- [acm] 🪲 docs: Parse relative url in articles [🔗](./tasks/acm-relative-url.md)
 - [abx] Improve user's menu [🔗](./tasks/abx-improve-user-menu.md)
 - [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
 - [abt] Import subscribe block [🔗](./tasks/abt-import-subscribe-block.md)
-- [abq] Add App layout [🔗](./tasks/abq-app-layout.md)
 - [aai] Add RBAC to the users system [🔗](./tasks/aai-add-rbac.md)
 - [aat] Support i18n
-- [aau] Implement public layout
 - [abd] Optimize Database Documentation [🔗](./tasks/abd-optimize-database-documentation.md)
 - [abe] Optimize Theming Documentation [🔗](./tasks/abe-optimize-theming-documentation.md)
 - [abf] Optimize Route Groups Documentation [🔗](./tasks/abf-optimize-route-groups-documentation.md)
@@ -31,11 +29,17 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [abn] Migrate to Prisma ORM
 - [acg] Import features block
 - [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
+- [adb] Refactor `42go/auth/providers` to expose single providers modules with types
 
-(LastID: acz)
+(LastID: adb)
 
 ## Completed Tasks
 
+- [aau] Implement public layout
+- [ada] Move `components/auth` to `42go` folder
+- [acy] Move `components/layouts` into `42go` folder
+- [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
+- [acx] Abstract configurable components [🔗](./tasks/acx-abstract-configurable-components.md)
 - [acv] Document Pages/hero
 - [acu] Document Pages/markdown
 - [acs] Document Markdown component and types

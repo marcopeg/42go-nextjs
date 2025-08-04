@@ -1,9 +1,12 @@
-import { getAppInfo } from "@/lib/config/app-config";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import Page, { getPageMeta } from "@/42go/components/pages";
+import PageUI, {
+  getPageId,
+  getPageMeta,
+  getPageData,
+} from "@/42go/components/DynamicPage";
 
-interface DynamicPageProps {
+interface PageProps {
   params: Promise<{
     slug: string[];
   }>;
@@ -11,23 +14,15 @@ interface DynamicPageProps {
 
 export async function generateMetadata({
   params,
-}: DynamicPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  return getPageMeta(slug.join("/").toLowerCase());
+}: PageProps): Promise<Metadata> {
+  const pageId = await getPageId(await params);
+  return getPageMeta(pageId);
 }
 
-const DynamicPage = async ({ params }: DynamicPageProps) => {
-  const { slug } = await params;
-  const { config } = await getAppInfo();
-
-  // Get the page id from the current url
-  const pageId = slug.join("/").toLowerCase();
-  const pageData = config?.public?.pages?.[pageId];
-
-  // Conditionally render the page's data
-  if (!pageData) notFound();
-  return <Page name={pageId} data={pageData} />;
+const Page = async ({ params }: PageProps) => {
+  const pageId = await getPageId(await params);
+  const pageData = await getPageData(pageId);
+  return pageData ? <PageUI name={pageId} data={pageData} /> : notFound();
 };
 
-// The dynamic page is protected as a feature flag by its url slug
-export default DynamicPage;
+export default Page;

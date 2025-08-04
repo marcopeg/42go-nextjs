@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { appPage } from "@/lib/config/app-config-pages";
+import { appPage } from "@/42go/config/app-config-pages";
 import { getDocMetadata, getDocData } from "@/42go/utils/docs";
 import DocPageComponent from "@/42go/components/docs/DocPage";
 

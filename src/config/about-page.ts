@@ -1,4 +1,4 @@
-import type { Page } from "@/42go/components/pages";
+import type { Page } from "@/42go/components/DynamicPage";
 
 export const AboutPage: Page = {
   meta: {

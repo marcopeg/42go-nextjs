@@ -1,30 +1,24 @@
 import type { NextRequest } from "next/server";
 import type { Metadata } from "next";
 import type { ComponentType, ReactNode } from "react";
-import type { AuthProviderArray } from "@/lib/auth/providers/types";
-import type { Pages } from "@/42go/components/pages";
+import type { AuthProviderArray } from "@/42go/auth/lib/providers/types";
+import type { Pages } from "@/42go/components/DynamicPage";
+import type { ContentBlock } from "@/42go/components/ContentBlock";
 import { HomePage } from "@/config/home-page";
 import { AboutPage } from "./config/about-page";
 import { PricingPage } from "./config/pricing-page";
 import { Zap, CheckSquare, CalendarCheck } from "lucide-react";
+import { UserMenu } from "@/42go/auth/components/UserMenu";
 
 // import { App1PublicLayout } from "@/components/App1PublicLayout";
 
 export type ThemeValue = "light" | "dark" | "system";
-
-export interface ToolbarLinkConfig {
-  label: string;
-  href: string;
-  style?: "primary" | "secondary" | "ghost";
-  sticky?: boolean; // Keep visible on small screens
-}
-
 export interface ToolbarConfig {
   title?: string;
   subtitle?: string;
   icon?: string | ComponentType<{ className?: string }>;
   href?: string;
-  links?: ToolbarLinkConfig[];
+  links?: ContentBlock[];
 }
 
 export interface AppConfigItem {
@@ -103,23 +97,18 @@ export const availableApps = {
         authors: [{ name: "Chuck Norris" }],
       },
       toolbar: {
-        title: "Chuck Norris Edition",
-        subtitle: "Tougher than a two-dollar steak",
+        title: "NextKit",
+        subtitle: "Build SaaS in minutes",
         icon: Zap,
         // href: "/", // this is the default value
         links: [
           {
-            label: "Get Started",
+            type: "link",
+            label: "Docs",
             href: "/docs",
-            style: "secondary",
-            sticky: false,
+            variant: "link",
           },
-          {
-            label: "Sign In",
-            href: "/login",
-            style: "primary",
-            sticky: true,
-          },
+          { type: "component", component: UserMenu },
         ],
       },
       pages: {
@@ -184,20 +173,20 @@ export const availableApps = {
         subtitle: "Get things done faster",
         icon: CheckSquare,
         href: "/",
-        links: [
-          {
-            label: "Join Us!",
-            href: "/login",
-            style: "primary",
-            sticky: true,
-          },
-          {
-            label: "Pricing",
-            href: "/pricing",
-            style: "ghost",
-            sticky: false,
-          },
-        ],
+        // links: [
+        //   {
+        //     label: "Join Us!",
+        //     href: "/login",
+        //     style: "primary",
+        //     sticky: true,
+        //   },
+        //   {
+        //     label: "Pricing",
+        //     href: "/pricing",
+        //     style: "ghost",
+        //     sticky: false,
+        //   },
+        // ],
       },
       pages: {
         HomePage,
@@ -247,20 +236,20 @@ export const availableApps = {
       toolbar: {
         title: "", // Empty title to test fallback to app name
         subtitle: "Write Operations",
-        links: [
-          {
-            label: "Dashboard",
-            href: "/dashboard",
-            style: "secondary",
-            sticky: true,
-          },
-          {
-            label: "About",
-            href: "/about",
-            style: "ghost",
-            sticky: false,
-          },
-        ],
+        // links: [
+        //   {
+        //     label: "Dashboard",
+        //     href: "/dashboard",
+        //     style: "secondary",
+        //     sticky: true,
+        //   },
+        //   {
+        //     label: "About",
+        //     href: "/about",
+        //     style: "ghost",
+        //     sticky: false,
+        //   },
+        // ],
       },
       pages: {
         HomePage,
@@ -312,20 +301,20 @@ export const availableApps = {
         subtitle: "Schedule Like a Pro",
         icon: CalendarCheck,
         href: "/",
-        links: [
-          {
-            label: "Try Now",
-            href: "/login",
-            style: "primary",
-            sticky: true,
-          },
-          {
-            label: "Features",
-            href: "/features",
-            style: "ghost",
-            sticky: false,
-          },
-        ],
+        // links: [
+        //   {
+        //     label: "Try Now",
+        //     href: "/login",
+        //     style: "primary",
+        //     sticky: true,
+        //   },
+        //   {
+        //     label: "Features",
+        //     href: "/features",
+        //     style: "ghost",
+        //     sticky: false,
+        //   },
+        // ],
       },
       pages: {
         HomePage: {

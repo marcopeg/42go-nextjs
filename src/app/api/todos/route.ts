@@ -1,5 +1,5 @@
-import { type AppConfig, appRoute } from "@/lib/config/app-config";
-import { getDB } from "@/lib/db";
+import { type AppConfig, appRoute } from "@/42go/config/app-config";
+import { getDB } from "@/42go/db";
 
 const getTodos = async (config: AppConfig) => {
   const db = getDB();

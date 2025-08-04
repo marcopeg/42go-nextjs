@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/lib/config/ThemeToggle";
+import { cn } from "@/42go/utils/utils";
+import { ThemeToggle } from "@/42go/config/ThemeToggle";
 
 // Simple placeholder components
 function DbTimeDisplay({ className }: { className?: string }) {

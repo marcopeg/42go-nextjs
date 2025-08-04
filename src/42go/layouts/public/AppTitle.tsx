@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import type { AppConfig } from "@/lib/config/app-config";
+import type { AppConfig } from "@/42go/config/app-config";
 
 type AppTitleProps = {
   config: AppConfig;

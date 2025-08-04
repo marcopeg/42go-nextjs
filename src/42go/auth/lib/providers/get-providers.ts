@@ -2,8 +2,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
-import { getDB } from "@/lib/db";
-import { getAppConfig } from "@/lib/config/app-config";
+import { getDB } from "@/42go/db";
+import { getAppConfig } from "@/42go/config/app-config";
 
 export const getProviders = async () => {
   const config = await getAppConfig();

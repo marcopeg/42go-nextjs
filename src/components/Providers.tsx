@@ -1,7 +1,7 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
-import { ThemeProvider } from "@/lib/config/ThemeProvider";
+import { ThemeProvider } from "@/42go/config/ThemeProvider";
 import { ThemeValue } from "@/AppConfig";
 
 interface ProvidersProps {

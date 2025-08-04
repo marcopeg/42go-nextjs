@@ -1,1 +1,1 @@
-export { PageNotFound as default } from "@/lib/config/PageNotFound";
+export { PageNotFound as default } from "@/42go/config/PageNotFound";

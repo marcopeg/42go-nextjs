@@ -1,10 +1,10 @@
-import { AuthError } from "@/components/auth/AuthError";
+import { AuthError } from "@/42go/auth/components/AuthError";
 import {
   CredentialsLogin,
   GitHubLogin,
   GoogleLogin,
-} from "@/components/auth/login-strategies";
-import { getAppConfig } from "@/lib/config/app-config";
+} from "@/42go/auth/components/login-strategies";
+import { getAppConfig } from "@/42go/config/app-config";
 
 export default async function LoginPage() {
   const appConfig = await getAppConfig();

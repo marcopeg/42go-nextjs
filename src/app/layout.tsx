@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { getAppInfo } from "@/lib/config/app-config";
-import { InjectAppName } from "@/lib/config/InjectAppName";
+import { getAppInfo } from "@/42go/config/app-config";
+import { InjectAppName } from "@/42go/config/InjectAppName";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 import "./tailwind.css";

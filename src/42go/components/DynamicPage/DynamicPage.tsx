@@ -1,43 +1,12 @@
-import type { Page, Block } from "./types";
-import HeroBlock from "./blocks/HeroBlock";
-import DemoBlock from "./blocks/DemoBlock";
-import MarkdownBlock from "./blocks/MarkdownBlock";
-import ComponentBlock from "./blocks/ComponentBlock";
+import type { Page } from "./types";
+import ContentBlock from "@/42go/components/ContentBlock";
 
 interface PageProps {
   data?: Page | null;
   name?: string;
 }
 
-function renderComponent(component: Block, index: number) {
-  switch (component.type) {
-    case "hero":
-      return <HeroBlock key={index} data={component} />;
-
-    case "demo":
-      return <DemoBlock key={index} data={component} />;
-
-    case "markdown":
-      // Pass details as 'data' prop for uniformity
-      return <MarkdownBlock key={index} data={component} />;
-
-    case "component":
-      // Use the default export from ComponentBlock
-      return <ComponentBlock key={index} data={component} />;
-
-    default:
-      return (
-        <div
-          key={index}
-          className="unknown-component p-4 border border-destructive rounded-md"
-        >
-          <p className="text-destructive">Unknown component type</p>
-        </div>
-      );
-  }
-}
-
-export const ComposablePage = ({ data, name }: PageProps) => {
+export const DynamicPage = ({ data, name }: PageProps) => {
   // Handle null/undefined data
   if (!data) {
     // Show warning in development
@@ -75,7 +44,7 @@ export const ComposablePage = ({ data, name }: PageProps) => {
       )}
 
       <div className="page-body space-y-6">
-        {items.map((component, index) => renderComponent(component, index))}
+        <ContentBlock items={items} />
       </div>
     </div>
   );

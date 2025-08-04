@@ -1,8 +1,8 @@
 import NextAuth from "next-auth";
 import type { NextRequest } from "next/server";
-import { setNextAuthUrl } from "@/lib/auth/utils/set-nextauth-url";
-import { getProviders } from "@/lib/auth/providers/get-providers";
-import { signIn, jwt, session } from "@/lib/auth/callbacks";
+import { setNextAuthUrl } from "@/42go/auth/lib/utils/set-nextauth-url";
+import { getProviders } from "@/42go/auth/lib/providers/get-providers";
+import { signIn, jwt, session } from "@/42go/auth/lib/callbacks";
 
 async function handler(
   req: NextRequest,

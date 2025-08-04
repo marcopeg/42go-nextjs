@@ -1,4 +1,4 @@
-import { getDB } from "@/lib/db";
+import { getDB } from "@/42go/db";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const signIn = async ({ user, account }: any) => {

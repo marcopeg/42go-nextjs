@@ -1,4 +1,4 @@
-import { getAppConfig } from "@/lib/config/app-config";
+import { getAppConfig } from "@/42go/config/app-config";
 
 export const getCacheDuration = async () => {
   const config = await getAppConfig();

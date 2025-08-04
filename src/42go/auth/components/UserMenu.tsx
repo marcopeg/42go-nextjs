@@ -25,7 +25,7 @@ export function UserMenu() {
   if (!session) {
     return (
       <div className="flex items-center gap-2">
-        <Button variant="ghost" asChild>
+        <Button variant="outline" asChild>
           <Link href="/login">Sign In</Link>
         </Button>
       </div>
