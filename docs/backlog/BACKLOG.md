@@ -4,10 +4,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [abq] Add App layout [🔗](./tasks/abq-app-layout.md)
-
 ## Upcoming Tasks
 
+- [adc] [Implement client/server BlockContent](./tasks/adc-block-content-client-server.md)
+- [ade] [DynamicPages with custom layout](./tasks/ade-dynamic-pages-layout.md)
 - [acj] Next standalone has `.env` file [🔗](./tasks/acj-next-standalone.md)
 - [acz] Document Getting started with README's information
 - [acr] Create an "clientAppPage" that applies feature flags to a client page
@@ -30,11 +30,13 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [acg] Import features block
 - [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
 - [adb] Refactor `42go/auth/providers` to expose single providers modules with types
+- [add] [Implement CLI scripts](./tasks/add-implement-cli-scripts.md)
 
-(LastID: adb)
+(LastID: ade)
 
 ## Completed Tasks
 
+- [abq] Add App layout [🔗](./tasks/abq-app-layout.md)
 - [aau] Implement public layout
 - [ada] Move `components/auth` to `42go` folder
 - [acy] Move `components/layouts` into `42go` folder
