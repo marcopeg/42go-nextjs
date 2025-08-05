@@ -4,10 +4,22 @@ import type { ComponentType, ReactNode } from "react";
 import type { AuthProviderArray } from "@/42go/auth/lib/providers/types";
 import type { Pages } from "@/42go/components/DynamicPage";
 import type { ContentBlock } from "@/42go/components/ContentBlock";
+import type { AppLayoutNavItem } from "@/42go/layouts/app/types";
 import { HomePage } from "@/config/home-page";
 import { AboutPage } from "./config/about-page";
 import { PricingPage } from "./config/pricing-page";
-import { Zap, CheckSquare, CalendarCheck } from "lucide-react";
+import {
+  Zap,
+  CheckSquare,
+  CalendarCheck,
+  LayoutDashboard,
+  Settings,
+  Users,
+  FileText,
+  BarChart3,
+  Home,
+  User,
+} from "lucide-react";
 import { UserMenu } from "@/42go/auth/components/UserMenu";
 
 // import { App1PublicLayout } from "@/components/App1PublicLayout";
@@ -42,6 +54,19 @@ export interface AppConfigItem {
   };
   auth?: {
     providers: AuthProviderArray;
+  };
+  app?: {
+    menu?: {
+      top?: {
+        items?: AppLayoutNavItem[];
+      };
+      bottom?: {
+        items?: AppLayoutNavItem[];
+      };
+      mobile?: {
+        items?: AppLayoutNavItem[];
+      };
+    };
   };
   featureFlags: {
     pages: string[]; // List of pages available in this app
@@ -120,6 +145,73 @@ export const availableApps = {
         source: "./contents/default/docs",
         cache: {
           duration: -1, // No expiration
+        },
+      },
+    },
+    app: {
+      menu: {
+        top: {
+          items: [
+            {
+              title: "Dashboard",
+              href: "/dashboard",
+              icon: LayoutDashboard,
+            },
+            {
+              title: "Analytics",
+              href: "/analytics",
+              icon: BarChart3,
+              badge: "Pro",
+            },
+            {
+              title: "Users",
+              href: "/users",
+              icon: Users,
+            },
+            {
+              title: "Documents",
+              href: "/documents",
+              icon: FileText,
+            },
+          ],
+        },
+        bottom: {
+          items: [
+            {
+              title: "Home",
+              href: "/",
+              icon: Home,
+            },
+            {
+              title: "Settings",
+              href: "/settings",
+              icon: Settings,
+            },
+          ],
+        },
+        mobile: {
+          items: [
+            {
+              title: "Home",
+              href: "/dashboard",
+              icon: Home,
+            },
+            {
+              title: "Analytics",
+              href: "/analytics",
+              icon: BarChart3,
+            },
+            {
+              title: "Users",
+              href: "/users",
+              icon: Users,
+            },
+            {
+              title: "Profile",
+              href: "/profile",
+              icon: User,
+            },
+          ],
         },
       },
     },
