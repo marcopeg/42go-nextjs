@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { AppLayout, type AppLayoutActionItem } from "@/42go/layouts/app";
+import { AppLayout, type TActionItem } from "@/42go/layouts/app";
 import { Button } from "@/components/ui/button";
 
 export default function SettingsPage() {
@@ -11,7 +11,7 @@ export default function SettingsPage() {
     return null;
   }
 
-  const headerActions: AppLayoutActionItem[] = [
+  const headerActions: TActionItem[] = [
     {
       type: "component",
       component: Button,
@@ -23,7 +23,7 @@ export default function SettingsPage() {
     <AppLayout
       title="Settings"
       subtitle="Configure your application settings and preferences"
-      headerActions={headerActions}
+      actions={headerActions}
       stickyHeader={true}
     >
       {/* Settings Content */}

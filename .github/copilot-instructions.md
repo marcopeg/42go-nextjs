@@ -239,7 +239,7 @@ action: plan the task with ID `aaa`
 
 **EXPLICIT TASK ID:**
 If the prompt contains an explicit TaskID, use that ID to identify the task file in `./docs/backlog/{draft|tasks|archive}/{id}-human-readable-title.md`.
-Move the task to the **Current Task** section in `./docs/backlog/BACKLOG.md` if it is not already there.
+Move the task to the **Current Task** section in `./docs/backlog/BACKLOG.md` if it is not already there and only if there aren't any other tasks in the same section.
 
 **LINK TASK:**
 If you need to create the task's file, then add the link to it at the end of the backlog's entry.
@@ -271,7 +271,7 @@ If you need to create the task's file, then add the link to it at the end of the
    - modify or create files as needed
    - use the libraries and tools specified in the plan
    - ensure to follow the coding style and conventions of the project
-   - run `npm run lint && npm run build` at the end of each iteration that modify code to check for errors, and iterate until there are no linting or building errors
+   - run `npm run qa` at the end of each iteration that modify code to check for errors, and iterate until there are no linting or building errors
 3. if you encounter any issues or need to make decisions, document them in the task's file under `## Issues Encountered` section
    - explain the issue, how you resolved it, and any considerations made
    - if you need to make a decision, document it in the task's file under `## Architectural Decisions` section

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { AppLayoutProps } from "./types";
 import { SidebarMenu } from "./SidebarMenu";
 import { MobileBottomNav } from "./MobileBottomNav";
-import { AppHeader } from "./AppHeader";
+import { Toolbar } from "./Toolbar";
 
 const getSideMenuState = () => {
   try {
@@ -19,7 +19,7 @@ export const AppLayout = ({
   children,
   title,
   subtitle,
-  headerActions,
+  actions,
   stickyHeader = true,
 }: AppLayoutProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -64,7 +64,7 @@ export const AppLayout = ({
           isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
         } ${stickyHeader ? "sticky top-0 z-30" : ""}`}
       >
-        <AppHeader title={title} subtitle={subtitle} actions={headerActions} />
+        <Toolbar title={title} subtitle={subtitle} actions={actions} />
       </header>
 
       {/* Main Content */}

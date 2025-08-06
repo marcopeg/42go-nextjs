@@ -9,7 +9,7 @@ export default function UsersPage() {
       stickyHeader
       title="Users"
       subtitle="Manage your user accounts and permissions"
-      headerActions={[
+      actions={[
         {
           type: "component",
           component: Button,

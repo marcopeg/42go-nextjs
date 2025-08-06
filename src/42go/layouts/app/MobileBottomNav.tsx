@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { cn } from "@/42go/utils/utils";
 import { useAppConfig } from "@/42go/config/use-app-config";
-import { AppLayoutNavItem } from "./types";
+import { TAppLayoutNavItem } from "./types";
 
 interface MobileBottomNavProps {
   onMoreClick: () => void;
@@ -16,7 +16,7 @@ export const MobileBottomNav = ({ onMoreClick }: MobileBottomNavProps) => {
   const config = useAppConfig();
 
   // Get mobile bottom items from app config or fallback to empty array
-  const mobileBottomItems: AppLayoutNavItem[] =
+  const mobileBottomItems: TAppLayoutNavItem[] =
     config?.app?.menu?.mobile?.items || [];
 
   // Calculate how many items to show in the bottom bar (max 4)

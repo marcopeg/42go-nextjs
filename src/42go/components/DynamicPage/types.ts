@@ -11,4 +11,4 @@ export interface Page {
 }
 
 // Pages collection
-export type Pages = Record<string, Page>;
+export type TDynamicPage = Record<string, Page>;

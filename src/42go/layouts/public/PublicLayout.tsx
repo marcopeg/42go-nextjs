@@ -1,5 +1,5 @@
 import type { AppConfig } from "@/42go/config/app-config";
-import { Header } from "./Header";
+import { Toolbar } from "./Toolbar";
 import { Footer } from "./Footer";
 
 interface PublicLayoutProps {
@@ -10,7 +10,7 @@ interface PublicLayoutProps {
 export function PublicLayout({ children, config }: PublicLayoutProps) {
   return (
     <div className="flex min-h-screen flex-col">
-      <Header config={config} />
+      <Toolbar config={config} />
       <main className="flex-1 w-full">{children}</main>
       <Footer />
     </div>

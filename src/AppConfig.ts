@@ -1,13 +1,19 @@
 import type { NextRequest } from "next/server";
 import type { Metadata } from "next";
 import type { ComponentType, ReactNode } from "react";
+// Types for composing the AppConfig
 import type { AuthProviderArray } from "@/42go/auth/lib/providers/types";
-import type { Pages } from "@/42go/components/DynamicPage";
-import type { ContentBlockItem } from "@/42go/components/ContentBlock/server";
-import type { AppLayoutNavItem } from "@/42go/layouts/app/types";
+import type { TDynamicPage } from "@/42go/components/DynamicPage";
+import type { TPublicLayoutToolbar } from "@/42go/layouts/public/types";
+import type { TAppLayoutNavItem } from "@/42go/layouts/app/types";
+// Into the default's public toolbar
+import { UserMenu } from "@/42go/auth/components/UserMenu";
+// Develompent utilities for the pages
 import { HomePage } from "@/config/home-page";
-import { AboutPage } from "./config/about-page";
-import { PricingPage } from "./config/pricing-page";
+import { AboutPage } from "@/config/about-page";
+import { PricingPage } from "@/config/pricing-page";
+
+// Icons user in links
 import {
   Zap,
   CheckSquare,
@@ -20,18 +26,9 @@ import {
   Home,
   User,
 } from "lucide-react";
-import { UserMenu } from "@/42go/auth/components/UserMenu";
 
-// import { App1PublicLayout } from "@/components/App1PublicLayout";
-
+// This should be moved into 42go somewhere
 export type ThemeValue = "light" | "dark" | "system";
-export interface ToolbarConfig {
-  title?: string;
-  subtitle?: string;
-  icon?: string | ComponentType<{ className?: string }>;
-  href?: string;
-  links?: ContentBlockItem[];
-}
 
 export interface AppConfigItem {
   name: string;
@@ -42,9 +39,9 @@ export interface AppConfigItem {
     PublicLayout?: ComponentType<{ children: ReactNode }>;
   };
   public?: {
-    toolbar?: ToolbarConfig;
+    toolbar?: TPublicLayoutToolbar;
     meta?: Partial<Metadata>;
-    pages?: Pages; // CMS pages configuration
+    pages?: TDynamicPage; // CMS pages configuration
     docs?: {
       source?: string; // Path to the documentation source
       cache?: {
@@ -58,13 +55,13 @@ export interface AppConfigItem {
   app?: {
     menu?: {
       top?: {
-        items?: AppLayoutNavItem[];
+        items?: TAppLayoutNavItem[];
       };
       bottom?: {
-        items?: AppLayoutNavItem[];
+        items?: TAppLayoutNavItem[];
       };
       mobile?: {
-        items?: AppLayoutNavItem[];
+        items?: TAppLayoutNavItem[];
       };
     };
   };
@@ -126,7 +123,7 @@ export const availableApps = {
         subtitle: "Build SaaS in minutes",
         icon: Zap,
         // href: "/", // this is the default value
-        links: [
+        actions: [
           {
             type: "link",
             label: "Docs",
@@ -265,7 +262,7 @@ export const availableApps = {
         subtitle: "Get things done faster",
         icon: CheckSquare,
         href: "/",
-        // links: [
+        // actions: [
         //   {
         //     label: "Join Us!",
         //     href: "/login",
@@ -328,7 +325,7 @@ export const availableApps = {
       toolbar: {
         title: "", // Empty title to test fallback to app name
         subtitle: "Write Operations",
-        // links: [
+        // actions: [
         //   {
         //     label: "Dashboard",
         //     href: "/dashboard",
@@ -393,7 +390,7 @@ export const availableApps = {
         subtitle: "Schedule Like a Pro",
         icon: CalendarCheck,
         href: "/",
-        // links: [
+        // actions: [
         //   {
         //     label: "Try Now",
         //     href: "/login",

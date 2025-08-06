@@ -1,9 +1,11 @@
 import { LucideIcon } from "lucide-react";
-import type { ContentBlockItem } from "@/42go/components/ContentBlock/client";
+import { type TLinkBlock } from "@/42go/components/ContentBlock/blocks/LinkBlock";
+import { type TComponentBlock } from "@/42go/components/ContentBlock/blocks/ComponentBlock";
 
-export type AppLayoutActionItem = ContentBlockItem;
+// AppLayout-specific toolbar action type: only link and component blocks
+export type TActionItem = TLinkBlock | TComponentBlock;
 
-export interface AppLayoutNavItem {
+export interface TAppLayoutNavItem {
   id?: string;
   title: string;
   href: string;
@@ -12,9 +14,9 @@ export interface AppLayoutNavItem {
 }
 
 export interface AppLayoutConfig {
-  topMenuItems: AppLayoutNavItem[];
-  bottomMenuItems: AppLayoutNavItem[];
-  mobileBottomItems: AppLayoutNavItem[]; // max 4 items
+  topMenuItems: TAppLayoutNavItem[];
+  bottomMenuItems: TAppLayoutNavItem[];
+  mobileBottomItems: TAppLayoutNavItem[]; // max 4 items
   mobileMenuWidth?: string;
 }
 
@@ -28,6 +30,6 @@ export interface AppLayoutProps {
   children: React.ReactNode;
   title: string;
   subtitle?: string;
-  headerActions?: AppLayoutActionItem[];
+  actions?: TActionItem[];
   stickyHeader?: boolean;
 }

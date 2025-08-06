@@ -1,22 +1,21 @@
 "use client";
 
-import { ContentBlock } from "@/42go/components/ContentBlock/client";
+import { ToolbarActions } from "./ToolbarActions";
+import { type TActionItem } from "./types";
 
-import { type AppLayoutActionItem } from "./types";
-
-interface AppHeaderProps {
+interface ToolbarProps {
   title: string;
   subtitle?: string;
-  actions?: AppLayoutActionItem[];
+  actions?: TActionItem[];
   className?: string;
 }
 
-export const AppHeader = ({
+export const Toolbar = ({
   title,
   subtitle,
   actions,
   className,
-}: AppHeaderProps) => {
+}: ToolbarProps) => {
   return (
     <div
       className={`flex items-center justify-between px-6 h-16 py-4 ${
@@ -33,10 +32,8 @@ export const AppHeader = ({
         )}
       </div>
 
-      {/* Header Actions on the right */}
-      <div className="flex items-center gap-4">
-        {actions && <ContentBlock items={actions} />}
-      </div>
+      {/* Toolbar Actions on the right */}
+      <ToolbarActions actions={actions} />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { AppLayout, type AppLayoutActionItem } from "@/42go/layouts/app";
+import { AppLayout, type TActionItem } from "@/42go/layouts/app";
 import { Button } from "@/components/ui/button";
 
 export default function AnalyticsPage() {
@@ -11,7 +11,7 @@ export default function AnalyticsPage() {
     return null;
   }
 
-  const headerActions: AppLayoutActionItem[] = [
+  const headerActions: TActionItem[] = [
     {
       type: "component",
       component: Button,
@@ -23,7 +23,7 @@ export default function AnalyticsPage() {
     <AppLayout
       title="Analytics"
       subtitle="Track your performance metrics and insights"
-      headerActions={headerActions}
+      actions={headerActions}
       stickyHeader={true}
     >
       {/* Analytics Content */}

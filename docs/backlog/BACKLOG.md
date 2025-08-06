@@ -2,15 +2,13 @@
 
 A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
 
-(LastID: adf)
+(LastID: adk)
 
 ## Current Task
 
-[n/a]
+- [adf] [Custom Actions Type - SUPERSEDED](./tasks/adf-custom-actions-type.md) ⚠️ Split into adg-adk
 
 ## Upcoming Tasks
-
-[n/a]
 
 ## Drafts
 
@@ -41,10 +39,13 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [] `config.match.url` add also `config.match.fn = async (request): bool` that let match programmatically
 - [] if `config.auth` is not defined, the `/login` should return a 404
 - [] `config.public.docs` if present should be enough to enable the documents even without explicit feature flag. this config should be a feature flag in itself.
-- [adf] custom `actions` type for `PublicLayout.Header` and `AppLayout.Header`
 
 ## Completed Tasks
 
+- [adi] [Create PublicLayout TActionItem Type](./archive/adi-create-publiclayout-tactionitem-type.md) 🔗
+- [adj] [Create AppLayout TActionItem Type](./archive/adj-create-applayout-tactionitem-type.md) 🔗
+- [adh] [Rename HeaderLinks to ToolbarActions](./archive/adh-rename-headerlinks-toolbaractions.md) 🔗
+- [adg] [Rename Toolbar API for Consistency](./archive/adg-rename-toolbar-api-consistency.md) 🔗 ✅ COMPLETE - All toolbar and header actions are now consistent. No mercy for legacy props.
 - [adc] [Implement client/server BlockContent](./archive/adc-block-content-client-server.md)
 - [abq] Add App layout [🔗](./archive/abq-app-layout.md)
 - [aau] Implement public layout

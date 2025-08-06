@@ -1,9 +1,9 @@
 import Link from "next/link";
 import type { AppConfig } from "@/42go/config/app-config";
 import { AppTitle } from "./AppTitle";
-import { HeaderLinks } from "./HeaderLinks";
+import { ToolbarActions } from "./ToolbarActions";
 
-export async function Header({ config }: { config: AppConfig }) {
+export async function Toolbar({ config }: { config: AppConfig }) {
   const toolbarHref = config?.public?.toolbar?.href || "/";
 
   return (
@@ -15,7 +15,7 @@ export async function Header({ config }: { config: AppConfig }) {
               <AppTitle config={config} />
             </Link>
           </div>
-          <HeaderLinks links={config?.public?.toolbar?.links} />
+          <ToolbarActions actions={config?.public?.toolbar?.actions} />
         </div>
       </div>
     </header>

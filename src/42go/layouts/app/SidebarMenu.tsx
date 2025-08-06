@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/42go/utils/utils";
 import { useSession } from "next-auth/react";
 import { useAppConfig } from "@/42go/config/use-app-config";
-import { SidebarMenuProps, AppLayoutNavItem } from "./types";
+import { SidebarMenuProps, TAppLayoutNavItem } from "./types";
 import { AppTitle } from "./AppTitle";
 
 export const SidebarMenu = ({
@@ -26,7 +26,7 @@ export const SidebarMenu = ({
   const bottomMenuItems = config?.app?.menu?.bottom?.items || [];
 
   // Function to render menu items
-  const renderMenuItems = (items: AppLayoutNavItem[]) => {
+  const renderMenuItems = (items: TAppLayoutNavItem[]) => {
     return items.map((item) => {
       const isActive = pathname === item.href;
       const itemKey = item.id || `${item.href}-${item.title}`;
