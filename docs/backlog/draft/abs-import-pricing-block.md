@@ -6,6 +6,31 @@ This feature was produced in a legacy project and this story has that source cod
 
 NOTE: add this block to the server available blocks
 
+## Goals
+
+- [ ] Create PricingBlock component following ContentBlock pattern
+- [ ] Implement responsive pricing table with 3-tier layout (but it's a dynamic array, could be 1, 2, 3 - let's say min 1, max 3)
+- [ ] Add feature icons (Check, X, Clock) from Lucide React
+- [ ] Support highlighted/recommended tier with visual emphasis
+- [ ] Use existing ScrollAnimation component for animations
+- [ ] Add markdown support for tier descriptions using Markdown component
+- [ ] Integrate with existing UI components (Button, Card)
+- [ ] Add PricingBlock to server ContentBlock exports
+
+## Acceptance Criteria
+
+- [ ] PricingBlock component created in `/src/42go/components/ContentBlock/blocks/PricingBlock.tsx`
+- [ ] Component follows existing ContentBlock interface pattern with TPricingBlock type
+- [ ] Responsive design works on mobile, tablet, and desktop
+- [ ] Feature status icons render correctly (included/excluded/coming-soon)
+- [ ] Highlighted tier shows visual emphasis with scale and shadow
+- [ ] Badge support for "Most Popular" or similar labels
+- [ ] CTA buttons work with proper routing
+- [ ] Markdown rendering for tier names and descriptions
+- [ ] ScrollAnimation integration for smooth reveal effects
+- [ ] Component added to server ContentBlock blocksMap
+- [ ] Proper TypeScript types exported
+
 ## Legacy Code for inspiration
 
 **pricing-wall.tsx**
@@ -423,19 +448,82 @@ export function UIAnimation({
 }
 ````
 
-## Implementation Guidelines
+## Development Plan
 
-Take into account the following facts:
+### Current Analysis
 
-- `@/42go/components/Markdown` should be used to render markdown
-- this is implemented as _ContentBlock_ so there is no need to access the app's config but all the properties are explicitly passed down as follow
+The ContentBlock system has both server and client implementations:
 
-```json
-{
-    "type": "pricing",
-    "tiers": [{
-        "name": "basic",
-        ...
-    }]
-}
-```
+- Server ContentBlock supports: HeroBlock, DemoBlock, MarkdownBlock, ComponentBlock, LinkBlock
+- Client ContentBlock supports: ComponentBlock, LinkBlock
+
+PricingBlock should be added to the **server** ContentBlock since it needs full markdown rendering and complex layout that benefits from SSR.
+
+### Implementation Strategy
+
+1. **Create PricingBlock Component**
+
+   - Follow existing ContentBlock pattern from HeroBlock
+   - Use ScrollAnimation for progressive reveal
+   - Implement responsive CSS Grid layout (1 col mobile, 3 cols desktop)
+   - Support feature status icons from Lucide React
+
+2. **Data Structure Design**
+
+   ```typescript
+   interface TPricingBlock {
+     type: "pricing";
+     title?: string;
+     subtitle?: string;
+     tiers: Array<{
+       name: string;
+       price: string;
+       period: string;
+       description: string;
+       features: Array<{
+         text: string;
+         status: "included" | "excluded" | "coming-soon";
+       }>;
+       cta: {
+         label: string;
+         href: string;
+       };
+       highlighted?: boolean;
+       badge?: string;
+     }>;
+   }
+   ```
+
+3. **UI Components Integration**
+   - Use existing Button component for CTAs
+   - Leverage ScrollAnimation for staggered reveals
+   - Use Markdown component for text rendering
+   - Apply existing Card-like styling with Tailwind classes
+
+### Files to Create/Modify
+
+**Create:**
+
+- `/src/42go/components/ContentBlock/blocks/PricingBlock.tsx` - Main component
+
+**Modify:**
+
+- `/src/42go/components/ContentBlock/server.tsx` - Add PricingBlock to blocksMap
+- `/src/42go/components/ContentBlock/server.tsx` - Add TPricingBlock to ContentBlockItem type
+
+### Architecture Decisions
+
+1. **Server-Side Rendering**: PricingBlock will be server-only for optimal SEO and performance
+2. **Markdown Integration**: Use existing Markdown component for text formatting with **bold** accent support
+3. **Animation Strategy**: Progressive reveal with staggered delays for each tier
+4. **Responsive Design**: Mobile-first approach with CSS Grid
+5. **Icon Strategy**: Use Lucide React icons for feature status indicators
+6. **Typography**: Follow existing patterns from HeroBlock for consistency
+
+### Card Design Pattern
+
+Instead of using a separate Card component, follow the pattern used in other blocks with direct Tailwind classes for optimal SSR performance and consistency.
+
+## Next Steps
+
+Execute task (k3) to implement the PricingBlock component and integrate it into the ContentBlock system.
