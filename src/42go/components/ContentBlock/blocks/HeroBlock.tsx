@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollAnimation } from "@/components/ui/scroll-animation";
 import type { Components } from "react-markdown";
 
-export interface HeroBlock {
+export interface THeroBlock {
   type: "hero";
   title: string;
   subtitle?: string;
@@ -14,10 +14,6 @@ export interface HeroBlock {
     href: string;
     style: "primary" | "secondary";
   }>;
-}
-
-interface HeroBlockProps {
-  data: HeroBlock;
 }
 
 // Custom markdown components for accent styling
@@ -30,7 +26,7 @@ const markdownComponentsH2: Components = {
   p: ({ children }) => <span>{children}</span>,
 };
 
-export default function HeroBlock({ data }: HeroBlockProps) {
+export function HeroBlock({ data }: { data: THeroBlock }) {
   const { title, subtitle, backgroundImage, actions } = data;
 
   return (

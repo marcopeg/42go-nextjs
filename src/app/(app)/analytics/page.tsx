@@ -1,8 +1,8 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { AppLayout, type AppLayoutActionItem } from "@/42go/layouts/app";
 import { Button } from "@/components/ui/button";
-import { AppLayout } from "@/42go/layouts/app";
 
 export default function AnalyticsPage() {
   const { status } = useSession();
@@ -11,7 +11,13 @@ export default function AnalyticsPage() {
     return null;
   }
 
-  const headerActions = <Button size="sm">Export Data</Button>;
+  const headerActions: AppLayoutActionItem[] = [
+    {
+      type: "component",
+      component: Button,
+      props: { size: "sm", children: "Export Data", variant: "outline" },
+    },
+  ];
 
   return (
     <AppLayout

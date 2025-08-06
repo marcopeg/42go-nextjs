@@ -1,6 +1,7 @@
-import ContentBlock, {
-  type ContentBlock as ContentBlockItem,
-} from "@/42go/components/ContentBlock";
+import {
+  ContentBlock,
+  type ContentBlockItem,
+} from "@/42go/components/ContentBlock/server";
 
 interface HeaderLinksProps {
   links?: ContentBlockItem[];

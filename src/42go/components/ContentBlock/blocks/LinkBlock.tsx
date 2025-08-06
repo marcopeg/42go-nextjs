@@ -12,19 +12,17 @@ type BlockButtonProps = Omit<
   "children" | "type"
 >;
 
-type LinkBlockProps = {
-  data: Omit<LinkBlock, "type">;
-};
-
-export interface LinkBlock extends BlockButtonProps {
+export interface TLinkBlock extends BlockButtonProps {
   type: "link";
   label: string;
   href: string;
 }
 
-export default function LinkBlock({
+export function LinkBlock({
   data: { label, href, ...buttonProps },
-}: LinkBlockProps) {
+}: {
+  data: Omit<TLinkBlock, "type">;
+}) {
   return (
     <Button asChild {...buttonProps}>
       <Link href={href}>{label}</Link>

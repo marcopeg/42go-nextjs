@@ -1,9 +1,9 @@
 // Specialized Block Component Types
-import type { ContentBlock } from "@/42go/components/ContentBlock";
+import type { ContentBlockItem } from "@/42go/components/ContentBlock/server";
 
 // Page configuration
 export interface Page {
-  items: ContentBlock[];
+  items: ContentBlockItem[];
   meta?: {
     title?: string;
     description?: string;

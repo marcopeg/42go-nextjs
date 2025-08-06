@@ -1,8 +1,7 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { AppLayout } from "@/42go/layouts/app";
+import { useSession } from "next-auth/react";
+import { AppLayout, type AppLayoutActionItem } from "@/42go/layouts/app";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -11,15 +10,16 @@ export default function DashboardPage() {
     return null;
   }
 
-  const headerActions = (
-    <Button
-      onClick={() => signOut({ callbackUrl: "/" })}
-      variant="outline"
-      size="sm"
-    >
-      Sign Out
-    </Button>
-  );
+  // Use ContentBlock configuration for header actions
+  const headerActions: AppLayoutActionItem[] = [
+    {
+      type: "link",
+      label: "Sign Out",
+      href: "/api/auth/signout",
+      variant: "outline",
+      size: "sm",
+    },
+  ];
 
   return (
     <AppLayout

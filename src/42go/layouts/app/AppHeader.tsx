@@ -1,11 +1,13 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ContentBlock } from "@/42go/components/ContentBlock/client";
+
+import { type AppLayoutActionItem } from "./types";
 
 interface AppHeaderProps {
   title: string;
   subtitle?: string;
-  actions?: ReactNode;
+  actions?: AppLayoutActionItem[];
   className?: string;
 }
 
@@ -32,7 +34,9 @@ export const AppHeader = ({
       </div>
 
       {/* Header Actions on the right */}
-      <div className="flex items-center gap-4">{actions}</div>
+      <div className="flex items-center gap-4">
+        {actions && <ContentBlock items={actions} />}
+      </div>
     </div>
   );
 };

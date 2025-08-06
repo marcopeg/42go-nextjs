@@ -1,15 +1,11 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface ComponentBlock<TProps = any> {
+export interface TComponentBlock<TProps = any> {
   type: "component";
   component: React.ComponentType<TProps>;
   props?: TProps;
 }
 
-interface ComponentBlockProps {
-  data: ComponentBlock;
-}
-
-export const ComponentBlock = ({ data }: ComponentBlockProps) => {
+export const ComponentBlock = ({ data }: { data: TComponentBlock }) => {
   const { component: Component, props = {} } = data;
   return <Component {...props} />;
 };

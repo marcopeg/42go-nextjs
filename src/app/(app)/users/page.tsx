@@ -1,24 +1,21 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
 import { AppLayout } from "@/42go/layouts/app";
+import { Button } from "@/components/ui/button";
 
 export default function UsersPage() {
-  const { status } = useSession();
-
-  if (status === "loading") {
-    return null;
-  }
-
-  const headerActions = <Button size="sm">Add New User</Button>;
-
   return (
     <AppLayout
+      stickyHeader
       title="Users"
       subtitle="Manage your user accounts and permissions"
-      headerActions={headerActions}
-      stickyHeader={true}
+      headerActions={[
+        {
+          type: "component",
+          component: Button,
+          props: { size: "sm", children: "Add New User" },
+        },
+      ]}
     >
       {/* Users Content */}
       <div className="rounded-lg border bg-card">

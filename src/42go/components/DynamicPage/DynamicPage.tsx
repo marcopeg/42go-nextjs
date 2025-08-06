@@ -1,5 +1,5 @@
 import type { Page } from "./types";
-import ContentBlock from "@/42go/components/ContentBlock";
+import { ContentBlock } from "@/42go/components/ContentBlock/server";
 
 interface PageProps {
   data?: Page | null;

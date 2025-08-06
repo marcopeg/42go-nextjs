@@ -6,20 +6,16 @@ import Markdown from "@/42go/components/Markdown";
 // Chuck Norris style: roundhouse cache
 const markdownCache: Record<string, string> = {};
 
-export type MarkdownBlock =
+export type TMarkdownBlock =
   | { type: "markdown"; source: string; path?: never }
   | { type: "markdown"; path: string; source?: never };
-
-export interface MarkdownBlockProps {
-  data: MarkdownBlock;
-}
 
 /**
  * Renders Markdown from either an inline source or a file path.
  * Server component only.
  */
 
-export default async function MarkdownBlock({ data }: MarkdownBlockProps) {
+export async function MarkdownBlock({ data }: { data: TMarkdownBlock }) {
   let content = "";
 
   if (data.source) {

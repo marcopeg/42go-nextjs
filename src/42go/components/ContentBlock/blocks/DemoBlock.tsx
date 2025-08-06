@@ -1,17 +1,13 @@
 import { Button } from "@/components/ui/button";
 import OriginDisplay from "@/components/OriginDisplay";
 
-export interface DemoBlock {
+export interface TDemoBlock {
   type: "demo";
   title?: string;
   description?: string;
 }
 
-interface DemoBlockProps {
-  data: DemoBlock;
-}
-
-export default function DemoBlock({ data }: DemoBlockProps) {
+export function DemoBlock({ data }: { data: TDemoBlock }) {
   return (
     <div className="demo-block w-full space-y-8 p-6">
       {data.title && (

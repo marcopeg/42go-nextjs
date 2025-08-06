@@ -2,46 +2,56 @@
 
 A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
 
+(LastID: adf)
+
 ## Current Task
+
+[n/a]
 
 ## Upcoming Tasks
 
-- [adc] [Implement client/server BlockContent](./tasks/adc-block-content-client-server.md)
-- [ade] [DynamicPages with custom layout](./tasks/ade-dynamic-pages-layout.md)
-- [acj] Next standalone has `.env` file [🔗](./tasks/acj-next-standalone.md)
+[n/a]
+
+## Drafts
+
+- [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
+- [acj] Next standalone has `.env` file [🔗](./draft/acj-next-standalone.md)
 - [acz] Document Getting started with README's information
 - [acr] Create an "clientAppPage" that applies feature flags to a client page
-- [acm] 🪲 docs: Parse relative url in articles [🔗](./tasks/acm-relative-url.md)
-- [abx] Improve user's menu [🔗](./tasks/abx-improve-user-menu.md)
-- [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
-- [abt] Import subscribe block [🔗](./tasks/abt-import-subscribe-block.md)
-- [aai] Add RBAC to the users system [🔗](./tasks/aai-add-rbac.md)
+- [acm] 🪲 docs: Parse relative url in articles [🔗](./draft/acm-relative-url.md)
+- [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
+- [abs] Import pricing block [🔗](./draft/abs-import-pricing-block.md)
+- [abt] Import subscribe block [🔗](./draft/abt-import-subscribe-block.md)
+- [aai] Add RBAC to the users system [🔗](./draft/aai-add-rbac.md)
 - [aat] Support i18n
-- [abd] Optimize Database Documentation [🔗](./tasks/abd-optimize-database-documentation.md)
-- [abe] Optimize Theming Documentation [🔗](./tasks/abe-optimize-theming-documentation.md)
-- [abf] Optimize Route Groups Documentation [🔗](./tasks/abf-optimize-route-groups-documentation.md)
-- [abg] Optimize Feature Flags Documentation [🔗](./tasks/abg-optimize-feature-flags-documentation.md)
-- [abh] Optimize App Config Documentation [🔗](./tasks/abh-optimize-app-config-documentation.md)
-- [abl] Add social login: LinkedIn [🔗](./tasks/abl-add-social-login-linkedin.md)
-- [abk] Add social login: X [🔗](./tasks/abk-add-social-login-x.md)
+- [abd] Optimize Database Documentation [🔗](./draft/abd-optimize-database-documentation.md)
+- [abe] Optimize Theming Documentation [🔗](./draft/abe-optimize-theming-documentation.md)
+- [abf] Optimize Route Groups Documentation [🔗](./draft/abf-optimize-route-groups-documentation.md)
+- [abg] Optimize Feature Flags Documentation [🔗](./draft/abg-optimize-feature-flags-documentation.md)
+- [abh] Optimize App Config Documentation [🔗](./draft/abh-optimize-app-config-documentation.md)
+- [abl] Add social login: LinkedIn [🔗](./draft/abl-add-social-login-linkedin.md)
+- [abk] Add social login: X [🔗](./draft/abk-add-social-login-x.md)
 - [aam] Add social login: Facebook
 - [aao] Add social login: Apple
 - [abn] Migrate to Prisma ORM
 - [acg] Import features block
-- [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
+- [aci] Add `config.match.header` [🔗](./draft/aci-config-match-header.md)
 - [adb] Refactor `42go/auth/providers` to expose single providers modules with types
-- [add] [Implement CLI scripts](./tasks/add-implement-cli-scripts.md)
-
-(LastID: ade)
+- [add] [Implement CLI scripts](./draft/add-implement-cli-scripts.md)
+- [] `config.match.url` add also `config.match.fn = async (request): bool` that let match programmatically
+- [] if `config.auth` is not defined, the `/login` should return a 404
+- [] `config.public.docs` if present should be enough to enable the documents even without explicit feature flag. this config should be a feature flag in itself.
+- [adf] custom `actions` type for `PublicLayout.Header` and `AppLayout.Header`
 
 ## Completed Tasks
 
-- [abq] Add App layout [🔗](./tasks/abq-app-layout.md)
+- [adc] [Implement client/server BlockContent](./archive/adc-block-content-client-server.md)
+- [abq] Add App layout [🔗](./archive/abq-app-layout.md)
 - [aau] Implement public layout
 - [ada] Move `components/auth` to `42go` folder
 - [acy] Move `components/layouts` into `42go` folder
-- [abz] Fix public links in toolbar [🔗](./tasks/abz-public-toolbar-links.md)
-- [acx] Abstract configurable components [🔗](./tasks/acx-abstract-configurable-components.md)
+- [abz] Fix public links in toolbar [🔗](./archive/abz-public-toolbar-links.md)
+- [acx] Abstract configurable components [🔗](./archive/acx-abstract-configurable-components.md)
 - [acv] Document Pages/hero
 - [acu] Document Pages/markdown
 - [acs] Document Markdown component and types

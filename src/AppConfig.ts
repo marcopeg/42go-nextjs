@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import type { ComponentType, ReactNode } from "react";
 import type { AuthProviderArray } from "@/42go/auth/lib/providers/types";
 import type { Pages } from "@/42go/components/DynamicPage";
-import type { ContentBlock } from "@/42go/components/ContentBlock";
+import type { ContentBlockItem } from "@/42go/components/ContentBlock/server";
 import type { AppLayoutNavItem } from "@/42go/layouts/app/types";
 import { HomePage } from "@/config/home-page";
 import { AboutPage } from "./config/about-page";
@@ -30,7 +30,7 @@ export interface ToolbarConfig {
   subtitle?: string;
   icon?: string | ComponentType<{ className?: string }>;
   href?: string;
-  links?: ContentBlock[];
+  links?: ContentBlockItem[];
 }
 
 export interface AppConfigItem {

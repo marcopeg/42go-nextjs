@@ -26,7 +26,7 @@ You can search in the articles for specific topics or concepts that might help y
 # Backlog
 
 - `./docs/backlog/BACKLOG.md` contains the current scope of work, upcoming tasks, and history.
-- `./docs/backlog/{tasks|archive}/{id}-human-readable-title.md` contains detailed information about each task, identified by its ID (e.g., `aaa`).
+- `./docs/backlog/{draft|tasks|archive}/{id}-human-readable-title.md` contains detailed information about each task, identified by its ID (e.g., `aaa`).
 
 NOTE: subfolder `tasks` is used to store tasks that are currently being worked on or have been completed recently. subfolder `archive` is used to store tasks that have been completed for a while and are no longer actively worked on, but can be accessed for reference.
 
@@ -36,7 +36,7 @@ The task IDs in `./docs/backlog/BACKLOG.md` are used to reference tasks in the M
 
 **Calculate Next TaskID:** The `(LastID: aav)` line indicates the last task ID added to the backlog. Use this value to calculate the next task ID. Examples: `aaa -> aab`, `aab -> aac`, `aaz -> aba`, etc. The IDs are alphanumeric and follow the sequence.
 
-**Access the Task's File:** Each task is stored in a file named `{id}-human-readable-title.md` in the `./docs/backlog/{tasks|archive}/` folder. Use the task ID to access the corresponding file.
+**Access the Task's File:** Each task is stored in a file named `{id}-human-readable-title.md` in the `./docs/backlog/{draft|tasks|archive}/` folder. Use the task ID to access the corresponding file.
 
 ### Current Task
 
@@ -48,6 +48,15 @@ It contains tasks that are planned to be worked on.
 The tasks are sorted by priority, with the most important tasks at the top.
 
 Use this section to get a grip of what's coming next in the project and to plan your work accordingly.
+
+### Tasks to be Refined
+
+It contains tasks that are planned but not yet ready to be worked on beacusa they need more information or clarification.
+
+Use this section to identify tasks that need more work before they can be executed.
+
+Or the ones created with only a title and no detailed description.
+Tasks in this section are not ready to be worked on, if the user asks to work on a task in this section, you should first ask to insert more detailed information.
 
 ### Completed Tasks
 
@@ -65,6 +74,41 @@ Your first responsibility is to analyze the user's prompt and determine which co
 If no command is specified, do your best to infer the user's intent and satisfy their request.
 
 If you find a match, print the command's name in the chat, followed by the action you will take.
+
+## Load Context
+
+> model: gpt
+
+**Goal:** Import the context from the Memory Bank and Current Task into the chat.
+
+**Triggers:**
+
+- load context
+- reload context
+- refresh context
+- load memory
+- reload memory
+- refresh memory
+- k8
+
+**Instructions:**
+
+1. Read the file `.github/copilot-instructions.md` to refresh the chat's capabilities and instructions.
+2. Identify & read the **Current Task**
+   - Identify the task file in `./docs/backlog/{draft|tasks|archive}/{id}-human-readable-title.md` based on the **Current Task** section in `./docs/backlog/BACKLOG.md`
+   - Read the task file to get the context of the current task
+3. Read the **Memory Bank** files:
+   - `./docs/memory-bank/ARCHITECTURE.md`
+   - `./docs/memory-bank/FEATURES.md`
+   - `./docs/memory-bank/DEPENDENCIES.md`
+4. Provide a brief summary of the project
+5. Provide a brief summary of the **Current Task** and its progress (reference the task file)
+
+Behavioral constraints:
+
+- Only pull the context into memory
+- Do not re-explain what you learn
+- Do not change anything in the codebase or the Memory Bank
 
 ## Create New Task
 
@@ -93,7 +137,7 @@ action: calculate the next task ID, create a new task file, focefully append it 
 2. Calculate the task's title, file name, and description from the content provided in the prompt
    - Use the task description to create a human-readable title
    - Format the task file name as `{NewID}-human-readable-title.md`
-3. Create a new task file in `./docs/backlog/{tasks|archive}/{NewID}-{human-readable-title}.md` with the following sections:
+3. Create a new task file in `./docs/backlog/draft/{NewID}-{human-readable-title}.md` with the following sections:
    - `# {title} [{NewID}]`
    - task description
    - `# Goals` - a list of goals for the task
@@ -103,7 +147,7 @@ action: calculate the next task ID, create a new task file, focefully append it 
    - if the **Current Task** section is empty, place the task entry to the **Current Task** section instead of **Upcoming Tasks**
 5. Update the `LastID` in the **Upcoming Tasks** section
 
-**NOTE:** Use the content of the prompt to fill the task description and goals. If the prompt does not contain all the information, use a placeholder to structure the file for future improvment. **Do not invent content that is not EXPLICITLY provided in the prompt.**
+**NOTE:** Use the content of the prompt to fill the task description and goals. If the prompt does not contain all the information, use a placeholder to structure the file for future improvment. **Do not invent content that is not EXPLICITLY provided in the prompt.** and put the task in the **Tasks to be Refined** section of the backlog.
 
 Example of a task scaffold with placeholders:
 
@@ -123,40 +167,39 @@ Example of a task scaffold with placeholders:
 - [ ] Item 2
 ```
 
-## Load Context
+## Refine Task
 
-> model: gpt
+> model: claude
+> **Goal:** Refine the task by adding more information to the task's file.
+> **Triggers:**
 
-**Goal:** Import the context from the Memory Bank and Current Task into the chat.
+- refine task
+- refine task: {task}
+- k1
 
-**Triggers:**
-
-- load context
-- reload context
-- refresh context
-- load memory
-- reload memory
-- refresh memory
-- k8
-
+**Examples:**
+prompt: `refine task` or `k4`
+action: refine the first task in the **Tasks to be refined** section
+prompt: `refine aaa` or `k4 aaa`
+action: refine the task with ID `aaa`
 **Instructions:**
 
-1. Read the file `.github/copilot-instructions.md` to refresh the chat's capabilities and instructions.
-2. Identify & read the **Current Task**
-   - Identify the task file in `./docs/backlog/{tasks|archive}/{id}-human-readable-title.md` based on the **Current Task** section in `./docs/backlog/BACKLOG.md`
-   - Read the task file to get the context of the current task
-3. Read the **Memory Bank** files:
-   - `./docs/memory-bank/ARCHITECTURE.md`
-   - `./docs/memory-bank/FEATURES.md`
-   - `./docs/memory-bank/DEPENDENCIES.md`
-4. Provide a brief summary of the project
-5. Provide a brief summary of the **Current Task** and its progress (reference the task file)
-
-Behavioral constraints:
-
-- Only pull the context into memory
-- Do not re-explain what you learn
-- Do not change anything in the codebase or the Memory Bank
+1. Reload the **Memory Bank** context (see `Load Context` command)
+2. Identify the **Target Task** ID from the prompt or use the **Current Task** if no ID is provided
+   - If the prompt contains an explicit TaskID, use that ID
+   - If no TaskID is provided, use the **Current Task** ID from the Backlog
+3. Read the task file to get the context of the current task
+4. Print the task's title in the chat to inform the user
+5. Read any other relevant files in the **Memory Bank** or in the **Articles** to gather additional context
+6. Search the codebase for any relevant files or code that might be related to the task
+7. Inform the user of the missing information in the task file
+   - Ask the user to provide more information about the task
+   - If the user provides more information, update the task file with the new information
+   - If the user does not provide more information, ask them to do so before proceeding with the task
+8. Update the task file with the new information filling the placeholders in the task file
+9. If the placeholders are filled remove the task from the **Tasks to be Refined** section in `./docs/backlog/BACKLOG.md` and move it to the **Upcoming Tasks** section
+10. If the task is ready to be worked on, update the `# Next Steps` section with "execute task (k2)" as content
+11. If the task is not ready to be worked on, update the `# Next Steps` section with "refine task (k4)" as content
 
 ## Plan Current Task
 
@@ -168,7 +211,7 @@ Behavioral constraints:
 
 - plan task
 - plan task: {task}
-- k1
+- k2
 
 **Examples:**
 
@@ -195,7 +238,7 @@ action: plan the task with ID `aaa`
    - any additional considerations or dependencies
 
 **EXPLICIT TASK ID:**
-If the prompt contains an explicit TaskID, use that ID to identify the task file in `./docs/backlog/{tasks|archive}/{id}-human-readable-title.md`.
+If the prompt contains an explicit TaskID, use that ID to identify the task file in `./docs/backlog/{draft|tasks|archive}/{id}-human-readable-title.md`.
 Move the task to the **Current Task** section in `./docs/backlog/BACKLOG.md` if it is not already there.
 
 **LINK TASK:**
@@ -203,7 +246,7 @@ If you need to create the task's file, then add the link to it at the end of the
 
 **UPDATE TASK FILE:**
 
-1. Create or update the task's file in `./docs/backlog/{tasks|archive}/{id}-human-readable-title.md` with the `# Development Plan` section
+1. Create or update the task's file in `./docs/backlog/{draft|tasks|archive}/{id}-human-readable-title.md` with the `# Development Plan` section
    - If the section does not exist, create it
    - If the section exists, update it with the new plan
 2. Append o update a `# Next Steps` section stating "execute task (k2)" as content
@@ -219,7 +262,7 @@ If you need to create the task's file, then add the link to it at the end of the
 - execute task
 - run task
 - do task
-- k2
+- k3
 
 **Instructions:**
 
@@ -256,7 +299,7 @@ If you need to create the task's file, then add the link to it at the end of the
 - close task
 - complete task
 - finalize task
-- k3
+- k4
 
 **Instructions:**
 
@@ -329,7 +372,7 @@ action: Archive the tasks with IDs `aaa`, `aab`, and `aac` from the backlog.
 **Instructions:**
 
 1. Obtain today's date and calculate the cutoff date based on the specified time period (default is 1 week)
-2. Find tasks files (`docs/backlog/{tasks|archive}/*.md`) that are older than the cutoff date
+2. Find tasks files (`docs/backlog/{draft|tasks|archive}/*.md`) that are older than the cutoff date
    - MacOS: `stat -f "%Sm %N" -t "%Y-%m-%d" *`
    - Linux: `stat --format="%y %n" *`
    - Windows: `Get-ChildItem | Select-Object LastWriteTime, Name`
@@ -337,6 +380,45 @@ action: Archive the tasks with IDs `aaa`, `aab`, and `aac` from the backlog.
 4. Update the `./docs/backlog/BACKLOG.md` file to **only update the links** to the archived tasks **without altering the order of the items**.
 
 **NOTE:** this task is complete only when the `./docs/backlog/BACKLOG.md` file is updated with the new links to the archived tasks.
+
+## Initialize Memory Bank
+
+> model: gpt
+
+**Goal:** Initialize or complete the Memory Bank files with the current project context and architecture.
+
+**Triggers:**
+
+- initialize memory bank
+- init memory bank
+- initialize docs
+- init docs
+
+**Instructions:**
+
+1. Check the current state of the `./docs/` folder
+2. Match the existing files with the expected structure:
+   - `./docs/memory-bank/ARCHITECTURE.md`
+   - `./docs/memory-bank/FEATURES.md`
+   - `./docs/memory-bank/DEPENDENCIES.md`
+   - `./docs/backlog/BACKLOG.md`
+   - `./docs/backlog/tasks/`
+   - `./docs/backlog/archive/`
+   - `./docs/articles/`
+3. If the `BACKLOG.md` file was missing, **create** a first `aaa` taks with title "first task"
+4. Analize the current codebase and the existing files to fill in the missing information in the Memory Bank files:
+   - `ARCHITECTURE.md`: summarize the project architecture, technology stack, and best practices focusing on the sections:
+     - `# Architecture`
+     - `# Technology Stack`
+     - `# Coding Style`
+     - `# Best Practices`
+   - `FEATURES.md`: list the main features of the project from a business perspective, for each dependency add:
+     - `## {name}`
+     - Brief description that targets LLMs (why it is used, what it does, how it is used)
+     - Link to the documentation (favor Context7 links where available)
+   - `DEPENDENCIES.md`: list the dependencies used in the project with brief descriptions and links to documentation
+
+**IMPORTANT:** Double check that a first tast (`aaa`) is created in the backlog, and that the Memory Bank files are updated with the current project context.
 
 ## Help
 
@@ -346,8 +428,8 @@ When prompted by `help` or `h` output a simple table of the available commands a
 
 The order of the commands is:
 
-- Working: k0, k1, k2, k3
-- IDE: k7, k8, k9, h
+- Working: k0, k1, k2, k3, k4
+- IDE: k7, k8, k9, init, h
 
 Produce 2 separated tables to maximize readability.
 Include the suggested model.
@@ -375,4 +457,4 @@ When prompted with `help {command}` or `h {command}`, output the command's descr
 
 ---
 
-_Last updated: 2025-08-01_
+_Last updated: 2025-08-06_

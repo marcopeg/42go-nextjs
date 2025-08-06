@@ -1,5 +1,7 @@
 import { LucideIcon } from "lucide-react";
-import { ReactNode } from "react";
+import type { ContentBlockItem } from "@/42go/components/ContentBlock/client";
+
+export type AppLayoutActionItem = ContentBlockItem;
 
 export interface AppLayoutNavItem {
   id?: string;
@@ -26,6 +28,6 @@ export interface AppLayoutProps {
   children: React.ReactNode;
   title: string;
   subtitle?: string;
-  headerActions?: ReactNode;
+  headerActions?: AppLayoutActionItem[];
   stickyHeader?: boolean;
 }
