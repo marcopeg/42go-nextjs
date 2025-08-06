@@ -6,9 +6,11 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [adf] [Custom Actions Type - SUPERSEDED](./tasks/adf-custom-actions-type.md) ⚠️ Split into adg-adk
+n/a
 
 ## Upcoming Tasks
+
+n/a
 
 ## Drafts
 
@@ -42,6 +44,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [adf] [Custom Actions Type - SUPERSEDED](./archive/adf-custom-actions-type.md) ⚠️ Split into adg-adk
 - [adi] [Create PublicLayout TActionItem Type](./archive/adi-create-publiclayout-tactionitem-type.md) 🔗
 - [adj] [Create AppLayout TActionItem Type](./archive/adj-create-applayout-tactionitem-type.md) 🔗
 - [adh] [Rename HeaderLinks to ToolbarActions](./archive/adh-rename-headerlinks-toolbaractions.md) 🔗
