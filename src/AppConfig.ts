@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import type { Metadata } from "next";
 import type { ComponentType, ReactNode } from "react";
 // Types for composing the AppConfig
-import type { AuthProviderArray } from "@/42go/auth/lib/providers/types";
+import type { TAuthProviders } from "@/42go/auth/lib/providers/types";
 import type { TDynamicPage } from "@/42go/components/DynamicPage";
 import type { TPublicLayoutToolbar } from "@/42go/layouts/public/types";
 import type { TAppLayoutNavItem } from "@/42go/layouts/app/types";
@@ -50,7 +50,7 @@ export interface AppConfigItem {
     };
   };
   auth?: {
-    providers: AuthProviderArray;
+    providers: TAuthProviders;
   };
   app?: {
     menu?: {

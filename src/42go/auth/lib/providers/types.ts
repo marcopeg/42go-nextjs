@@ -55,7 +55,7 @@ export type AnyAuthProvider =
   | GoogleProvider;
 
 // Helper type for provider arrays in AppConfig
-export type AuthProviderArray = AnyAuthProvider[];
+export type TAuthProviders = AnyAuthProvider[];
 
 // Extend NextAuth's session type to include our custom user fields
 declare module "next-auth" {
