@@ -2,7 +2,7 @@
 
 A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
 
-(LastID: adi)
+(LastID: adl)
 
 ## Current Task
 
@@ -10,18 +10,18 @@ n/a
 
 ## Upcoming Tasks
 
-- [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
-- [abt] Import waitlist block [🔗](./tasks/abt-import-waitlist-block.md)
-- [abt] Import feedback block [🔗](./tasks/adi-import-feedback-block.md)
-
 ## Drafts
 
+- [abs] Import pricing block [🔗](./draft/abs-import-pricing-block.md)
+- [abt] Import waitlist block [🔗](./draft/abt-import-waitlist-block.md)
+- [abt] Import feedback block [🔗](./draft/adi-import-feedback-block.md)
+- [adl] 🪲 docs: Links from the docs index page don't work [🔗](./draft/adl-docs-article-walls-links.md)
+- [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
 - [acj] Next standalone has `.env` file [🔗](./draft/acj-next-standalone.md)
 - [acz] Document Getting started with README's information
 - [acr] Create an "clientAppPage" that applies feature flags to a client page
 - [acm] 🪲 docs: Parse relative url in articles [🔗](./draft/acm-relative-url.md)
-- [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [aai] Add RBAC to the users system [🔗](./draft/aai-add-rbac.md)
 - [aat] Support i18n
 - [abd] Optimize Database Documentation [🔗](./draft/abd-optimize-database-documentation.md)
@@ -29,15 +29,14 @@ n/a
 - [abf] Optimize Route Groups Documentation [🔗](./draft/abf-optimize-route-groups-documentation.md)
 - [abg] Optimize Feature Flags Documentation [🔗](./draft/abg-optimize-feature-flags-documentation.md)
 - [abh] Optimize App Config Documentation [🔗](./draft/abh-optimize-app-config-documentation.md)
+- [adb] Refactor `42go/auth/providers` to expose single providers modules with types
 - [abl] Add social login: LinkedIn [🔗](./draft/abl-add-social-login-linkedin.md)
 - [abk] Add social login: X [🔗](./draft/abk-add-social-login-x.md)
 - [aam] Add social login: Facebook
 - [aao] Add social login: Apple
 - [abn] Migrate to Prisma ORM
-- [acg] Import features block
 - [aci] Add `config.match.header` [🔗](./draft/aci-config-match-header.md)
 - [] Add `config.match.fn = async (request): bool` that let match programmatically
-- [adb] Refactor `42go/auth/providers` to expose single providers modules with types
 - [add] [Implement CLI scripts](./draft/add-implement-cli-scripts.md)
 - [] if `config.auth` is not defined, the `/login` should return a 404
 - [] `config.public.docs` if present should be enough to enable the documents even without explicit feature flag. this config should be a feature flag in itself.

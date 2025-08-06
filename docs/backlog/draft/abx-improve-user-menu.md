@@ -14,7 +14,7 @@ If the user is NOT logged in, the button should get configuration from:
 const config = {
   app1: {
     public: {
-      mainCta: {
+      publicCta: {
         label: "Sign in",
         href: "/login",
         style: "primary", // that is default value and can be omitted
