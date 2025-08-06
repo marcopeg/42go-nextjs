@@ -10,9 +10,10 @@ n/a
 
 ## Upcoming Tasks
 
+- [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
+
 ## Drafts
 
-- [abs] Import pricing block [🔗](./draft/abs-import-pricing-block.md)
 - [abt] Import waitlist block [🔗](./draft/abt-import-waitlist-block.md)
 - [abt] Import feedback block [🔗](./draft/adi-import-feedback-block.md)
 - [adl] 🪲 docs: Links from the docs index page don't work [🔗](./draft/adl-docs-article-walls-links.md)

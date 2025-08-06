@@ -494,7 +494,13 @@ PricingBlock should be added to the **server** ContentBlock since it needs full 
    }
    ```
 
-3. **UI Components Integration**
+3. **Dependencies Clarification**
+
+   - **No new dependencies needed**: Uses existing ScrollAnimation, Button, Lucide icons
+   - **Follows existing patterns**: ReactMarkdown (like HeroBlock), Tailwind classes (like other blocks)
+   - **Maintains consistency**: Server-side rendering, TypeScript interfaces, component structure
+
+4. **UI Components Integration**
    - Use existing Button component for CTAs
    - Leverage ScrollAnimation for staggered reveals
    - Use Markdown component for text rendering
@@ -514,15 +520,30 @@ PricingBlock should be added to the **server** ContentBlock since it needs full 
 ### Architecture Decisions
 
 1. **Server-Side Rendering**: PricingBlock will be server-only for optimal SEO and performance
-2. **Markdown Integration**: Use existing Markdown component for text formatting with **bold** accent support
-3. **Animation Strategy**: Progressive reveal with staggered delays for each tier
-4. **Responsive Design**: Mobile-first approach with CSS Grid
-5. **Icon Strategy**: Use Lucide React icons for feature status indicators
+2. **Markdown Integration**: Use `@/42go/components/Markdown` for consistency (same pattern for all blocks)
+3. **Animation Strategy**: Use existing ScrollAnimation component with staggered delays (0.1s intervals) for maximum visual impact
+4. **Responsive Design**: Dynamic CSS Grid `grid-cols-1 md:grid-cols-${Math.min(tiers.length, 3)}` for optimal content adaptation
+5. **Icon Strategy**: Use Lucide React icons (Check, X, Clock) with semantic colors (green/red/yellow)
 6. **Typography**: Follow existing patterns from HeroBlock for consistency
+7. **Styling**: Use direct Tailwind classes (no Card component) following existing block patterns
+8. **Visual Hierarchy**: Highlighted tier with `scale-105` and absolute positioned badges for maximum impact
 
-### Card Design Pattern
+### Implementation Decisions
 
-Instead of using a separate Card component, follow the pattern used in other blocks with direct Tailwind classes for optimal SSR performance and consistency.
+- **No framer-motion dependency**: Stick with existing ScrollAnimation for consistency and maintainability
+- **No shadcn Card components**: Use Tailwind classes like other blocks for pattern consistency
+- **Dynamic Grid**: `grid-cols-1 md:grid-cols-${Math.min(tiers.length, 3)}` adapts to content (1-3 tiers)
+- **Feature Icons**: Green Check, Red X, Yellow Clock for included/excluded/coming-soon status
+- **Markdown Components**: Use `@/42go/components/Markdown` for consistency across all blocks
+- **Animation Timing**: Staggered delays (0.1s intervals) for maximum visual impact
+
+### Related Improvements
+
+**Future Task**: Update HeroBlock to use `@/42go/components/Markdown` instead of ReactMarkdown for consistency
+
+### Testing & Integration
+
+**Implementation Target**: Add PricingBlock to the default app's home page to demonstrate the component in action and validate the implementation.
 
 ## Next Steps
 
