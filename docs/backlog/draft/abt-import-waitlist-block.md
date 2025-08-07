@@ -1,18 +1,149 @@
 # Import Waitlist Block [abt]
 
-This story is about importing a _WaitlistBlock_ and its relative counterpart for backend and database migration from a legacy project. It should become one of the blocks available to the _ContentBlock_ component.
+Create a WaitlistBlock component for the ContentBlock system that allows users to join a waitlist by providing their email address. This component will include both frontend UI and backend API integration.
 
-NOTE: this component should be added to the default _server_ components list so that it is possible to use it in a _DynamicPage_
+## Goals
+
+- [ ] Create WaitlistBlock component following existing ContentBlock patterns
+- [ ] Add database migration for waitlist table
+- [ ] Implement API endpoint for email submission
+- [ ] Add client-side email validation and form handling
+- [ ] Support both success message and redirect options for feedback
+- [ ] Add WaitlistBlock to server ContentBlock exports
+- [ ] Follow existing architecture patterns from HeroBlock/DemoBlock
+
+## Acceptance Criteria
+
+- [ ] WaitlistBlock component created in `/src/42go/components/ContentBlock/blocks/WaitlistBlock.tsx`
+- [ ] Component follows ContentBlock interface pattern with TWaitlistBlock type
+- [ ] Database migration creates `waitlists` table with UUID primary key and unique email constraint
+- [ ] API endpoint at `/api/waitlist` handles POST requests with email validation
+- [ ] Client-side form validates email format before submission
+- [ ] Success feedback uses toast notifications or redirects based on configuration
+- [ ] Component uses existing UI components (Button, Input) and Markdown for content
+- [ ] Component uses simple Tailwind classes without Card wrapper components
+- [ ] Component added to server ContentBlock blocksMap and exported types
+- [ ] Error handling for duplicate emails (silently succeed) and server errors
+- [ ] Mobile-responsive design consistent with other blocks
 
 ## Feature Behavior Details
 
-This is a "join the waitlist" feature.
-The user provides their email to receive early access.
-This task is only about saving the email in the db and provide a visual feedback.
-The visual feedback can be a markdown message passed as configuration, or a redirect url that we should navigate to after adding the email.
-Keep the backend at bare minimum implementation.
-No need to send confirmation emails, that will be done by another system.
-Validate the email both in the client and in the backend.
+This is a "join the waitlist" feature where users provide their email to receive early access notifications. The implementation focuses on:
+
+- **Email Collection**: Simple form with email input and submit button
+- **Database Storage**: Store email, timestamp, IP address, and user agent for analytics
+- **Visual Feedback**: Either display markdown success message or redirect to thank-you page
+- **Validation**: Client-side email format validation plus server-side validation
+- **Minimal Backend**: Basic email storage without confirmation emails (handled by external systems)
+- **Error Handling**: Graceful handling of duplicate emails and validation errors
+
+## Development Plan
+
+### Current Architecture Analysis
+
+Based on the ContentBlock system:
+
+- **Server ContentBlock**: Supports HeroBlock, DemoBlock, MarkdownBlock, ComponentBlock, LinkBlock
+- **Client ContentBlock**: Limited to ComponentBlock, LinkBlock
+- **Pattern**: Each block has interface + component in `/src/42go/components/ContentBlock/blocks/`
+- **Registration**: Blocks registered in `/src/42go/components/ContentBlock/server.tsx`
+
+WaitlistBlock needs client interactivity (form submission) but should be part of server ContentBlock for SSR and dynamic page usage.
+
+### Implementation Strategy
+
+1. **Create WaitlistBlock Component**
+
+   - Follow HeroBlock pattern with `"use client"` directive for form interactivity
+   - Use existing UI components: Button, Input from shadcn/ui
+   - Use toast notifications for success/error feedback
+   - Use `@/42go/components/Markdown` for title/subtitle rendering
+   - Simple Tailwind classes (no Card components)
+   - Implement form state management with React hooks
+   - Add email validation and submission handling
+
+2. **Database Schema Design**
+
+   ```sql
+   CREATE TABLE waitlists (
+     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     email TEXT UNIQUE NOT NULL,
+     ip_address TEXT,
+     user_agent TEXT,
+     created_at TIMESTAMP DEFAULT NOW()
+   );
+   ```
+
+3. **API Endpoint Implementation**
+
+   - Create `/src/app/api/waitlist/route.ts` following existing patterns
+   - Use `appRoute` wrapper for multi-app support
+   - Implement email validation and duplicate handling
+   - Silently handle duplicate emails (return success to user)
+   - Store IP address and user agent for analytics
+   - Database auto-generates UUID via `gen_random_uuid()`
+
+4. **Type Definition**
+   ```typescript
+   interface TWaitlistBlock {
+     type: "waitlist";
+     title?: string;
+     subtitle?: string;
+     placeholder?: string;
+     buttonLabel?: string;
+     // Only one feedback method allowed
+     feedback:
+       | { type: "message"; content: string }
+       | { type: "redirect"; url: string };
+   }
+   ```
+
+### Files to Create/Modify
+
+**Create:**
+
+- `/src/42go/components/ContentBlock/blocks/WaitlistBlock.tsx` - Main component
+- `/knex/migrations/YYYYMMDD_create_waitlists_table.js` - Database migration with UUID extension
+- `/src/app/api/waitlist/route.ts` - API endpoint
+
+**Modify:**
+
+- `/src/42go/components/ContentBlock/server.tsx` - Add WaitlistBlock to blocksMap and types
+- Install additional shadcn components if needed: `npx shadcn@latest add input toast`
+
+### Dependencies Analysis
+
+**Existing Components:**
+
+- Button (✅ available)
+- Input (❓ needs verification/installation)
+- Toast (❓ needs verification/installation)
+- ScrollAnimation (✅ available)
+- Markdown (✅ available at `@/42go/components/Markdown`)
+
+**Patterns to Follow:**
+
+- Toast notifications for user feedback (not inline messages)
+- Markdown rendering via `@/42go/components/Markdown` component
+- Simple Tailwind styling (no Card wrapper components)
+- Server-side validation following todos API pattern
+- Database operations using existing getDB() singleton
+- UUID auto-generation with PostgreSQL `gen_random_uuid()`
+- Duplicate email handling: silently succeed, thank user normally
+
+## Next Steps
+
+1. Check existing migrations for UUID extension, add if needed
+2. Verify if Input and Toast components need installation
+3. Create database migration for waitlists table
+4. Implement WaitlistBlock component with toast feedback
+5. Create API endpoint with duplicate email handling
+6. Add component to ContentBlock system
+7. Test integration in dynamic pages
+
+## Next Steps
+
+execute task (k3)
 
 ## Legacy sourcecode for inspiration
 

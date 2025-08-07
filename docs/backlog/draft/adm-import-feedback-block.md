@@ -1,4 +1,4 @@
-# Import Waitlist Block [abt]
+# Import Feedback Block [adm]
 
 This story is about importing a _FeedbackBlock_ and its relative counterpart for backend and database migration from a legacy project. It should become one of the blocks available to the _ContentBlock_ component.
 
