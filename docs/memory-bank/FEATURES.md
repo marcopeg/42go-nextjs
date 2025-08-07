@@ -56,6 +56,9 @@
 
 ## Authentication & Security
 
+The authentication is handled by the library NextAuth.
+42go boilerplate provides easy configuration only.
+
 ### JWT-Based Authentication
 
 **Capability**: NextAuth.js with JWT sessions and automatic refresh

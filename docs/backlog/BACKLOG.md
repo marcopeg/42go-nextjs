@@ -14,13 +14,13 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [adl] 🪲 docs: Links from the docs index page don't work [🔗](./tasks/adl-docs-article-walls-links.md)
 - [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
 - [adn] Add `config.match.fn = async (request): bool` that let match programmatically [🔗](./tasks/adn-config-match-function.md)
+- [acj] 🪲 Next standalone has `.env` file [🔗](./tasks/acj-next-standalone.md)
 
 ## Drafts
 
 - [adq] Clean up AppConfig matching logic [🔗](./draft/adq-clean-appconfig-match.md)
 - [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
-- [acj] 🪲 Next standalone has `.env` file [🔗](./draft/acj-next-standalone.md)
 - [acz] Document Getting started with README's information
 - [acr] Create an "clientAppPage" that applies feature flags to a client page
 - [acm] 🪲 docs: Parse relative url in articles [🔗](./draft/acm-relative-url.md)
