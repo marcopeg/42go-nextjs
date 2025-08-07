@@ -2,7 +2,7 @@
 
 A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
 
-(LastID: adq)
+(LastID: aam)
 
 ## Current Task
 
@@ -20,19 +20,11 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Drafts
 
-## Current Task
-
 - [aai] RBAC Database Schema & Core Infrastructure 🔗 [story](./draft/aai-add-rbac.md)
-
-## Upcoming Tasks
-
 - [aaj] RBAC useGrants Hook & Client Components 🔗 [story](./draft/aaj-rbac-usegrants-hook.md)
 - [aak] RBAC Page & Route Protection 🔗 [story](./draft/aak-rbac-page-route-protection.md)
 - [aal] RBAC Menu Integration 🔗 [story](./draft/aal-rbac-menu-integration.md)
 - [aam] RBAC Advanced Features 🔗 [story](./draft/aam-rbac-advanced-features.md)
-
-(LastID: aam)
-
 - [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
 - [acz] Document Getting started with README's information
