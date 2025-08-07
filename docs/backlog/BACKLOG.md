@@ -6,12 +6,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-n/a
-
 ## Upcoming Tasks
 
 - [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
-- [abt] Import waitlist block [🔗](./draft/abt-import-waitlist-block.md)
+- [abt] Import waitlist block [🔗](./tasks/abt-import-waitlist-block.md)
 
 ## Drafts
 

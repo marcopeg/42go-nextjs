@@ -39,51 +39,79 @@ This is a "join the waitlist" feature where users provide their email to receive
 
 ## Development Plan
 
-### Current Architecture Analysis
+### Pre-Implementation Analysis
 
-Based on the ContentBlock system:
+**Current Project State:**
 
-- **Server ContentBlock**: Supports HeroBlock, DemoBlock, MarkdownBlock, ComponentBlock, LinkBlock
-- **Client ContentBlock**: Limited to ComponentBlock, LinkBlock
-- **Pattern**: Each block has interface + component in `/src/42go/components/ContentBlock/blocks/`
-- **Registration**: Blocks registered in `/src/42go/components/ContentBlock/server.tsx`
+- ✅ Markdown component available at `@/42go/components/Markdown`
+- ✅ Button component available at `@/components/ui/button`
+- ✅ ScrollAnimation component available at `@/components/ui/scroll-animation`
+- ❓ Input component needs verification/installation
+- ❓ Toast system needs verification/installation
+- ❓ UUID extension for PostgreSQL needs installation in migration
 
-WaitlistBlock needs client interactivity (form submission) but should be part of server ContentBlock for SSR and dynamic page usage.
+**Dependencies Assessment:**
+
+- Database: PostgreSQL with Knex.js, no UUID extension detected in existing migrations
+- UI Components: shadcn/ui system partially installed
+- Styling: Tailwind CSS with theme support
+- Authentication: NextAuth.js with database sessions
 
 ### Implementation Strategy
 
-1. **Create WaitlistBlock Component**
+#### Phase 1: Dependencies and Infrastructure (30 min)
 
-   - Follow HeroBlock pattern with `"use client"` directive for form interactivity
-   - Use existing UI components: Button, Input from shadcn/ui
-   - Use toast notifications for success/error feedback
-   - Use `@/42go/components/Markdown` for title/subtitle rendering
-   - Simple Tailwind classes (no Card components)
-   - Implement form state management with React hooks
-   - Add email validation and submission handling
+1. **Install Missing UI Components**
 
-2. **Database Schema Design**
-
-   ```sql
-   CREATE TABLE waitlists (
-     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-     email TEXT UNIQUE NOT NULL,
-     ip_address TEXT,
-     user_agent TEXT,
-     created_at TIMESTAMP DEFAULT NOW()
-   );
+   ```bash
+   npx shadcn@latest add input toast
    ```
 
-3. **API Endpoint Implementation**
+2. **Create Database Migration with UUID Support**
 
-   - Create `/src/app/api/waitlist/route.ts` following existing patterns
-   - Use `appRoute` wrapper for multi-app support
-   - Implement email validation and duplicate handling
-   - Silently handle duplicate emails (return success to user)
+   - File: `/knex/migrations/20250807_waitlists.js`
+   - Enable UUID extension idempotently
+   - Create waitlists table with proper constraints
+
+3. **Verify getDB() Integration**
+   - Ensure database connection singleton works properly
+   - Test migration execution `make migrate`
+
+#### Phase 2: API Endpoint Implementation (45 min)
+
+1. **Create Waitlist API Route**
+
+   - File: `/src/app/api/waitlist/route.ts`
+   - Use `appRoute` wrapper for multi-app compatibility
+   - Implement email validation (client + server)
+   - Handle duplicate emails silently (return success)
    - Store IP address and user agent for analytics
-   - Database auto-generates UUID via `gen_random_uuid()`
 
-4. **Type Definition**
+2. **API Features:**
+   - Email format validation using built-in HTML5 + server regex
+   - Graceful error handling with proper HTTP status codes
+   - Request metadata capture (IP, User-Agent)
+   - Multi-app support via existing `appRoute` pattern
+
+#### Phase 3: WaitlistBlock Component (60 min)
+
+1. **Create Component Structure**
+
+   - File: `/src/42go/components/ContentBlock/blocks/WaitlistBlock.tsx`
+   - Follow existing ContentBlock pattern from HeroBlock
+   - Use `"use client"` directive for form interactivity
+
+2. **Component Features:**
+
+   - Form state management with React hooks
+   - Email validation with HTML5 + regex
+   - Toast notifications for success/error feedback
+   - Redirect support for success flow
+   - Markdown rendering for title/subtitle via `@/42go/components/Markdown`
+   - ScrollAnimation integration for reveal effects
+   - Mobile-responsive design with Tailwind classes
+
+3. **Type Definition:**
    ```typescript
    interface TWaitlistBlock {
      type: "waitlist";
@@ -91,55 +119,107 @@ WaitlistBlock needs client interactivity (form submission) but should be part of
      subtitle?: string;
      placeholder?: string;
      buttonLabel?: string;
-     // Only one feedback method allowed
      feedback:
        | { type: "message"; content: string }
        | { type: "redirect"; url: string };
    }
    ```
 
-### Files to Create/Modify
+#### Phase 4: ContentBlock System Integration (15 min)
 
-**Create:**
+1. **Register Component**
 
-- `/src/42go/components/ContentBlock/blocks/WaitlistBlock.tsx` - Main component
-- `/knex/migrations/YYYYMMDD_create_waitlists_table.js` - Database migration with UUID extension
-- `/src/app/api/waitlist/route.ts` - API endpoint
+   - Update `/src/42go/components/ContentBlock/server.tsx`
+   - Add WaitlistBlock to blocksMap
+   - Add TWaitlistBlock to ContentBlockItem union type
+   - Export type for external usage
 
-**Modify:**
+2. **Testing Integration**
+   - Verify component appears in server ContentBlock
+   - Test in dynamic pages context
+   - Validate SSR compatibility
 
-- `/src/42go/components/ContentBlock/server.tsx` - Add WaitlistBlock to blocksMap and types
-- Install additional shadcn components if needed: `npx shadcn@latest add input toast`
+### Implementation Decisions
 
-### Dependencies Analysis
+**Architecture Choices:**
 
-**Existing Components:**
+- **Client-Side Component**: Uses `"use client"` for form interactivity while remaining in server ContentBlock
+- **Toast vs Redirect**: Mutually exclusive feedback types enforced at TypeScript level
+- **Database Strategy**: PostgreSQL UUID primary keys with auto-generation
+- **Styling Approach**: Direct Tailwind classes, no Card wrapper components
+- **Validation Strategy**: Client-side HTML5 + server-side regex validation
 
-- Button (✅ available)
-- Input (❓ needs verification/installation)
-- Toast (❓ needs verification/installation)
-- ScrollAnimation (✅ available)
-- Markdown (✅ available at `@/42go/components/Markdown`)
+**Security Considerations:**
 
-**Patterns to Follow:**
+- Server-side email validation to prevent bypassing client checks
+- IP address and User-Agent logging for analytics and abuse detection
+- Silent duplicate handling to prevent email enumeration attacks
+- Proper error handling without information leakage
 
-- Toast notifications for user feedback (not inline messages)
-- Markdown rendering via `@/42go/components/Markdown` component
-- Simple Tailwind styling (no Card wrapper components)
-- Server-side validation following todos API pattern
-- Database operations using existing getDB() singleton
-- UUID auto-generation with PostgreSQL `gen_random_uuid()`
-- Duplicate email handling: silently succeed, thank user normally
+**UX Decisions:**
 
-## Next Steps
+- Toast notifications for immediate feedback
+- Loading states during submission
+- Form reset after successful submission
+- Consistent visual design with existing blocks
+- Mobile-first responsive approach
 
-1. Check existing migrations for UUID extension, add if needed
-2. Verify if Input and Toast components need installation
-3. Create database migration for waitlists table
-4. Implement WaitlistBlock component with toast feedback
-5. Create API endpoint with duplicate email handling
-6. Add component to ContentBlock system
-7. Test integration in dynamic pages
+### File Structure
+
+```
+/src/42go/components/ContentBlock/blocks/
+├── WaitlistBlock.tsx           # New component
+├── HeroBlock.tsx              # Reference pattern
+└── ...
+
+/knex/migrations/
+├── 20250807_create_waitlists_table.js  # New migration
+└── ...
+
+/src/app/api/
+├── waitlist/
+│   └── route.ts               # New API endpoint
+└── ...
+```
+
+### Testing Strategy
+
+1. **Component Testing:**
+
+   - Form submission with valid email
+   - Form submission with invalid email
+   - Toast notification display
+   - Redirect functionality
+   - Loading states and error handling
+
+2. **API Testing:**
+
+   - Valid email submission
+   - Invalid email format rejection
+   - Duplicate email handling (silent success)
+   - Database insertion verification
+   - IP and User-Agent capture
+
+3. **Integration Testing:**
+   - ContentBlock registration
+   - Dynamic page rendering
+   - SSR compatibility
+   - Multi-app support via appRoute
+
+### Risk Mitigation
+
+**Potential Issues:**
+
+- UUID extension not available in PostgreSQL → Migration handles installation
+- Toast component conflicts → Use latest shadcn implementation
+- Form validation bypassed → Dual client/server validation
+- Database connection issues → Leverage existing getDB() singleton
+
+**Contingency Plans:**
+
+- Fallback to text-based IDs if UUID fails
+- Inline error messages if toast system fails
+- Progressive enhancement for JavaScript-disabled users
 
 ## Next Steps
 
