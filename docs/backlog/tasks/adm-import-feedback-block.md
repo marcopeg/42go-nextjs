@@ -4,15 +4,79 @@ This task implements a _FeedbackBlock_ component for the ContentBlock system tha
 
 The component follows the same architecture patterns as HeroBlock and WaitlistBlock, becoming one of the server-side ContentBlock components available for dynamic pages.
 
+## Goals
+
+- [ ] Create FeedbackBlock component following existing ContentBlock patterns
+- [ ] Add database migration for feedbacks table (plural)
+- [ ] Implement API endpoint for feedback submission with email and message fields
+- [ ] Add optional newsletter subscription checkbox functionality (boolean field)
+- [ ] Add client-side email validation and form handling
+- [ ] Support both success message and redirect options for feedback
+- [ ] Add FeedbackBlock to server ContentBlock exports
+- [ ] Follow existing architecture patterns from HeroBlock/DemoBlock
+- [ ] Install and use toast notifications system for user feedback
+
+## Acceptance Criteria
+
+- [ ] FeedbackBlock component created in `/src/42go/components/ContentBlock/blocks/FeedbackBlock.tsx`
+- [ ] Component follows ContentBlock interface pattern with TFeedbackBlock type
+- [ ] Database migration creates `feedbacks` table (plural) with UUID primary key, email, message, and boolean newsletter_subscription field
+- [ ] API endpoint at `/api/feedback` handles POST requests with email and message validation
+- [ ] Client-side form validates email format and required fields before submission
+- [ ] Toast notifications installed (via shadcn) and used for success/error feedback
+- [ ] Component uses existing UI components (Button, Input, Textarea) and Markdown for content
+- [ ] Component uses simple Tailwind classes without Card wrapper components
+- [ ] Component added to server ContentBlock blocksMap and exported types
+- [ ] Error handling for server errors and proper user feedback
+- [ ] Mobile-responsive design consistent with other blocks
+- [ ] Optional newsletter subscription checkbox when enabled in configuration (boolean value)
+
+## Feature Behavior Details
+
+The FeedbackBlock allows users to submit feedback with:
+
+- **Email field** (required) - with client and server-side validation
+- **Message field** (required) - for the actual feedback content
+- **Newsletter checkbox** (optional) - boolean field, only appears when enabled in configuration
+- **Success feedback** - either markdown message or redirect URL after successful submission
+
+**Backend requirements:**
+
+- Save email, message, and newsletter subscription preference (boolean) to `feedbacks` table
+- Include IP address and User-Agent for analytics and abuse detection
+- Validate email format on server-side
+- Return appropriate error messages for validation failures
+
+**Frontend requirements:**
+
+- Client-side email validation before submission
+- Loading states during form submission
+- Form reset after successful submission
+- Toast notifications for immediate feedback
+- Consistent visual design with other ContentBlock components
+
 ## Development Plan
 
 ### Implementation Strategy
 
+#### Phase 0: Dependencies Installation (10 min)
+
+1. **Check and Install Toast System**
+
+   - Check if toast components already exist in `@/components/ui`
+   - If not installed: `npx shadcn@latest add toast`
+   - If already exists: verify implementation and proceed
+
+2. **Check and Install Textarea**
+   - Check if textarea component exists in `@/components/ui`
+   - If not installed: `npx shadcn@latest add textarea`
+   - If already exists: proceed with existing implementation
+
 #### Phase 1: Database Migration (15 min)
 
 1. **Create Migration File**
-   - File: `knex/migrations/[timestamp]_create_feedback_table.js`
-   - Table structure: `feedback` with id (UUID), email, message, newsletter_subscription, ip_address, user_agent, created_at
+   - File: `knex/migrations/[timestamp]_create_feedbacks_table.js`
+   - Table structure: `feedbacks` (plural) with id (UUID), email, message, newsletter_subscription (boolean), ip_address, user_agent, created_at
    - Primary key: UUID with auto-generation
    - Email validation constraint
 
@@ -52,7 +116,7 @@ The component follows the same architecture patterns as HeroBlock and WaitlistBl
 
    - Form state management with React hooks
    - Email and message validation with HTML5 + regex
-   - Toast notifications for success/error feedback (when available)
+   - Toast notifications for success/error feedback
    - Redirect support for success flow
    - Markdown rendering for title/subtitle via `@/42go/components/Markdown`
    - ScrollAnimation integration for reveal effects
@@ -108,7 +172,7 @@ The component follows the same architecture patterns as HeroBlock and WaitlistBl
 
 **UX Decisions:**
 
-- Toast notifications for immediate feedback (when toast system is available)
+- Toast notifications for immediate feedback using shadcn toast system
 - Loading states during submission
 - Form reset after successful submission
 - Consistent visual design with existing blocks
@@ -124,22 +188,22 @@ The component follows the same architecture patterns as HeroBlock and WaitlistBl
 - ScrollAnimation from `@/components/ui/scroll-animation`
 - Markdown rendering via `@/42go/components/Markdown`
 
-**Missing Dependencies:**
+**Required Dependencies:**
 
-- Toast system: The legacy code shows a complete toast implementation that would need to be added
-- Textarea component: May need to be added to `@/components/ui` or use native textarea
+- Toast system: Install via `npx shadcn@latest add toast` if not present
+- Textarea component: Install via `npx shadcn@latest add textarea` if not present
 
-**Installation Decisions:**
+**Installation Strategy:**
 
-- **Use existing components where possible**: Button, Input from shadcn/ui
-- **Consider adding Textarea**: Either install via shadcn or create simple wrapper
-- **Toast system**: Evaluate if worth implementing or use simple alerts initially
+- Check for existing components at execution time
+- Install only missing dependencies via shadcn CLI
+- Use existing components where already available
 
 ### Files to Create/Modify
 
 **Create:**
 
-- `knex/migrations/[timestamp]_create_feedback_table.js` - Database migration
+- `knex/migrations/[timestamp]_create_feedbacks_table.js` - Database migration
 - `app/api/feedback/route.ts` - API endpoint
 - `/src/42go/components/ContentBlock/blocks/FeedbackBlock.tsx` - Main component
 
@@ -147,6 +211,11 @@ The component follows the same architecture patterns as HeroBlock and WaitlistBl
 
 - `/src/42go/components/ContentBlock/server.tsx` - Add FeedbackBlock to blocksMap
 - `/src/42go/components/ContentBlock/server.tsx` - Add TFeedbackBlock to ContentBlockItem type
+
+**Potentially Install:**
+
+- Toast components via shadcn (if not present)
+- Textarea component via shadcn (if not present)
 
 ### Architecture Alignment
 
@@ -157,36 +226,11 @@ This implementation follows the established patterns:
 3. **API Pattern**: Standard Next.js API routes with proper validation
 4. **UI Pattern**: Tailwind classes, existing UI components, ScrollAnimation integration
 5. **Form Pattern**: Client-side validation, loading states, proper error handling
+6. **Toast Pattern**: Standard shadcn toast integration for user feedback
 
 ## Next Steps
 
 execute task (k3)
-
-- [ ] Optional newsletter subscription checkbox when enabled in configuration
-
-## Feature Behavior Details
-
-The FeedbackBlock allows users to submit feedback with:
-
-- **Email field** (required) - with client and server-side validation
-- **Message field** (required) - for the actual feedback content
-- **Newsletter checkbox** (optional) - only appears when enabled in configuration
-- **Success feedback** - either markdown message or redirect URL after successful submission
-
-**Backend requirements:**
-
-- Save email, message, and newsletter subscription preference to database
-- Include IP address and User-Agent for analytics and abuse detection
-- Validate email format on server-side
-- Return appropriate error messages for validation failures
-
-**Frontend requirements:**
-
-- Client-side email validation before submission
-- Loading states during form submission
-- Form reset after successful submission
-- Toast notifications or redirect based on configuration
-- Consistent visual design with other ContentBlock components
 
 ## Legacy sourcecode for inspiration
 
@@ -817,7 +861,7 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-**add-feedback-table.migration.js**
+**add-feedbacks-table.migration.js**
 
 ```js
 /**
@@ -825,10 +869,11 @@ export async function POST(request: NextRequest) {
  * @returns { Promise<void> }
  */
 exports.up = function (knex) {
-  return knex.schema.createTable("feedback", (table) => {
+  return knex.schema.createTable("feedbacks", (table) => {
     table.text("id").primary().notNullable();
     table.text("email").notNullable();
     table.text("message").notNullable();
+    table.boolean("newsletter_subscription").defaultTo(false);
     table.text("ip_address");
     table.text("user_agent");
     table.timestamp("created_at").notNullable().defaultTo(knex.fn.now());
@@ -840,7 +885,7 @@ exports.up = function (knex) {
  * @returns { Promise<void> }
  */
 exports.down = function (knex) {
-  return knex.schema.dropTableIfExists("feedback");
+  return knex.schema.dropTableIfExists("feedbacks");
 };
 ```
 
