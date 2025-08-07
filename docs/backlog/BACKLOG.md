@@ -12,8 +12,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [abt] Import waitlist block [🔗](./tasks/abt-import-waitlist-block.md)
 - [adm] Import feedback block [🔗](./tasks/adm-import-feedback-block.md)
 - [adl] 🪲 docs: Links from the docs index page don't work [🔗](./tasks/adl-docs-article-walls-links.md)
-- [aci] Add `config.match.header` [🔗](./draft/aci-config-match-header.md)
-- [adn] Add `config.match.fn = async (request): bool` that let match programmatically [🔗](./draft/adn-config-match-function.md)
+- [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
+- [adn] Add `config.match.fn = async (request): bool` that let match programmatically [🔗](./tasks/adn-config-match-function.md)
 
 ## Drafts
 
