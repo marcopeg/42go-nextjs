@@ -11,10 +11,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
 - [abt] Import waitlist block [🔗](./tasks/abt-import-waitlist-block.md)
 - [adm] Import feedback block [🔗](./tasks/adm-import-feedback-block.md)
+- [adl] 🪲 docs: Links from the docs index page don't work [🔗](./tasks/adl-docs-article-walls-links.md)
 
 ## Drafts
 
-- [adl] 🪲 docs: Links from the docs index page don't work [🔗](./draft/adl-docs-article-walls-links.md)
 - [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
 - [acj] Next standalone has `.env` file [🔗](./draft/acj-next-standalone.md)
