@@ -8,7 +8,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Upcoming Tasks
 
-- [acr] Create Client Page HOC [🔗](./draft/acr-client-page-wrapper.md)
 - [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
 - [abt] Import waitlist block [🔗](./tasks/abt-import-waitlist-block.md)
 - [adm] Import feedback block [🔗](./tasks/adm-import-feedback-block.md)
@@ -16,15 +15,16 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
 - [adn] Add `config.match.fn = async (request): bool` that let match programmatically [🔗](./tasks/adn-config-match-function.md)
 - [adq] Clean up AppConfig matching logic [🔗](./tasks/adq-clean-appconfig-match.md)
+- [acr] Create Client Page HOC [🔗](./draft/acr-client-page-wrapper.md)
 - [acj] 🪲 Next standalone has `.env` file [🔗](./tasks/acj-next-standalone.md)
 
 ## Drafts
 
+- [aai] Add RBAC to the users system [🔗](./draft/aai-add-rbac.md)
 - [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
 - [acz] Document Getting started with README's information
 - [acm] 🪲 docs: Parse relative url in articles [🔗](./draft/acm-relative-url.md)
-- [aai] Add RBAC to the users system [🔗](./draft/aai-add-rbac.md)
 - [aat] Support i18n
 - [abd] Optimize Database Documentation [🔗](./draft/abd-optimize-database-documentation.md)
 - [abe] Optimize Theming Documentation [🔗](./draft/abe-optimize-theming-documentation.md)
