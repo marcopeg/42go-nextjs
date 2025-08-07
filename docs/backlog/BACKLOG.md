@@ -2,7 +2,7 @@
 
 A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
 
-(LastID: adm)
+(LastID: adq)
 
 ## Current Task
 
@@ -15,9 +15,12 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Drafts
 
+- [aci] Add `config.match.header` [🔗](./draft/aci-config-match-header.md)
+- [adn] Add `config.match.fn = async (request): bool` that let match programmatically [🔗](./draft/adn-config-match-function.md)
+- [adq] Clean up AppConfig matching logic [🔗](./draft/adq-clean-appconfig-match.md)
 - [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
-- [acj] Next standalone has `.env` file [🔗](./draft/acj-next-standalone.md)
+- [acj] 🪲 Next standalone has `.env` file [🔗](./draft/acj-next-standalone.md)
 - [acz] Document Getting started with README's information
 - [acr] Create an "clientAppPage" that applies feature flags to a client page
 - [acm] 🪲 docs: Parse relative url in articles [🔗](./draft/acm-relative-url.md)
@@ -34,11 +37,9 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aam] Add social login: Facebook
 - [aao] Add social login: Apple
 - [abn] Migrate to Prisma ORM
-- [aci] Add `config.match.header` [🔗](./draft/aci-config-match-header.md)
-- [] Add `config.match.fn = async (request): bool` that let match programmatically
 - [add] [Implement CLI scripts](./draft/add-implement-cli-scripts.md)
-- [] if `config.auth` is not defined, the `/login` should return a 404
-- [] `config.public.docs` if present should be enough to enable the documents even without explicit feature flag. this config should be a feature flag in itself.
+- [ado] if `config.auth` is not defined, the `/login` should return a 404
+- [adp] `config.public.docs` if present should be enough to enable the documents even without explicit feature flag. this config should be a feature flag in itself.
 
 ## Completed Tasks
 
