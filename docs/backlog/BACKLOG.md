@@ -6,9 +6,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
+- [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
+
 ## Upcoming Tasks
 
-- [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
 - [abt] Import waitlist block [🔗](./tasks/abt-import-waitlist-block.md)
 - [adm] Import feedback block [🔗](./tasks/adm-import-feedback-block.md)
 - [adl] 🪲 docs: Links from the docs index page don't work [🔗](./tasks/adl-docs-article-walls-links.md)

@@ -45,11 +45,54 @@ export const HomePage: Page = {
       type: "markdown",
       path: "test/fixtures/markdown-block-01.md",
     },
-    // {
-    //   type: "demo",
-    //   title: "Button Playground by Chuck Norris 🥋",
-    //   description:
-    //     "Testing all button variants and combinations - Chuck Norris style!",
-    // },
+    {
+      type: "pricing",
+      title: "Simple Pricing for **Real** SaaS",
+      subtitle: "No hidden fees. No mercy for complexity.",
+      tiers: [
+        {
+          name: "Starter",
+          price: "$19",
+          period: "/mo",
+          description: "For solo devs and side projects.",
+          features: [
+            { text: "1 Project", status: "included" },
+            { text: "Basic Support", status: "included" },
+            { text: "Unlimited Chuck Norris jokes", status: "coming-soon" },
+            { text: "Team Access", status: "excluded" },
+          ],
+          cta: { label: "Start", href: "/buy?plan=starter" },
+        },
+        {
+          name: "Pro",
+          price: "$49",
+          period: "/mo",
+          description: "For teams who fear nothing.",
+          features: [
+            { text: "10 Projects", status: "included" },
+            { text: "Priority Support", status: "included" },
+            { text: "Unlimited Chuck Norris jokes", status: "included" },
+            { text: "Team Access", status: "included" },
+          ],
+          cta: { label: "Go Pro", href: "/buy?plan=pro" },
+          highlighted: true,
+          badge: "Most Popular",
+        },
+        {
+          name: "Enterprise",
+          price: "Custom",
+          period: "",
+          description: "For those who want to break the internet.",
+          features: [
+            { text: "Unlimited Projects", status: "included" },
+            { text: "Dedicated Support", status: "included" },
+            { text: "Custom Integrations", status: "included" },
+            { text: "Personal Chuck Norris training", status: "coming-soon" },
+          ],
+          cta: { label: "Contact Us", href: "/contact" },
+          badge: "Contact Sales",
+        },
+      ],
+    },
   ],
 };

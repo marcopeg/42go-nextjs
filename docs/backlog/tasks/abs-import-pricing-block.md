@@ -545,6 +545,35 @@ PricingBlock should be added to the **server** ContentBlock since it needs full 
 
 **Implementation Target**: Add PricingBlock to the default app's home page to demonstrate the component in action and validate the implementation.
 
-## Next Steps
+## Issues Encountered
 
-Execute task (k3) to implement the PricingBlock component and integrate it into the ContentBlock system.
+- **Hydration Error: Nested <p> tags**
+
+  - Problem: Using <Markdown> inside a <p> wrapper caused <p> inside <p> (invalid HTML), leading to React hydration errors.
+  - Solution: Replaced the <p> wrapper with a <div> to avoid nested paragraphs. Now <Markdown> renders block content safely.
+
+- **Deprecated `legacyBehavior` and `passHref` in <Link>**
+  - Problem: Next.js warned about deprecated usage of `legacyBehavior` and `passHref` props on <Link>.
+  - Solution: Removed both props and used the modern <Link> API. Button is now a direct child of <Link>.
+
+## Progress
+
+- PricingBlock component created and follows ContentBlock pattern.
+- Responsive grid, feature icons, highlight, badge, and markdown support implemented.
+- Integrated with Button, ScrollAnimation, and Markdown components.
+- Added to server ContentBlock exports and types.
+- Added demo config to home page for validation.
+- All hydration and deprecation errors resolved.
+
+## Implementation Notes
+
+- The block is server-only for SSR and SEO.
+- Uses Tailwind for layout and styling, no Card component for consistency with other blocks.
+- Animation and icon strategies follow project conventions.
+- Markdown is used for all text fields that may require formatting.
+
+## Status
+
+- [x] Implementation complete
+- [x] All known issues resolved
+- [ ] Awaiting user review/QA
