@@ -7,4 +7,4 @@ const getTodos = async (config: AppConfig) => {
   return Response.json({ config, todos });
 };
 
-export const GET = appRoute(getTodos);
+export const GET = appRoute(getTodos, "todos");

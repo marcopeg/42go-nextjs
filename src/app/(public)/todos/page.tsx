@@ -11,4 +11,4 @@ const TodosPage = () => {
   );
 };
 
-export default appPage(TodosPage, "url!");
+export default appPage(TodosPage, "todos");

@@ -96,7 +96,7 @@ export const DEFAULT_APP: AppName = null;
 /**
  * Available applications with their configurations.
  */
-export const availableApps = {
+export const availableApps: Record<string, AppConfigItem> = {
   default: {
     name: "DEFAULT APP",
     match: {
@@ -116,8 +116,8 @@ export const availableApps = {
       },
     },
     featureFlags: {
-      pages: [],
-      apis: ["waitlist", "feedback"],
+      pages: ["docs", "todos"],
+      apis: ["waitlist", "feedback", "todos"],
     },
     theme: {
       default: "system",
@@ -478,4 +478,4 @@ export const availableApps = {
       ],
     },
   },
-} satisfies Record<string, AppConfigItem>;
+};

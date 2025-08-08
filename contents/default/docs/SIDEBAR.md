@@ -1,6 +1,6 @@
 # Documentation
 
-- [Getting Started](./getting-started.md)
+- [Getting Started](./getting-started/README.md)
 
 # Features
 
