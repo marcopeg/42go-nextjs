@@ -64,12 +64,12 @@ export const PricingBlock = ({ data }: { data: TPricingBlock }) => {
         className={`grid grid-cols-1 md:grid-cols-${Math.min(
           tiers.length,
           3
-        )} gap-6`}
+        )} gap-6 items-end`}
       >
         {tiers.map((tier, index) => (
           <ScrollAnimation key={index} type="slideUp" delay={0.1 * (index + 1)}>
             <div
-              className={`relative flex flex-col h-full min-h-[520px] p-8 rounded-lg border bg-background shadow-sm transition-transform duration-300 ${
+              className={`relative flex flex-col h-full p-8 rounded-lg border bg-background shadow-sm transition-transform duration-300 ${
                 tier.highlighted
                   ? "border-primary shadow-lg scale-105 z-10"
                   : ""
@@ -120,7 +120,12 @@ export const PricingBlock = ({ data }: { data: TPricingBlock }) => {
                   </li>
                 ))}
               </ul>
-              <div className="mt-auto pt-8 flex items-end">
+              <div
+                className={`mt-auto pt-8 flex items-end`}
+                style={{
+                  transform: tier.highlighted ? "translateY(-10px)" : "",
+                }}
+              >
                 <Link href={tier.cta.href} className="w-full">
                   <Button className="w-full" variant="default">
                     {tier.cta.label}
