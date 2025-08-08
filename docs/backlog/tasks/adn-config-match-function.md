@@ -378,6 +378,30 @@ INSERT INTO users (id, premium) VALUES
 ('regular-user-456', false);
 ```
 
+## Edge Runtime Findings & Considerations
+
+- Next.js middleware (Edge Runtime) cannot import or even reference any config object that contains functions (especially async functions) due to serialization and runtime restrictions.
+- Adding a `match.fn` property to `AppConfig` (even if not called) will break the Edge Runtime if the config is imported by middleware.
+- This is not about the `fn` keyword, but about the presence of a function in the config object. Edge Runtime is strict about what can be imported and inspected.
+- Other properties like icons or React components work because they are not executed or inspected in Edge, and are only used in client/server code.
+- Any function in a config object imported by middleware will cause runtime errors, even if you guard against execution.
+
+## Proposed Solution: Config Split
+
+- **Split the config:**
+  - Create an Edge-safe config (no functions) for middleware and Edge Runtime usage.
+  - Create a server-only config (with `match.fn` and other advanced logic) for backend/server code.
+- **How:**
+  - Move all `fn` logic to a separate file, e.g., `AppConfig.server.ts`.
+  - Keep `AppConfig.ts` strictly Edge-compatible.
+  - Middleware imports only the Edge-safe config.
+  - Backend/server code imports the full config with `fn`.
+- **Result:**
+  - No more Edge Runtime errors.
+  - Full power for server-side matching logic.
+
 ## Next Steps
 
-execute task (k2)
+- Refactor config as described above.
+- Document the split and usage in the Memory Bank and developer docs.
+- Update all imports to use the correct config for their runtime.

@@ -1,4 +1,3 @@
-import type { NextRequest } from "next/server";
 import type { Metadata } from "next";
 import type { ComponentType, ReactNode } from "react";
 // Types for composing the AppConfig
@@ -6,6 +5,7 @@ import type { TAuthProviders } from "@/42go/auth/lib/providers/types";
 import type { TDynamicPage } from "@/42go/components/DynamicPage";
 import type { TPublicLayoutToolbar } from "@/42go/layouts/public/types";
 import type { TAppLayoutNavItem } from "@/42go/layouts/app/types";
+import type { TAppConfigMatch } from "@/42go/lib/match/matchers";
 // Into the default's public toolbar
 import { UserMenu } from "@/42go/auth/components/UserMenu";
 // Develompent utilities for the pages
@@ -69,9 +69,7 @@ export interface AppConfigItem {
     pages: string[]; // List of pages available in this app
     apis: string[]; // List of API endpoints available in this app
   };
-  match?: {
-    url?: string | string[]; // Regexp string(s) to match host
-  };
+  match?: TAppConfigMatch;
   // pages moved to public.pages
   // docs moved to public.docs
 }
@@ -82,6 +80,7 @@ export type AppName = keyof typeof availableApps | null;
 /**
  * Header name for app identification
  * (this might become an ENV variable in the future)
+ * (this should be nullable to skip the functionality)
  */
 export const APP_HEADER_NAME = "X-App-Name";
 
@@ -102,6 +101,19 @@ export const availableApps = {
     name: "DEFAULT APP",
     match: {
       url: ["^localhost:3000$"],
+      header: {
+        mode: "all",
+        keys: [
+          {
+            key: "foo",
+            value: "bar",
+          },
+          {
+            key: "faa",
+            value: "bar",
+          },
+        ],
+      },
     },
     featureFlags: {
       pages: [],
@@ -240,6 +252,18 @@ export const availableApps = {
     name: "APP n1",
     match: {
       url: ["^app1\\.localhost:3000$", "^app1\\.mydomain.com$"],
+      header: {
+        keys: [
+          {
+            key: "Authorization",
+            value: /^Bearer .+app1-api-key.+$/,
+          },
+          {
+            key: "X-App-Type",
+            value: "app1",
+          },
+        ],
+      },
     },
     featureFlags: {
       pages: ["todos", "docs"],
@@ -363,6 +387,19 @@ export const availableApps = {
     name: "CalendarPro",
     match: {
       url: ["^calendar\\.localhost:3000$", "^calendar\\.mydomain.com$"],
+      header: {
+        keys: [
+          {
+            key: "X-App-Type",
+            value: ["calendar", "scheduling"],
+            mode: "any",
+          },
+          {
+            key: /^X-Calendar-.*/i,
+            value: /^pro-/,
+          },
+        ],
+      },
     },
     featureFlags: {
       pages: ["CalendarPage"],
@@ -442,46 +479,3 @@ export const availableApps = {
     },
   },
 } satisfies Record<string, AppConfigItem>;
-
-/**
- * Dynamically determines the app name based on request headers or URL.
- * (used in middleware and other parts of the application)
- *
- * @param request NextRequest object from Next.js
- * @returns
- */
-export const matchAppName = async (request: NextRequest): Promise<AppName> => {
-  // Identify by header
-  const customSetupHeader = request.headers.get(APP_HEADER_NAME);
-  if (
-    customSetupHeader &&
-    customSetupHeader !== "null" &&
-    availableApps[customSetupHeader as keyof typeof availableApps]
-  ) {
-    return customSetupHeader as AppName;
-  }
-
-  // Match by Host Header
-  // config.match.url
-  const hostHeader = request.headers.get("host");
-  for (const [appKey, appConfig] of Object.entries(availableApps)) {
-    if (appConfig.match?.url) {
-      const urlPatterns = Array.isArray(appConfig.match.url)
-        ? appConfig.match.url
-        : [appConfig.match.url];
-      for (const pattern of urlPatterns) {
-        try {
-          const regex = new RegExp(pattern);
-          if (hostHeader && regex.test(hostHeader)) {
-            return appKey as AppName; // First positive match exits like Chuck Norris
-          }
-        } catch {
-          // Chuck Norris doesn't catch errors, but TypeScript does
-        }
-      }
-    }
-  }
-
-  // Unknown host - return null to trigger 404
-  return null;
-};

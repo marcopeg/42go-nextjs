@@ -11,9 +11,6 @@ n/a
 ## Upcoming Tasks
 
 - [adl] 🪲 docs: Links from the docs index page don't work [🔗](./tasks/adl-docs-article-walls-links.md)
-- [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
-- [adn] Add `config.match.fn = async (request): bool` that let match programmatically [🔗](./tasks/adn-config-match-function.md)
-- [adq] Clean up AppConfig matching logic [🔗](./tasks/adq-clean-appconfig-match.md)
 - [acr] Create Client Page HOC [🔗](./draft/acr-client-page-wrapper.md)
 - [acj] 🪲 Next standalone has `.env` file [🔗](./tasks/acj-next-standalone.md)
 
@@ -44,9 +41,12 @@ n/a
 - [add] [Implement CLI scripts](./draft/add-implement-cli-scripts.md)
 - [ado] if `config.auth` is not defined, the `/login` should return a 404
 - [adp] `config.public.docs` if present should be enough to enable the documents even without explicit feature flag. this config should be a feature flag in itself.
+- [adn] Add `config.match.fn = async (request): bool` that let match programmatically [🔗](./tasks/adn-config-match-function.md)
 
 ## Completed Tasks
 
+- [adq] Clean up AppConfig matching logic [🔗](./tasks/adq-clean-appconfig-match.md)
+- [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
 - [adm] Import feedback block [🔗](./tasks/adm-import-feedback-block.md)
 - [abt] Import waitlist block [🔗](./tasks/abt-import-waitlist-block.md)
 - [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)

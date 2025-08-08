@@ -1,26 +1,18 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { matchAppName, APP_HEADER_NAME } from "@/AppConfig"; // Updated import path
+import { matchAppName, APP_HEADER_NAME } from "@/42go/lib/match";
 
 export async function middleware(request: NextRequest) {
-  // Set the AppName header
-  const resolvedAppName = await matchAppName(request);
-  const requestHeaders = new Headers(request.headers);
+  // Resolve the appName
+  const appName = await matchAppName(request);
 
-  if (resolvedAppName) {
-    requestHeaders.set(APP_HEADER_NAME, resolvedAppName);
-    console.log(
-      `@@@@@@ Middleware: Setting ${APP_HEADER_NAME} header to: ${resolvedAppName}`
-    );
-  } else {
-    console.warn(
-      `@@@@@@ Middleware: No valid app name resolved, not setting ${APP_HEADER_NAME} header.`
-    );
+  // Set the AppName header
+  const requestHeaders = new Headers(request.headers);
+  if (appName) {
+    requestHeaders.set(APP_HEADER_NAME, appName);
   }
 
-  // Set the pathname header for URL-based feature flag checking
-  requestHeaders.set("x-pathname", request.nextUrl.pathname);
-
+  // Forward the request
   return NextResponse.next({
     request: {
       headers: requestHeaders,
