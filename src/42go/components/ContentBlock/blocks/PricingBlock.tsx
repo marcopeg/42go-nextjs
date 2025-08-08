@@ -69,13 +69,21 @@ export const PricingBlock = ({ data }: { data: TPricingBlock }) => {
         {tiers.map((tier, index) => (
           <ScrollAnimation key={index} type="slideUp" delay={0.1 * (index + 1)}>
             <div
-              className={`relative flex flex-col h-full p-8 rounded-lg border bg-background shadow-sm transition-transform duration-300 ${
-                tier.highlighted ? "border-accent shadow-lg scale-105 z-10" : ""
+              className={`relative flex flex-col h-full min-h-[520px] p-8 rounded-lg border bg-background shadow-sm transition-transform duration-300 ${
+                tier.highlighted
+                  ? "border-primary shadow-lg scale-105 z-10"
+                  : ""
               }`}
             >
               {tier.badge && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-accent text-accent-foreground text-xs font-semibold px-3 py-1 rounded-full">
+                  <span
+                    className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                      tier.highlighted
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-accent text-accent-foreground"
+                    }`}
+                  >
                     {tier.badge}
                   </span>
                 </div>
@@ -94,7 +102,7 @@ export const PricingBlock = ({ data }: { data: TPricingBlock }) => {
                   <Markdown source={tier.description} />
                 </div>
               </div>
-              <ul className="space-y-3 flex-1">
+              <ul className="space-y-3 flex-1 min-h-[180px]">
                 {tier.features.map((feature, i) => (
                   <li key={i} className="flex items-start">
                     <span className="mr-2 mt-1">
@@ -112,15 +120,9 @@ export const PricingBlock = ({ data }: { data: TPricingBlock }) => {
                   </li>
                 ))}
               </ul>
-              <div className="mt-8">
+              <div className="mt-auto pt-8 flex items-end">
                 <Link href={tier.cta.href} className="w-full">
-                  <Button
-                    className={`w-full ${
-                      tier.highlighted
-                        ? "bg-accent text-accent-foreground hover:bg-accent/90"
-                        : ""
-                    }`}
-                  >
+                  <Button className="w-full" variant="default">
                     {tier.cta.label}
                   </Button>
                 </Link>

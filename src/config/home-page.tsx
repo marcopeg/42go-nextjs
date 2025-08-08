@@ -58,7 +58,6 @@ export const HomePage: Page = {
           features: [
             { text: "1 Project", status: "included" },
             { text: "Basic Support", status: "included" },
-            { text: "Unlimited Chuck Norris jokes", status: "coming-soon" },
             { text: "Team Access", status: "excluded" },
           ],
           cta: { label: "Start", href: "/buy?plan=starter" },
@@ -73,6 +72,7 @@ export const HomePage: Page = {
             { text: "Priority Support", status: "included" },
             { text: "Unlimited Chuck Norris jokes", status: "included" },
             { text: "Team Access", status: "included" },
+            { text: "VIP Support", status: "coming-soon" },
           ],
           cta: { label: "Go Pro", href: "/buy?plan=pro" },
           highlighted: true,
@@ -87,7 +87,6 @@ export const HomePage: Page = {
             { text: "Unlimited Projects", status: "included" },
             { text: "Dedicated Support", status: "included" },
             { text: "Custom Integrations", status: "included" },
-            { text: "Personal Chuck Norris training", status: "coming-soon" },
           ],
           cta: { label: "Contact Us", href: "/contact" },
           badge: "Contact Sales",
