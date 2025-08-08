@@ -2,14 +2,15 @@
 
 A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
 
-(LastID: aam)
+(LastID: aan)
 
 ## Current Task
 
-- [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
+n/a
 
 ## Upcoming Tasks
 
+- [aan] App-Specific Session Configuration [🔗](./draft/aan-app-specific-session-config.md)
 - [abt] Import waitlist block [🔗](./tasks/abt-import-waitlist-block.md)
 - [adm] Import feedback block [🔗](./tasks/adm-import-feedback-block.md)
 - [adl] 🪲 docs: Links from the docs index page don't work [🔗](./tasks/adl-docs-article-walls-links.md)
@@ -48,6 +49,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
 - [adf] [Custom Actions Type - SUPERSEDED](./archive/adf-custom-actions-type.md) ⚠️ Split into adg-adk
 - [adi] [Create PublicLayout TActionItem Type](./archive/adi-create-publiclayout-tactionitem-type.md) 🔗
 - [adj] [Create AppLayout TActionItem Type](./archive/adj-create-applayout-tactionitem-type.md) 🔗
