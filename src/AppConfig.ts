@@ -104,8 +104,8 @@ export const availableApps = {
       url: ["^localhost:3000$"],
     },
     featureFlags: {
-      pages: ["*"],
-      apis: ["*"],
+      pages: [],
+      apis: ["waitlist"],
     },
     theme: {
       default: "system",

@@ -6,6 +6,7 @@ import { MarkdownBlock, type TMarkdownBlock } from "./blocks/MarkdownBlock";
 import { ComponentBlock, type TComponentBlock } from "./blocks/ComponentBlock";
 import { LinkBlock, type TLinkBlock } from "./blocks/LinkBlock";
 import { PricingBlock, type TPricingBlock } from "./blocks/PricingBlock";
+import { WaitlistBlock, type TWaitlistBlock } from "./blocks/WaitlistBlock";
 
 export type ContentBlockItem =
   | THeroBlock
@@ -13,7 +14,8 @@ export type ContentBlockItem =
   | TMarkdownBlock
   | TComponentBlock
   | TLinkBlock
-  | TPricingBlock;
+  | TPricingBlock
+  | TWaitlistBlock;
 
 const blocksMap: BlocksMap = {
   hero: HeroBlock,
@@ -22,6 +24,7 @@ const blocksMap: BlocksMap = {
   component: ComponentBlock,
   link: LinkBlock,
   pricing: PricingBlock,
+  waitlist: ({ data }: { data: TWaitlistBlock }) => <WaitlistBlock {...data} />,
 } as BlocksMap;
 
 export const ContentBlock = ({ items }: { items: ContentBlockItem[] }) => {

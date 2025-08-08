@@ -6,12 +6,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-n/a
-
 ## Upcoming Tasks
 
-- [aan] App-Specific Session Configuration [🔗](./draft/aan-app-specific-session-config.md)
-- [abt] Import waitlist block [🔗](./tasks/abt-import-waitlist-block.md)
 - [adm] Import feedback block [🔗](./tasks/adm-import-feedback-block.md)
 - [adl] 🪲 docs: Links from the docs index page don't work [🔗](./tasks/adl-docs-article-walls-links.md)
 - [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
@@ -27,6 +23,7 @@ n/a
 - [aak] RBAC Page & Route Protection 🔗 [story](./draft/aak-rbac-page-route-protection.md)
 - [aal] RBAC Menu Integration 🔗 [story](./draft/aal-rbac-menu-integration.md)
 - [aam] RBAC Advanced Features 🔗 [story](./draft/aam-rbac-advanced-features.md)
+- [aan] App-Specific Session Configuration [🔗](./draft/aan-app-specific-session-config.md)
 - [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
 - [acz] Document Getting started with README's information
@@ -49,6 +46,7 @@ n/a
 
 ## Completed Tasks
 
+- [abt] Import waitlist block [🔗](./tasks/abt-import-waitlist-block.md)
 - [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
 - [adf] [Custom Actions Type - SUPERSEDED](./archive/adf-custom-actions-type.md) ⚠️ Split into adg-adk
 - [adi] [Create PublicLayout TActionItem Type](./archive/adi-create-publiclayout-tactionitem-type.md) 🔗

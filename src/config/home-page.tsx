@@ -21,30 +21,30 @@ export const HomePage: Page = {
         },
       ],
     },
+
     {
-      type: "component",
-      component: Foo,
-      props: {
-        name: "42go",
+      type: "waitlist",
+      title: "Join the **Waitlist**",
+      subtitle: "Get early access. **No spam.** Only roundhouse kicks.",
+      placeholder: "Your email address",
+      buttonLabel: "Join Now",
+      feedback: {
+        type: "message",
+        content: "You're on the list. Chuck Norris approves.",
       },
     },
     {
-      type: "component",
-      component: () => "faa",
-      // props: {},
+      type: "waitlist",
+      title: "With redirect",
+      subtitle: "Get early access. **No spam.** Only roundhouse kicks.",
+      placeholder: "Your email address",
+      buttonLabel: "Join Now",
+      feedback: {
+        type: "redirect",
+        url: "/thank-you",
+      },
     },
-    {
-      type: "markdown",
-      source: "This is a **Markdown Block** rendered.",
-    },
-    {
-      type: "markdown",
-      path: "/Users/marcopeg/dv/marcopeg/42go-next/test/fixtures/markdown-block-01.md",
-    },
-    {
-      type: "markdown",
-      path: "test/fixtures/markdown-block-01.md",
-    },
+
     {
       type: "pricing",
       title: "Simple Pricing for **Real** SaaS",
@@ -92,6 +92,30 @@ export const HomePage: Page = {
           badge: "Contact Sales",
         },
       ],
+    },
+    {
+      type: "component",
+      component: Foo,
+      props: {
+        name: "42go",
+      },
+    },
+    {
+      type: "component",
+      component: () => "faa",
+      // props: {},
+    },
+    {
+      type: "markdown",
+      source: "This is a **Markdown Block** rendered.",
+    },
+    {
+      type: "markdown",
+      path: "/Users/marcopeg/dv/marcopeg/42go-next/test/fixtures/markdown-block-01.md",
+    },
+    {
+      type: "markdown",
+      path: "test/fixtures/markdown-block-01.md",
     },
   ],
 };
