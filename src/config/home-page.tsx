@@ -22,6 +22,22 @@ export const HomePage: Page = {
       ],
     },
 
+    // Feedback block before waitlist
+    {
+      type: "feedback",
+      title: "Give Us Your **Feedback**",
+      subtitle: "Chuck Norris reads every message. Be brave.",
+      emailPlaceholder: "Your email address",
+      messagePlaceholder: "Your feedback message",
+      buttonLabel: "Send Feedback",
+      showNewsletter: true,
+      newsletterLabel: "Subscribe to roundhouse updates",
+      feedback: {
+        type: "message",
+        content: "Thanks for your feedback! Chuck Norris approves.",
+      },
+    },
+
     {
       type: "waitlist",
       title: "Join the **Waitlist**",

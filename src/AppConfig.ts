@@ -105,7 +105,7 @@ export const availableApps = {
     },
     featureFlags: {
       pages: [],
-      apis: ["waitlist"],
+      apis: ["waitlist", "feedback"],
     },
     theme: {
       default: "system",

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/toast";
 import { ScrollAnimation } from "@/components/ui/scroll-animation";
 import Markdown from "@/42go/components/Markdown";
 
@@ -17,6 +17,7 @@ export interface TWaitlistBlock {
   feedback:
     | { type: "message"; content: string }
     | { type: "redirect"; url: string };
+  resetLabel?: string;
 }
 
 export const WaitlistBlock = (props: TWaitlistBlock) => {
@@ -24,6 +25,8 @@ export const WaitlistBlock = (props: TWaitlistBlock) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,12 +55,18 @@ export const WaitlistBlock = (props: TWaitlistBlock) => {
           const data = await res.json();
           if (data?.error) msg = data.error;
         } catch {}
-        toast.error(msg);
-        alert(msg);
+        toast({
+          title: "Error",
+          description: msg,
+          variant: "destructive",
+        });
       }
     } catch {
-      toast.error("Something went roundhouse wrong.");
-      alert("Network error. Please try again later.");
+      toast({
+        title: "Error",
+        description: "Network error. Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -111,6 +120,18 @@ export const WaitlistBlock = (props: TWaitlistBlock) => {
                   source={props.feedback.content || "You're on the list!"}
                 />
               </div>
+              <Button
+                variant="link"
+                className="text-sm text-gray-500 hover:text-primary mt-2"
+                onClick={() => {
+                  setSuccess(false);
+                  setTimeout(() => {
+                    emailInputRef.current?.focus();
+                  }, 0);
+                }}
+              >
+                {props.resetLabel || "Add new email"}
+              </Button>
             </div>
           </ScrollAnimation>
         ) : (
@@ -124,6 +145,7 @@ export const WaitlistBlock = (props: TWaitlistBlock) => {
               autoComplete="email"
               aria-label="Email address"
               disabled={loading}
+              ref={emailInputRef}
             />
             <Button
               type="submit"

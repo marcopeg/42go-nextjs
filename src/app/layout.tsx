@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { getAppInfo } from "@/42go/config/app-config";
 import { InjectAppName } from "@/42go/config/InjectAppName";
 import { Providers } from "@/components/Providers";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import "./tailwind.css";
 
@@ -34,7 +35,10 @@ const RootLayout = async ({
       <head>
         <InjectAppName name={name} />
       </head>
-      <body className={inter.className}>{body}</body>
+      <body className={inter.className}>
+        {body}
+        <Toaster richColors />
+      </body>
     </html>
   );
 };

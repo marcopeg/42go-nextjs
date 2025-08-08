@@ -7,6 +7,7 @@ import { ComponentBlock, type TComponentBlock } from "./blocks/ComponentBlock";
 import { LinkBlock, type TLinkBlock } from "./blocks/LinkBlock";
 import { PricingBlock, type TPricingBlock } from "./blocks/PricingBlock";
 import { WaitlistBlock, type TWaitlistBlock } from "./blocks/WaitlistBlock";
+import { FeedbackBlock, type TFeedbackBlock } from "./blocks/FeedbackBlock";
 
 export type ContentBlockItem =
   | THeroBlock
@@ -15,7 +16,8 @@ export type ContentBlockItem =
   | TComponentBlock
   | TLinkBlock
   | TPricingBlock
-  | TWaitlistBlock;
+  | TWaitlistBlock
+  | TFeedbackBlock;
 
 const blocksMap: BlocksMap = {
   hero: HeroBlock,
@@ -25,6 +27,7 @@ const blocksMap: BlocksMap = {
   link: LinkBlock,
   pricing: PricingBlock,
   waitlist: ({ data }: { data: TWaitlistBlock }) => <WaitlistBlock {...data} />,
+  feedback: ({ data }: { data: TFeedbackBlock }) => <FeedbackBlock {...data} />,
 } as BlocksMap;
 
 export const ContentBlock = ({ items }: { items: ContentBlockItem[] }) => {
