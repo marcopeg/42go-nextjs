@@ -48,11 +48,34 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+  /* Respect OS color-scheme for built-in UI like form controls */
+  :root {
+    color-scheme: light dark;
   }
+
+  /* Set a sane default border color without forcing outlines everywhere */
+  *,
+  *::before,
+  *::after {
+    border-color: var(--border);
+  }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Accessible focus styles for interactive elements */
+  :where(
+      a,
+      button,
+      input,
+      textarea,
+      select,
+      summary,
+      [role="button"],
+      [tabindex]
+    ):focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }
 
