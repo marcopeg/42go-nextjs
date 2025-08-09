@@ -22,9 +22,8 @@ export const matchAppName = async (request: NextRequest): Promise<AppName> => {
       return envMatch;
     }
   } catch (error) {
-    // In Edge Runtime, we can't exit the process, so we log and continue
     console.error("APP_ID validation failed:", (error as Error).message);
-    // Fall through to other matching strategies
+    return null;
   }
 
   // 2. Header pattern matching (existing logic)
