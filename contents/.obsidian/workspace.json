@@ -96,9 +96,9 @@
               "state": {
                 "file": "default/docs/multiple-apps/README.md",
                 "collapseAll": false,
-                "extraContext": false,
+                "extraContext": true,
                 "sortOrder": "alphabetical",
-                "showSearch": false,
+                "showSearch": true,
                 "searchQuery": "",
                 "backlinkCollapsed": false,
                 "unlinkedCollapsed": true
@@ -151,12 +151,12 @@
               "title": "Outline of README"
             }
           }
-        ]
+        ],
+        "currentTab": 3
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -168,7 +168,7 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "fb3a5db95b09e15b",
+  "active": "5487273809d58008",
   "lastOpenFiles": [
     "default/docs/SIDEBAR.md",
     "default/docs/getting-started/README.md"

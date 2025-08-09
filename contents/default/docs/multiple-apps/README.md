@@ -32,18 +32,21 @@ export const apps: Record<string, AppConfigItem> = {
 ## Config Matchers
 
 The first think you want to setup is the App's matcher, the rule(s) that are used by the system to figure out which configuration to use to satisfy the incoming request.
-### match.url
 
-This setting works by matching the url of the request against one or more _regular expressions_. If any of the rules is a match, then the configuration is used.
+> You will work mostly at configuration level, but be aware that you can throw all of this away and implement your own custom logic in `@/middleware.ts`
 
-```ts
-// Match the url from the incoming request
-const app: AppConfigItem = {
-	match: {
-		url: ["^localhost:3000$", ...other options ]
-	}
-}
-```
+The order of application is specific, and the first positive match will stop the process:
+
+1. Environment
+2. Headers
+3. URL
+### env.APP_ID
+
+Provide a specific `APP_ID=todo` as _Environment Variable_ at boot time to lock down the execution to that specific App only.
+
+> No other apps will be available to this running process!
+
+👉 This is particularly useful when you want to work on multiple apps from the same codebase, but then you deploy each one (or groups of them) independently for scaling reasons.
 
 ### match.header
 
@@ -71,6 +74,20 @@ const app: AppConfigItem = {
 }
 ```
 
+### match.url
+
+This setting works by matching the URL of the request against one or more _regular expressions_. If any of the rules is a match, then the configuration is used.
+
+```ts
+// Match the url from the incoming request
+const app: AppConfigItem = {
+	match: {
+		url: ["^localhost:3000$", ...other options ]
+	}
+}
+```
+
+> The first hit will stop the search setting the AppID as active.
 ### Custom Match Logic
 If these functionalities are not enough, you can modify the `@/middleware.ts` and implement whatever _Request_ matching logic that you need to put in place to pick the active _App_ configuration.
 
@@ -80,6 +97,15 @@ Just make sure you forward the final value as internal header:
 const requestHeaders = new Headers(request.headers);
 requestHeaders.set(APP_HEADER_NAME, '-- your choiche goes here --');
 ```
+
+### Default App
+
+If the matching fails to identify the correct AppID to use during the request, the control passes to the `export const DEFAULT_APP` from `@/AppConfig.ts`.
+
+- `null` will cause a `404 app not found`
+- `{app-id}` will force that specific App to be used when no match was possible
+
+> We suggest to keep this to `null` and be explicit with the matching configuration!
 
 ## Feature Flags
 
@@ -117,3 +143,48 @@ const TodosPage = () => 'todos page...'
 // "todos" is the FeatureID:
 export default appPage(TodosPage, "todos");
 ```
+
+## Theming
+
+_42Go-Next_ is based on [TailwindCSS] and [ChadCN] and supports Light and Dark theme out of the box.
+
+Styling is achieved by 2 main files in your project:
+
+- `@/app/tokens.css` sets up all the [Design Tokens]
+- `@/app/tailwind.css` connects your tokens to Tailwind
+
+> Whatever change you apply to these files will impact every App.
+
+### Default Theme
+
+You can control what theme is used at boot time by changing the following setting:
+
+```ts
+const app: AppConfigItem = {
+	theme: {
+		default: "light", // light | dark | system (default: system)
+	},
+}
+```
+
+### Override Tokens
+
+You probably want to give your App a specific branding and visual identity.
+
+You can create a `@/public/themes/{app-id}.css` and override any token to customize, say, your primary color:
+
+```css
+/* 
+@/public/themes/todo.css 
+(AppID: todo)
+*/
+:root {
+	--primary: oklch(69.512% 0.20285 41.616);
+}
+```
+
+### PublicLayout
+
+All the public pages should be implemented under `@/app/(public)`
+
+### AppLayout
