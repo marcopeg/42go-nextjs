@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { matchAppName } from "@/42go/lib/match";
-import { APP_HEADER_NAME } from "@/AppConfig";
+import { APP_HEADER_NAME } from "@/42go/lib/match/constants";
 
 export async function middleware(request: NextRequest) {
   // Resolve the appName

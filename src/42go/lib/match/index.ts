@@ -27,11 +27,11 @@ export const matchAppName = async (request: NextRequest): Promise<AppName> => {
     // Fall through to other matching strategies
   }
 
-  // 4. Header pattern matching (existing logic)
+  // 2. Header pattern matching (existing logic)
   const headerPatternMatch = matchByHeaderPatterns(request, apps);
   if (headerPatternMatch) return headerPatternMatch;
 
-  // 5. URL pattern matching
+  // 3. URL pattern matching
   const urlMatch = matchByUrl(request, apps);
   if (urlMatch) return urlMatch;
 
@@ -44,3 +44,4 @@ export type {
   HeaderMatchConfig,
   HeaderMatchRule,
 } from "./matchers";
+export { APP_HEADER_NAME } from "./constants";

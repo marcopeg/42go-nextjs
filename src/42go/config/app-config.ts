@@ -1,13 +1,8 @@
 import { headers as getHeaders } from "next/headers";
 import { cache } from "react";
 
-import {
-  type AppConfig,
-  type AppName,
-  apps,
-  DEFAULT_APP,
-  APP_HEADER_NAME,
-} from "@/AppConfig";
+import { APP_HEADER_NAME } from "@/42go/lib/match/constants";
+import { type AppConfig, type AppName, apps, DEFAULT_APP } from "@/AppConfig";
 
 export type { AppConfig, AppName } from "@/AppConfig";
 

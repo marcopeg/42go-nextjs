@@ -77,12 +77,7 @@ export interface AppConfigItem {
 export type AppConfig = AppConfigItem | null;
 export type AppName = keyof typeof apps | null;
 
-/**
- * Header name for app identification
- * (this might become an ENV variable in the future)
- * (this should be nullable to skip the functionality)
- */
-export const APP_HEADER_NAME = "X-App-Name";
+// Removed: APP_HEADER_NAME is now internal to the 42go library
 
 /**
  * Default application name.
