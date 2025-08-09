@@ -1,4 +1,4 @@
-import { availableApps } from "@/AppConfig";
+import { apps } from "@/AppConfig";
 
 /**
  * Validates APP_NAME environment variable at application startup
@@ -14,10 +14,10 @@ export const validateAppEnvironment = (): void => {
 
   const envAppName = process.env.APP_NAME;
 
-  if (envAppName && !(envAppName in availableApps)) {
+  if (envAppName && !(envAppName in apps)) {
     console.error(`❌ APP_NAME validation failed:`);
     console.error(`   Specified: "${envAppName}"`);
-    console.error(`   Available: ${Object.keys(availableApps).join(", ")}`);
+    console.error(`   Available: ${Object.keys(apps).join(", ")}`);
     process.exit(1);
   }
 

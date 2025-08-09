@@ -75,7 +75,7 @@ export interface AppConfigItem {
 }
 
 export type AppConfig = AppConfigItem | null;
-export type AppName = keyof typeof availableApps | null;
+export type AppName = keyof typeof apps | null;
 
 /**
  * Header name for app identification
@@ -96,7 +96,7 @@ export const DEFAULT_APP: AppName = null;
 /**
  * Available applications with their configurations.
  */
-export const availableApps: Record<string, AppConfigItem> = {
+export const apps: Record<string, AppConfigItem> = {
   default: {
     name: "DEFAULT APP",
     match: {

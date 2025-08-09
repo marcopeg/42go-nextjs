@@ -4,7 +4,7 @@ import { cache } from "react";
 import {
   type AppConfig,
   type AppName,
-  availableApps,
+  apps,
   DEFAULT_APP,
   APP_HEADER_NAME,
 } from "@/AppConfig";
@@ -28,18 +28,22 @@ export const getAppName = cache(async (): Promise<AppName> => {
     return DEFAULT_APP;
   }
 
-  const appName = appNameHeader as keyof typeof availableApps;
-  if (availableApps[appName]) {
+  const appName = appNameHeader as keyof typeof apps;
+  if (apps[appName]) {
     return appName as AppName;
   } else {
     if (DEFAULT_APP === null) {
       console.error(
-        `No setup found for name: ${appName}, and no DEFAULT_APP set. Returning null.`
+        `No setup found for name: ${String(
+          appName
+        )}, and no DEFAULT_APP set. Returning null.`
       );
       return null;
     }
     console.error(
-      `No setup found for name: ${appName}, using default: ${DEFAULT_APP}`
+      `No setup found for name: ${String(
+        appName
+      )}, using default: ${DEFAULT_APP}`
     );
     return DEFAULT_APP;
   }
@@ -48,7 +52,7 @@ export const getAppName = cache(async (): Promise<AppName> => {
 export const getAppConfig = cache(async (): Promise<AppConfig> => {
   const appName = await getAppName();
   if (!appName) return null;
-  return availableApps[appName as keyof typeof availableApps] || null;
+  return apps[appName as keyof typeof apps] || null;
 });
 
 export const getAppInfo = cache(

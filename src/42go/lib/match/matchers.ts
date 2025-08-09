@@ -23,18 +23,18 @@ export interface TAppConfigMatch {
  * Highest priority - skips all other matching when APP_NAME is set
  */
 export const matchByEnvironment = (
-  availableApps: Record<string, AppConfigItem>
+  apps: Record<string, AppConfigItem>
 ): AppName | null => {
   const envAppName = process.env.APP_NAME;
   if (!envAppName) return null;
 
-  if (envAppName in availableApps) {
+  if (envAppName in apps) {
     return envAppName as AppName;
   }
 
   throw new Error(
     `APP_NAME="${envAppName}" not found in available apps. Available: ${Object.keys(
-      availableApps
+      apps
     ).join(", ")}`
   );
 };
@@ -45,13 +45,13 @@ export const matchByEnvironment = (
 export const matchByHeader = (
   request: NextRequest,
   headerName: string,
-  availableApps: Record<string, AppConfigItem>
+  apps: Record<string, AppConfigItem>
 ): AppName | null => {
   const customSetupHeader = request.headers.get(headerName);
   if (
     customSetupHeader &&
     customSetupHeader !== "null" &&
-    customSetupHeader in availableApps
+    customSetupHeader in apps
   ) {
     return customSetupHeader as AppName;
   }
@@ -125,9 +125,9 @@ const matchHeaderConfig = (
  */
 export const matchByHeaderPatterns = (
   request: NextRequest,
-  availableApps: Record<string, AppConfigItem>
+  apps: Record<string, AppConfigItem>
 ): AppName | null => {
-  for (const [appKey, appConfig] of Object.entries(availableApps)) {
+  for (const [appKey, appConfig] of Object.entries(apps)) {
     const matchConfig = appConfig.match;
     if (matchConfig && "header" in matchConfig && matchConfig.header) {
       try {
@@ -148,10 +148,10 @@ export const matchByHeaderPatterns = (
  */
 export const matchByUrl = (
   request: NextRequest,
-  availableApps: Record<string, AppConfigItem>
+  apps: Record<string, AppConfigItem>
 ): AppName | null => {
   const hostHeader = request.headers.get("host");
-  for (const [appKey, appConfig] of Object.entries(availableApps)) {
+  for (const [appKey, appConfig] of Object.entries(apps)) {
     if (appConfig.match?.url) {
       const urlPatterns = Array.isArray(appConfig.match.url)
         ? appConfig.match.url
@@ -178,7 +178,7 @@ export const matchByFunction = async (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _request: NextRequest,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _availableApps: Record<string, AppConfigItem>
+  _apps: Record<string, AppConfigItem>
 ): Promise<AppName | null> => {
   // Implementation will come from task [adn]
   return null;

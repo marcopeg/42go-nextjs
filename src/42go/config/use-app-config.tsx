@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { availableApps, type AppConfig, type AppName } from "@/AppConfig";
+import { apps, type AppConfig, type AppName } from "@/AppConfig";
 
 declare global {
   interface Window {
@@ -17,7 +17,7 @@ export function useAppName(): AppName {
 export function useAppConfig(): AppConfig {
   const appName = useAppName();
   return useMemo(
-    () => (appName && availableApps[appName] ? availableApps[appName] : null),
+    () => (appName && apps[appName] ? apps[appName] : null),
     [appName]
   );
 }

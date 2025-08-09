@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { availableApps, APP_HEADER_NAME, type AppName } from "@/AppConfig";
+import { apps, APP_HEADER_NAME, type AppName } from "@/AppConfig";
 import {
   matchByEnvironment,
   matchByHeader,
@@ -18,7 +18,7 @@ import {
 export const matchAppName = async (request: NextRequest): Promise<AppName> => {
   // 1. Highest priority: APP_NAME environment variable
   try {
-    const envMatch = matchByEnvironment(availableApps);
+    const envMatch = matchByEnvironment(apps);
     if (envMatch) {
       console.log(`APP_NAME override: using ${envMatch}`);
       return envMatch;
@@ -30,19 +30,19 @@ export const matchAppName = async (request: NextRequest): Promise<AppName> => {
   }
 
   // 2. Custom header (X-App-Name)
-  const headerMatch = matchByHeader(request, APP_HEADER_NAME, availableApps);
+  const headerMatch = matchByHeader(request, APP_HEADER_NAME, apps);
   if (headerMatch) return headerMatch;
 
   // 3. Custom function matching (from task [adn])
-  const functionMatch = await matchByFunction(request, availableApps);
+  const functionMatch = await matchByFunction(request, apps);
   if (functionMatch) return functionMatch;
 
   // 4. Header pattern matching (existing logic)
-  const headerPatternMatch = matchByHeaderPatterns(request, availableApps);
+  const headerPatternMatch = matchByHeaderPatterns(request, apps);
   if (headerPatternMatch) return headerPatternMatch;
 
   // 5. URL pattern matching
-  const urlMatch = matchByUrl(request, availableApps);
+  const urlMatch = matchByUrl(request, apps);
   if (urlMatch) return urlMatch;
 
   // Unknown host - return null to trigger 404
