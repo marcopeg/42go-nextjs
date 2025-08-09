@@ -1,7 +1,7 @@
 import { apps } from "@/AppConfig";
 
 /**
- * Validates APP_NAME environment variable at application startup
+ * Validates APP_ID environment variable at application startup
  * This should be called during application boot, not during request processing
  * Exits process if invalid app name is specified
  */
@@ -12,16 +12,16 @@ export const validateAppEnvironment = (): void => {
     return;
   }
 
-  const envAppName = process.env.APP_NAME;
+  const envAppId = process.env.APP_ID;
 
-  if (envAppName && !(envAppName in apps)) {
-    console.error(`❌ APP_NAME validation failed:`);
-    console.error(`   Specified: "${envAppName}"`);
+  if (envAppId && !(envAppId in apps)) {
+    console.error(`❌ APP_ID validation failed:`);
+    console.error(`   Specified: "${envAppId}"`);
     console.error(`   Available: ${Object.keys(apps).join(", ")}`);
     process.exit(1);
   }
 
-  if (envAppName) {
-    console.log(`✅ APP_NAME override validated: ${envAppName}`);
+  if (envAppId) {
+    console.log(`✅ APP_ID override validated: ${envAppId}`);
   }
 };

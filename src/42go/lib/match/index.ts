@@ -14,16 +14,16 @@ import {
  * @returns AppName or null if no match found
  */
 export const matchAppName = async (request: NextRequest): Promise<AppName> => {
-  // 1. Highest priority: APP_NAME environment variable
+  // 1. Highest priority: APP_ID environment variable
   try {
     const envMatch = matchByEnvironment(apps);
     if (envMatch) {
-      console.log(`APP_NAME override: using ${envMatch}`);
+      console.log(`APP_ID override: using ${envMatch}`);
       return envMatch;
     }
   } catch (error) {
     // In Edge Runtime, we can't exit the process, so we log and continue
-    console.error("APP_NAME validation failed:", (error as Error).message);
+    console.error("APP_ID validation failed:", (error as Error).message);
     // Fall through to other matching strategies
   }
 

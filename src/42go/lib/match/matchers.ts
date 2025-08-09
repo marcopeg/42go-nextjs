@@ -19,20 +19,20 @@ export interface TAppConfigMatch {
 
 /**
  * Environment variable override matcher
- * Highest priority - skips all other matching when APP_NAME is set
+ * Highest priority - skips all other matching when APP_ID is set
  */
 export const matchByEnvironment = (
   apps: Record<string, AppConfigItem>
 ): AppName | null => {
-  const envAppName = process.env.APP_NAME;
-  if (!envAppName) return null;
+  const envAppId = process.env.APP_ID;
+  if (!envAppId) return null;
 
-  if (envAppName in apps) {
-    return envAppName as AppName;
+  if (envAppId in apps) {
+    return envAppId as AppName;
   }
 
   throw new Error(
-    `APP_NAME="${envAppName}" not found in available apps. Available: ${Object.keys(
+    `APP_ID="${envAppId}" not found in available apps. Available: ${Object.keys(
       apps
     ).join(", ")}`
   );
