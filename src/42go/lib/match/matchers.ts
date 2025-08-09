@@ -2,9 +2,9 @@ import type { NextRequest } from "next/server";
 import type { AppName, AppConfigItem } from "@/AppConfig";
 
 export interface HeaderMatchRule {
-  key: string | RegExp;
-  value: string | RegExp | Array<string | RegExp>;
-  mode?: "any" | "all"; // For array values
+  // Strings only. To use regex, provide "/pattern/flags" format.
+  key: string;
+  value: string;
 }
 
 export interface HeaderMatchConfig {
@@ -43,26 +43,34 @@ export const matchByEnvironment = (
 /**
  * Header pattern matching utilities
  */
-const isRegExp = (value: unknown): value is RegExp => value instanceof RegExp;
-
-const matchHeaderKey = (
-  headerName: string,
-  pattern: string | RegExp
-): boolean => {
-  if (isRegExp(pattern)) {
-    return pattern.test(headerName);
+// String pattern helpers: support literal strings or "/regex/flags" syntax
+const parsePattern = (
+  pattern: string
+): { type: "regex"; re: RegExp } | { type: "literal"; value: string } => {
+  // Regex form: /pattern/flags
+  if (pattern.startsWith("/") && pattern.lastIndexOf("/") > 0) {
+    const lastSlash = pattern.lastIndexOf("/");
+    const body = pattern.slice(1, lastSlash);
+    const flags = pattern.slice(lastSlash + 1);
+    try {
+      return { type: "regex", re: new RegExp(body, flags) };
+    } catch {
+      // Fall through to literal if invalid
+    }
   }
-  return headerName.toLowerCase() === pattern.toLowerCase();
+  return { type: "literal", value: pattern };
 };
 
-const matchHeaderValue = (
-  headerValue: string,
-  pattern: string | RegExp
-): boolean => {
-  if (isRegExp(pattern)) {
-    return pattern.test(headerValue);
-  }
-  return headerValue === pattern;
+const matchHeaderKey = (headerName: string, pattern: string): boolean => {
+  const parsed = parsePattern(pattern);
+  if (parsed.type === "regex") return parsed.re.test(headerName);
+  return headerName.toLowerCase() === parsed.value.toLowerCase();
+};
+
+const matchHeaderValue = (headerValue: string, pattern: string): boolean => {
+  const parsed = parsePattern(pattern);
+  if (parsed.type === "regex") return parsed.re.test(headerValue);
+  return headerValue === parsed.value;
 };
 
 const matchHeaderRule = (headers: Headers, rule: HeaderMatchRule): boolean => {
@@ -76,17 +84,9 @@ const matchHeaderRule = (headers: Headers, rule: HeaderMatchRule): boolean => {
 
   if (matchingHeaders.length === 0) return false;
 
-  // Test values against pattern(s)
-  const patterns = Array.isArray(rule.value) ? rule.value : [rule.value];
-  const mode = rule.mode || "any";
-
+  // Test header values against single pattern
   for (const headerValue of matchingHeaders) {
-    const results = patterns.map((pattern) =>
-      matchHeaderValue(headerValue, pattern)
-    );
-
-    if (mode === "all" && results.every(Boolean)) return true;
-    if (mode === "any" && results.some(Boolean)) return true;
+    if (matchHeaderValue(headerValue, rule.value)) return true;
   }
 
   return false;

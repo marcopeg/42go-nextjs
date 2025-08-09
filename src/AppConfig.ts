@@ -99,14 +99,8 @@ export const apps: Record<string, AppConfigItem> = {
       header: {
         mode: "all",
         keys: [
-          {
-            key: "foo",
-            value: "bar",
-          },
-          {
-            key: "faa",
-            value: "bar",
-          },
+          { key: "foo", value: "bar" },
+          { key: "faa", value: "bar" },
         ],
       },
     },
@@ -249,14 +243,8 @@ export const apps: Record<string, AppConfigItem> = {
       url: ["^app1\\.localhost:3000$", "^app1\\.mydomain.com$"],
       header: {
         keys: [
-          {
-            key: "Authorization",
-            value: /^Bearer .+app1-api-key.+$/,
-          },
-          {
-            key: "X-App-Type",
-            value: "app1",
-          },
+          { key: "Authorization", value: "/^Bearer .+app1-api-key.+$/" },
+          { key: "X-App-Type", value: "app1" },
         ],
       },
     },
@@ -384,15 +372,9 @@ export const apps: Record<string, AppConfigItem> = {
       url: ["^calendar\\.localhost:3000$", "^calendar\\.mydomain.com$"],
       header: {
         keys: [
-          {
-            key: "X-App-Type",
-            value: ["calendar", "scheduling"],
-            mode: "any",
-          },
-          {
-            key: /^X-Calendar-.*/i,
-            value: /^pro-/,
-          },
+          { key: "X-App-Type", value: "calendar" },
+          { key: "X-App-Type", value: "scheduling" },
+          { key: "/^X-Calendar-.*/i", value: "/^pro-/" },
         ],
       },
     },
