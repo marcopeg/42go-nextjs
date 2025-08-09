@@ -4,10 +4,11 @@ import { getAppInfo } from "@/42go/config/app-config";
 import { InjectAppName } from "@/42go/config/InjectAppName";
 import { Providers } from "@/components/Providers";
 import { Toaster } from "@/components/ui/sonner";
-import "./globals.css";
+import "./tokens.css";
 import "./tailwind.css";
 
-const inter = Inter({ subsets: ["latin"] });
+// Expose Inter via CSS variable to integrate with Tailwind's font-sans token
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const generateMetadata = async (): Promise<Metadata> => {
   const { config } = await getAppInfo();
@@ -31,11 +32,12 @@ const RootLayout = async ({
   );
 
   return (
-    <html suppressHydrationWarning lang="en">
+    <html suppressHydrationWarning lang="en" className={inter.variable}>
       <head>
         <InjectAppName name={name} />
       </head>
-      <body className={inter.className}>
+      {/* Use Tailwind font token so themes and utilities stay consistent */}
+      <body className="font-sans">
         {body}
         <Toaster richColors />
       </body>
