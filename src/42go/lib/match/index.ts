@@ -1,9 +1,7 @@
 import type { NextRequest } from "next/server";
-import { apps, APP_HEADER_NAME, type AppName } from "@/AppConfig";
+import { apps, type AppName } from "@/AppConfig";
 import {
   matchByEnvironment,
-  matchByHeader,
-  matchByFunction,
   matchByHeaderPatterns,
   matchByUrl,
 } from "./matchers";
@@ -29,14 +27,6 @@ export const matchAppName = async (request: NextRequest): Promise<AppName> => {
     // Fall through to other matching strategies
   }
 
-  // 2. Custom header (X-App-Name)
-  const headerMatch = matchByHeader(request, APP_HEADER_NAME, apps);
-  if (headerMatch) return headerMatch;
-
-  // 3. Custom function matching (from task [adn])
-  const functionMatch = await matchByFunction(request, apps);
-  if (functionMatch) return functionMatch;
-
   // 4. Header pattern matching (existing logic)
   const headerPatternMatch = matchByHeaderPatterns(request, apps);
   if (headerPatternMatch) return headerPatternMatch;
@@ -49,8 +39,6 @@ export const matchAppName = async (request: NextRequest): Promise<AppName> => {
   return null;
 };
 
-// Re-export for convenience
-export { APP_HEADER_NAME } from "@/AppConfig";
 export type {
   TAppConfigMatch,
   HeaderMatchConfig,

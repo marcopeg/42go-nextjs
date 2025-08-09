@@ -14,8 +14,7 @@ export interface HeaderMatchConfig {
 
 export interface TAppConfigMatch {
   url?: string | string[]; // Regexp string(s) to match host
-  header?: HeaderMatchConfig; // Header-based matching
-  fn?: (request: NextRequest) => Promise<boolean> | boolean; // Custom function matching (future from task [adn])
+  header?: HeaderMatchConfig; // Header-based matching (patterns only)
 }
 
 /**
@@ -39,24 +38,7 @@ export const matchByEnvironment = (
   );
 };
 
-/**
- * Header-based matching (X-App-Name)
- */
-export const matchByHeader = (
-  request: NextRequest,
-  headerName: string,
-  apps: Record<string, AppConfigItem>
-): AppName | null => {
-  const customSetupHeader = request.headers.get(headerName);
-  if (
-    customSetupHeader &&
-    customSetupHeader !== "null" &&
-    customSetupHeader in apps
-  ) {
-    return customSetupHeader as AppName;
-  }
-  return null;
-};
+// Removed: direct header-based matching (X-App-Name) in favor of header pattern and URL matching
 
 /**
  * Header pattern matching utilities
@@ -171,15 +153,4 @@ export const matchByUrl = (
   return null;
 };
 
-/**
- * Function-based matching (future from task [adn])
- */
-export const matchByFunction = async (
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _request: NextRequest,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _apps: Record<string, AppConfigItem>
-): Promise<AppName | null> => {
-  // Implementation will come from task [adn]
-  return null;
-};
+// Removed: function-based matching. Custom resolvers are not supported in this version.
