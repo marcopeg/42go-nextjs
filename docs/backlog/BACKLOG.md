@@ -2,7 +2,7 @@
 
 A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
 
-(LastID: aan)
+(LastID: aap)
 
 ## Current Task
 
@@ -36,6 +36,8 @@ n/a
 - [abl] Add social login: LinkedIn [🔗](./draft/abl-add-social-login-linkedin.md)
 - [abk] Add social login: X [🔗](./draft/abk-add-social-login-x.md)
 - [aam] Add social login: Facebook
+- [aao] Add app name to waitlist table [🔗](./draft/aao-add-app-name-to-waitlist.md)
+- [aap] Add app name to feedback table [🔗](./draft/aap-add-app-name-to-feedback.md)
 - [aao] Add social login: Apple
 - [abn] Migrate to Prisma ORM
 - [add] [Implement CLI scripts](./draft/add-implement-cli-scripts.md)
