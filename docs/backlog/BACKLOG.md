@@ -11,16 +11,16 @@ n/a
 ## Upcoming Tasks
 
 - [adl] 🪲 docs: Links from the docs index page don't work [🔗](./tasks/adl-docs-article-walls-links.md)
-- [acr] Create Client Page HOC [🔗](./draft/acr-client-page-wrapper.md)
+- [aai] RBAC Database Schema & Core Infrastructure 🔗 [story](./story/aai-add-rbac.md)
+- [aaj] RBAC useGrants Hook & Client Components 🔗 [story](./story/aaj-rbac-usegrants-hook.md)
+- [aak] RBAC Page & Route Protection 🔗 [story](./story/aak-rbac-page-route-protection.md)
+- [aal] RBAC Menu Integration 🔗 [story](./story/aal-rbac-menu-integration.md)
+- [aam] RBAC Advanced Features 🔗 [story](./story/aam-rbac-advanced-features.md)
 - [acj] 🪲 Next standalone has `.env` file [🔗](./tasks/acj-next-standalone.md)
 
 ## Drafts
 
-- [aai] RBAC Database Schema & Core Infrastructure 🔗 [story](./draft/aai-add-rbac.md)
-- [aaj] RBAC useGrants Hook & Client Components 🔗 [story](./draft/aaj-rbac-usegrants-hook.md)
-- [aak] RBAC Page & Route Protection 🔗 [story](./draft/aak-rbac-page-route-protection.md)
-- [aal] RBAC Menu Integration 🔗 [story](./draft/aal-rbac-menu-integration.md)
-- [aam] RBAC Advanced Features 🔗 [story](./draft/aam-rbac-advanced-features.md)
+- [acr] Create Client Page HOC (might be already completed by RBAC) [🔗](./tasks/acr-client-page-wrapper.md)
 - [aan] App-Specific Session Configuration [🔗](./draft/aan-app-specific-session-config.md)
 - [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
