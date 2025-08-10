@@ -1,18 +1,27 @@
 import Link from "next/link";
 import { getDocTitle, getDocExcerpt, type DocFile } from "@/42go/utils/docs";
+import Markdown from "../../Markdown";
 import { ShowDate } from "../../ShowDate";
 
 export const DocsList = ({
+  readme,
   items,
   basePath,
 }: {
+  readme?: DocFile;
   items: DocFile[];
   basePath: string;
 }) => {
   return (
     <div className="py-8">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Documentation</h1>
+        {readme ? (
+          <div className="mb-8">
+            <Markdown source={readme.content} />
+          </div>
+        ) : (
+          <h1 className="text-3xl font-bold mb-6">Documentation</h1>
+        )}
 
         {items.length === 0 ? (
           <p className="text-lg">No documentation files found.</p>
@@ -32,9 +41,9 @@ export const DocsList = ({
                     <ShowDate date={doc.data.date} />
                   </p>
                 )}
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                  {getDocExcerpt(doc)}
-                </p>
+                <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  <Markdown source={getDocExcerpt(doc)} />
+                </div>
               </Link>
             ))}
           </div>

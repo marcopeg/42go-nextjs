@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "default/docs/multiple-apps/README.md",
+                "file": "default/docs/README.md",
                 "mode": "source",
                 "source": false
               },
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "default/docs/multiple-apps/README.md",
+                "file": "default/docs/README.md",
                 "collapseAll": false,
                 "extraContext": true,
                 "sortOrder": "alphabetical",
@@ -113,7 +113,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "default/docs/multiple-apps/README.md",
+                "file": "default/docs/README.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -142,9 +142,9 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "default/docs/multiple-apps/README.md",
-                "followCursor": false,
-                "showSearch": false,
+                "file": "default/docs/README.md",
+                "followCursor": true,
+                "showSearch": true,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
@@ -168,8 +168,9 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "5487273809d58008",
+  "active": "fb3a5db95b09e15b",
   "lastOpenFiles": [
+    "default/docs/multiple-apps/README.md",
     "default/docs/SIDEBAR.md",
     "default/docs/getting-started/README.md"
   ]

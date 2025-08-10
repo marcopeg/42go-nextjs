@@ -1,8 +1,9 @@
 export const getSlug = (filePath: string, basePath: string): string => {
   // Remove basePath
-  let slug = filePath.startsWith(basePath)
-    ? filePath.slice(basePath.length)
+  let slug = filePath.includes(basePath)
+    ? filePath.split(basePath).pop() || ""
     : filePath;
+
   // Remove leading slashes
   slug = slug.replace(/^\/+/, "");
   // Remove extension

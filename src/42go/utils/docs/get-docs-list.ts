@@ -16,7 +16,11 @@ export const getDocsList = async () => {
   return files
     ?.map((file) => ({
       ...file,
+
+      content: file.content.substring(0, 80), // Limit content to 200 characters
       slug: getSlug(file.path, docsPath),
     }))
-    .filter((file) => file.slug.toLowerCase() !== "sidebar");
+    .filter(
+      (file) => file.slug !== "" && file.slug.toLowerCase() !== "sidebar"
+    );
 };

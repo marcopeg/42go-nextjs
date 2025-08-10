@@ -6,11 +6,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-n/a
-
 ## Upcoming Tasks
 
-- [adl] 🪲 docs: Links from the docs index page don't work [🔗](./tasks/adl-docs-article-walls-links.md)
 - [aai] RBAC Database Schema & Core Infrastructure 🔗 [story](./story/aai-add-rbac.md)
 - [aaj] RBAC useGrants Hook & Client Components 🔗 [story](./story/aaj-rbac-usegrants-hook.md)
 - [aak] RBAC Page & Route Protection 🔗 [story](./story/aak-rbac-page-route-protection.md)
@@ -47,6 +44,7 @@ n/a
 
 ## Completed Tasks
 
+- [adl] 🪲 docs: Links from the docs index page don't work [🔗](./tasks/adl-docs-article-walls-links.md)
 - [adq] Clean up AppConfig matching logic [🔗](./tasks/adq-clean-appconfig-match.md)
 - [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
 - [adm] Import feedback block [🔗](./tasks/adm-import-feedback-block.md)
