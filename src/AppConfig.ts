@@ -66,8 +66,8 @@ export interface AppConfigItem {
     };
   };
   featureFlags: {
-    pages: string[]; // List of pages available in this app
-    apis: string[]; // List of API endpoints available in this app
+    pages: readonly string[]; // List of pages available in this app
+    apis: readonly string[]; // List of API endpoints available in this app
   };
   match?: TAppConfigMatch;
   // pages moved to public.pages
@@ -91,7 +91,7 @@ export const DEFAULT_APP: AppName = null;
 /**
  * Available applications with their configurations.
  */
-export const apps: Record<string, AppConfigItem> = {
+export const apps = {
   default: {
     name: "DEFAULT APP",
     match: {
@@ -455,4 +455,4 @@ export const apps: Record<string, AppConfigItem> = {
       ],
     },
   },
-};
+} as const satisfies Record<string, AppConfigItem>;
