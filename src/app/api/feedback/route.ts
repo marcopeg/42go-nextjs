@@ -2,11 +2,23 @@ import { NextResponse } from "next/server";
 import { getDB } from "@/42go/db";
 import { v4 as uuidv4 } from "uuid";
 import { protectRoute } from "@/42go/policy/protectRoute";
+import sanitizeHtml from "sanitize-html";
 import { getAppID } from "@/42go/config/app-config";
 
 const feedback = async (request: Request) => {
   try {
-    const { email, message, newsletter } = await request.json();
+    const {
+      email: rawEmail,
+      message: rawMessage,
+      newsletter,
+    } = await request.json();
+
+    // Normalize inputs
+    const email = (rawEmail ?? "").toString().trim();
+    let message = (rawMessage ?? "").toString();
+
+    // Enforce size limits
+    if (message.length > 10_000) message = message.slice(0, 10_000);
 
     // Validate input
     if (!email || !message) {
@@ -24,6 +36,23 @@ const feedback = async (request: Request) => {
       );
     }
 
+    // Sanitize message to avoid dangerous HTML/script content
+    const sanitizedMessage = sanitizeHtml(message, {
+      allowedTags: [], // store plain text only
+      allowedAttributes: {},
+      disallowedTagsMode: "discard",
+    }).trim();
+    const normalizedOriginal = message.trim();
+    if (sanitizedMessage !== normalizedOriginal) {
+      return NextResponse.json(
+        {
+          error: "unacceptable",
+          message: "Message contains disallowed content",
+        },
+        { status: 406 }
+      );
+    }
+
     // Get IP address and user agent
     const ip_address = request.headers.get("x-forwarded-for") || "unknown";
     const user_agent = request.headers.get("user-agent") || "unknown";
@@ -35,7 +64,7 @@ const feedback = async (request: Request) => {
       id: uuidv4(),
       app_id,
       email,
-      message,
+      message: sanitizedMessage,
       newsletter_subscription: !!newsletter,
       ip_address,
       user_agent,
