@@ -317,7 +317,7 @@ export const apps = {
         ],
       },
     },
-    features: ["page:docs", "api:getTodos"],
+    features: ["page:docs", "api:getTodos", "api:waitlist", "api:feedback"],
     theme: {
       default: "dark",
       // PublicLayout: App1PublicLayout,

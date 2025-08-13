@@ -7,11 +7,14 @@ exports.up = async function (knex) {
   await knex.raw('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
 
   return knex.schema.createTable("waitlists", (table) => {
-    table.uuid("id").primary().defaultTo(knex.raw("uuid_generate_v4()"));
-    table.string("email").notNullable().unique();
+    // App scope for multi-tenant tracking
+    table.text("app_id").notNullable().defaultTo("default");
+    table.string("email").notNullable();
     table.timestamp("created_at").notNullable().defaultTo(knex.fn.now());
     table.string("ip_address");
     table.string("user_agent");
+    // Primary key: ensure uniqueness per app
+    table.primary(["app_id", "email"]);
   });
 };
 

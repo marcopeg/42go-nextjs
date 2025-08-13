@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDB } from "@/42go/db";
 import { protectRoute } from "@/42go/policy/protectRoute";
+import { getAppID } from "@/42go/config/app-config";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -17,10 +18,12 @@ const waitlist = async (request: Request) => {
     const ip = request.headers.get("x-forwarded-for") || "unknown";
     const userAgent = request.headers.get("user-agent") || "unknown";
     const db = getDB();
+    const app_id = (await getAppID()) || "default";
 
     // Try to insert, ignore duplicate emails
     try {
       await db("waitlists").insert({
+        app_id,
         email,
         ip_address: ip,
         user_agent: userAgent,

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDB } from "@/42go/db";
 import { v4 as uuidv4 } from "uuid";
 import { protectRoute } from "@/42go/policy/protectRoute";
+import { getAppID } from "@/42go/config/app-config";
 
 const feedback = async (request: Request) => {
   try {
@@ -28,9 +29,11 @@ const feedback = async (request: Request) => {
     const user_agent = request.headers.get("user-agent") || "unknown";
 
     const db = getDB();
+    const app_id = (await getAppID()) || "default";
     // Insert feedback into database
     await db("feedbacks").insert({
       id: uuidv4(),
+      app_id,
       email,
       message,
       newsletter_subscription: !!newsletter,
