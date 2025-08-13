@@ -5,7 +5,7 @@ Extend the AppConfig matching system to support HTTP header-based app resolution
 ## Goals
 
 - [ ] Extend `AppConfigItem.match` interface to support header-based matching
-- [ ] Implement header matching logic in `matchAppName` function
+- [ ] Implement header matching logic in `matchAppID` function
 - [ ] Support both string and regex patterns for header keys and values
 - [ ] Support list matching with "any" or "all" modes
 - [ ] Maintain backward compatibility with existing `config.match.url`
@@ -16,7 +16,7 @@ Extend the AppConfig matching system to support HTTP header-based app resolution
 - [ ] Header matching works with string patterns (case-insensitive for keys)
 - [ ] Header matching works with regex patterns
 - [ ] List matching supports both "any" (default) and "all" modes
-- [ ] Integration with existing `matchAppName` function
+- [ ] Integration with existing `matchAppID` function
 - [ ] Header matching takes precedence after custom header but before URL matching
 - [ ] Documentation is updated in Memory Bank
 
@@ -147,7 +147,7 @@ const config = {
 
 ### Phase 2: Core Implementation ⚡
 
-**Goal**: Implement header matching logic in the `matchAppName` function
+**Goal**: Implement header matching logic in the `matchAppID` function
 
 1. **Create header matching utility functions**:
 
@@ -217,12 +217,10 @@ const config = {
    };
    ```
 
-2. **Update `matchAppName` function**:
+2. **Update `matchAppID` function**:
 
    ```ts
-   export const matchAppName = async (
-     request: NextRequest
-   ): Promise<AppName> => {
+   export const matchAppID = async (request: NextRequest): Promise<AppName> => {
      // 1. Existing: Identify by custom header (highest priority)
      const customSetupHeader = request.headers.get(APP_HEADER_NAME);
      if (

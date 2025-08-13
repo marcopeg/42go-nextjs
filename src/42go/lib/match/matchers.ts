@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import type { AppName, AppConfigItem } from "@/AppConfig";
+import type { TAppID, TAppConfigItem } from "@/AppConfig";
 
 export interface HeaderMatchRule {
   // Strings only. To use regex, provide "/pattern/flags" format.
@@ -22,13 +22,13 @@ export interface TAppConfigMatch {
  * Highest priority - skips all other matching when APP_ID is set
  */
 export const matchByEnvironment = (
-  apps: Record<string, AppConfigItem>
-): AppName | null => {
+  apps: Record<string, TAppConfigItem>
+): TAppID | null => {
   const envAppId = process.env.APP_ID;
   if (!envAppId) return null;
 
   if (envAppId in apps) {
-    return envAppId as AppName;
+    return envAppId as TAppID;
   }
 
   throw new Error(
@@ -107,15 +107,15 @@ const matchHeaderConfig = (
  */
 export const matchByHeaderPatterns = (
   request: NextRequest,
-  apps: Record<string, AppConfigItem>
-): AppName | null => {
+  apps: Record<string, TAppConfigItem>
+): TAppID | null => {
   for (const [appKey, appConfig] of Object.entries(apps)) {
     const matchConfig = appConfig.match;
     if (matchConfig && "header" in matchConfig && matchConfig.header) {
       try {
         if (matchHeaderConfig(request.headers, matchConfig.header)) {
           console.log(`Header match found for app: ${appKey}`);
-          return appKey as AppName;
+          return appKey as TAppID;
         }
       } catch (error) {
         console.error(`Header matching error for app ${appKey}:`, error);
@@ -130,8 +130,8 @@ export const matchByHeaderPatterns = (
  */
 export const matchByUrl = (
   request: NextRequest,
-  apps: Record<string, AppConfigItem>
-): AppName | null => {
+  apps: Record<string, TAppConfigItem>
+): TAppID | null => {
   const hostHeader = request.headers.get("host");
   for (const [appKey, appConfig] of Object.entries(apps)) {
     if (appConfig.match?.url) {
@@ -142,7 +142,7 @@ export const matchByUrl = (
         try {
           const regex = new RegExp(pattern);
           if (hostHeader && regex.test(hostHeader)) {
-            return appKey as AppName;
+            return appKey as TAppID;
           }
         } catch {
           // Chuck Norris doesn't catch regex errors, but we do

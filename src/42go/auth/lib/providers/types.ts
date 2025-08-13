@@ -64,6 +64,9 @@ declare module "next-auth" {
       id: string;
       name: string;
       email: string;
+      grants: string[];
+      roles: string[];
+      appId: string;
     };
   }
 
@@ -79,5 +82,8 @@ declare module "next-auth/jwt" {
     id: string;
     email: string;
     name: string;
+    grants: string[];
+    roles: string[];
+    appId: string;
   }
 }

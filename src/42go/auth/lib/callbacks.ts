@@ -1,4 +1,5 @@
 import { getDB } from "@/42go/db";
+import { getUserGrants, getUserRoles } from "@/42go/policy/access";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const signIn = async ({ user, account }: any) => {
@@ -85,11 +86,45 @@ export const signIn = async ({ user, account }: any) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const jwt = async ({ token, user }: any) => {
+export const jwt = async ({ token, user, trigger, session }: any) => {
   if (user) {
     token.id = user.id;
     token.email = user.email;
     token.name = user.name;
+
+    // Embed RBAC data into JWT for client-side session cache
+    try {
+      // TODO: get appId from request context when available
+      const appId = "default";
+      const [grants, roles] = await Promise.all([
+        getUserGrants(user.id, appId),
+        getUserRoles(user.id, appId),
+      ]);
+      token.grants = grants;
+      token.roles = roles;
+      token.appId = appId;
+    } catch (error) {
+      console.error("JWT callback: failed to load user RBAC data", error);
+      token.grants = [];
+      token.roles = [];
+      token.appId = "default";
+    }
+  }
+
+  // Allow client to force a RBAC refresh via update({ rbacRefresh: true })
+  if (trigger === "update" && session?.rbacRefresh && token?.id) {
+    try {
+      const appId = token.appId || "default";
+      const [grants, roles] = await Promise.all([
+        getUserGrants(token.id, appId),
+        getUserRoles(token.id, appId),
+      ]);
+      token.grants = grants;
+      token.roles = roles;
+      token.appId = appId;
+    } catch (error) {
+      console.error("JWT update: failed to refresh RBAC data", error);
+    }
   }
   return token;
 };
@@ -100,6 +135,11 @@ export const session = async ({ session, token }: any) => {
     session.user.id = token.id;
     session.user.email = token.email;
     session.user.name = token.name;
+
+    // Expose RBAC data to client session
+    session.user.grants = token.grants || [];
+    session.user.roles = token.roles || [];
+    session.user.appId = token.appId || "default";
   }
   return session;
 };

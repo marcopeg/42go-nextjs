@@ -1,122 +1,105 @@
-# Feature Flags
+# Feature Flags (Unified)
 
-Your App supports **Feature Flags** for both App and API routes using HOC from the `@/lib/config/app-config-*` libraries.
+Brutal simplicity: one array per app. `features: string[]` inside each `AppConfig` is the single source of truth. Every entry is prefixed:
 
-## Available Flags
+- `page:...` for pages / UI surfaces
+- `api:...` for API endpoints
 
-Edit your `@/AppConfig.ts` file and setup explicit whitelists for each App's config object:
+Examples:
 
-```js
-export const availableApps = {
+```ts
+features: ["page:docs", "page:dashboard", "api:todos", "api:feedback"];
+```
+
+## Why unify?
+
+Because split `pages|apis` objects were weak. One list means fast membership tests, zero branching, cleaner mental model. Less code, fewer bugs.
+
+## Naming Rules
+
+1. Always prefix (`page:` or `api:`). No prefix? Rejected by policy evaluator.
+2. Lowercase with dashes allowed. Keep it human.
+3. Wildcards: `page:*` / `api:*` grant blanket enablement (use sparingly; dev-only or internal apps).
+
+## Defining Features
+
+Edit `src/AppConfig.ts` per app:
+
+```ts
+export const apps = {
   default: {
-    featureFlags: {
-      pages: ["flag1", "flag2"],
-      apis: ["flag3", "flag4"],
-    },
+    name: "DEFAULT APP",
+    features: ["page:docs", "page:todos", "api:todos", "api:feedback"],
   },
 };
 ```
 
-## Passthrough Flag
+## Enforcing Features
 
-If you are running a single app you may do not need to whitelist every single feature you do. Use the `*` flag to enable them all:
+Use policies. Pages: `protectPage`. API routes: `protectRoute`. See also [POLICY.md](./POLICY.md) for evaluation semantics & overrides.
 
-```js
-export const availableApps = {
-  default: {
-    featureFlags: {
-      pages: ["*"],
-      apis: ["*"],
-    },
-  },
-};
-```
-
-## Apply Feature Flag Protection
-
-🔥 By default NextJS **DOES NOT PROTECT** pages nor API routes. 🔥
-
-This is an opt-in activity that you have to do by applying HOC to your pages' components and routes' handlers.
-
-### Protect a Page
-
-Apply the `pageWithConfig()` HOC from `@/lib/config/app-config-pages.tsx`:
+### Page Example
 
 ```tsx
-import { type AppConfig, pageWithConfig } from "@/lib/config/app-config-pages";
+import { protectPage } from "@/42go/policy/protectPage";
 
-const TodosPage = ({ config }: { config: AppConfig }) => (
-  <div>{config.name}</div>
-);
+function Todos() {
+  return <div>Todos</div>;
+}
 
-export default pageWithConfig(TodosPage);
+export default protectPage(Todos, { require: { feature: "page:todos" } });
 ```
 
-### Protect a Route
-
-Apply the `routeWithConfig()` HOC from `@/lib/config/app-config.ts`:
+### API Route Example
 
 ```ts
-import { typeAppConfig, routeWithConfig } from "@/lib/config/app-config";
+import { protectRoute } from "@/42go/policy/protectRoute";
 
-const getTodos = async (config: AppConfig) => {
-  return Response.json({ success: true });
-};
+const handler = async (_req: Request) => Response.json({ ok: true });
 
-export const GET = routeWithConfig(getTodos);
+export const POST = protectRoute(handler, {
+  require: { feature: "api:feedback" },
+});
 ```
 
-### Config-Based Protection
+### Inferred API Feature
 
-Both HOCs will try to get the current App's config and will automatically kill the request with a 404 in case no configuration is provided.
+If you skip the policy, `protectRoute(handler)` will infer `api:<segment>` from the URL (`/api/todos` → `api:todos`). Explicit beats implicit—prefer explicit for clarity.
 
-> This happens when the configuration match is set to [**strict mode**](./APP_CONFIG.md#strict-mode).
+## Dynamic / Catch-All Pages
 
-### Custom Flag Name
+`protectPage` can infer the first path segment and build a `page:` feature automatically when you omit an explicit one. For `/docs/anything` it checks `page:docs`.
 
-By default both HOC will use the function's name (Component or handler) as flag name to check against the config's available flags.
+Still better to be explicit when guarding critical surfaces.
 
-You can customize this by providing an explicit flag name:
+## Wildcards
 
-```ts
-// For a page:
-export default appPage(TodosPage, "todos:page");
+`api:*` or `page:*` entries (feature enablement) are discouraged in production and may be removed. Grant pattern matching is NOT supported (exact grant IDs only) – see POLICY.md. Treat wildcard features as temporary local convenience only.
 
-// For a route:
-export const GET = appRoute(getTodos, "todos:list");
-```
+## Removal of Legacy System
 
-### Passthrough Flag
+Gone: `featureFlags.pages`, `featureFlags.apis`, `appRoute`, `routeWithConfig`, `pageWithConfig`, `appPage`.
 
-If you need to mark a page or route as globally available use the `*` flag name to force-skip the control:
+Now: `features[]` + `protectPage` + `protectRoute` + unified policy evaluator.
 
-```ts
-// For a page:
-export default appPage(TodosPage, "*");
+## Migration Notes
 
-// For a route:
-export const GET = appRoute(getTodos, "*");
-```
+Old → New mapping:
 
-### URL-Based Flag
+| Legacy                    | New                           |
+| ------------------------- | ----------------------------- |
+| pages: ["docs"]           | features: ["page:docs"]       |
+| apis: ["todos"]           | features: ["api:todos"]       |
+| appRoute(handler)         | protectRoute(handler, policy) |
+| routeWithConfig(getTodos) | protectRoute(getTodos)        |
+| appPage/pageWithConfig    | protectPage(Component)        |
 
-For dynamic pages that should check feature flags based on the current URL path, use the special `"url!"` flag:
+If you somehow still find legacy symbols in code, you've traveled back in time.
 
-```ts
-// For a catch-all or dynamic page:
-export default appPage(DynamicPage, "url!");
-```
+## Testing (Deferred)
 
-When using `"url!"`, the feature flag is automatically calculated from the current URL:
+Formal test matrix lives in the `[aea]` Testing Strategy story. This doc stays lean.
 
-- `/about` → checks for `"about"` flag
-- `/foo/bar` → checks for `"foo/bar"` flag
-- `/foo/bar-beer` → checks for `"foo/bar-beer"` flag
+## TL;DR
 
-This is especially useful for:
-
-- Catch-all routes like `[...slug]/page.tsx`
-- CMS-driven pages where the URL determines the content
-- Dynamic routing based on configuration
-
-The URL-based flag uses the same path-to-key conversion as your page configuration, ensuring consistency between routing and feature flag checking.
+Declare features once. Guard with policies. Ship.

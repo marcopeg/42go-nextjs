@@ -7,7 +7,8 @@
 - [Multi-App Configuration](./multiple-apps/README.md)
 - [Composable Pages](./composable-pages/README.md)
 - [Documentation Project](./docs/README.md)
-- [Login & Accounts](./login/README.md)
+- [Authentication](./authentication/README.md)
+- [Authorization](./authorization/README.md)
 
 # UI & Experience
 

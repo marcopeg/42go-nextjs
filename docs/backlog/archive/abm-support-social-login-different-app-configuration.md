@@ -122,7 +122,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
 }
 ```
 
-**Key Insight**: The project already has a robust app config resolution system that uses `X-App-Name` header to identify apps and return appropriate configurations. The breakthrough is connecting this existing system to NextAuth's dynamic configuration capability.
+**Key Insight**: The project already has a robust app config resolution system that uses `X-42Go-AppID` header to identify apps and return appropriate configurations. The breakthrough is connecting this existing system to NextAuth's dynamic configuration capability.
 
 **Simplified Approach**: We'll use only the explicit configuration available from `getAppConfig()` - no additional request processing or dynamic URI building needed. The AppConfig contains all the provider information and credentials required.
 
@@ -279,7 +279,7 @@ export async function GET(req: NextApiRequest, res: NextApiResponse) {
 2. **🔄 Frontend Provider Filtering**: Implement client-side filtering to show only configured providers per app
 3. **🔄 Refactor & Document**: Clean up implementation and complete documentation
 
-**Key Discovery**: The project already has a sophisticated app config system that resolves configurations from `X-App-Name` headers. Backend integration is complete - now need frontend filtering and documentation.
+**Key Discovery**: The project already has a sophisticated app config system that resolves configurations from `X-42Go-AppID` headers. Backend integration is complete - now need frontend filtering and documentation.
 
 ### Files Modified
 

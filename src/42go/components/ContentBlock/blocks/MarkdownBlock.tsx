@@ -52,6 +52,10 @@ export async function MarkdownBlock({ data }: { data: TMarkdownBlock }) {
     }
   }
 
-  // MarkdownRenderer is a client component, so wrap in a fragment
-  return <Markdown source={content} />;
+  // MarkdownRenderer is a client component, so wrap with max-width for readability
+  return (
+    <div className="max-w-4xl mx-auto px-4">
+      <Markdown source={content} />
+    </div>
+  );
 }

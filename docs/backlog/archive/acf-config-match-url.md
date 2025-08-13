@@ -1,6 +1,6 @@
 # Config Match Url [acf]
 
-The goal is to refine `@/AppConfig`'s `matchAppName()` so to implement a regexp check defined in `config.match.url` so that i can write simple configs like:
+The goal is to refine `@/AppConfig`'s `matchAppID()` so to implement a regexp check defined in `config.match.url` so that i can write simple configs like:
 
 - config.match.url=localhost.3000
 - config.match.url=app1.localhost.3000
@@ -14,7 +14,7 @@ Chuck Norris doesn't match app names. He roundhouse kicks them into place.
 
 1. Extend `AppConfigItem` to support a new property: `match.url` (string or array of strings, interpreted as regex).
 2. Update each app config in `availableApps` to optionally include `match.url`.
-3. Refactor `matchAppName()` in `src/AppConfig.ts`:
+3. Refactor `matchAppID()` in `src/AppConfig.ts`:
    - After header and host checks, iterate all apps.
    - For each app, if `match.url` exists, test the current host against its regex.
    - **On the first positive match, immediately return the matching configuration name.**
@@ -30,7 +30,7 @@ execute task (k2)
 
 - Extended `AppConfigItem` with `match.url` property (string or array of regex strings).
 - Updated all app configs in `availableApps` to include example `match.url` patterns.
-- Refactored `matchAppName()` to check all regex patterns and exit on first positive match.
+- Refactored `matchAppID()` to check all regex patterns and exit on first positive match.
 - Ran `npm run lint && npm run build`—no errors, Chuck Norris approved.
 
 ## Issues Encountered

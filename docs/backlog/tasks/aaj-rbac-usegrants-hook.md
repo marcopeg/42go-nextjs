@@ -1093,3 +1093,64 @@ After completing [aaj]:
 1. **[aak]** RBAC Page & Route Protection - Server-side middleware
 2. **[aal]** RBAC Menu Integration - Hook integration with existing menus
 3. **[aam]** RBAC Advanced Features - Multi-app support, role inheritance
+
+---
+
+## Progress (2025-08-10)
+
+This story has been implemented and integrated. The Users page is now protected for admins only using the client guard. A render loop issue was found and fixed.
+
+### What shipped
+
+- useRBACSession and useGrants hooks with session-first checks and realtime fallback
+- Client permission checker with wildcard and ALL/ANY strategies
+- HTTP realtime checker and `/api/rbac/check` endpoint
+- UI components: AccessDenied, LoadingSpinner, ProtectedComponent
+- RBAC docs with usage examples (`docs/articles/RBAC.md`)
+- NextAuth JWT/session callbacks embedding roles/grants and a forced-RBAC-refresh via `update({ rbacRefresh: true })`
+- Page protection added to `src/app/(app)/users/page.tsx` with `roles=["admin"]`
+
+### Files changed (representative)
+
+- src/42go/rbac/hooks/useRBACSession.ts
+- src/42go/rbac/hooks/useGrants.ts
+- src/42go/rbac/lib/client.ts
+- src/42go/rbac/lib/http.ts
+- src/42go/rbac/components/AccessDenied.tsx
+- src/42go/rbac/components/LoadingStates.tsx
+- src/42go/rbac/components/ProtectedComponent.tsx
+- src/42go/rbac/index.ts and src/42go/rbac/client.ts
+- src/42go/auth/lib/callbacks.ts (JWT/session embedding + refresh)
+- src/app/api/rbac/check/route.ts
+- src/app/(app)/users/page.tsx (guarded to admin)
+- docs/articles/RBAC.md (guide)
+
+### Issues encountered & fixes
+
+- Symptom: Infinite re-render, “Maximum update depth exceeded” from `useGrants` in dev inspector.
+- Root cause: Effect depended on the raw `policy` object identity; props change each render in React 19 + HMR.
+- Fix: Memoized a normalized policy and switched effect deps to stable, primitive keys. Updated loading component handling to use memoized value.
+
+### Acceptance Criteria — status
+
+- Session Enhancement (JWT + session) — Done
+- Session types include grants/roles/appId — Done
+- useGrants returns loading/allowed/error and respects session-first — Done
+- Realtime fallback via HTTP when `realtime: true` — Done
+- Wildcards and ALL/ANY strategies — Done
+- Loading states and friendly AccessDenied — Done
+- ProtectedComponent wrapper — Done
+- RBAC check API with fail-closed handling — Done
+- Module exports wired — Done
+- Documentation added — Done
+- Tests — Deferred (explicitly skipped for now)
+
+### Notes
+
+- For server-side enforcement, continue with [aak].
+- App-aware RBAC on JWT (per-request appId) is planned in [aan].
+
+### Next steps
+
+- Optional: add unit/integration tests for hooks and wrapper (deferred by request)
+- Proceed to [aak] for server-side route/page protection

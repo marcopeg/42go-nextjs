@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAppName } from "@/42go/config/app-config";
+import { getAppID } from "@/42go/config/app-config";
 
 /**
  * Test API route to verify app name identification via middleware
@@ -8,11 +8,11 @@ import { getAppName } from "@/42go/config/app-config";
 export async function GET(request: NextRequest) {
   try {
     // Get the app name identified by middleware
-    const appName = await getAppName();
+    const appID = await getAppID();
 
     // Collect debug information
     const debugInfo = {
-      appName,
+      appID,
       url: request.url,
       host: request.headers.get("host"),
       appHeader: request.headers.get("X-App-Name"),
@@ -20,10 +20,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      appName,
+      appID,
       debug: debugInfo,
-      message: appName
-        ? `Chuck Norris identified app: ${appName}`
+      message: appID
+        ? `Chuck Norris identified app: ${appID}`
         : "No app matched. Chuck Norris is confused.",
     });
   } catch (error) {

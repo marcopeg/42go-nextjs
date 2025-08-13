@@ -1,8 +1,9 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { AppLayout } from "@/42go/layouts/app";
+import { SimplePanel } from "@/42go/components/panel";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -16,11 +17,12 @@ export default function ProfilePage() {
       title="Profile"
       subtitle="Manage your account settings and preferences"
       stickyHeader={true}
+      // Demo: require read grant to show a special section
+      // Note: page itself is unprotected here; only the inner section is guarded
     >
       {/* Profile Content */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-lg border p-6 bg-card">
-          <h3 className="text-lg font-semibold mb-4">Account Information</h3>
+      <div className="grid gap-6 md:grid-cols-2 mb-6">
+        <SimplePanel title="Account Information">
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">Name</label>
@@ -40,10 +42,9 @@ export default function ProfilePage() {
             </div>
             <Button className="w-full">Edit Profile</Button>
           </div>
-        </div>
+        </SimplePanel>
 
-        <div className="rounded-lg border p-6 bg-card">
-          <h3 className="text-lg font-semibold mb-4">Preferences</h3>
+        <SimplePanel title="Preferences">
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">Theme</label>
@@ -61,11 +62,10 @@ export default function ProfilePage() {
               Update Preferences
             </Button>
           </div>
-        </div>
+        </SimplePanel>
       </div>
 
-      <div className="rounded-lg border p-6 bg-card">
-        <h3 className="text-lg font-semibold mb-4">Security</h3>
+      <SimplePanel title="Security">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
@@ -86,7 +86,104 @@ export default function ProfilePage() {
             <Button variant="outline">Change</Button>
           </div>
         </div>
-      </div>
+      </SimplePanel>
+
+      {/* Guarded content now via SimplePanel policy prop */}
+      <SimplePanel
+        title="Special Data"
+        policy={{ require: { anyGrant: ["profile:read"] } }}
+        renderOnLoading={() => null}
+        renderOnError={() => null}
+        className="mt-6"
+      >
+        <p className="text-sm text-muted-foreground">
+          You can see this because you have profile:read.
+        </p>
+      </SimplePanel>
+
+      <PolicySessionPanel />
     </AppLayout>
+  );
+}
+
+function PolicySessionPanel() {
+  const { data: rawSession, status, update } = useSession();
+  const user = rawSession?.user as unknown as {
+    id?: string;
+    grants?: string[];
+    roles?: string[];
+    appId?: string;
+  };
+  const userId = user?.id;
+  const roles = user?.roles || [];
+  const grants = user?.grants || [];
+  const appId = user?.appId || "default";
+
+  const handleRefresh = async () => {
+    try {
+      await update({ rbacRefresh: true });
+    } catch {
+      // noop: best-effort refresh
+    }
+  };
+
+  const handleLogout = () => {
+    void signOut();
+  };
+
+  if (status === "loading") return null;
+
+  return (
+    <SimplePanel
+      title="RBAC Session"
+      actions={
+        <>
+          <Button variant="outline" onClick={handleRefresh}>
+            Refresh Session
+          </Button>
+          <Button variant="destructive" onClick={handleLogout}>
+            Logout
+          </Button>
+        </>
+      }
+      className="mt-6"
+    >
+      <div className="space-y-3">
+        <div>
+          <label className="text-sm font-medium">User ID</label>
+          <p className="text-sm text-muted-foreground mt-1 break-all">
+            {userId || "—"}
+          </p>
+        </div>
+        <div>
+          <label className="text-sm font-medium">App ID</label>
+          <p className="text-sm text-muted-foreground mt-1">{appId}</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium">Roles</label>
+          {roles.length === 0 ? (
+            <p className="text-sm text-muted-foreground mt-1">—</p>
+          ) : (
+            <ul className="list-disc pl-5 text-sm text-muted-foreground mt-1">
+              {roles.map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div>
+          <label className="text-sm font-medium">Grants</label>
+          {grants.length === 0 ? (
+            <p className="text-sm text-muted-foreground mt-1">—</p>
+          ) : (
+            <ul className="list-disc pl-5 text-sm text-muted-foreground mt-1">
+              {grants.map((g) => (
+                <li key={g}>{g}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </SimplePanel>
   );
 }

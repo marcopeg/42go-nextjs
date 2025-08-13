@@ -17,7 +17,7 @@ Each config item is completely independent and should match the `AppConfigItem` 
 
 ## Default App
 
-You can optionally setup the `DEFAULT_APP` using the config key that you want to use if no match is returned from `matchAppName()` (see next section).
+You can optionally setup the `DEFAULT_APP` using the config key that you want to use if no match is returned from `matchAppID()` (see next section).
 
 ## Strict Mode
 
@@ -25,7 +25,7 @@ Setting `DEFAULT_APP` to `null` enables the **strict mode** where the app will r
 
 ## Match the Current App
 
-Implement your matching logic in `matchAppName(Request): Promise<AppName>`.
+Implement your matching logic in `matchAppID(Request): Promise<TAppID>`.
 
 It's async and it should return one of the `availableApps` name (the object's key) or `null` in case no match is identified.
 

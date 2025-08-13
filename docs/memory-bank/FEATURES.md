@@ -82,20 +82,15 @@ The authentication is handled by the library NextAuth.
 **Security**: Minimal OAuth scopes (`read:user user:email`), server-side token management
 **UI**: Modern login interface with loading states and comprehensive error handling
 
-### Enhanced Feature Flag System
+### Unified Feature & Access Policy System
 
-**Capability**: URL-based dynamic feature flag calculation for config-driven pages
-**Implementation**: Enhanced `appPage` wrapper with `"url!"` syntax and middleware support
-**Features**: Dynamic flag calculation from URL, consistent with page routing logic
-**Usage**: `appPage(Component, "url!")` automatically checks feature flags based on current URL
-**Integration**: Middleware sets `x-pathname` header, wrapper calculates flags dynamically
-
-### Configuration-Based Feature Flags
-
-**Capability**: Granular page and API route control per app
-**Implementation**: App-specific `featureFlags.pages` and `featureFlags.apis` arrays
-**Features**: Wildcard (`*`) support, server-side validation, middleware enforcement
-**Usage guide**: See [docs/FEATURE_FLAGS.md](../docs/FEATURE_FLAGS.md)
+**Capability**: Single `features: string[]` per app controlling page & API availability plus policy evaluation (auth + RBAC + grants).
+**Implementation**: `AppConfig.features` with explicit entries like `page:docs`, `page:dashboard`, `api:todos`, `api:feedback` etc. Guards: `protectPage(policy)` & `protectRoute(policy)` on server; `ProtectComponent` / `useEvaluatePolicy` on client.
+**Inference**: If a policy omits `feature`, guard derives it from URL: `/docs/intro` → `page:docs`, `/api/todos` → `api:todos`.
+**Evaluation Pipeline**: (1) Feature present? else 404. (2) Auth required? else 401. (3) Role / grants check → 403 on failure. All via unified evaluator.
+**Authoring Policies**: Provide `require: { feature?: string; auth?: boolean; roles?: string[]; grants?: string[] }` – minimal, declarative.
+**Benefits**: One mental model, zero wrapper magic, transparent errors, easier testing.
+**Usage guide**: See FEATURE FLAGS article at `../articles/FEATURE_FLAGS.md`.
 
 ## UI & Development
 
@@ -139,44 +134,7 @@ The authentication is handled by the library NextAuth.
 
 _For detailed implementation guides, see the `docs/` directory._
 
-### 1. Multi-App Configuration System
-
-**Pattern**: Request-based app resolution with server/client configuration bridge
-
-**Key Components**:
-
-- `src/AppConfig.ts` - App configurations and matching logic
-- `src/middleware.ts` - Request interception and app resolution via `X-App-Name` header
-- Server components read header, client uses script tag + React Context
-
-**Benefits**: Avoids config serialization, enables dynamic multi-tenant apps, server-side validation
-
-### 2. Feature Flag Architecture
-
-**Pattern**: App-specific page and API route control via configuration whitelists
-
-**Implementation**:
-
-- `featureFlags.pages` and `featureFlags.apis` arrays per app
-- Supports wildcard (`*`) or specific route lists
-- Server-side validation in middleware
-
-### 5. CMS Architecture
-
-**Pattern**: Type-safe, configuration-driven content management with dynamic routing
-
-**Core Components**:
-
-- **Page Component**: Renders CMS content blocks from configuration (`/src/components/Page/`)
-- **Content Blocks**: Extensible block system (TextBlock, HeroBlock, DemoBlock, etc.)
-- **Type System**: Centralized CMS types in single source of truth (`Page/types.ts`)
-- **Dynamic Routing**: Catch-all route `[...slug]/page.tsx` for config-driven pages
-
-**URL-to-Config Mapping**:
-
-- Simple path preservation: `/foo/bar-beer` → `"foo/bar-beer"` config key
-- Case-insensitive lookup for better UX
-- Consistent between routing and feature flag systems
+<!-- Removed legacy numbered feature list & old featureFlags.* docs after unification -->
 
 **Metadata Integration**:
 

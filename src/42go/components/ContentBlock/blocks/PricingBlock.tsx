@@ -43,29 +43,30 @@ export const PricingBlock = ({ data }: { data: TPricingBlock }) => {
   };
 
   return (
-    <section className="py-16">
-      {title && (
-        <ScrollAnimation type="fade" delay={0.05}>
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-2">
-              <Markdown source={title} />
-            </h2>
-            {subtitle && (
-              <ScrollAnimation type="fade" delay={0.2}>
-                <div className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                  <Markdown source={subtitle} />
-                </div>
-              </ScrollAnimation>
-            )}
-          </div>
-        </ScrollAnimation>
-      )}
-      <div
-        className={`grid grid-cols-1 md:grid-cols-${Math.min(
-          tiers.length,
-          3
-        )} gap-6 items-end`}
-      >
+    <section className="py-16 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {title && (
+          <ScrollAnimation type="fade" delay={0.05}>
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-2">
+                <Markdown source={title} />
+              </h2>
+              {subtitle && (
+                <ScrollAnimation type="fade" delay={0.2}>
+                  <div className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                    <Markdown source={subtitle} />
+                  </div>
+                </ScrollAnimation>
+              )}
+            </div>
+          </ScrollAnimation>
+        )}
+        <div
+          className={`grid grid-cols-1 md:grid-cols-${Math.min(
+            tiers.length,
+            3
+          )} gap-6 items-end`}
+        >
         {tiers.map((tier, index) => (
           <ScrollAnimation key={index} type="slideUp" delay={0.1 * (index + 1)}>
             <div
@@ -135,6 +136,7 @@ export const PricingBlock = ({ data }: { data: TPricingBlock }) => {
             </div>
           </ScrollAnimation>
         ))}
+        </div>
       </div>
     </section>
   );

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AppLayoutProps } from "./types";
+import { ProtectComponent } from "@/42go/policy/client";
 import { SidebarMenu } from "./SidebarMenu";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { Toolbar } from "./Toolbar";
@@ -21,6 +22,9 @@ export const AppLayout = ({
   subtitle,
   actions,
   stickyHeader = true,
+  policy,
+  renderOnLoading,
+  renderOnError,
 }: AppLayoutProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
@@ -74,7 +78,19 @@ export const AppLayout = ({
         }`}
       >
         {/* Page Content */}
-        <div className="h-full flex flex-col p-6 pb-20 md:pb-6">{children}</div>
+        <div className="h-full flex flex-col p-6 pb-20 md:pb-6">
+          {policy ? (
+            <ProtectComponent
+              policy={policy}
+              renderOnLoading={renderOnLoading}
+              renderOnError={renderOnError}
+            >
+              {children}
+            </ProtectComponent>
+          ) : (
+            children
+          )}
+        </div>
       </main>
 
       {/* Mobile Bottom Navigation */}

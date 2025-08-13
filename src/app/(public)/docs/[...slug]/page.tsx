@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { appPage } from "@/42go/config/app-config-pages";
+import { protectPage } from "@/42go/policy/protectPage";
 import { getDocMetadata, getDocData } from "@/42go/utils/docs";
 import DocPageComponent from "@/42go/components/docs/DocPage";
 
@@ -21,4 +21,4 @@ const DocPage = async ({ params }: DocPageProps) => {
   return <DocPageComponent doc={doc} basePath="docs" slug={_params.slug} />;
 };
 
-export default appPage(DocPage, "docs");
+export default protectPage(DocPage, { require: { feature: "page:docs" } });

@@ -18,7 +18,7 @@ Complete guide for setting up OAuth providers across multiple app configurations
 
 ### Request Flow
 
-1. **App Resolution**: Middleware identifies current app via `X-App-Name` header
+1. **App Resolution**: Middleware identifies current app via `X-42Go-AppID` header
 2. **Provider Configuration**: `getAppConfig()` returns app-specific provider list
 3. **Backend Provider Building**: `getProviders()` constructs NextAuth providers array
 4. **Frontend Filtering**: Login page renders only configured provider buttons

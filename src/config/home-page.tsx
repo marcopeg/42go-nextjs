@@ -121,17 +121,60 @@ export const HomePage: Page = {
       component: () => "faa",
       // props: {},
     },
+
+    // --- CTA Block Examples ---
+    {
+      type: "cta",
+      action: {
+        href: "/signup",
+        label: "Start Free Trial",
+        icon: "Rocket",
+        size: "hero",
+        variant: "default",
+      },
+      secondary: {
+        href: "/docs",
+        label: "Read Docs",
+        icon: "BookOpen",
+        variant: "ghost",
+      },
+      spacing: "lg",
+      align: "center",
+      direction: "column",
+    },
+    {
+      type: "cta",
+      action: {
+        href: "/buy",
+        label: "Buy Now",
+        icon: "CreditCard",
+        size: "hero",
+        variant: "default",
+      },
+      secondary: {
+        href: "/brochure.pdf",
+        label: "Download Brochure",
+        icon: "Download",
+        variant: "outline",
+        target: "_blank",
+      },
+      spacing: "xl",
+      align: "center",
+      direction: "row",
+    },
+    // --- End CTA Block Examples ---
+
     {
       type: "markdown",
       source: "This is a **Markdown Block** rendered.",
     },
     {
       type: "markdown",
-      path: "/Users/marcopeg/dv/marcopeg/42go-next/test/fixtures/markdown-block-01.md",
+      path: "./test/fixtures/markdown-block-01.md",
     },
     {
       type: "markdown",
-      path: "test/fixtures/markdown-block-01.md",
+      path: "./contents/default/docs/getting-started/README.md",
     },
   ],
 };

@@ -79,8 +79,8 @@ A singleton database connection is exposed via `getDB()`. Import it from `src/li
 
 ```typescript
 // src/app/api/todos/route.ts
-import { appRoute } from "@/lib/config/app-config";
-import { getDB } from "@/lib/db";
+import { protectRoute } from "@/42go/auth/protectRoute";
+import { getDB } from "@/42go/db";
 
 const getTodos = async () => {
   const db = getDB();
@@ -88,7 +88,8 @@ const getTodos = async () => {
   return Response.json({ todos });
 };
 
-export const GET = appRoute(getTodos);
+// Policy: require auth, inferred feature => api:todos
+export const GET = protectRoute(getTodos, { require: { auth: true } });
 ```
 
 The `getDB()` function returns a fully configured Knex instance with PostgreSQL, complete with connection pooling and any JSON overrides. No manual connect/disconnect needed.

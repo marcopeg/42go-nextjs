@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { getAppInfo } from "@/42go/config/app-config";
-import { InjectAppName } from "@/42go/config/InjectAppName";
+import { InjectAppID } from "@/42go/config/InjectAppID";
 import { Providers } from "@/components/Providers";
 import { Toaster } from "@/components/ui/sonner";
 import "./tokens.css";
@@ -20,12 +20,12 @@ const RootLayout = async ({
 }: Readonly<{
   children: React.ReactNode;
 }>) => {
-  const { name, config } = await getAppInfo();
+  const { id: appID, config } = await getAppInfo();
   const themeDefault = config?.theme?.default;
 
   // Conditionally render the app's body based on a recognised configuration
   // TODO: redirect to a default app?
-  const body = name ? (
+  const body = appID ? (
     <Providers defaultTheme={themeDefault}>{children}</Providers>
   ) : (
     <Providers defaultTheme={themeDefault}>not found</Providers>
@@ -34,7 +34,7 @@ const RootLayout = async ({
   return (
     <html suppressHydrationWarning lang="en" className={inter.variable}>
       <head>
-        <InjectAppName name={name} />
+        <InjectAppID id={appID} />
       </head>
       {/* Use Tailwind font token so themes and utilities stay consistent */}
       <body className="font-sans">

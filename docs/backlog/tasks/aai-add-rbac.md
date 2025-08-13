@@ -173,13 +173,13 @@ WHERE rg.role_id IN (
 
 ## Goals
 
-- [ ] **PREREQUISITE**: Modify existing migration to add `app_id` columns to association tables
-- [ ] **PREREQUISITE**: Update seed data for multi-app associations
-- [ ] **PREREQUISITE**: Recreate database with updated schema
-- [ ] Create core RBAC TypeScript interfaces
-- [ ] Implement database permission lookup utilities with app scoping
-- [ ] Implement wildcard grant matching (`users:*`)
-- [ ] Create session-based permission helpers
+- [x] **PREREQUISITE**: Modify existing migration to add `app_id` columns to association tables
+- [x] **PREREQUISITE**: Update seed data for multi-app associations
+- [x] **PREREQUISITE**: Recreate database with updated schema
+- [x] Create core RBAC TypeScript interfaces
+- [x] Implement database permission lookup utilities with app scoping
+- [x] Implement wildcard grant matching (`users:*`)
+- [x] Create session-based permission helpers
 - [ ] Add basic error handling and validation
 - [ ] Create unit tests for core utilities
 
@@ -187,19 +187,19 @@ WHERE rg.role_id IN (
 
 ### Database Schema
 
-- [ ] `auth.roles_users` table has `app_id` column with default 'default'
-- [ ] `auth.roles_grants` table has `app_id` column with default 'default'
-- [ ] Primary keys updated to include `app_id`: `(role_id, user_id, app_id)` and `(role_id, grant_id, app_id)`
-- [ ] Seed data updated to explicitly use `app_id: 'default'` for associations
-- [ ] Database recreated successfully with new schema
+- [x] `auth.roles_users` table has `app_id` column with default 'default'
+- [x] `auth.roles_grants` table has `app_id` column with default 'default'
+- [x] Primary keys updated to include `app_id`: `(role_id, user_id, app_id)` and `(role_id, grant_id, app_id)`
+- [x] Seed data updated to explicitly use `app_id: 'default'` for associations
+- [x] Database recreated successfully with new schema
 
 ### Core Infrastructure
 
-- [ ] TypeScript interfaces defined for RBAC policies and results
-- [ ] Database utilities support app-scoped permission lookups
-- [ ] Wildcard grant matching works correctly (`users:*` matches `users:list`)
-- [ ] Session-based permission helpers integrate with NextAuth
-- [ ] All database interactions use existing Knex.js setup
+- [x] TypeScript interfaces defined for RBAC policies and results
+- [x] Database utilities support app-scoped permission lookups
+- [x] Wildcard grant matching works correctly (`users:*` matches `users:list`)
+- [x] Session-based permission helpers integrate with NextAuth
+- [x] All database interactions use existing Knex.js setup
 
 ### Testing & Quality
 
@@ -470,3 +470,52 @@ Implement [aaj] RBAC useGrants Hook & Client Components
 ## Next Steps
 
 Implement [aaj] RBAC useGrants Hook & Client Components
+
+## Progress
+
+- Updated migrations to add `app_id` to `auth.roles_users` and `auth.roles_grants` with composite PKs including `app_id`.
+- Updated seeds to insert `app_id: "default"` for role-user and role-grant associations.
+- Rebuilt database successfully (rollback → latest → seed).
+- Implemented core RBAC modules:
+  - `types.ts` with policy and result types
+  - `lib/db.ts` with app-scoped role/grant lookups and checks
+  - `lib/grants.ts` with wildcard grant matching and batch check
+  - `lib/roles.ts` with role checks
+  - `lib/session.ts` with NextAuth-based current-user helpers
+  - `index.ts` exporting public API
+- Ran QA: ESLint PASS, Next.js build PASS.
+
+## Files Changed
+
+- knex/migrations/20240522_acl.js — add `app_id` to association tables, update PKs
+- knex/seeds/20240522_init_auth_data.js — add `app_id: "default"` to inserts
+- src/42go/rbac/index.ts — new exports
+- src/42go/rbac/types.ts — new types
+- src/42go/rbac/lib/db.ts — app-scoped DB utils
+- src/42go/rbac/lib/grants.ts — wildcard matching and grant checks
+- src/42go/rbac/lib/roles.ts — role checks
+- src/42go/rbac/lib/session.ts — session helpers
+
+## Quality Gates
+
+- Build: PASS (Next 15 production build)
+- Lint/Typecheck: PASS
+- Unit tests: Deferred (no test runner configured). Recommend adding Vitest/Jest in a follow-up.
+
+## Requirements Coverage
+
+- Schema updates: Done
+- Seeds updated: Done
+- DB recreation: Done
+- TS interfaces: Done
+- DB utilities: Done
+- Wildcard matching: Done
+- Session helpers: Done
+- Error handling: Deferred (basic guards present; expand in follow-up)
+- Unit tests: Deferred (propose adding in [aam] or a dedicated task)
+
+## Next Steps
+
+1. Integrate RBAC into route/page protection and hooks (tracked in [aaj], [aak]).
+2. Add unit tests with a lightweight runner (propose Vitest) for wildcard and DB lookups.
+3. Expand error handling and add input normalization (e.g., lowercase grant/role IDs).

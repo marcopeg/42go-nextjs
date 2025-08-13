@@ -4,17 +4,29 @@ import { Button } from "@/components/ui/button";
 import { ScrollAnimation } from "@/components/ui/scroll-animation";
 import type { Components } from "react-markdown";
 
-export interface THeroBlock {
-  type: "hero";
-  title: string;
+// Utility type: require at least one of a set of keys
+type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<
+  T,
+  Exclude<keyof T, Keys>
+> &
+  {
+    [K in Keys]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<Keys, K>>>;
+  }[Keys];
+
+interface THeroContentFields {
+  title?: string;
   subtitle?: string;
-  backgroundImage?: string;
   actions?: Array<{
     label: string;
     href: string;
     style: "primary" | "secondary";
   }>;
 }
+
+export type THeroBlock = {
+  type: "hero";
+  backgroundImage?: string;
+} & RequireAtLeastOne<THeroContentFields, "title" | "subtitle" | "actions">;
 
 // Custom markdown components for accent styling
 const markdownComponentsH1: Components = {
@@ -27,7 +39,14 @@ const markdownComponentsH2: Components = {
 };
 
 export function HeroBlock({ data }: { data: THeroBlock }) {
-  const { title, subtitle, backgroundImage, actions } = data;
+  const { title, subtitle, backgroundImage } = data;
+  const actions = data.actions?.filter(Boolean) ?? [];
+  const hasTitle = Boolean(title);
+  const hasSubtitle = Boolean(subtitle);
+  const hasActions = actions.length > 0;
+
+  // Runtime safety: if misconfigured (shouldn't happen due to types), render nothing.
+  if (!hasTitle && !hasSubtitle && !hasActions) return null;
 
   return (
     <section className="w-full py-10 md:py-20 flex flex-col items-center justify-center text-center">
@@ -49,27 +68,43 @@ export function HeroBlock({ data }: { data: THeroBlock }) {
         )}
 
         <div className="relative z-10 py-16">
-          <ScrollAnimation type="fade" delay={0.1}>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4 max-w-4xl mx-auto">
-              <ReactMarkdown components={markdownComponentsH1}>
-                {title}
-              </ReactMarkdown>
-            </h1>
-          </ScrollAnimation>
+          {hasTitle && (
+            <ScrollAnimation type="fade" delay={0.1}>
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4 max-w-4xl mx-auto">
+                <ReactMarkdown components={markdownComponentsH1}>
+                  {title as string}
+                </ReactMarkdown>
+              </h1>
+            </ScrollAnimation>
+          )}
 
-          {subtitle && (
+          {!hasTitle && hasSubtitle && (
+            // Escalate subtitle to h1 semantics if no title provided
+            <ScrollAnimation type="fade" delay={0.1}>
+              <h1 className="text-3xl md:text-5xl font-semibold tracking-tight mb-4 max-w-3xl mx-auto">
+                <ReactMarkdown components={markdownComponentsH2}>
+                  {subtitle as string}
+                </ReactMarkdown>
+              </h1>
+            </ScrollAnimation>
+          )}
+
+          {hasTitle && hasSubtitle && (
             <ScrollAnimation type="fade" delay={0.2}>
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
                 <ReactMarkdown components={markdownComponentsH2}>
-                  {subtitle}
+                  {subtitle as string}
                 </ReactMarkdown>
               </p>
             </ScrollAnimation>
           )}
 
-          {actions && actions.length > 0 && (
-            <ScrollAnimation type="scale" delay={0.3}>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {hasActions && (
+            <ScrollAnimation
+              type={hasTitle || hasSubtitle ? "scale" : "fade"}
+              delay={0.3}
+            >
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-4">
                 {actions.map((action, index) => (
                   <Button
                     key={index}

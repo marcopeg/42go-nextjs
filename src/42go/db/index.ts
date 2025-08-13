@@ -1,3 +1,4 @@
+import "server-only";
 import knex, { Knex } from "knex";
 import { createKnexConfig } from "./utils";
 

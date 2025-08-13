@@ -1,15 +1,15 @@
-type InjectAppNameProps = {
-  name?: string | null;
+type InjectAppIDProps = {
+  id?: string | null;
 };
 
-export const InjectAppName = ({ name }: InjectAppNameProps) => (
+export const InjectAppID = ({ id }: InjectAppIDProps) => (
   <>
-    {name && name !== "default" && (
-      <link rel="stylesheet" href={`/themes/${name}.css`} />
+    {id && id !== "default" && (
+      <link rel="stylesheet" href={`/themes/${id}.css`} />
     )}
     <script
       dangerouslySetInnerHTML={{
-        __html: `window.__APP_NAME__ = ${JSON.stringify(name ?? null)};`,
+        __html: `window.__APP_ID__ = ${JSON.stringify(id ?? null)};`,
       }}
     />
   </>

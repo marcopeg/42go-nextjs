@@ -1,4 +1,4 @@
-import { appPage } from "@/42go/config/app-config-pages";
+import { protectPage } from "@/42go/policy/protectPage";
 import { Metadata } from "next";
 import Page, { getPageMeta, getPageData } from "@/42go/components/DynamicPage";
 
@@ -11,4 +11,5 @@ const HomePage = async () => {
   return <Page name={"HomePage"} data={pageData} />;
 };
 
-export default appPage(HomePage, "*");
+// No feature enforced for root; protectPage will not infer feature for "/"
+export default protectPage(HomePage);

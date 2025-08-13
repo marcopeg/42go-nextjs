@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { getDB } from "@/42go/db";
-import { type AppConfig, appRoute } from "@/42go/config/app-config";
+import { protectRoute } from "@/42go/policy/protectRoute";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const waitlist = async (config: AppConfig, req: Request) => {
+const waitlist = async (request: Request) => {
   try {
-    const { email } = await req.json();
+    const { email } = await request.json();
     if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email)) {
       return NextResponse.json(
         { error: "Invalid email address." },
@@ -14,8 +14,8 @@ const waitlist = async (config: AppConfig, req: Request) => {
       );
     }
 
-    const ip = req.headers.get("x-forwarded-for") || "unknown";
-    const userAgent = req.headers.get("user-agent") || "unknown";
+    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const userAgent = request.headers.get("user-agent") || "unknown";
     const db = getDB();
 
     // Try to insert, ignore duplicate emails
@@ -37,4 +37,6 @@ const waitlist = async (config: AppConfig, req: Request) => {
   }
 };
 
-export const POST = appRoute(waitlist);
+export const POST = protectRoute(waitlist, {
+  require: { feature: "api:waitlist" },
+});

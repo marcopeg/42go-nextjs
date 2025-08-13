@@ -2,23 +2,31 @@
 
 A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
 
-(LastID: aap)
+(LastID: ael)
 
 ## Current Task
 
+- [ael] Stack Block Component 🔗 [draft/ael-stack-block-component.md]
+
 ## Upcoming Tasks
 
-- [aai] RBAC Database Schema & Core Infrastructure 🔗 [story](./story/aai-add-rbac.md)
-- [aaj] RBAC useGrants Hook & Client Components 🔗 [story](./story/aaj-rbac-usegrants-hook.md)
-- [aak] RBAC Page & Route Protection 🔗 [story](./story/aak-rbac-page-route-protection.md)
-- [aal] RBAC Menu Integration 🔗 [story](./story/aal-rbac-menu-integration.md)
-- [aam] RBAC Advanced Features 🔗 [story](./story/aam-rbac-advanced-features.md)
+- [aei] Extract Policy Utilities & Refactor Imports [🔗](./draft/aei-extract-policy-utilities.md)
+- [aal] RBAC Menu Integration 🔗 [story](./tasks/aal-rbac-menu-integration.md)
+- [aam] RBAC Advanced Features 🔗 [story](./tasks/aam-rbac-advanced-features.md)
+- [ads] RBAC SQL Functions [🔗](./draft/ads-sql-functions.md)
+- [adr] EPIC - RBAC Refactor Policies [🔗](./draft/adr-refactor-rbac-policies.md)
 - [acj] 🪲 Next standalone has `.env` file [🔗](./tasks/acj-next-standalone.md)
 
 ## Drafts
 
+- [adw] Client Policy Hook and Component [🔗](./draft/adw-client-policy-hook-component.md)
+- [aea] Policy & RBAC Testing Strategy [🔗](./draft/aea-policy-testing-strategy.md)
+- [aef] Design anyPolicy OR Helper [🔗](./draft/aef-design-anypolicy-or-helper.md)
+- [aeg] Unified Policy Engine Tests Implementation [🔗](./draft/aeg-policy-engine-tests.md)
 - [acr] Create Client Page HOC (might be already completed by RBAC) [🔗](./tasks/acr-client-page-wrapper.md)
 - [aan] App-Specific Session Configuration [🔗](./draft/aan-app-specific-session-config.md)
+- [aed] Protect waitlist route with feature flag [🔗](./draft/aed-protect-waitlist-route-with-feature-flag.md)
+- [aee] Protect feedback route with feature flag [🔗](./draft/aee-protect-feedback-route-with-feature-flag.md)
 - [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
 - [acz] Document Getting started with README's information
@@ -41,9 +49,27 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [ado] if `config.auth` is not defined, the `/login` should return a 404
 - [adp] `config.public.docs` if present should be enough to enable the documents even without explicit feature flag. this config should be a feature flag in itself.
 - [adn] Add `config.match.fn = async (request): bool` that let match programmatically [🔗](./tasks/adn-config-match-function.md)
+- [] Add "youtube" ContentBlock
+- [] Add "image" ContentBlock
+- [] HeroBlock: should be possibel to set only one among "title", "subtitle", or "actions" but at least one, so that it can work only as a title block
+- [] HeroBlock: add the "aligment" (left, center, right) so to apply it to the contents (optional, default "center")
 
 ## Completed Tasks
 
+- [aek] Add Call To Action content block [🔗](./draft/aek-add-call-to-action-content-block.md) (refined – ready to plan k2)
+- [aej] Fix protectPage Switch Fall-Through Bug [🔗](./draft/aej-fix-protectpage-switch-fallthrough.md)
+- [aeh] Remove Wildcard Grant Support [🔗](./draft/aeh-remove-wildcard-grant-support.md)
+- [adt] Unified Policy Engine [🔗](./draft/adt-unified-policy-engine.md)
+- [adv] Protect SSR Pages with Policies [🔗](./draft/adv-protect-ssr-pages.md)
+- [adz] API Route Policy Guard uses Policies [🔗](./draft/adz-api-route-policy-guard.md) ✅ COMPLETE - Unified protectRoute with feature inference, per-policy overrides, routes migrated; tests deferred to [aea]
+- [adv] Protect SSR Pages with Policies [🔗](./draft/adv-protect-ssr-pages.md)
+- [adx] AppLayout Policy Integration [🔗](./draft/adx-applayout-policy-integration.md)
+- [aeb] Consolidate RBAC Into Policy Engine [🔗](./draft/aeb-consolidate-rbac-into-policy-engine.md) ✅ COMPLETE - Legacy RBAC surface removed, unified policy engine sole API.
+- [adu] Feature Flags Unification to AppConfig.features [🔗](./draft/adu-feature-flags-unification.md) ✅ COMPLETE - Single features[] list, legacy flags bridged then purged.
+- [ady] Cleanup Legacy Feature Flags [🔗](./draft/ady-cleanup-legacy-feature-flags.md) ✅ COMPLETE - Removed deprecated config & bridge, docs updated.
+- [aak] RBAC Page & Route Protection 🔗 [story](./tasks/aak-rbac-page-route-protection.md)
+- [aaj] RBAC useGrants Hook & Client Components 🔗 [story](./tasks/aaj-rbac-usegrants-hook.md)
+- [aai] RBAC Database Schema & Core Infrastructure 🔗 [story](./tasks/aai-add-rbac.md)
 - [adl] 🪲 docs: Links from the docs index page don't work [🔗](./tasks/adl-docs-article-walls-links.md)
 - [adq] Clean up AppConfig matching logic [🔗](./tasks/adq-clean-appconfig-match.md)
 - [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
@@ -106,3 +132,5 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aap] API routes ACL with App config feature flags
 - [aaq] Page routes ACL with cApp config feature flags
 - [aar] Identify App config by Request properties
+
+- [aec] Abstract Panel Component [🔗](./draft/aec-abstract-panel-component.md) ✅ COMPLETE - SRP panel primitives + SimplePanel sugar, policy-aware panels, profile page refactored

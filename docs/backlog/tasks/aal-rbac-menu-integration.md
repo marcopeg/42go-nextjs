@@ -1,23 +1,25 @@
-# RBAC Menu Integration [aal]
+# Policy‑Driven Menu Item Visibility [aal]
 
-Integrate RBAC permissions with AppConfig menu system to filter menu items based on user permissions. Implements client-side menu filtering with smooth loading transitions.
+Integrate the new generic Policy system with the AppConfig menu so items declare an optional `policy` (single or array) and are automatically hidden (not rendered, no errors) when the policy fails. This replaces the original RBAC‑only concept with the unified `Policy` abstraction (session / feature / role / grants / anyGrant).
 
-**Part of RBAC Series**: [aai] → [aaj] → [aak] → **[aal]** → [aam]
+**Series Context**: [aai] → [aaj] → [aak] → **[aal]** → [aam]
 
-**Prerequisites**:
+**Prerequisites** (already implemented):
 
-- [aai] RBAC Database Schema & Core Infrastructure
-- [aaj] RBAC useGrants Hook & Client Components
-- [aak] RBAC Page & Route Protection
+- Policy evaluation hook `useEvaluatePolicy`
+- `<ProtectComponent>` visual guard (used elsewhere for panels/pages)
+- AppConfig menu structure (top / bottom / mobile)
 
-## Requirements Analysis
+## Requirements Analysis (Updated)
 
-Extend AppConfig menu system with RBAC support:
+Extend AppConfig menu system with Policy support:
 
-- **AppConfig Integration**: Add optional `rbac` property to menu items
-- **Menu Filtering**: Client-side filtering based on user permissions
-- **Loading States**: Smooth transitions during permission checks
-- **TypeScript**: Extend existing menu types with RBAC support
+- **Type Extension**: Add optional `policy?: Policy | Policy[]` to `TAppLayoutNavItem` (current file: `src/42go/layouts/app/types.ts`).
+- **Rendering Rule**: If `policy` provided and evaluation fails (pass === false, loading === false) do NOT render the item (pure omission; no placeholder, no error component, no skeleton inside the menu list).
+- **Loading Behavior**: While a menu item's policy is loading, we may optimistically hide it to avoid flicker OR (simpler v1) treat loading as "not yet decided" and withhold rendering; no global skeleton for the whole menu (keep existing instant menu rendering for items without policy). Simplicity first.
+- **Batching / Optimization**: Minimal v1—call `useEvaluatePolicy` per item. (Future optimization: batch evaluate unique policy sets). Note this is acceptable because policy evaluation is synchronous-over-session + feature flags (no network) today.
+- **Backward Compatibility**: Existing menus (no policy fields) remain unchanged.
+- **No RBAC Terminology**: Replace previous `rbac` references with generic `policy`.
 
 ## AppConfig Menu Enhancement
 
@@ -40,7 +42,7 @@ app: {
 }
 ```
 
-### Enhanced Structure (with RBAC)
+### Enhanced Structure (with Policy)
 
 ```ts
 // Enhanced with RBAC support
@@ -52,20 +54,16 @@ app: {
           title: "Users",
           href: "/users",
           icon: Users,
-          rbac: {
-            grants: ["users:list"],
-            roles: ["backoffice"],
-          },
+          policy: { require: { anyGrant: ["users:list", "admin:*"] } },
         },
         {
           title: "Admin Panel",
           href: "/admin",
           icon: Settings,
-          rbac: {
-            grants: ["admin:*"],
-            roles: ["administrator"],
-            grantsStrategy: "ANY", // User needs ANY of the specified grants
-          },
+          policy: [
+            { require: { role: "administrator" } },
+            { require: { grants: ["admin:panel"] } }, // both must pass
+          ],
         },
       ];
     }
@@ -75,71 +73,38 @@ app: {
 
 ## Menu Component Integration
 
-### Enhanced Menu Item Interface
+### Updated Menu Item Interface (concept)
 
 ```ts
-// Extend existing TAppLayoutNavItem
 interface TAppLayoutNavItem {
-  title: string;
-  href: string;
-  icon?: ComponentType<{ className?: string }>;
-  rbac?: RBACPolicyClient; // Optional RBAC configuration
-  // ... existing properties
+  // ... existing fields
+  policy?: Policy | Policy[]; // Optional visibility policy
 }
 ```
 
-### Menu Filtering Component
+### Rendering Strategy
+
+Instead of pre-filtering arrays, we can inline wrap each menu link:
 
 ```tsx
-const FilteredMenuItems: React.FC<{
-  items: TAppLayoutNavItem[];
-  onLoadingChange?: (loading: boolean) => void;
-}> = ({ items, onLoadingChange }) => {
-  const [filteredItems, setFilteredItems] = useState<TAppLayoutNavItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Filter items based on permissions
-  useEffect(() => {
-    const filterItems = async () => {
-      setLoading(true);
-      onLoadingChange?.(true);
-
-      const results = await Promise.all(
-        items.map(async (item) => {
-          if (!item.rbac) {
-            return { item, allowed: true };
-          }
-
-          const permission = await checkPermissions(item.rbac);
-          return { item, allowed: permission };
-        })
-      );
-
-      const allowed = results
-        .filter(({ allowed }) => allowed)
-        .map(({ item }) => item);
-
-      setFilteredItems(allowed);
-      setLoading(false);
-      onLoadingChange?.(false);
-    };
-
-    filterItems();
-  }, [items, onLoadingChange]);
-
-  if (loading) {
-    return <MenuSkeleton />;
-  }
-
-  return (
-    <>
-      {filteredItems.map((item, index) => (
-        <MenuItem key={index} item={item} />
-      ))}
-    </>
-  );
-};
+{
+  items.map((item) => {
+    if (!item.policy) return <MenuLink key={k(item)} item={item} />;
+    return (
+      <ProtectComponent
+        key={k(item)}
+        policy={item.policy}
+        renderOnLoading={() => null}
+        renderOnError={() => null}
+      >
+        <MenuLink item={item} />
+      </ProtectComponent>
+    );
+  });
+}
 ```
+
+Pros: minimal new code, reuse existing policy evaluation & caching semantics. Cons: multiple hooks (acceptable for typical small menu sizes).
 
 ## Loading States & Transitions
 
@@ -186,271 +151,127 @@ const AnimatedMenuItems: React.FC<{
 };
 ```
 
-## Goals
+## Goals (Revised)
 
-- [ ] Extend `TAppLayoutNavItem` type to include optional `rbac` property
-- [ ] Create menu filtering logic using permissions from [aaj]
-- [ ] Update sidebar menu components to support RBAC filtering
-- [ ] Implement smooth loading transitions during permission checks
-- [ ] Add menu skeleton components for loading states
-- [ ] Create batch permission checking for menu items
-- [ ] Support all menu locations (top, bottom, mobile)
-- [ ] Add TypeScript support for RBAC menu configuration
-- [ ] Create integration tests for menu filtering
-- [ ] Document menu RBAC configuration patterns
+- [ ] Extend `TAppLayoutNavItem` with optional `policy` field
+- [ ] Update `SidebarMenu` (and any mobile menu components) to hide items failing policy
+- [ ] Ensure loading state causes silent omission (no layout jump flicker beyond natural list shrink)
+- [ ] Maintain backward compatibility (menus without policy unaffected)
+- [ ] Add types & inline JSDoc for `policy` field
+- [ ] Add minimal tests (unit: helper that decides render, component: snapshot absence when failing)
+- [ ] Document usage in `docs/articles/POLICY.md` or dedicated snippet
+- [ ] (Optional) Extract small helper `wrapWithPolicy(item, node)` for reuse
 
 ## Acceptance Criteria
 
 ### Type System
 
-- [ ] `TAppLayoutNavItem` supports optional `rbac: RBACPolicyClient`
-- [ ] AppConfig interface properly typed for RBAC menu items
-- [ ] TypeScript compilation succeeds with new menu types
-- [ ] Backward compatibility maintained for non-RBAC menus
+- [ ] `TAppLayoutNavItem` supports optional `policy?: Policy | Policy[]`
+- [ ] TypeScript compiles with updated interface
+- [ ] No breaking changes to existing config objects
 
-### Menu Filtering
+### Visibility Logic
 
-- [ ] Menu items without `rbac` property always show
-- [ ] Menu items with `rbac` property filtered based on user permissions
-- [ ] Wildcard grants work in menu item permissions
-- [ ] Menu filtering works for all menu locations (top, bottom, mobile)
+- [ ] Items without `policy` always render
+- [ ] Items with failing policy never render (no spacer)
+- [ ] Items while loading are not rendered (no flicker)
+- [ ] Works across top / bottom / mobile menus
 
-### Loading & Performance
+### Performance & UX
 
-- [ ] Menu skeleton shows during permission checks
-- [ ] Smooth transitions when menu items appear/disappear
-- [ ] Batch permission checking optimizes performance
-- [ ] Menu doesn't flicker during permission resolution
+- [ ] No perceptible layout thrash (React key stability maintained)
+- [ ] Acceptable performance with N items (no extra re-renders)
+- [ ] (Stretch) Avoid duplicate identical policy hook executions if easily possible
 
 ### Integration
 
-- [ ] Works with existing sidebar menu components
-- [ ] Integrates with useGrants hook from [aaj]
-- [ ] Uses core RBAC infrastructure from [aai]
-- [ ] Client-side only filtering (no SSR for app layouts)
+- [ ] Uses `ProtectComponent` (preferred) or `useEvaluatePolicy` directly if needed
+- [ ] Pure client-side behavior only
 
 ### Testing & Quality
 
-- [ ] Unit tests for menu filtering logic
-- [ ] Integration tests with actual menu components
-- [ ] Tests verify loading state behavior
-- [ ] Tests cover permission batch processing
+- [ ] Unit test: policy pass renders; fail omits
+- [ ] Component test: combination of items renders only allowed subset
+- [ ] Snapshot or DOM assertions stable when toggling policy pass/fail
+- [ ] Type test (dts) for new field
 
-## Development Plan
+## Development Plan (Revised)
 
-### Phase 1: Type System Extension
+### Phase 1: Types
 
-**1.1 Menu Types** (`src/42go/layouts/app/types.ts`)
+1. Add `policy?: Policy | Policy[]` to `TAppLayoutNavItem` (`src/42go/layouts/app/types.ts`). Include JSDoc explaining silent hide behavior.
+2. Ensure `AppConfig` inference still works (no changes needed besides the nav item interface).
 
-```ts
-import type { RBACPolicyClient } from "@/42go/rbac/types";
+### Phase 2: Rendering Update
 
-interface TAppLayoutNavItem {
-  title: string;
-  href: string;
-  icon?: ComponentType<{ className?: string }>;
-  rbac?: RBACPolicyClient; // New optional RBAC property
-  // ... existing properties
-}
+1. In `SidebarMenu.tsx` modify `renderMenuItems`:
 
-// Update AppConfig types
-interface AppLayoutMenu {
-  top?: {
-    items?: TAppLayoutNavItem[];
-  };
-  bottom?: {
-    items?: TAppLayoutNavItem[];
-  };
-  mobile?: {
-    items?: TAppLayoutNavItem[];
-  };
-}
-```
+- Extract existing link body into `renderSingleItem(item)`.
+- If `item.policy` wrap with `<ProtectComponent policy={item.policy} renderOnLoading={() => null} renderOnError={() => null}>`.
 
-**1.2 AppConfig Integration** (`src/AppConfig.ts`)
+2. Repeat for mobile nav component(s) if they map items similarly (`MobileBottomNav.tsx`).
 
-- Update type imports
-- Ensure backward compatibility
-- Add example RBAC menu configuration
+### Phase 3: Tests
 
-### Phase 2: Menu Filtering Logic
+1. Add a simple test file (e.g., `test/layouts/sidebar-menu.policy.test.tsx`) using React Testing Library:
 
-**2.1 Permission Batch Checker** (`src/42go/rbac/lib/menuPermissions.ts`)
+- Mock session + feature flags context.
+- Render menu with: item A (no policy), item B (policy that passes), item C (policy that fails).
+- Assert A & B present; C absent.
 
-```ts
-export const checkMenuPermissions = async (
-  items: TAppLayoutNavItem[]
-): Promise<TAppLayoutNavItem[]> => {
-  // Batch check permissions for all menu items
-  const permissionChecks = items.map(async (item) => {
-    if (!item.rbac) {
-      return { item, allowed: true };
-    }
+2. Test loading scenario: simulate hook initial loading returning loading=true then pass; ensure no placeholder rendered first frame (may require mocking hook to controlled states).
 
-    const allowed = await checkPermissions(item.rbac);
-    return { item, allowed };
-  });
+### Phase 4: Docs
 
-  const results = await Promise.all(permissionChecks);
+1. Update `docs/articles/POLICY.md` (append section) OR create a short snippet in the backlog task if doc already exhaustive.
+2. Provide configuration example inside `AppConfig` comment block (non-executing) for maintainers.
 
-  return results.filter(({ allowed }) => allowed).map(({ item }) => item);
-};
-```
+### Phase 5: (Optional Optimization / Stretch)
 
-**2.2 Menu Hook** (`src/42go/rbac/hooks/useFilteredMenu.ts`)
+- If necessary, create a lightweight helper `PolicyWrapper` to avoid repeating the `renderOnLoading` / `renderOnError` props.
 
-```ts
-export const useFilteredMenu = (items: TAppLayoutNavItem[]) => {
-  const [filteredItems, setFilteredItems] = useState<TAppLayoutNavItem[]>([]);
-  const [loading, setLoading] = useState(true);
+### Non-Goals for This Story
 
-  useEffect(() => {
-    let mounted = true;
+- Batch de-dup of identical policies (future performance story)
+- Skeleton / animation transitions (nice-to-have previously; scope reduced to simplicity)
 
-    const filterMenu = async () => {
-      setLoading(true);
+### Rollback Plan
 
-      try {
-        const filtered = await checkMenuPermissions(items);
+- Removing the `policy` key reverts to prior behavior instantly (pure additive field).
 
-        if (mounted) {
-          setFilteredItems(filtered);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Menu filtering error:", error);
+## Key Implementation Details (Adjusted)
 
-        if (mounted) {
-          // Show all items on error to avoid breaking UI
-          setFilteredItems(items.filter((item) => !item.rbac));
-          setLoading(false);
-        }
-      }
-    };
+### Simplicity First
 
-    filterMenu();
+Each item individually invokes `ProtectComponent` only when it has a `policy`. Evaluation relies on session + feature set already in memory; no network calls => acceptable O(n) hook cost (typical n < 15). Future batching only if evidence of performance issue.
 
-    return () => {
-      mounted = false;
-    };
-  }, [items]);
+### Error Handling
 
-  return { filteredItems, loading };
-};
-```
-
-### Phase 3: Menu Component Updates
-
-**3.1 Sidebar Menu Component** (`src/42go/layouts/app/SidebarMenu.tsx`)
-
-```tsx
-// Update existing SidebarMenu to use filtering
-export const SidebarMenu: React.FC<{
-  items: TAppLayoutNavItem[];
-}> = ({ items }) => {
-  const { filteredItems, loading } = useFilteredMenu(items);
-
-  if (loading) {
-    return <MenuSkeleton />;
-  }
-
-  return (
-    <nav className="space-y-1">
-      <AnimatedMenuItems items={filteredItems} />
-    </nav>
-  );
-};
-```
-
-**3.2 Loading Components** (`src/42go/rbac/components/MenuSkeleton.tsx`)
-
-- Menu skeleton for loading states
-- Animated transitions
-- Responsive design
-
-### Phase 4: Integration & Polish
-
-**4.1 Menu Integration Tests**
-
-- Test menu filtering with various permission scenarios
-- Test loading states and transitions
-- Test error handling
-
-**4.2 Performance Optimization**
-
-- Memoize permission results
-- Optimize batch permission checking
-- Reduce unnecessary re-renders
-
-## Key Implementation Details
-
-### Batch Permission Checking
-
-```ts
-const optimizedPermissionCheck = async (
-  items: TAppLayoutNavItem[]
-): Promise<PermissionResult[]> => {
-  // Group similar permission checks to optimize database queries
-  const permissionGroups = groupPermissionsByPolicy(items);
-
-  const results = await Promise.all(
-    permissionGroups.map((group) =>
-      checkBatchPermissions(group.policy, group.items)
-    )
-  );
-
-  return flattenResults(results);
-};
-```
-
-### Error Handling Strategy
-
-```ts
-const safeMenuFiltering = async (
-  items: TAppLayoutNavItem[]
-): Promise<TAppLayoutNavItem[]> => {
-  try {
-    return await checkMenuPermissions(items);
-  } catch (error) {
-    console.error("Menu permission check failed:", error);
-
-    // Fallback: show items without RBAC requirements
-    return items.filter((item) => !item.rbac);
-  }
-};
-```
+`ProtectComponent` already renders nothing (due to our override) when failing or loading because we supply `renderOnError/Loading` returning null. So error UI is intentionally suppressed in menu context.
 
 ### Performance Considerations
 
-- **Memoization**: Cache permission results for identical policies
-- **Batch Processing**: Group similar permission checks
-- **Lazy Loading**: Only check permissions when menu is visible
-- **Error Boundaries**: Graceful degradation on permission failures
+- Lightweight: evaluation synchronous vs session snapshot & feature set
+- Stable keys: use existing `item.id || href-title` to avoid remount storms
+- Early omission reduces DOM churn
 
 ## Architecture Decisions
 
 ### Client-Side Only Filtering
 
-- **Decision**: All menu filtering happens client-side
-- **Rationale**: Consistent with "client-side only app layout" decision
-- **Trade-off**: Initial loading state vs server performance
-- **Implementation**: Loading skeletons during permission resolution
+- Unchanged: still purely client-side, aligned with existing layout approach.
 
 ### Backward Compatibility
 
-- **Decision**: Optional `rbac` property maintains compatibility
-- **Rationale**: Existing menus continue to work without changes
-- **Implementation**: Items without `rbac` property always show
+- Optional `policy` property maintains full compatibility; no existing item definitions break.
 
 ### Batch Permission Optimization
 
-- **Decision**: Check all menu permissions in single batch
-- **Rationale**: Better performance than individual checks
-- **Implementation**: Parallel async permission resolution
+- Deferred; complexity not justified yet. Future story can replace per-item wrappers with a context pre-pass.
 
 ## Integration Points
 
-### AppConfig Usage Example
+### AppConfig Usage Example (Updated)
 
 ```ts
 // Example AppConfig with RBAC menu
@@ -470,20 +291,16 @@ const appConfig: AppConfigItem = {
             title: "Users",
             href: "/users",
             icon: Users,
-            rbac: {
-              grants: ["users:list"],
-              roles: ["admin", "user-manager"],
-              rolesStrategy: "ANY",
-            },
+            policy: { require: { anyGrant: ["users:list", "admin:*"] } },
           },
           {
             title: "Settings",
             href: "/settings",
             icon: Settings,
-            rbac: {
-              grants: ["admin:*"],
-              roles: ["administrator"],
-            },
+            policy: [
+              { require: { role: "administrator" } },
+              { require: { feature: "page:settings" } },
+            ],
           },
         ],
       },

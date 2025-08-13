@@ -5,7 +5,7 @@ import type { TAuthProviders } from "@/42go/auth/lib/providers/types";
 import type { TDynamicPage } from "@/42go/components/DynamicPage";
 import type { TPublicLayoutToolbar } from "@/42go/layouts/public/types";
 import type { TAppLayoutNavItem } from "@/42go/layouts/app/types";
-import type { TAppConfigMatch } from "@/42go/lib/match/matchers";
+import type { TAppConfigMatch } from "@/42go/lib/app-id/matchers";
 // Into the default's public toolbar
 import { UserMenu } from "@/42go/auth/components/UserMenu";
 // Develompent utilities for the pages
@@ -30,7 +30,7 @@ import {
 // This should be moved into 42go somewhere
 export type ThemeValue = "light" | "dark" | "system";
 
-export interface AppConfigItem {
+export interface TAppConfigItem {
   name: string;
   logo?: string | ComponentType<{ className?: string }>;
   // meta moved to public.meta
@@ -65,19 +65,22 @@ export interface AppConfigItem {
       };
     };
   };
-  featureFlags: {
-    pages: readonly string[]; // List of pages available in this app
-    apis: readonly string[]; // List of API endpoints available in this app
-  };
+  /**
+   * Unified feature flags list.
+   * MUST use prefixes: `page:` or `api:`.
+   */
+  features: readonly string[];
   match?: TAppConfigMatch;
   // pages moved to public.pages
   // docs moved to public.docs
 }
 
-export type AppConfig = AppConfigItem | null;
-export type AppName = keyof typeof apps | null;
+export type TAppConfig = TAppConfigItem | null;
+export type TAppID = keyof typeof apps | null;
 
-// Removed: APP_HEADER_NAME is now internal to the 42go library
+// (moved earlier)
+
+// Removed: APP_ID_HEADER is internal to the 42go library
 
 /**
  * Default application name.
@@ -86,7 +89,7 @@ export type AppName = keyof typeof apps | null;
  * If set to null and no app is identified,
  * the application will return a 404.
  */
-export const DEFAULT_APP: AppName = null;
+export const DEFAULT_APP: TAppID = null;
 
 /**
  * Available applications with their configurations.
@@ -104,10 +107,13 @@ export const apps = {
         ],
       },
     },
-    featureFlags: {
-      pages: ["docs", "todos"],
-      apis: ["waitlist", "feedback", "todos"],
-    },
+    features: [
+      "page:docs",
+      "page:todos",
+      "api:waitlist",
+      "api:feedback",
+      "api:todos",
+    ],
     theme: {
       default: "system",
     },
@@ -131,6 +137,12 @@ export const apps = {
             href: "/docs",
             variant: "link",
           },
+          {
+            type: "link",
+            label: "Stack",
+            href: "/stack",
+            variant: "link",
+          },
           { type: "component", component: UserMenu },
         ],
       },
@@ -138,6 +150,63 @@ export const apps = {
         HomePage,
         about: AboutPage,
         pricing: PricingPage,
+        stack: {
+          items: [
+            {
+              type: "markdown",
+              source: "# Stack Demo",
+            },
+            {
+              type: "stack",
+              direction: { base: "column", md: "row" },
+              spacing: "md",
+              items: [
+                {
+                  alignSelf: "center",
+                  items: [
+                    {
+                      type: "markdown",
+                      source: "Legacy inline block before rich cells.",
+                    },
+                  ],
+                },
+                {
+                  items: [
+                    {
+                      type: "markdown",
+                      source: "**Left cell** with _markdown_.",
+                    },
+                    { type: "cta", action: { href: "/login", label: "Login" } },
+                  ],
+                  alignSelf: "start",
+                  grow: true,
+                  className: "p-2 border rounded-md",
+                },
+                {
+                  items: [
+                    {
+                      type: "stack",
+                      direction: "column",
+                      spacing: "sm",
+                      items: [
+                        { type: "markdown", source: "Nested **A**" },
+                        { type: "markdown", source: "Nested **B**" },
+                      ],
+                    },
+                  ],
+                  alignSelf: "center",
+                  basis: "1/3",
+                  className: "p-2 bg-muted/30 rounded-md",
+                },
+                {
+                  type: "markdown",
+                  source:
+                    "End of inner stack. *Balanced like Chuck Norris on a roundhouse*.",
+                },
+              ],
+            },
+          ],
+        },
       },
       docs: {
         source: "./contents/default/docs",
@@ -248,10 +317,7 @@ export const apps = {
         ],
       },
     },
-    featureFlags: {
-      pages: ["todos", "docs"],
-      apis: ["getTodos"],
-    },
+    features: ["page:docs", "api:getTodos"],
     theme: {
       default: "dark",
       // PublicLayout: App1PublicLayout,
@@ -314,10 +380,7 @@ export const apps = {
     match: {
       url: ["^app2\\.localhost:3000$", "^app2\\.mydomain.com$"],
     },
-    featureFlags: {
-      pages: ["todos", "about"],
-      apis: ["todos:write"],
-    },
+    features: ["page:todos", "page:about", "api:todos:write"],
     theme: {
       default: "light",
     },
@@ -378,10 +441,7 @@ export const apps = {
         ],
       },
     },
-    featureFlags: {
-      pages: ["CalendarPage"],
-      apis: [""],
-    },
+    features: ["page:CalendarPage"],
     theme: {
       default: "light",
     },
@@ -455,4 +515,7 @@ export const apps = {
       ],
     },
   },
-} as const satisfies Record<string, AppConfigItem>;
+} as const satisfies Record<string, TAppConfigItem>;
+
+// Helper derived type including optional features on each app entry
+export type AppsMap = typeof apps;

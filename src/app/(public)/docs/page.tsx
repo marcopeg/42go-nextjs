@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { appPage } from "@/42go/config/app-config-pages";
+import { protectPage } from "@/42go/policy/protectPage";
 import { getDocsList, readDoc } from "@/42go/utils/docs";
 import DocsList from "@/42go/components/docs/DocsList";
 
@@ -20,4 +20,6 @@ const DocsListPage = async () => {
   );
 };
 
-export default appPage(DocsListPage, "docs");
+export default protectPage(DocsListPage, {
+  require: { feature: "page:docs" },
+});

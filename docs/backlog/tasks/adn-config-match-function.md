@@ -86,7 +86,7 @@ const appConfig = {
 
 ### Matching Logic Priority
 
-1. **Custom Header** (`X-App-Name`): Highest priority (existing)
+1. **Custom Header** (`X-42Go-AppID`): Highest priority (existing)
 2. **Custom Function** (`match.fn`): Second priority (new)
 3. **Header Matching** (`match.header`): Third priority (task [aci])
 4. **URL Matching** (`match.url`): Lowest priority (existing)
@@ -141,14 +141,12 @@ const appConfig = {
 
 ### Phase 2: Core Implementation ⚡
 
-**Goal**: Implement function matching in the `matchAppName` function
+**Goal**: Implement function matching in the `matchAppID` function
 
-1. **Add function matching logic** to `matchAppName`:
+1. **Add function matching logic** to `matchAppID`:
 
    ```ts
-   export const matchAppName = async (
-     request: NextRequest
-   ): Promise<AppName> => {
+   export const matchAppID = async (request: NextRequest): Promise<AppName> => {
      // 1. Existing: Custom header (highest priority)
      const customSetupHeader = request.headers.get(APP_HEADER_NAME);
      if (

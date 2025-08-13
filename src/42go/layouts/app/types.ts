@@ -1,6 +1,7 @@
 import { LucideIcon } from "lucide-react";
 import { type TLinkBlock } from "@/42go/components/ContentBlock/blocks/LinkBlock";
 import { type TComponentBlock } from "@/42go/components/ContentBlock/blocks/ComponentBlock";
+import type { Policy, PolicyErrorCode } from "@/42go/policy/client";
 
 // AppLayout-specific toolbar action type: only link and component blocks
 export type TActionItem = TLinkBlock | TComponentBlock;
@@ -32,4 +33,11 @@ export interface AppLayoutProps {
   subtitle?: string;
   actions?: TActionItem[];
   stickyHeader?: boolean;
+  // Optional client-side policy to guard the page content visually
+  policy?: Policy | Policy[];
+  renderOnLoading?: () => React.ReactNode;
+  renderOnError?: (args: {
+    code: PolicyErrorCode;
+    detail?: string;
+  }) => React.ReactNode;
 }

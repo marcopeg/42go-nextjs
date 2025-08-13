@@ -96,7 +96,8 @@ exports.seed = async function (knex) {
     });
     console.log(`Created faa role with ID: ${faaRoleId}`);
 
-    // 3. Add the backoffice grant with a text ID
+    // 3. Add backoffice grants (Wildcard patterns removed: grant matching is now literal-only)
+
     const usersListGrantId = "users:list";
     await trx("auth.grants").insert({
       id: usersListGrantId,
@@ -121,11 +122,13 @@ exports.seed = async function (knex) {
     await trx("auth.roles_users").insert({
       role_id: backofficeRoleId,
       user_id: adminId,
+      app_id: "default",
       created_at: new Date(),
     });
     await trx("auth.roles_users").insert({
       role_id: fooRoleId,
       user_id: adminId,
+      app_id: "default",
       created_at: new Date(),
     });
     console.log(`Associated admin user with backoffice role`);
@@ -134,6 +137,7 @@ exports.seed = async function (knex) {
     await trx("auth.roles_grants").insert({
       role_id: backofficeRoleId,
       grant_id: usersListGrantId,
+      app_id: "default",
       created_at: new Date(),
     });
     console.log(`Associated backoffice grant with backoffice role`);

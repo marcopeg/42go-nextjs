@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDB } from "@/42go/db";
 import { v4 as uuidv4 } from "uuid";
-import { appRoute } from "@/42go/config/app-config";
+import { protectRoute } from "@/42go/policy/protectRoute";
 
-import type { AppConfig } from "@/AppConfig";
-
-const feedback = async (_config: AppConfig, request: Request) => {
+const feedback = async (request: Request) => {
   try {
     const { email, message, newsletter } = await request.json();
 
@@ -49,4 +47,6 @@ const feedback = async (_config: AppConfig, request: Request) => {
   }
 };
 
-export const POST = appRoute(feedback);
+export const POST = protectRoute(feedback, {
+  require: { feature: "api:feedback" },
+});

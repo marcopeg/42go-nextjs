@@ -117,20 +117,27 @@ This structure is intended to be recursive: A very complex component can be simp
 **Access**: Singleton `getDB()` from `src/lib/db`, Knex migrations in `./knex/`
 **Usage details**: See [docs/DATABASE.md](../docs/DATABASE.md)
 
-## Feature Flags
+## Feature Flags (Unified)
 
-**Pattern**: URL-based dynamic feature flag calculation
+See also `docs/articles/POLICY.md` (policy evaluation, prefixes, dev warnings, experimental flags).
 
-**URL-Based Flags**:
+**Pattern**: Single `features: string[]` list per app config. Entries prefixed with `page:` or `api:`.
 
-- **Special Syntax**: `appPage(Component, "url!")` triggers URL-based calculation
-- **Middleware Integration**: `x-pathname` header provides current URL to wrapper
-- **Dynamic Calculation**: `/foo/bar` → checks for `"foo/bar"` in `featureFlags.pages`
-- **Consistency**: Same URL→key logic as CMS page routing
+**Inferred Defaults**: `protectPage` / `protectRoute` can infer feature names from URL segments when explicit policy feature not provided.
 
-**Route Control**: App-specific page/API whitelists in configuration
-**Security**: Server-side validation, client protection, middleware enforcement
-**Usage patterns**: See [docs/FEATURE_FLAGS.md](../docs/FEATURE_FLAGS.md)
+**Examples**:
+
+```ts
+features: ["page:docs", "page:dashboard", "api:todos", "api:feedback"];
+```
+
+**URL Inference**: `/docs/intro` → default inferred feature `page:docs`; `/api/todos` → `api:todos`.
+
+**Security Semantics**: Missing feature → 404; missing session → 401; role/grant failure → 403 (via unified policy evaluator).
+
+**Legacy Removal**: Deprecated `featureFlags.pages|apis`, `appRoute`, `appPage`, `pageWithConfig` removed. See ADR [adr-refactor-rbac-policies].
+
+**Usage**: Guard pages with `protectPage(policy)` and API routes with `protectRoute(policy)`; both consume unified policies. Full guide: [docs/FEATURE_FLAGS.md](../articles/FEATURE_FLAGS.md)
 
 ## Layouts
 
@@ -184,4 +191,4 @@ A `Makefile` interface is available and strongly encouraged as default mean of e
 
 **Architectural Philosophy**: Favor explicit configuration over convention, server-side validation over client trust, type safety over runtime flexibility.
 
-_Last Updated: August 2nd, 2025_
+_Last Updated: August 12th, 2025_

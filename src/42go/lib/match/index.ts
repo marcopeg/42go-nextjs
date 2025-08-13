@@ -1,19 +1,23 @@
 import type { NextRequest } from "next/server";
-import { apps, type AppName } from "@/AppConfig";
+import { apps, type TAppID } from "@/AppConfig";
 import {
   matchByEnvironment,
   matchByHeaderPatterns,
   matchByUrl,
 } from "./matchers";
 
+// Internal header name used to carry the resolved app id across the request lifecycle
+// Kept local (not documented as public config) to allow future refactors without churn.
+export const APP_ID_HEADER = "X-42Go-AppID";
+
 /**
- * Dynamically determines the app name based on request headers or URL.
+ * Dynamically determines the AppID based on request headers or URL.
  * (used in middleware and other parts of the application)
  *
  * @param request NextRequest object from Next.js
- * @returns AppName or null if no match found
+ * @returns AppID or null if no match found
  */
-export const matchAppName = async (request: NextRequest): Promise<AppName> => {
+export const matchAppID = async (request: NextRequest): Promise<TAppID> => {
   // 1. Highest priority: APP_ID environment variable
   try {
     const envMatch = matchByEnvironment(apps);
@@ -43,4 +47,3 @@ export type {
   HeaderMatchConfig,
   HeaderMatchRule,
 } from "./matchers";
-export { APP_HEADER_NAME } from "./constants";

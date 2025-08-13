@@ -1,10 +1,10 @@
-import type { AppConfig } from "@/42go/config/app-config";
+import type { TAppConfig } from "@/42go/config/app-config";
 import { Toolbar } from "./Toolbar";
 import { Footer } from "./Footer";
 
 interface PublicLayoutProps {
   children: React.ReactNode;
-  config: AppConfig;
+  config: TAppConfig;
 }
 
 export function PublicLayout({ children, config }: PublicLayoutProps) {

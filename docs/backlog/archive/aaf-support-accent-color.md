@@ -47,7 +47,7 @@ I expect also that the foreground OR background of items that implement the acce
   }
   /* END App2 override */
   ```
-- Updated `InjectAppName` (`src/lib/config/InjectAppName.tsx`) to emit a `<link rel="stylesheet" href={`/themes/${name}.css`} />` when `name !== 'default'`:
+- Updated `InjectAppID` (`src/42go/config/InjectAppID.tsx`) to emit a `<link rel="stylesheet" href={`/themes/${name}.css`} />` when `name !== 'default'`:
   ```tsx
   {
     name && name !== "default" && (
@@ -64,7 +64,7 @@ I expect also that the foreground OR background of items that implement the acce
 
 ## Testing Notes
 
-- Verified that visiting `app2.localhost:3000` or sending `X-App-Name: app2` header applies the red background.
+- Verified that visiting `app2.localhost:3000` or sending `X-42Go-AppID: app2` header applies the red background.
 - Confirmed that missing theme CSS (e.g. for apps without an override file) falls back gracefully to `globals.css` defaults.
 
 _Next step_: implement a CSS-only “base color” variable (`--accent-base`) and use native CSS `color-contrast()` or PostCSS plugins to auto-generate tints and contrast colors.

@@ -1,8 +1,10 @@
-import { appPage } from "@/42go/config/app-config-pages";
+import { protectPage } from "@/42go/policy/protectPage";
 import CalendarClient from "./CalendarClient";
 
 function CalendarPage() {
   return <CalendarClient />;
 }
 
-export default appPage(CalendarPage, "CalendarPage");
+export default protectPage(CalendarPage, {
+  require: { feature: "page:CalendarPage" },
+});

@@ -7,11 +7,11 @@
 >
 > **Status**: 🛑 BLOCKED - Do not work on this task until dependencies are completed!
 
-Refactor the AppConfig matching system by extracting the `matchAppName` function from `AppConfig.ts` into a dedicated utility library at `@/42go/lib/match`. This improves code organization and enables easier testing and maintenance.
+Refactor the AppConfig matching system by extracting the `matchAppID` function from `AppConfig.ts` into a dedicated utility library at `@/42go/lib/match`. This improves code organization and enables easier testing and maintenance.
 
 ## Goals
 
-- [x] Extract `matchAppName` function from `AppConfig.ts` into `@/42go/lib/match` utility
+- [x] Extract `matchAppID` function from `AppConfig.ts` into `@/42go/lib/match` utility
 - [x] Create modular matching functions for different matching strategies (header, URL, function)
 - [x] Add `APP_NAME` environment variable override functionality
 - [x] Implement boot-time validation for app configuration
@@ -22,7 +22,7 @@ Refactor the AppConfig matching system by extracting the `matchAppName` function
 
 ## Acceptance Criteria
 
-- [x] `@/42go/lib/match/index.ts` exports `matchAppName` function with same signature
+- [x] `@/42go/lib/match/index.ts` exports `matchAppID` function with same signature
 - [x] `APP_NAME` environment variable skips all matching logic when set
 - [x] Boot validation checks that `APP_NAME` config exists and exits with error if not
 - [x] All existing matching logic works exactly as before
@@ -37,7 +37,7 @@ Refactor the AppConfig matching system by extracting the `matchAppName` function
 **Current State** (`src/AppConfig.ts`):
 
 - Contains both config definitions AND matching logic
-- `matchAppName` function handles header + URL matching
+- `matchAppID` function handles header + URL matching
 - Mixing of concerns between data and behavior
 
 **Target State** (`@/42go/lib/match/index.ts`):
@@ -50,7 +50,7 @@ Refactor the AppConfig matching system by extracting the `matchAppName` function
 **Matching Priority Order**:
 
 1. `APP_NAME` environment variable (highest priority)
-2. Custom header (`X-App-Name`)
+2. Custom header (`X-42Go-AppID`)
 3. Custom function (`match.fn`) - from task [adn]
 4. Header patterns (`match.header`) - from task [aci]
 5. URL patterns (`match.url`)
@@ -161,7 +161,7 @@ The refactoring should maintain Chuck Norris-level reliability while improving c
 
    ```ts
    import type { NextRequest } from "next/server";
-   import { availableApps, APP_HEADER_NAME, type AppName } from "@/AppConfig";
+   import { availableApps, APP_ID_HEADER, type TAppID } from "@/AppConfig";
    import {
      matchByEnvironment,
      matchByHeader,
@@ -169,25 +169,26 @@ The refactoring should maintain Chuck Norris-level reliability while improving c
      matchByHeaderPatterns,
      matchByUrl,
    } from "./matchers";
+   ```
 
-   export const matchAppName = async (
-     request: NextRequest
-   ): Promise<AppName> => {
-     // 1. Highest priority: APP_NAME environment variable
-     try {
-       const envMatch = matchByEnvironment(availableApps);
-       if (envMatch) {
-         console.log(`APP_NAME override: using ${envMatch}`);
-         return envMatch;
-       }
-     } catch (error) {
-       console.error("APP_NAME validation failed:", error.message);
-       process.exit(1);
-     }
+export const matchAppID = async (
+request: NextRequest
+): Promise<TAppID> => {
+// 1. Highest priority: APP_NAME environment variable
+try {
+const envMatch = matchByEnvironment(availableApps);
+if (envMatch) {
+console.log(`APP_NAME override: using ${envMatch}`);
+return envMatch;
+}
+} catch (error) {
+console.error("APP_NAME validation failed:", error.message);
+process.exit(1);
+}
 
-     // 2. Custom header (X-App-Name)
-     const headerMatch = matchByHeader(request, APP_HEADER_NAME, availableApps);
-     if (headerMatch) return headerMatch;
+// 2. Custom header (X-42Go-AppID)
+const headerMatch = matchByHeader(request, APP_ID_HEADER, availableApps);
+if (headerMatch) return headerMatch;
 
      // 3. Custom function matching (from task [adn])
      const functionMatch = await matchByFunction(request, availableApps);
@@ -203,11 +204,13 @@ The refactoring should maintain Chuck Norris-level reliability while improving c
 
      // Unknown host - return null to trigger 404
      return null;
-   };
 
-   // Re-export for convenience
-   export { APP_HEADER_NAME } from "@/AppConfig";
-   ```
+};
+
+// Re-export for convenience
+export { APP_HEADER_NAME } from "@/AppConfig";
+
+````
 
 ### Phase 2: Add Boot-Time Validation ⚡
 
@@ -215,24 +218,24 @@ The refactoring should maintain Chuck Norris-level reliability while improving c
 
 1. **Create validation utility** (`src/42go/lib/match/validation.ts`):
 
-   ```ts
-   import { availableApps } from "@/AppConfig";
+```ts
+import { availableApps } from "@/AppConfig";
 
-   export const validateAppEnvironment = (): void => {
-     const envAppName = process.env.APP_NAME;
+export const validateAppEnvironment = (): void => {
+  const envAppName = process.env.APP_NAME;
 
-     if (envAppName && !availableApps[envAppName]) {
-       console.error(`❌ APP_NAME validation failed:`);
-       console.error(`   Specified: "${envAppName}"`);
-       console.error(`   Available: ${Object.keys(availableApps).join(", ")}`);
-       process.exit(1);
-     }
+  if (envAppName && !availableApps[envAppName]) {
+    console.error(`❌ APP_NAME validation failed:`);
+    console.error(`   Specified: "${envAppName}"`);
+    console.error(`   Available: ${Object.keys(availableApps).join(", ")}`);
+    process.exit(1);
+  }
 
-     if (envAppName) {
-       console.log(`✅ APP_NAME override validated: ${envAppName}`);
-     }
-   };
-   ```
+  if (envAppName) {
+    console.log(`✅ APP_NAME override validated: ${envAppName}`);
+  }
+};
+````
 
 2. **Add validation to application startup**:
    - Hook into Next.js startup process
@@ -240,27 +243,29 @@ The refactoring should maintain Chuck Norris-level reliability while improving c
 
 ### Phase 3: Update Imports and Remove Old Code ⚡
 
-**Goal**: Update all imports and remove the old `matchAppName` from AppConfig.ts
+**Goal**: Update all imports and remove the old `matchAppID` from AppConfig.ts
 
 1. **Update middleware imports** (`src/middleware.ts`):
 
    ```ts
    // Change from:
-   import { matchAppName, APP_HEADER_NAME } from "@/AppConfig";
-
-   // To:
-   import { matchAppName, APP_HEADER_NAME } from "@/42go/lib/match";
+   import { matchAppID, APP_ID_HEADER } from "@/AppConfig";
    ```
+
+// To:
+import { matchAppID, APP_ID_HEADER } from "@/42go/lib/match";
+
+````
 
 2. **Remove matching logic from AppConfig.ts**:
 
-   - Remove the `matchAppName` function
-   - Keep only config definitions and types
-   - Update exports to remove `matchAppName`
+- Remove the `matchAppID` function
+- Keep only config definitions and types
+- Update exports to remove `matchAppID`
 
 3. **Update documentation**:
-   - Update `docs/articles/APP_CONFIG.md` to reference new location
-   - Update Memory Bank files to reflect the architectural change
+- Update `docs/articles/APP_CONFIG.md` to reference new location
+- Update Memory Bank files to reflect the architectural change
 
 ### Phase 4: Testing and Validation ⚡
 
@@ -268,16 +273,16 @@ The refactoring should maintain Chuck Norris-level reliability while improving c
 
 1. **Test all matching scenarios**:
 
-   - Environment variable override (`APP_NAME=default`)
-   - Header-based matching (`X-App-Name: app1`)
-   - URL pattern matching (localhost:3000)
-   - Boot validation (invalid `APP_NAME`)
+- Environment variable override (`APP_NAME=default`)
+- Header-based matching (`X-42Go-AppID: app1`)
+- URL pattern matching (localhost:3000)
+- Boot validation (invalid `APP_NAME`)
 
 2. **Build and lint validation**:
 
-   ```bash
-   npm run qa
-   ```
+```bash
+npm run qa
+````
 
 3. **Runtime testing**:
    - Start development server
@@ -294,7 +299,7 @@ The refactoring should maintain Chuck Norris-level reliability while improving c
 
 **Modified Files**:
 
-- `src/AppConfig.ts` - Remove `matchAppName` function
+- `src/AppConfig.ts` - Remove `matchAppID` function
 - `src/middleware.ts` - Update import path
 - `docs/memory-bank/ARCHITECTURE.md` - Update matching documentation
 - `docs/articles/APP_CONFIG.md` - Update matching documentation
@@ -346,7 +351,7 @@ The refactoring should maintain Chuck Norris-level reliability while improving c
 **Files Modified**:
 
 - `src/middleware.ts` - Updated import to use new match library
-- `src/app/api/test/app-name/route.ts` - Updated import path
+- `src/app/api/test/app-id/route.ts` - Updated import path
 - `src/AppConfig.ts` - Removed all matching logic and utilities, kept only config definitions
 
 **Validation**:
@@ -386,7 +391,7 @@ The AppConfig matching logic has been successfully refactored with Chuck Norris-
 
 ### Overview
 
-The app matching system determines which AppConfig to use for each incoming request. It follows a **priority-based cascade** where higher priority methods can override lower ones. The matching happens in the **middleware** (`src/middleware.ts`) and sets the `X-App-Name` header for the rest of the application to consume.
+The app matching system determines which AppConfig to use for each incoming request. It follows a **priority-based cascade** where higher priority methods can override lower ones. The matching happens in the **middleware** (`src/middleware.ts`) and sets the `X-42Go-AppID` header for the rest of the application to consume.
 
 ### Matching Priority Order (Highest to Lowest)
 
@@ -413,14 +418,14 @@ npm start
 
 ---
 
-#### 2. Custom Header (`X-App-Name`)
+#### 2. Custom Header (`X-42Go-AppID`)
 
 **Priority**: **HIGH** 🥈  
 **Purpose**: Client-controlled app selection  
-**Header**: `X-App-Name: app1`
+**Header**: `X-42Go-AppID: app1`
 
 ```bash
-curl -H "X-App-Name: app1" http://localhost:3000/api/test/app-name
+curl -H "X-42Go-AppID: app1" http://localhost:3000/api/test/app-id
 ```
 
 **Behavior**:
@@ -432,8 +437,8 @@ curl -H "X-App-Name: app1" http://localhost:3000/api/test/app-name
 
 **Edge Cases**:
 
-- `X-App-Name: "null"` → ignored, continues to next strategy
-- `X-App-Name: "nonexistent"` → ignored, continues to next strategy
+- `X-42Go-AppID: "null"` → ignored, continues to next strategy
+- `X-42Go-AppID: "nonexistent"` → ignored, continues to next strategy
 
 ---
 
@@ -594,7 +599,7 @@ return null; // No app matched
 
 **Application Behavior**:
 
-1. `getAppName()` → returns `null`
+1. `getAppID()` → returns `null`
 2. `getAppConfig()` → returns `null`
 3. API routes → 404 "app not found"
 4. Pages → 404 behavior
@@ -671,12 +676,12 @@ export const DEFAULT_APP: AppName = null; // Current setting
 ### Architecture Flow
 
 ```
-Request → Middleware → matchAppName() → Priority Cascade:
+Request → Middleware → matchAppID() → Priority Cascade:
 
 1. APP_NAME env var?     → YES → Return app name
                         → NO  → Continue
 
-2. X-App-Name header?   → YES → Return app name
+2. X-42Go-AppID header?   → YES → Return app id
                         → NO  → Continue
 
 3. Custom function?     → YES → Return app name
@@ -688,7 +693,7 @@ Request → Middleware → matchAppName() → Priority Cascade:
 5. URL patterns?        → YES → Return app name
                         → NO  → Continue
 
-6. Return null          → getAppName() handles fallback
+6. Return null          → getAppID() handles fallback
 ```
 
 ### Testing the Matching
@@ -697,16 +702,16 @@ Use the test endpoint to verify matching:
 
 ```bash
 # Test default matching
-curl http://localhost:3000/api/test/app-name
+curl http://localhost:3000/api/test/app-id
 
 # Test header override
-curl -H "X-App-Name: app1" http://localhost:3000/api/test/app-name
+curl -H "X-42Go-AppID: app1" http://localhost:3000/api/test/app-id
 
 # Test header patterns
-curl -H "X-App-Type: calendar" http://localhost:3000/api/test/app-name
+curl -H "X-App-Type: calendar" http://localhost:3000/api/test/app-id
 
 # Test with host header
-curl -H "Host: app1.localhost:3000" http://localhost:3000/api/test/app-name
+curl -H "Host: app1.localhost:3000" http://localhost:3000/api/test/app-id
 ```
 
 ### Debug Information
@@ -715,7 +720,7 @@ curl -H "Host: app1.localhost:3000" http://localhost:3000/api/test/app-name
 
 - `"APP_NAME override: using {app}"`
 - `"Header match found for app: {app}"`
-- `"@@@@@@ Middleware: Setting X-App-Name header to: {app}"`
+- `"@@@@@@ Middleware: Setting X-42Go-AppID header to: {app}"`
 
 **Error Logs**:
 

@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { matchAppName } from "@/42go/lib/match";
-import { APP_HEADER_NAME } from "@/42go/lib/match/constants";
+import { matchAppID, APP_ID_HEADER } from "@/42go/lib/app-id";
 
 export async function middleware(request: NextRequest) {
-  // Resolve the appName
-  const appName = await matchAppName(request);
+  // Resolve the AppID
+  const appID = await matchAppID(request);
 
-  // Set the AppName header
+  // Set the AppID header if resolved
   const requestHeaders = new Headers(request.headers);
-  if (appName) {
-    requestHeaders.set(APP_HEADER_NAME, appName);
+  if (appID) {
+    requestHeaders.set(APP_ID_HEADER, appID);
   }
 
   // Forward the request

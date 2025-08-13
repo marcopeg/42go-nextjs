@@ -16,6 +16,12 @@ export default function UsersPage() {
           props: { size: "sm", children: "Add New User" },
         },
       ]}
+      policy={{
+        require: {
+          role: "backoffice",
+          grants: ["users:list"],
+        },
+      }}
     >
       {/* Users Content */}
       <div className="rounded-lg border bg-card">

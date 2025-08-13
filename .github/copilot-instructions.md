@@ -170,18 +170,22 @@ Example of a task scaffold with placeholders:
 ## Refine Task
 
 > model: claude
-> **Goal:** Refine the task by adding more information to the task's file.
-> **Triggers:**
+
+**Goal:** Refine the task by adding more information to the task's file.
+
+**Triggers:**
 
 - refine task
 - refine task: {task}
 - k1
 
 **Examples:**
+
 prompt: `refine task` or `k4`
 action: refine the first task in the **Tasks to be refined** section
 prompt: `refine aaa` or `k4 aaa`
 action: refine the task with ID `aaa`
+
 **Instructions:**
 
 1. Reload the **Memory Bank** context (see `Load Context` command)
@@ -198,7 +202,7 @@ action: refine the task with ID `aaa`
    - If the user does not provide more information, ask them to do so before proceeding with the task
 8. Update the task file with the new information filling the placeholders in the task file
 9. If the placeholders are filled remove the task from the **Tasks to be Refined** section in `./docs/backlog/BACKLOG.md` and move it to the **Upcoming Tasks** section
-10. If the task is ready to be worked on, update the `# Next Steps` section with "execute task (k2)" as content
+10. If the task is ready to be worked on, update the `# Next Steps` section with "execute task (k3)" as content
 11. If the task is not ready to be worked on, update the `# Next Steps` section with "refine task (k4)" as content
 
 ## Plan Current Task
@@ -249,7 +253,7 @@ If you need to create the task's file, then add the link to it at the end of the
 1. Create or update the task's file in `./docs/backlog/{draft|tasks|archive}/{id}-human-readable-title.md` with the `# Development Plan` section
    - If the section does not exist, create it
    - If the section exists, update it with the new plan
-2. Append o update a `# Next Steps` section stating "execute task (k2)" as content
+2. Append o update a `# Next Steps` section stating "execute task (k3)" as content
 
 ## Execute Current Task
 

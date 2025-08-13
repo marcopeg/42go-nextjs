@@ -1,4 +1,4 @@
-import { appPage } from "@/42go/config/app-config-pages";
+import { protectPage } from "@/42go/policy/protectPage";
 
 const TodosPage = () => {
   return (
@@ -11,4 +11,19 @@ const TodosPage = () => {
   );
 };
 
-export default appPage(TodosPage, "todos");
+export default protectPage(TodosPage, [
+  {
+    require: { feature: "page:todos" },
+  },
+  // {
+  //   require: { session: true },
+  //   // onFail: { redirect: "/login" },
+  // },
+  // {
+  //   require: { role: "fooo" },
+  //   onFail: {
+  //     code: "Forbidden!",
+  //     message: "You do not have permission to access this page!!!",
+  //   },
+  // },
+]);

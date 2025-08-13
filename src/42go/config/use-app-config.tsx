@@ -1,23 +1,20 @@
 import { useMemo } from "react";
-import { apps, type AppConfig, type AppName } from "@/AppConfig";
+import { apps, type TAppConfig, type TAppID } from "@/AppConfig";
 
 declare global {
   interface Window {
-    __APP_NAME__?: AppName;
+    __APP_ID__?: TAppID;
   }
 }
 
-export function useAppName(): AppName {
+export function useAppID(): TAppID {
   if (typeof window !== "undefined") {
-    return window.__APP_NAME__ as AppName;
+    return window.__APP_ID__ as TAppID;
   }
   return null;
 }
 
-export function useAppConfig(): AppConfig {
-  const appName = useAppName();
-  return useMemo(
-    () => (appName && apps[appName] ? apps[appName] : null),
-    [appName]
-  );
+export function useAppConfig(): TAppConfig {
+  const appID = useAppID();
+  return useMemo(() => (appID && apps[appID] ? apps[appID] : null), [appID]);
 }

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import type { AppConfig } from "@/42go/config/app-config";
+import type { TAppConfig } from "@/42go/config/app-config";
 import { AppTitle } from "./AppTitle";
 import { ToolbarActions } from "./ToolbarActions";
 
-export async function Toolbar({ config }: { config: AppConfig }) {
+export async function Toolbar({ config }: { config: TAppConfig }) {
   const toolbarHref = config?.public?.toolbar?.href || "/";
 
   return (
