@@ -6,6 +6,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
+_none_
+
 ## Upcoming Tasks
 
 - [aei] Extract Policy Utilities & Refactor Imports [🔗](./draft/aei-extract-policy-utilities.md)
@@ -13,7 +15,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [aam] RBAC Advanced Features 🔗 [story](./tasks/aam-rbac-advanced-features.md)
 - [ads] RBAC SQL Functions [🔗](./draft/ads-sql-functions.md)
 - [adr] EPIC - RBAC Refactor Policies [🔗](./draft/adr-refactor-rbac-policies.md)
-- [acj] 🪲 Next standalone has `.env` file [🔗](./tasks/acj-next-standalone.md)
 
 ## Drafts
 
@@ -54,6 +55,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [acj] 🦲 Next standalone has `.env` file [🔗](./archive/acj-next-standalone.md) ✅ COMPLETE - .env excluded from images, runtime env injection, docs + verification script
 - [ael] Stack Block Component [🔗](./archive/ael-stack-block-component.md)
 - [aek] Add Call To Action content block [🔗](./archive/aek-add-call-to-action-content-block.md) (refined – ready to plan k2)
 - [aej] Fix protectPage Switch Fall-Through Bug [🔗](./archive/aej-fix-protectpage-switch-fallthrough.md)

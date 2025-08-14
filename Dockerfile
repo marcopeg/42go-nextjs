@@ -28,6 +28,7 @@ WORKDIR /app
 COPY --from=build-deps /app/node_modules ./node_modules
 
 # Copy source code and configuration files
+# Copy source code and configuration files (respecting .dockerignore to exclude secrets)
 COPY . .
 
 # Set environment variables for production build
@@ -66,6 +67,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 # Copy package.json for proper startup
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
+# Remove any accidentally included env files from standalone output (defense in depth)
+RUN rm -f .env .env.* || true
+
 # Switch to non-root user
 USER nextjs
 
@@ -77,6 +81,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE 3000
 
 # Start the Next.js application
-CMD ["node", "server.js"]
-
 CMD ["node", "server.js"]

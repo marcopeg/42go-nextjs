@@ -4,13 +4,15 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runner
-    env_file:
-      - .env
     environment:
       - NODE_ENV=production
       - AUTH_TRUST_HOST=true
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
+      - PGSTRING=postgresql://postgres:postgres@db:5432/postgres
+      - NEXTAUTH_URL=http://localhost:4000
+      - NEXTAUTH_SECRET=replace-me-in-prod
       - PORT=3000
+      - APP_ID=default
     ports:
       - "4000:3000"
     depends_on:

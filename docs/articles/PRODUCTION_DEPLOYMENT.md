@@ -66,7 +66,7 @@ make prod           # Build, start, migrate, seed, and show logs
 
 ### Environment Variables
 
-Required production environment variables in `docker-compose.prod.yml`:
+Required production environment variables in `docker-compose.prod.yml` (injected at runtime, no env_file usage):
 
 ```yaml
 environment:
@@ -136,6 +136,19 @@ deploy:
 - **Non-root User**: Application runs as `nextjs` (UID 1001)
 - **Minimal Base**: Alpine Linux with only required packages
 - **Read-only**: Application files owned by `nextjs:nodejs`
+
+### Environment Variable Handling
+
+- **No `.env` files in images**: The `.dockerignore` excludes local `.env` files from the build context; the Dockerfile also removes any accidental `.env` copies from the final layer (defense in depth).
+- **Runtime Injection**: All required variables are provided via the `environment:` section in `docker-compose.prod.yml` or your orchestrator (Kubernetes, etc.). No `env_file` is used in production.
+
+### Security Verification
+
+Run a quick security check to ensure no `.env` files are present in the running container:
+
+```bash
+./scripts/check-docker-security.sh
+```
 
 ### Network Security
 
