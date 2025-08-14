@@ -9,18 +9,15 @@ import {
 export const APP_ID_HEADER = "X-42Go-AppID";
 
 export const matchAppID = async (request: NextRequest): Promise<TAppID> => {
-  try {
-    const envMatch = matchByEnvironment(apps);
-    if (envMatch) {
-      console.log(`APP_ID override: using ${envMatch}`);
-      return envMatch;
-    }
-  } catch (error) {
-    console.error("APP_ID validation failed:", (error as Error).message);
-    return null;
-  }
+  console.log("@matchByEnv");
+  const envMatch = matchByEnvironment(apps);
+  if (envMatch) return envMatch;
+
+  console.log("@matchByHeader");
   const headerPatternMatch = matchByHeaderPatterns(request, apps);
   if (headerPatternMatch) return headerPatternMatch;
+
+  console.log("@matchByUrl");
   const urlMatch = matchByUrl(request, apps);
   if (urlMatch) return urlMatch;
   return null;

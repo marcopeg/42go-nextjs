@@ -98,7 +98,7 @@ export const apps = {
   default: {
     name: "DEFAULT APP",
     match: {
-      url: ["^localhost:3000$"],
+      url: ["^localhost:\\d+$"],
       header: {
         mode: "all",
         keys: [
@@ -309,7 +309,7 @@ export const apps = {
   app1: {
     name: "APP n1",
     match: {
-      url: ["^app1\\.localhost:3000$", "^app1\\.mydomain.com$"],
+      url: ["^app1\\.localhost:\\d+$", "^app1\\.mydomain.com$"],
       header: {
         keys: [
           { key: "Authorization", value: "/^Bearer .+app1-api-key.+$/" },
@@ -378,7 +378,7 @@ export const apps = {
   app2: {
     name: "APP n2",
     match: {
-      url: ["^app2\\.localhost:3000$", "^app2\\.mydomain.com$"],
+      url: ["^app2\\.localhost:\\d+$", "^app2\\.mydomain.com$"],
     },
     features: ["page:todos", "page:about", "api:todos:write"],
     theme: {
