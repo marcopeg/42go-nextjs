@@ -108,7 +108,11 @@ prod.clean:
 
 prod.init: migrate seed
 
-prod.re: prod.build.light prod.start
+prod.app.stop:
+	docker compose -f docker-compose.prod.yml stop app
+	docker compose -f docker-compose.prod.yml rm -f app
+
+prod.app.re: prod.app.stop prod.build.light prod.start prod.logs
 
 prod: prod.build prod.start prod.init
 	@echo "🎉 Production environment is ready!"
