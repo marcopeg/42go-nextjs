@@ -6,8 +6,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [ael] Stack Block Component 🔗 [draft/ael-stack-block-component.md]
-
 ## Upcoming Tasks
 
 - [aei] Extract Policy Utilities & Refactor Imports [🔗](./draft/aei-extract-policy-utilities.md)
@@ -56,26 +54,27 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
-- [aek] Add Call To Action content block [🔗](./draft/aek-add-call-to-action-content-block.md) (refined – ready to plan k2)
-- [aej] Fix protectPage Switch Fall-Through Bug [🔗](./draft/aej-fix-protectpage-switch-fallthrough.md)
-- [aeh] Remove Wildcard Grant Support [🔗](./draft/aeh-remove-wildcard-grant-support.md)
-- [adt] Unified Policy Engine [🔗](./draft/adt-unified-policy-engine.md)
-- [adv] Protect SSR Pages with Policies [🔗](./draft/adv-protect-ssr-pages.md)
-- [adz] API Route Policy Guard uses Policies [🔗](./draft/adz-api-route-policy-guard.md) ✅ COMPLETE - Unified protectRoute with feature inference, per-policy overrides, routes migrated; tests deferred to [aea]
-- [adv] Protect SSR Pages with Policies [🔗](./draft/adv-protect-ssr-pages.md)
-- [adx] AppLayout Policy Integration [🔗](./draft/adx-applayout-policy-integration.md)
-- [aeb] Consolidate RBAC Into Policy Engine [🔗](./draft/aeb-consolidate-rbac-into-policy-engine.md) ✅ COMPLETE - Legacy RBAC surface removed, unified policy engine sole API.
-- [adu] Feature Flags Unification to AppConfig.features [🔗](./draft/adu-feature-flags-unification.md) ✅ COMPLETE - Single features[] list, legacy flags bridged then purged.
-- [ady] Cleanup Legacy Feature Flags [🔗](./draft/ady-cleanup-legacy-feature-flags.md) ✅ COMPLETE - Removed deprecated config & bridge, docs updated.
-- [aak] RBAC Page & Route Protection 🔗 [story](./tasks/aak-rbac-page-route-protection.md)
-- [aaj] RBAC useGrants Hook & Client Components 🔗 [story](./tasks/aaj-rbac-usegrants-hook.md)
-- [aai] RBAC Database Schema & Core Infrastructure 🔗 [story](./tasks/aai-add-rbac.md)
-- [adl] 🪲 docs: Links from the docs index page don't work [🔗](./tasks/adl-docs-article-walls-links.md)
-- [adq] Clean up AppConfig matching logic [🔗](./tasks/adq-clean-appconfig-match.md)
-- [aci] Add `config.match.header` [🔗](./tasks/aci-config-match-header.md)
-- [adm] Import feedback block [🔗](./tasks/adm-import-feedback-block.md)
-- [abt] Import waitlist block [🔗](./tasks/abt-import-waitlist-block.md)
-- [abs] Import pricing block [🔗](./tasks/abs-import-pricing-block.md)
+- [ael] Stack Block Component [🔗](./archive/ael-stack-block-component.md)
+- [aek] Add Call To Action content block [🔗](./archive/aek-add-call-to-action-content-block.md) (refined – ready to plan k2)
+- [aej] Fix protectPage Switch Fall-Through Bug [🔗](./archive/aej-fix-protectpage-switch-fallthrough.md)
+- [aeh] Remove Wildcard Grant Support [🔗](./archive/aeh-remove-wildcard-grant-support.md)
+- [adt] Unified Policy Engine [🔗](./archive/adt-unified-policy-engine.md)
+- [adv] Protect SSR Pages with Policies [🔗](./archive/adv-protect-ssr-pages.md)
+- [adz] API Route Policy Guard uses Policies [🔗](./archive/adz-api-route-policy-guard.md) ✅ COMPLETE - Unified protectRoute with feature inference, per-policy overrides, routes migrated; tests deferred to [aea]
+- [adv] Protect SSR Pages with Policies [🔗](./archive/adv-protect-ssr-pages.md)
+- [adx] AppLayout Policy Integration [🔗](./archive/adx-applayout-policy-integration.md)
+- [aeb] Consolidate RBAC Into Policy Engine [🔗](./archive/aeb-consolidate-rbac-into-policy-engine.md) ✅ COMPLETE - Legacy RBAC surface removed, unified policy engine sole API.
+- [adu] Feature Flags Unification to AppConfig.features [🔗](./archive/adu-feature-flags-unification.md) ✅ COMPLETE - Single features[] list, legacy flags bridged then purged.
+- [ady] Cleanup Legacy Feature Flags [🔗](./archive/ady-cleanup-legacy-feature-flags.md) ✅ COMPLETE - Removed deprecated config & bridge, docs updated.
+- [aak] RBAC Page & Route Protection 🔗 [story](./archive/aak-rbac-page-route-protection.md)
+- [aaj] RBAC useGrants Hook & Client Components 🔗 [story](./archive/aaj-rbac-usegrants-hook.md)
+- [aai] RBAC Database Schema & Core Infrastructure 🔗 [story](./archive/aai-add-rbac.md)
+- [adl] 🪲 docs: Links from the docs index page don't work [🔗](./archive/adl-docs-article-walls-links.md)
+- [adq] Clean up AppConfig matching logic [🔗](./archive/adq-clean-appconfig-match.md)
+- [aci] Add `config.match.header` [🔗](./archive/aci-config-match-header.md)
+- [adm] Import feedback block [🔗](./archive/adm-import-feedback-block.md)
+- [abt] Import waitlist block [🔗](./archive/abt-import-waitlist-block.md)
+- [abs] Import pricing block [🔗](./archive/abs-import-pricing-block.md)
 - [adf] [Custom Actions Type - SUPERSEDED](./archive/adf-custom-actions-type.md) ⚠️ Split into adg-adk
 - [adi] [Create PublicLayout TActionItem Type](./archive/adi-create-publiclayout-tactionitem-type.md) 🔗
 - [adj] [Create AppLayout TActionItem Type](./archive/adj-create-applayout-tactionitem-type.md) 🔗
