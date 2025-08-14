@@ -1,18 +1,18 @@
 services:
   app:
+    image: 42go-next:latest
     build:
       context: .
       dockerfile: Dockerfile
       target: runner
+    env_file:
+      - .env
+    volumes:
+      - ./contents:/app/contents
     environment:
       - NODE_ENV=production
       - AUTH_TRUST_HOST=true
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
-      - PGSTRING=postgresql://postgres:postgres@db:5432/postgres
-      - NEXTAUTH_URL=http://localhost:4000
-      - NEXTAUTH_SECRET=replace-me-in-prod
-      - PORT=3000
-      - APP_ID=default
     ports:
       - "4000:3000"
     depends_on:
@@ -31,7 +31,7 @@ services:
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://localhost:3000/api/health",
+          "http://localhost:4000/api/health",
         ]
       interval: 30s
       timeout: 10s

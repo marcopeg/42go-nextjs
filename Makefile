@@ -52,7 +52,12 @@ qa: npm run qa
 
 prod.build:
 	@echo "🏗️  Building production Docker image..."
-	docker compose -f docker-compose.prod.yml build --no-cache
+	docker build --progress=plain --no-cache -f Dockerfile -t 42go-next:latest .
+	@echo "✅ Production build complete"
+
+prod.build.light:
+	@echo "🏗️  Building production Docker image..."
+	docker build --progress=plain -f Dockerfile -t 42go-next:latest .
 	@echo "✅ Production build complete"
 
 prod.start:
@@ -101,7 +106,11 @@ prod.clean:
 	docker system prune -f
 	@echo "✅ Production artifacts cleaned"
 
-prod: prod.build prod.start migrate seed
+prod.init: migrate seed
+
+prod.re: prod.build.light prod.start
+
+prod: prod.build prod.start prod.init
 	@echo "🎉 Production environment is ready!"
 	@echo "🌐 Access the application at: http://localhost:4000"
 	@echo "📋 View logs with: make prod.logs"
