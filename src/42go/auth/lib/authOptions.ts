@@ -14,7 +14,6 @@ export async function getAuthOptions(): Promise<NextAuthOptions> {
     },
     pages: {
       signIn: "/login",
-      signOut: "/logout",
       error: "/error",
       verifyRequest: "/verify-request",
       newUser: "/signup",

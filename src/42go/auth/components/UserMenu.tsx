@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { useAppConfig } from "@/42go/config/use-app-config";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +14,7 @@ import {
 
 export function UserMenu() {
   const { data: session, status } = useSession();
+  const appConfig = useAppConfig();
 
   if (status === "loading") {
     return (
@@ -33,7 +35,8 @@ export function UserMenu() {
   }
 
   const handleSignOut = () => {
-    signOut({ callbackUrl: "/" });
+    const callbackUrl = appConfig?.auth?.logout?.url || "/";
+    signOut({ callbackUrl });
   };
 
   return (

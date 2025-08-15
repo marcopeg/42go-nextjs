@@ -323,9 +323,9 @@ export const apps = {
           },
         },
       ],
-      logout: {
-        url: "/foo",
-      },
+      // logout: {
+      //   url: "/foo",
+      // },
     },
   },
   app1: {
