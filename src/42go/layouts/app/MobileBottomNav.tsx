@@ -6,6 +6,7 @@ import { Menu } from "lucide-react";
 import { cn } from "@/42go/utils/utils";
 import { useAppConfig } from "@/42go/config/use-app-config";
 import { TAppLayoutNavItem } from "./types";
+import { ProtectComponent } from "@/42go/policy/client";
 
 interface MobileBottomNavProps {
   onMoreClick: () => void;
@@ -30,7 +31,7 @@ export const MobileBottomNav = ({ onMoreClick }: MobileBottomNavProps) => {
         const isActive = pathname === item.href;
         const itemKey = item.id || `${item.href}-${item.title}`;
 
-        return (
+        const node = (
           <Link
             key={itemKey}
             href={item.href}
@@ -45,6 +46,18 @@ export const MobileBottomNav = ({ onMoreClick }: MobileBottomNavProps) => {
             <item.icon className="h-5 w-5" />
             <span className="text-xs mt-1 font-medium">{item.title}</span>
           </Link>
+        );
+
+        if (!item.policy) return node;
+        return (
+          <ProtectComponent
+            key={`pc-${itemKey}`}
+            policy={item.policy}
+            renderOnLoading={() => null}
+            renderOnError={() => null}
+          >
+            {node}
+          </ProtectComponent>
         );
       })}
 

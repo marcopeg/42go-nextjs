@@ -9,6 +9,7 @@ import { cn } from "@/42go/utils/utils";
 import { useSession } from "next-auth/react";
 import { useAppConfig } from "@/42go/config/use-app-config";
 import { SidebarMenuProps, TAppLayoutNavItem } from "./types";
+import { ProtectComponent } from "@/42go/policy/client";
 import { AppTitle } from "./AppTitle";
 
 export const SidebarMenu = ({
@@ -25,55 +26,71 @@ export const SidebarMenu = ({
   const topMenuItems = config?.app?.menu?.top?.items || [];
   const bottomMenuItems = config?.app?.menu?.bottom?.items || [];
 
-  // Function to render menu items
+  // Function to render a single menu link body
+  const renderSingleItem = (item: TAppLayoutNavItem) => {
+    const isActive = pathname === item.href;
+    const itemKey = item.id || `${item.href}-${item.title}`;
+
+    return (
+      <Link
+        key={itemKey}
+        href={item.href}
+        onClick={closeMobileMenu}
+        className={cn(
+          "flex items-center px-3 py-2 text-sm transition-all duration-200 cursor-pointer relative group rounded-md border border-transparent",
+          isActive
+            ? "text-foreground font-bold bg-accent/10 border-transparent group-hover:border-primary"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/5 font-medium",
+          isCollapsed && "justify-center px-2",
+          "hover:border-primary hover:border"
+        )}
+        style={{
+          borderWidth: undefined, // fallback to class
+          ...(isActive ? {} : { "--tw-border-opacity": "1", borderWidth: 1 }),
+        }}
+      >
+        <item.icon
+          className={cn(
+            "h-5 w-5 transition-transform duration-200",
+            isCollapsed ? "mr-0" : "mr-3"
+          )}
+        />
+        {!isCollapsed && (
+          <div
+            className={cn(
+              "flex items-center justify-between w-full transition-all duration-200",
+              "group-hover:ml-2 ml-0"
+            )}
+            style={{
+              transitionProperty: "margin-left",
+            }}
+          >
+            <span>{item.title}</span>
+            {item.badge && (
+              <span className="text-xs bg-accent text-accent-foreground px-1.5 py-0.5 rounded">
+                {item.badge}
+              </span>
+            )}
+          </div>
+        )}
+      </Link>
+    );
+  };
+
+  // Function to render menu items (with optional policy wrapper)
   const renderMenuItems = (items: TAppLayoutNavItem[]) => {
     return items.map((item) => {
-      const isActive = pathname === item.href;
-      const itemKey = item.id || `${item.href}-${item.title}`;
-
+      if (!item.policy) return renderSingleItem(item);
+      const key = item.id || `${item.href}-${item.title}`;
       return (
-        <Link
-          key={itemKey}
-          href={item.href}
-          onClick={closeMobileMenu}
-          className={cn(
-            "flex items-center px-3 py-2 text-sm transition-all duration-200 cursor-pointer relative group rounded-md border border-transparent",
-            isActive
-              ? "text-foreground font-bold bg-accent/10 border-transparent group-hover:border-primary"
-              : "text-muted-foreground hover:text-foreground hover:bg-accent/5 font-medium",
-            isCollapsed && "justify-center px-2",
-            "hover:border-primary hover:border"
-          )}
-          style={{
-            borderWidth: undefined, // fallback to class
-            ...(isActive ? {} : { "--tw-border-opacity": "1", borderWidth: 1 }),
-          }}
+        <ProtectComponent
+          key={key}
+          policy={item.policy}
+          renderOnLoading={() => null}
+          renderOnError={() => null}
         >
-          <item.icon
-            className={cn(
-              "h-5 w-5 transition-transform duration-200",
-              isCollapsed ? "mr-0" : "mr-3"
-            )}
-          />
-          {!isCollapsed && (
-            <div
-              className={cn(
-                "flex items-center justify-between w-full transition-all duration-200",
-                "group-hover:ml-2 ml-0"
-              )}
-              style={{
-                transitionProperty: "margin-left",
-              }}
-            >
-              <span>{item.title}</span>
-              {item.badge && (
-                <span className="text-xs bg-accent text-accent-foreground px-1.5 py-0.5 rounded">
-                  {item.badge}
-                </span>
-              )}
-            </div>
-          )}
-        </Link>
+          {renderSingleItem(item)}
+        </ProtectComponent>
       );
     });
   };

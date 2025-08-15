@@ -348,6 +348,6 @@ const appConfig: AppConfigItem = {
 };
 ```
 
-## Next Steps
+## Follow-ups
 
-Implement [aam] RBAC Advanced Features (Auth Ping & Session Management)
+- Implement [aam] RBAC Advanced Features (Auth Ping & Session Management)

@@ -234,11 +234,17 @@ export const apps = {
               title: "Users",
               href: "/users",
               icon: Users,
+              policy: {
+                require: { role: "backoffice" },
+              },
             },
             {
               title: "Documents",
               href: "/documents",
               icon: FileText,
+              policy: {
+                require: { role: "backoffice" },
+              },
             },
           ],
         },

@@ -12,6 +12,12 @@ export interface TAppLayoutNavItem {
   href: string;
   icon: LucideIcon;
   badge?: string;
+  /**
+   * Optional visibility policy. When provided, the menu item will be rendered
+   * only if the policy passes. While the policy is loading or when it fails,
+   * the item is silently omitted (no placeholder/error UI inside menus).
+   */
+  policy?: Policy | Policy[];
 }
 
 export interface AppLayoutConfig {
