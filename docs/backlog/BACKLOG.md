@@ -2,11 +2,11 @@
 
 A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
 
-(LastID: aem)
+(LastID: aen)
 
 ## Current Task
 
-- [aal] RBAC Menu Integration 🔗 [story](./tasks/aal-rbac-menu-integration.md)
+- [aen] Move logout button to the profile's page top bar [🔗](./draft/aen-move-logout-button-to-profile-top-bar.md)
 
 ## Upcoming Tasks
 
@@ -55,6 +55,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [aal] RBAC Menu Integration 🔗 [story](./tasks/aal-rbac-menu-integration.md)
 - [acj] 🦲 Next standalone has `.env` file [🔗](./archive/acj-next-standalone.md) ✅ COMPLETE - .env excluded from images, runtime env injection, docs + verification script
 - [ael] Stack Block Component [🔗](./archive/ael-stack-block-component.md)
 - [aek] Add Call To Action content block [🔗](./archive/aek-add-call-to-action-content-block.md) (refined – ready to plan k2)

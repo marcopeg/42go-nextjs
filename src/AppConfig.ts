@@ -51,6 +51,10 @@ export interface TAppConfigItem {
   };
   auth?: {
     providers: TAuthProviders;
+    logout?: {
+      /** Optional redirect URL after sign out; defaults to "/" */
+      url?: string;
+    };
   };
   app?: {
     menu?: {
@@ -319,6 +323,9 @@ export const apps = {
           },
         },
       ],
+      logout: {
+        url: "/foo",
+      },
     },
   },
   app1: {
@@ -388,6 +395,9 @@ export const apps = {
           },
         },
       ],
+      logout: {
+        url: "/",
+      },
     },
   },
   app2: {
@@ -528,6 +538,9 @@ export const apps = {
           config: {},
         },
       ],
+      logout: {
+        url: "/",
+      },
     },
   },
 } as const satisfies Record<string, TAppConfigItem>;

@@ -1,7 +1,8 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { LogoutAction } from "@/42go/auth/components/LogoutAction";
 import { AppLayout } from "@/42go/layouts/app";
 import { SimplePanel } from "@/42go/components/panel";
 
@@ -17,6 +18,12 @@ export default function ProfilePage() {
       title="Profile"
       subtitle="Manage your account settings and preferences"
       stickyHeader={true}
+      actions={[
+        {
+          type: "component",
+          component: LogoutAction,
+        },
+      ]}
       // Demo: require read grant to show a special section
       // Note: page itself is unprotected here; only the inner section is guarded
     >
@@ -127,9 +134,7 @@ function PolicySessionPanel() {
     }
   };
 
-  const handleLogout = () => {
-    void signOut();
-  };
+  // Logout moved to top bar via LogoutAction component
 
   if (status === "loading") return null;
 
@@ -140,9 +145,6 @@ function PolicySessionPanel() {
         <>
           <Button variant="outline" onClick={handleRefresh}>
             Refresh Session
-          </Button>
-          <Button variant="destructive" onClick={handleLogout}>
-            Logout
           </Button>
         </>
       }
