@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { AppLayout, type TActionItem } from "@/42go/layouts/app";
+import { AppLayout } from "@/42go/layouts/app";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -10,22 +10,10 @@ export default function DashboardPage() {
     return null;
   }
 
-  // Use ContentBlock configuration for header actions
-  const headerActions: TActionItem[] = [
-    {
-      type: "link",
-      label: "Sign Out",
-      href: "/api/auth/signout",
-      variant: "outline",
-      size: "sm",
-    },
-  ];
-
   return (
     <AppLayout
       title="Dashboard"
       subtitle={`Welcome back, ${session?.user?.name || "User"}!`}
-      actions={headerActions}
       stickyHeader={true}
     >
       <div className="space-y-6">
