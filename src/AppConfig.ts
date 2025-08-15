@@ -259,6 +259,9 @@ export const apps = {
               title: "Settings",
               href: "/settings",
               icon: Settings,
+              policy: {
+                require: { role: "backoffice" },
+              },
             },
           ],
         },
@@ -273,11 +276,17 @@ export const apps = {
               title: "Analytics",
               href: "/analytics",
               icon: BarChart3,
+              policy: {
+                require: { role: "backoffice" },
+              },
             },
             {
               title: "Users",
               href: "/users",
               icon: Users,
+              policy: {
+                require: { role: "backoffice" },
+              },
             },
             {
               title: "Profile",
