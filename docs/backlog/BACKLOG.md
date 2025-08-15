@@ -6,27 +6,22 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aen] Move logout button to the profile's page top bar [🔗](./draft/aen-move-logout-button-to-profile-top-bar.md)
-
 ## Upcoming Tasks
+
+- [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
+
+## Drafts
 
 - [aei] Extract Policy Utilities & Refactor Imports [🔗](./draft/aei-extract-policy-utilities.md)
 - [aam] RBAC Advanced Features 🔗 [story](./tasks/aam-rbac-advanced-features.md)
 - [ads] RBAC SQL Functions [🔗](./draft/ads-sql-functions.md)
 - [adr] EPIC - RBAC Refactor Policies [🔗](./draft/adr-refactor-rbac-policies.md)
-
-## Drafts
-
-- [aem] fix docker build [🔗](./draft/aem-fix-docker-build.md)
 - [adw] Client Policy Hook and Component [🔗](./draft/adw-client-policy-hook-component.md)
 - [aea] Policy & RBAC Testing Strategy [🔗](./draft/aea-policy-testing-strategy.md)
 - [aef] Design anyPolicy OR Helper [🔗](./draft/aef-design-anypolicy-or-helper.md)
 - [aeg] Unified Policy Engine Tests Implementation [🔗](./draft/aeg-policy-engine-tests.md)
-- [acr] Create Client Page HOC (might be already completed by RBAC) [🔗](./tasks/acr-client-page-wrapper.md)
+- [aem] fix docker build [🔗](./draft/aem-fix-docker-build.md)
 - [aan] App-Specific Session Configuration [🔗](./draft/aan-app-specific-session-config.md)
-- [aed] Protect waitlist route with feature flag [🔗](./draft/aed-protect-waitlist-route-with-feature-flag.md)
-- [aee] Protect feedback route with feature flag [🔗](./draft/aee-protect-feedback-route-with-feature-flag.md)
-- [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
 - [acz] Document Getting started with README's information
 - [acm] 🪲 docs: Parse relative url in articles [🔗](./draft/acm-relative-url.md)
@@ -55,6 +50,9 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+- [aee] Protect feedback route with feature flag [🔗](./draft/aee-protect-feedback-route-with-feature-flag.md)
+- [aed] Protect waitlist route with feature flag [🔗](./draft/aed-protect-waitlist-route-with-feature-flag.md)
+- [aen] Move logout button to the profile's page top bar [🔗](./draft/aen-move-logout-button-to-profile-top-bar.md)
 - [aal] RBAC Menu Integration 🔗 [story](./tasks/aal-rbac-menu-integration.md)
 - [acj] 🦲 Next standalone has `.env` file [🔗](./archive/acj-next-standalone.md) ✅ COMPLETE - .env excluded from images, runtime env injection, docs + verification script
 - [ael] Stack Block Component [🔗](./archive/ael-stack-block-component.md)

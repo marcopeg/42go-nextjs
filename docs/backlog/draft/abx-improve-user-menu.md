@@ -14,10 +14,12 @@ If the user is NOT logged in, the button should get configuration from:
 const config = {
   app1: {
     public: {
-      publicCta: {
-        label: "Sign in",
-        href: "/login",
-        style: "primary", // that is default value and can be omitted
+      userMenu: {
+        publicCta: {
+          label: "Sign in",
+          href: "/login",
+          style: "primary", // that is default value and can be omitted
+        },
       },
     },
   },
@@ -32,24 +34,28 @@ If the user is logged in, then we should render the avatar with a fallback on a 
 const config = {
   app1: {
     public: {
-      userCta: {
-        event: "hover|click", // optional, default "hover"
-        title: "What to show on mouse hover", // optional
-        label: "Dashboard", // optional
-        style: "primary", // optional, defaults to "primary" if a label is provided
-        href: "/dashboard", // optional, if provided it replaces the popover menu behavior
-        items: [
-          {
-            label: "Dashboard",
-            href: "/dashboard",
-            divider: true,
-          },
-          {
-            label: "Logout",
-            href: "/logout",
-            style: "primary",
-          },
-        ],
+      userMenu: {
+        userCta: {
+          title: "What to show on mouse hover", // optional
+          label: "Dashboard", // optional
+          style: "primary", // optional, defaults to "primary" if a label is provided
+          href: "/dashboard", // optional, if provided it replaces the popover menu behavior and makes the "dropDown" configuration useless
+        },
+        dropDown: {
+          event: "hover|click", // optional, default "hover"
+          items: [
+            {
+              label: "Dashboard",
+              href: "/dashboard",
+              divider: true,
+            },
+            {
+              label: "Logout",
+              href: "/logout",
+              style: "primary",
+            },
+          ],
+        },
       },
     },
   },
