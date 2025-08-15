@@ -1,4 +1,4 @@
-# Policy‑Driven Menu Item Visibility [aal]
+# Policy–Driven Menu Item Visibility [aal]
 
 Integrate the new generic Policy system with the AppConfig menu so items declare an optional `policy` (single or array) and are automatically hidden (not rendered, no errors) when the policy fails. This replaces the original RBAC‑only concept with the unified `Policy` abstraction (session / feature / role / grants / anyGrant).
 
@@ -20,6 +20,18 @@ Extend AppConfig menu system with Policy support:
 - **Batching / Optimization**: Minimal v1—call `useEvaluatePolicy` per item. (Future optimization: batch evaluate unique policy sets). Note this is acceptable because policy evaluation is synchronous-over-session + feature flags (no network) today.
 - **Backward Compatibility**: Existing menus (no policy fields) remain unchanged.
 - **No RBAC Terminology**: Replace previous `rbac` references with generic `policy`.
+
+## Reality Check (as of Aug 14, 2025)
+
+- Types: `TAppLayoutNavItem` exists in `src/42go/layouts/app/types.ts` and currently has no `policy` field. It already imports `type Policy, PolicyErrorCode` from `@/42go/policy/client` so adding `policy?: Policy | Policy[]` is consistent with existing imports.
+- Guards: `<ProtectComponent>` exists in `src/42go/policy/ProtectComponent.tsx` and supports `renderOnLoading` / `renderOnError` props (we’ll pass null renderers for silent omission in menus).
+- Hooks: `useEvaluatePolicy` is available at `src/42go/policy/useEvaluatePolicy.ts` and relies on client session + app features (no network calls for the visual check).
+- Menus today:
+  - Sidebar: `src/42go/layouts/app/SidebarMenu.tsx` maps items and renders `Link` directly (no policy yet).
+  - Mobile bottom: `src/42go/layouts/app/MobileBottomNav.tsx` maps items and renders `Link` directly (no policy yet).
+  - Toolbar actions: `src/42go/layouts/app/ToolbarActions.tsx` uses ContentBlock; out-of-scope for this story.
+
+Conclusion: We only need a minimal additive change to the types and to both menu renderers.
 
 ## AppConfig Menu Enhancement
 
@@ -158,9 +170,10 @@ const AnimatedMenuItems: React.FC<{
 - [ ] Ensure loading state causes silent omission (no layout jump flicker beyond natural list shrink)
 - [ ] Maintain backward compatibility (menus without policy unaffected)
 - [ ] Add types & inline JSDoc for `policy` field
-- [ ] Add minimal tests (unit: helper that decides render, component: snapshot absence when failing)
 - [ ] Document usage in `docs/articles/POLICY.md` or dedicated snippet
 - [ ] (Optional) Extract small helper `wrapWithPolicy(item, node)` for reuse
+
+Testing note: No test runner is configured in `package.json`. If tests are required, add a separate story to introduce Jest/Vitest + RTL; otherwise validate via local smoke and `npm run qa`.
 
 ## Acceptance Criteria
 
@@ -188,6 +201,13 @@ const AnimatedMenuItems: React.FC<{
 - [ ] Uses `ProtectComponent` (preferred) or `useEvaluatePolicy` directly if needed
 - [ ] Pure client-side behavior only
 
+## File Touchpoints
+
+- `src/42go/layouts/app/types.ts` — add `policy?: Policy | Policy[]` to `TAppLayoutNavItem` (keep existing imports; add JSDoc explaining silent hide).
+- `src/42go/layouts/app/SidebarMenu.tsx` — wrap each item that has `policy` with `<ProtectComponent policy={...} renderOnLoading={() => null} renderOnError={() => null}>`.
+- `src/42go/layouts/app/MobileBottomNav.tsx` — same wrapping logic for bottom mobile items.
+- (Docs) `docs/articles/POLICY.md` — add a short subsection “Menu visibility via policies” with an AppConfig example.
+
 ### Testing & Quality
 
 - [ ] Unit test: policy pass renders; fail omits
@@ -213,13 +233,13 @@ const AnimatedMenuItems: React.FC<{
 
 ### Phase 3: Tests
 
-1. Add a simple test file (e.g., `test/layouts/sidebar-menu.policy.test.tsx`) using React Testing Library:
+1. Optional (separate story): Introduce Jest/Vitest + RTL. Otherwise, perform manual smoke validation.
+2. Manual validation checklist:
 
-- Mock session + feature flags context.
-- Render menu with: item A (no policy), item B (policy that passes), item C (policy that fails).
-- Assert A & B present; C absent.
-
-2. Test loading scenario: simulate hook initial loading returning loading=true then pass; ensure no placeholder rendered first frame (may require mocking hook to controlled states).
+- Item without policy renders.
+- Item with passing policy renders.
+- Item with failing policy is absent.
+- Loading state shows absence (no placeholder), then appears when pass.
 
 ### Phase 4: Docs
 
@@ -268,6 +288,25 @@ Each item individually invokes `ProtectComponent` only when it has a `policy`. E
 ### Batch Permission Optimization
 
 - Deferred; complexity not justified yet. Future story can replace per-item wrappers with a context pre-pass.
+
+## Quality Gates
+
+- Build: `npm run qa` passes with no TypeScript or ESLint errors after changes.
+- Smoke: Sidebar and mobile bottom menus visually omit items with failing or loading policies.
+- Backward compatibility: Existing configs (no `policy`) behave unchanged.
+
+## Assumptions
+
+- `useEvaluatePolicy` remains synchronous over in-memory session + features for client checks (no network I/O), keeping per-item overhead acceptable.
+- Menus have relatively small N (≤ 15); per-item wrappers are fine.
+
+## Open Questions
+
+- Should the Profile link (in the sidebar’s bottom section) ever be policy-guarded? Probably out-of-scope here; leave always visible when session exists.
+
+## Next Steps
+
+execute task (k3)
 
 ## Integration Points
 

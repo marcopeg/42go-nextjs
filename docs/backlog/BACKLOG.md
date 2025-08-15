@@ -6,18 +6,18 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aem] fix docker build [🔗](./draft/aem-fix-docker-build.md)
+- [aal] RBAC Menu Integration 🔗 [story](./tasks/aal-rbac-menu-integration.md)
 
 ## Upcoming Tasks
 
 - [aei] Extract Policy Utilities & Refactor Imports [🔗](./draft/aei-extract-policy-utilities.md)
-- [aal] RBAC Menu Integration 🔗 [story](./tasks/aal-rbac-menu-integration.md)
 - [aam] RBAC Advanced Features 🔗 [story](./tasks/aam-rbac-advanced-features.md)
 - [ads] RBAC SQL Functions [🔗](./draft/ads-sql-functions.md)
 - [adr] EPIC - RBAC Refactor Policies [🔗](./draft/adr-refactor-rbac-policies.md)
 
 ## Drafts
 
+- [aem] fix docker build [🔗](./draft/aem-fix-docker-build.md)
 - [adw] Client Policy Hook and Component [🔗](./draft/adw-client-policy-hook-component.md)
 - [aea] Policy & RBAC Testing Strategy [🔗](./draft/aea-policy-testing-strategy.md)
 - [aef] Design anyPolicy OR Helper [🔗](./draft/aef-design-anypolicy-or-helper.md)
