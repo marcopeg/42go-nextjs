@@ -64,3 +64,11 @@ Investigate and fix why Next.js middleware doesn’t appear to execute when the 
 
 - Implement Option 1 and test. If green, merge and close.
 - If not viable, document findings and pivot to Option 3/2.
+
+## Notes
+
+Official doc:
+https://nextjs.org/docs/app/getting-started/deploying
+
+Docker example for running nextjs:
+https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile

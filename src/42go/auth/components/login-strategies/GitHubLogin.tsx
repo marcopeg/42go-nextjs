@@ -8,20 +8,21 @@ import { useState } from "react";
 interface GitHubLoginProps {
   isOtherLoading?: boolean;
   tabIndex?: number;
+  /** Redirect target passed from server login page. */
+  callbackUrl: string;
 }
 
 export function GitHubLogin({
   isOtherLoading = false,
   tabIndex,
+  callbackUrl,
 }: GitHubLoginProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signIn("github", {
-        callbackUrl: "/dashboard",
-      });
+      await signIn("github", { callbackUrl });
     } catch (error) {
       console.error("GitHub sign-in error:", error);
       setIsLoading(false);

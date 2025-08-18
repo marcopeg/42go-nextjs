@@ -2,15 +2,23 @@
 
 A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
 
-(LastID: aen)
+(LastID: acu)
 
 ## Current Task
 
+<!-- none -->
+
 ## Upcoming Tasks
 
-- [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
-
 ## Drafts
+
+### QuickList
+
+- [ack] quicklist - API: delete task [🔗](./draft/ack-quicklist-api-delete-task.md)
+- [acr] quicklist - API: delete project [🔗](./draft/acr-quicklist-api-delete-project.md)
+- [aba] quicklist - invite collaborator [🔗](./draft/aba-quicklist-invite-collaborator.md)
+
+### RBAC
 
 - [aei] Extract Policy Utilities & Refactor Imports [🔗](./draft/aei-extract-policy-utilities.md)
 - [aam] RBAC Advanced Features 🔗 [story](./tasks/aam-rbac-advanced-features.md)
@@ -18,9 +26,13 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [adr] EPIC - RBAC Refactor Policies [🔗](./draft/adr-refactor-rbac-policies.md)
 - [adw] Client Policy Hook and Component [🔗](./draft/adw-client-policy-hook-component.md)
 - [aea] Policy & RBAC Testing Strategy [🔗](./draft/aea-policy-testing-strategy.md)
-- [aef] Design anyPolicy OR Helper [🔗](./draft/aef-design-anypolicy-or-helper.md)
 - [aeg] Unified Policy Engine Tests Implementation [🔗](./draft/aeg-policy-engine-tests.md)
+- [aef] Design anyPolicy OR Helper [🔗](./draft/aef-design-anypolicy-or-helper.md)
+
+### Boilerplate
+
 - [aem] fix docker build [🔗](./draft/aem-fix-docker-build.md)
+- [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [aan] App-Specific Session Configuration [🔗](./draft/aan-app-specific-session-config.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
 - [acz] Document Getting started with README's information
@@ -35,14 +47,12 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [abl] Add social login: LinkedIn [🔗](./draft/abl-add-social-login-linkedin.md)
 - [abk] Add social login: X [🔗](./draft/abk-add-social-login-x.md)
 - [aam] Add social login: Facebook
-- [aao] Add app name to waitlist table [🔗](./draft/aao-add-app-name-to-waitlist.md)
-- [aap] Add app name to feedback table [🔗](./draft/aap-add-app-name-to-feedback.md)
+
 - [aao] Add social login: Apple
 - [abn] Migrate to Prisma ORM
 - [add] [Implement CLI scripts](./draft/add-implement-cli-scripts.md)
 - [ado] if `config.auth` is not defined, the `/login` should return a 404
 - [adp] `config.public.docs` if present should be enough to enable the documents even without explicit feature flag. this config should be a feature flag in itself.
-- [adn] Add `config.match.fn = async (request): bool` that let match programmatically [🔗](./tasks/adn-config-match-function.md)
 - [] Add "youtube" ContentBlock
 - [] Add "image" ContentBlock
 - [] HeroBlock: should be possibel to set only one among "title", "subtitle", or "actions" but at least one, so that it can work only as a title block
@@ -50,6 +60,27 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed Tasks
 
+### QuickList
+
+- [acu] quicklist - isolate data by app-id [🔗](./draft/acu-isolate-data-appid.md) ✅ COMPLETE - Projects.app_id added, APIs scoped by app, seeds updated, QA passed
+- [aax] quicklist - create new list [🔗](./draft/aax-quicklist-create-new-list.md)
+- [act] quicklist - support check/uncheck task in UI [🔗](./draft/act-quicklist-support-check-uncheck-task-ui.md)
+- [acu] quicklist - support edit task title in task list UI [🔗](./draft/acu-quicklist-support-edit-task-title-ui.md)
+- [aaz] quicklist - edit list page [🔗](./draft/aaz-quicklist-edit-list-page.md)
+- [aby] quicklist - API: create project with initial task [🔗](./draft/aby-quicklist-api-create-project.md)
+- [acg] quicklist - API: update task (title/position/completed) [🔗](./draft/acg-quicklist-api-update-task.md)
+- [aay] quicklist - view list page [🔗](./draft/aay-quicklist-view-list-page.md)
+- [acc] quicklist - API: get project with tasks (conditional) [🔗](./draft/acc-quicklist-api-get-project.md) ✅ COMPLETE - ETag conditional caching, timestamp format, query param support, access control
+- [aaw] quicklist - projects page [🔗](./draft/aaw-quicklist-projects-page.md)
+- [abw] quicklist - API: list projects and invites [🔗](./draft/abw-quicklist-api-get-projects.md)
+- [abb] quicklist - data model [🔗](./draft/abb-quicklist-data-model.md)
+
+### Boilerplate
+
+- [acs] devise how to test api through authenticated curl calls [🔗](./draft/acs-test-api.md)
+- [act] App default page [🔗](./draft/act-app-default-page.md)
+- [aao] Add app name to waitlist table
+- [aap] Add app name to feedback table
 - [aee] Protect feedback route with feature flag [🔗](./draft/aee-protect-feedback-route-with-feature-flag.md)
 - [aed] Protect waitlist route with feature flag [🔗](./draft/aed-protect-waitlist-route-with-feature-flag.md)
 - [aen] Move logout button to the profile's page top bar [🔗](./draft/aen-move-logout-button-to-profile-top-bar.md)

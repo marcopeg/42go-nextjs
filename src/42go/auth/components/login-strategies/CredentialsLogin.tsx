@@ -3,17 +3,22 @@
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface CredentialsLoginProps {
   isOtherLoading?: boolean;
   tabIndex?: number;
+  /** Redirect target passed from server login page. */
+  callbackUrl: string;
 }
 
 export function CredentialsLogin({
   isOtherLoading = false,
   tabIndex = 0,
+  callbackUrl,
 }: CredentialsLoginProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,12 +31,14 @@ export function CredentialsLogin({
       const result = await signIn("credentials", {
         username,
         password,
-        callbackUrl: "/dashboard",
+        callbackUrl,
         redirect: false,
       });
 
       if (result?.ok) {
-        window.location.href = "/dashboard";
+        // SPA navigation to avoid full page reload
+        router.replace(callbackUrl);
+        router.refresh();
       } else {
         alert("Login failed!");
       }
@@ -55,7 +62,9 @@ export function CredentialsLogin({
           disabled={isLoading || isOtherLoading}
           className="w-full px-4 py-3 border-0 border-b border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-0 focus:border-gray-300 dark:focus:border-gray-600 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50 bg-transparent"
           placeholder="username or name@example.com"
-          tabIndex={tabIndex}
+          autoComplete="username"
+          autoFocus
+          tabIndex={tabIndex > 0 ? tabIndex : undefined}
         />
         <input
           type="password"
@@ -65,7 +74,8 @@ export function CredentialsLogin({
           disabled={isLoading || isOtherLoading}
           className="w-full px-4 py-3 border-0 focus:outline-none focus:ring-0 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50 bg-transparent"
           placeholder="password"
-          tabIndex={tabIndex + 1}
+          autoComplete="current-password"
+          tabIndex={tabIndex > 0 ? tabIndex + 1 : undefined}
         />
       </div>
 
@@ -73,7 +83,7 @@ export function CredentialsLogin({
         type="submit"
         disabled={isLoading || isOtherLoading}
         className="w-full h-12 rounded-lg text-lg font-medium"
-        tabIndex={tabIndex + 2}
+        tabIndex={tabIndex > 0 ? tabIndex + 2 : undefined}
       >
         {isLoading ? (
           <>

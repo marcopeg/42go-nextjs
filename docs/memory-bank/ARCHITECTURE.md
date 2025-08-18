@@ -150,6 +150,19 @@ features: ["page:docs", "page:dashboard", "api:todos", "api:feedback"];
 - **Responsive Design**: Mobile-first approach with proper alignment and accessibility
 - **SSR-Ready**: Full server-side rendering support for SEO and performance
 
+### App Pages Convention (Client-Only)
+
+For all routes under the `(app)` route group:
+
+- Pages MUST be client components (`"use client"`).
+- Wrap content with `AppLayout` to provide navigation chrome and client-side policy enforcement via the `policy` prop.
+- Perform data fetching from the browser using `fetch` with `credentials: "same-origin"`.
+- Avoid SSR fetch to internal APIs to prevent host/cookie issues.
+- Use `useParams`/`useSearchParams` for routing data inside client components.
+- Policy semantics (404/401/403) are handled by the unified policy engine through `ProtectComponent` inside `AppLayout`.
+
+Rationale: This avoids SSR pitfalls (e.g., getaddrinfo on inferred hosts, cookie propagation) and unifies UX for loading states.
+
 ## Theme Management
 
 **Architecture**: `next-themes` with app-specific defaults via AppConfig

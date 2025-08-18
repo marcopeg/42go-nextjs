@@ -6,6 +6,7 @@ import { ProtectComponent } from "@/42go/policy/client";
 import { SidebarMenu } from "./SidebarMenu";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { Toolbar } from "./Toolbar";
+import { useAppConfig } from "@/42go/config/use-app-config";
 
 const getSideMenuState = () => {
   try {
@@ -22,10 +23,13 @@ export const AppLayout = ({
   subtitle,
   actions,
   stickyHeader = true,
+  backBtn,
   policy,
   renderOnLoading,
   renderOnError,
+  hideMobileMenu,
 }: AppLayoutProps) => {
+  const config = useAppConfig();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     getSideMenuState()
@@ -59,6 +63,11 @@ export const AppLayout = ({
         <SidebarMenu
           isCollapsed={isSidebarCollapsed}
           toggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          collapsePosition={
+            config?.app?.menu?.collapsible?.position === "top"
+              ? "top"
+              : "bottom"
+          }
         />
       </aside>
 
@@ -68,7 +77,12 @@ export const AppLayout = ({
           isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
         } ${stickyHeader ? "sticky top-0 z-30" : ""}`}
       >
-        <Toolbar title={title} subtitle={subtitle} actions={actions} />
+        <Toolbar
+          title={title}
+          subtitle={subtitle}
+          actions={actions}
+          backBtn={backBtn}
+        />
       </header>
 
       {/* Main Content */}
@@ -94,10 +108,12 @@ export const AppLayout = ({
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav onMoreClick={() => setIsMobileMenuOpen(true)} />
+      {!hideMobileMenu && (
+        <MobileBottomNav onMoreClick={() => setIsMobileMenuOpen(true)} />
+      )}
 
       {/* Mobile Sidebar - Overlay */}
-      {isMobileMenuOpen && (
+      {!hideMobileMenu && isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black/60 z-50 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
@@ -105,17 +121,24 @@ export const AppLayout = ({
       )}
 
       {/* Mobile Sidebar - Content */}
-      <aside
-        className={`fixed top-0 right-0 z-[60] h-full w-4/5 transition-transform duration-300 ease-in-out md:hidden ${
-          isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <SidebarMenu
-          isCollapsed={false}
-          toggleCollapse={() => {}}
-          closeMobileMenu={() => setIsMobileMenuOpen(false)}
-        />
-      </aside>
+      {!hideMobileMenu && (
+        <aside
+          className={`fixed top-0 right-0 z-[60] h-full w-4/5 transition-transform duration-300 ease-in-out md:hidden ${
+            isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <SidebarMenu
+            isCollapsed={false}
+            toggleCollapse={() => {}}
+            closeMobileMenu={() => setIsMobileMenuOpen(false)}
+            collapsePosition={
+              config?.app?.menu?.collapsible?.position === "top"
+                ? "top"
+                : "bottom"
+            }
+          />
+        </aside>
+      )}
     </div>
   );
 };

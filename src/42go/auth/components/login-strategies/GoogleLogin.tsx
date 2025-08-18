@@ -8,20 +8,21 @@ import { useState } from "react";
 interface GoogleLoginProps {
   isOtherLoading?: boolean;
   tabIndex?: number;
+  /** Redirect target passed from server login page. */
+  callbackUrl: string;
 }
 
 export function GoogleLogin({
   isOtherLoading = false,
   tabIndex,
+  callbackUrl,
 }: GoogleLoginProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signIn("google", {
-        callbackUrl: "/dashboard",
-      });
+      await signIn("google", { callbackUrl });
     } catch (error) {
       console.error("Google sign-in error:", error);
       setIsLoading(false);

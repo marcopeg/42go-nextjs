@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -16,11 +16,17 @@ export const SidebarMenu = ({
   isCollapsed,
   toggleCollapse,
   closeMobileMenu,
+  collapsePosition: collapsePositionProp,
 }: SidebarMenuProps) => {
   const { data: session } = useSession();
   const config = useAppConfig();
   const pathname = usePathname();
   const [isHovered, setIsHovered] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
+  const userItemRef = useRef<HTMLAnchorElement | null>(null);
+  const [collapseBtnTop, setCollapseBtnTop] = useState<number | null>(null);
+  // Keep this in sync with button class (h-6)
+  const COLLAPSE_BTN_SIZE = 24; // px
 
   // Get menu items from app config or fallback to empty arrays
   const topMenuItems = config?.app?.menu?.top?.items || [];
@@ -95,6 +101,50 @@ export const SidebarMenu = ({
     });
   };
 
+  // Collapse button positioning
+  const collapsePosition: "top" | "bottom" = useMemo(() => {
+    if (collapsePositionProp) return collapsePositionProp;
+    return config?.app?.menu?.collapsible?.position === "top"
+      ? "top"
+      : "bottom";
+  }, [collapsePositionProp, config?.app?.menu?.collapsible?.position]);
+
+  useEffect(() => {
+    if (closeMobileMenu) return; // desktop only
+    if (collapsePosition === "top") {
+      setCollapseBtnTop(21); // px to align with header
+      return;
+    }
+    // bottom mode: center on the user item row
+    const updatePosition = () => {
+      if (!sidebarRef.current) return;
+      const containerRect = sidebarRef.current.getBoundingClientRect();
+      const anchorEl = userItemRef.current;
+      if (anchorEl) {
+        const rect = anchorEl.getBoundingClientRect();
+        // Center the button over the user row
+        const center =
+          rect.top +
+          rect.height / 2 -
+          containerRect.top -
+          COLLAPSE_BTN_SIZE / 2;
+        setCollapseBtnTop(center);
+        return;
+      }
+      // Fallback: place near bottom padding if user item doesn't exist
+      setCollapseBtnTop(containerRect.height - 60 - COLLAPSE_BTN_SIZE / 2);
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    return () => window.removeEventListener("resize", updatePosition);
+  }, [
+    collapsePosition,
+    closeMobileMenu,
+    bottomMenuItems.length,
+    session?.user,
+  ]);
+
   return (
     <div
       className={cn(
@@ -102,10 +152,22 @@ export const SidebarMenu = ({
         closeMobileMenu ? "w-full" : "border-r"
       )}
       style={{ width: closeMobileMenu ? "100%" : "auto" }}
+      ref={sidebarRef}
     >
       {/* Collapse Toggle Button - Desktop only */}
       {!closeMobileMenu && (
-        <div className="absolute -right-3 top-[21px] z-10 hidden md:block">
+        <div
+          className={cn(
+            "absolute -right-3 z-10 hidden md:block",
+            // when we compute a dynamic top, rely on inline style
+            collapsePosition === "top" && "top-[21px]"
+          )}
+          style={
+            collapsePosition === "bottom" && collapseBtnTop != null
+              ? { top: collapseBtnTop }
+              : undefined
+          }
+        >
           <Button
             variant="outline"
             size="icon"
@@ -194,6 +256,7 @@ export const SidebarMenu = ({
               <Link
                 href="/profile"
                 onClick={closeMobileMenu}
+                ref={userItemRef}
                 className={cn(
                   "flex items-center px-3 py-2 text-sm transition-all duration-200 cursor-pointer relative group rounded-md border border-transparent",
                   pathname === "/profile"

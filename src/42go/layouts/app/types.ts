@@ -31,14 +31,27 @@ export interface SidebarMenuProps {
   isCollapsed: boolean;
   toggleCollapse: () => void;
   closeMobileMenu?: () => void;
+  /**
+   * Where to place the desktop collapse button. Defaults to "top".
+   */
+  collapsePosition?: "top" | "bottom";
+}
+
+export interface BackBtnConfig {
+  to: string;
+  label?: string; // default: "back"
+  icon?: LucideIcon; // default: simple left arrow
+  hideDesktop?: boolean; // when true, show only on mobile
 }
 
 export interface AppLayoutProps {
   children: React.ReactNode;
-  title: string;
+  title: React.ReactNode;
   subtitle?: string;
   actions?: TActionItem[];
   stickyHeader?: boolean;
+  // Rich back button configuration for the top toolbar
+  backBtn?: BackBtnConfig;
   // Optional client-side policy to guard the page content visually
   policy?: Policy | Policy[];
   renderOnLoading?: () => React.ReactNode;
@@ -46,4 +59,9 @@ export interface AppLayoutProps {
     code: PolicyErrorCode;
     detail?: string;
   }) => React.ReactNode;
+  /**
+   * When true, hides the mobile bottom navigation and the slide-in mobile menu.
+   * Desktop sidebar remains unaffected.
+   */
+  hideMobileMenu?: boolean;
 }

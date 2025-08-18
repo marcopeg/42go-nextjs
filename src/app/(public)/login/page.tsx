@@ -6,20 +6,45 @@ import {
 } from "@/42go/auth/components/login-strategies";
 import { getAppConfig } from "@/42go/config/app-config";
 
+const safeInternalPath = (input?: string | null): string | null => {
+  if (!input || typeof input !== "string") return null;
+  const trimmed = input.trim();
+  if (!trimmed.startsWith("/")) return null;
+  if (trimmed.includes("://") || trimmed.includes("\\")) return null;
+  // normalize duplicate slashes (except protocol which we don't allow anyway)
+  return trimmed.replace(/\/+/, "/");
+};
+
 export default async function LoginPage() {
   const appConfig = await getAppConfig();
+  const fallback = "/dashboard";
+  const configured = appConfig?.app?.default?.page ?? null;
+  const callbackUrl = safeInternalPath(configured) ?? fallback;
   const providers: string[] =
     appConfig?.auth?.providers.map((provider) => provider.type) || [];
+  const isDev = process.env.NODE_ENV !== "production";
 
   let tabIndex = 0;
   const socialLogins = providers
     .map((name) => {
       if (name === "github") {
-        return <GitHubLogin key="github" tabIndex={(tabIndex += 1)} />;
+        return (
+          <GitHubLogin
+            key="github"
+            tabIndex={(tabIndex += 1)}
+            callbackUrl={callbackUrl}
+          />
+        );
       }
 
       if (name === "google") {
-        return <GoogleLogin key="google" tabIndex={(tabIndex += 1)} />;
+        return (
+          <GoogleLogin
+            key="google"
+            tabIndex={(tabIndex += 1)}
+            callbackUrl={callbackUrl}
+          />
+        );
       }
 
       return null;
@@ -29,6 +54,9 @@ export default async function LoginPage() {
   return (
     <div className="login-page max-w-md mx-auto mt-8 p-6">
       <h1 className="text-2xl font-bold text-center mb-6">Sign In</h1>
+      {isDev && (
+        <p data-callback-url={callbackUrl}>callbackUrl: {callbackUrl}</p>
+      )}
 
       {/* Error Display */}
       <AuthError />
@@ -61,7 +89,7 @@ export default async function LoginPage() {
       {/* Credentials Form */}
       {providers.includes("credentials") && (
         <div className="w-full">
-          <CredentialsLogin tabIndex={tabIndex} />
+          <CredentialsLogin tabIndex={tabIndex} callbackUrl={callbackUrl} />
         </div>
       )}
     </div>

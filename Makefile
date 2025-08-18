@@ -46,6 +46,22 @@ app.start:
 app: app.install app.start
 qa: npm run qa
 
+ngrok:
+	ngrok http --url=42go.ngrok.app 3000
+
+###
+### JS Prod Tasks
+###
+
+prod.js.start:
+	yarn build
+	yarn start
+
+prod.js.ngrok:
+	ngrok http --url=42go.ngrok.app 4000
+
+
+
 ###
 ### Production Tasks
 ###
