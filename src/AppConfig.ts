@@ -26,7 +26,13 @@ export interface TAppConfigItem {
     PublicLayout?: ComponentType<{ children: ReactNode }>;
   };
   public?: {
-    toolbar?: TPublicLayoutToolbar;
+    toolbar?: TPublicLayoutToolbar & {
+      /**
+       * If true, disables the public layout toolbar entirely.
+       * Defaults to false. All other properties are ignored if true.
+       */
+      disabled?: boolean;
+    };
     meta?: Partial<Metadata>;
     pages?: TDynamicPage; // CMS pages configuration
     docs?: {
@@ -34,6 +40,14 @@ export interface TAppConfigItem {
       cache?: {
         duration?: number; // Cache duration in ms (-1 for no cache, 0 for no expiration, >0 for specific duration)
       };
+    };
+    footer?: {
+      /**
+       * If true, disables the public layout footer entirely.
+       * Defaults to false. All other properties are ignored if true.
+       */
+      disabled?: boolean;
+      // ...other optional footer properties...
     };
   };
   auth?: {
@@ -65,6 +79,11 @@ export interface TAppConfigItem {
       };
       mobile?: {
         items?: TAppLayoutNavItem[];
+        /**
+         * If true, disables the "more" hamburger menu in mobile nav.
+         * Defaults to false.
+         */
+        disableMore?: boolean;
       };
     };
   };

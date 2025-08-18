@@ -799,7 +799,7 @@ export default function ProjectDetailsPage() {
             {tasks.length === 0 && <EmptyState />}
             {/* Mobile bottom sheet editor */}
             {editingId && (
-              <div className="md:hidden fixed inset-0 z-50">
+              <div className="md:hidden fixed inset-0 z-[500]">
                 <div
                   className="absolute inset-0 bg-black/40 transition-opacity"
                   onClick={handleCancelEdit}
@@ -838,7 +838,7 @@ export default function ProjectDetailsPage() {
             )}
             {/* Mobile bottom sheet for list title */}
             {editingList && (
-              <div className="md:hidden fixed inset-0 z-50">
+              <div className="md:hidden fixed inset-0 z-[500]">
                 <div
                   className="absolute inset-0 bg-black/40 transition-opacity"
                   onClick={cancelEditList}
@@ -915,6 +915,7 @@ export default function ProjectDetailsPage() {
       {/* Mobile sticky chat-like input; elevated via portal above AppLayout toolbar */}
       {mounted &&
         !editingId &&
+        !editingList &&
         createPortal(
           <div
             className="md:hidden fixed bottom-0 left-0 right-0 z-[200] border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3"

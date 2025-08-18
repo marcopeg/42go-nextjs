@@ -1,13 +1,11 @@
 import { TAppConfigItem } from "../../AppConfig";
-import QuicklistIcon from "./QuicklistIcon";
-// import { UserMenu } from "@/42go/auth/components/UserMenu";
 
 import { User, ListChecks } from "lucide-react";
 
 export default {
   name: "quicklist",
   match: {
-    url: ["^quicklist\\.localhost:\\d+$"],
+    url: ["^quicklist\\.localhost:\\d+$", "^42go.ngrok.app+$"],
   },
   features: ["api:waitlist", "api:quicklists", "page:quicklists"],
   auth: {
@@ -20,9 +18,10 @@ export default {
   },
   public: {
     toolbar: {
-      title: "QuickList",
-      icon: QuicklistIcon,
-      // actions: [{ type: "component", component: UserMenu }],
+      disabled: true,
+    },
+    footer: {
+      disabled: true,
     },
     pages: {
       HomePage: {
@@ -30,11 +29,11 @@ export default {
           {
             type: "hero",
             title: "Quick**List**",
-            subtitle: "The fastest way through your grocery duties",
+            subtitle: "todos, **made simple**",
             actions: [
               {
                 href: "/login",
-                label: "Join",
+                label: "Go!",
                 style: "primary",
               },
             ],
@@ -69,6 +68,7 @@ export default {
         ],
       },
       mobile: {
+        disableMore: true,
         items: [
           {
             title: "Projects",

@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface CredentialsLoginProps {
   isOtherLoading?: boolean;
@@ -93,6 +94,13 @@ export function CredentialsLogin({
         ) : (
           "Sign In"
         )}
+      </Button>
+      <Button
+        asChild
+        variant="ghost"
+        className="w-full h-12 rounded-lg text-lg font-medium"
+      >
+        <Link href="/">Cancel</Link>
       </Button>
     </form>
   );

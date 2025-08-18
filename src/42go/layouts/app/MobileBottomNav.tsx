@@ -19,11 +19,12 @@ export const MobileBottomNav = ({ onMoreClick }: MobileBottomNavProps) => {
   // Get mobile bottom items from app config or fallback to empty array
   const mobileBottomItems: TAppLayoutNavItem[] =
     config?.app?.menu?.mobile?.items || [];
+  const disableMore = config?.app?.menu?.mobile?.disableMore ?? false;
 
   // Calculate how many items to show in the bottom bar (max 4)
   const visibleItemsCount = Math.min(mobileBottomItems.length, 4);
-  // Calculate the width for each item (including the hamburger menu)
-  const itemWidth = `${100 / (visibleItemsCount + 1)}%`;
+  // Calculate the width for each item (including the hamburger menu if enabled)
+  const itemWidth = `${100 / (visibleItemsCount + (disableMore ? 0 : 1))}%`;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border h-16 flex items-center z-40 md:hidden">
@@ -61,14 +62,16 @@ export const MobileBottomNav = ({ onMoreClick }: MobileBottomNavProps) => {
         );
       })}
 
-      <button
-        onClick={onMoreClick}
-        className="flex flex-col items-center justify-center h-full text-muted-foreground hover:text-foreground transition-colors duration-200"
-        style={{ width: itemWidth }}
-      >
-        <Menu className="h-5 w-5" />
-        <span className="text-xs mt-1 font-medium">More</span>
-      </button>
+      {!disableMore && (
+        <button
+          onClick={onMoreClick}
+          className="flex flex-col items-center justify-center h-full text-muted-foreground hover:text-foreground transition-colors duration-200"
+          style={{ width: itemWidth }}
+        >
+          <Menu className="h-5 w-5" />
+          <span className="text-xs mt-1 font-medium">More</span>
+        </button>
+      )}
     </div>
   );
 };
