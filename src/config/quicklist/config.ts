@@ -1,8 +1,8 @@
 import { TAppConfigItem } from "../../AppConfig";
 import QuicklistIcon from "./QuicklistIcon";
-import { UserMenu } from "@/42go/auth/components/UserMenu";
+// import { UserMenu } from "@/42go/auth/components/UserMenu";
 
-import { LayoutDashboard, ListChecks } from "lucide-react";
+import { User, ListChecks } from "lucide-react";
 
 export default {
   name: "quicklist",
@@ -22,7 +22,7 @@ export default {
     toolbar: {
       title: "QuickList",
       icon: QuicklistIcon,
-      actions: [{ type: "component", component: UserMenu }],
+      // actions: [{ type: "component", component: UserMenu }],
     },
     pages: {
       HomePage: {
@@ -31,18 +31,25 @@ export default {
             type: "hero",
             title: "Quick**List**",
             subtitle: "The fastest way through your grocery duties",
+            actions: [
+              {
+                href: "/login",
+                label: "Join",
+                style: "primary",
+              },
+            ],
           },
-          {
-            type: "waitlist",
-            title: "Join the **Waitlist**",
-            subtitle: "Get early access. **No spam.**",
-            placeholder: "Your email address",
-            buttonLabel: "Join Now",
-            feedback: {
-              type: "message",
-              content: "You're on the list!",
-            },
-          },
+          // {
+          //   type: "waitlist",
+          //   title: "Join the **Waitlist**",
+          //   subtitle: "Get early access. **No spam.**",
+          //   placeholder: "Your email address",
+          //   buttonLabel: "Join Now",
+          //   feedback: {
+          //     type: "message",
+          //     content: "You're on the list!",
+          //   },
+          // },
         ],
       },
     },
@@ -55,17 +62,23 @@ export default {
       top: {
         items: [
           {
-            title: "Dashboard",
-            href: "/dashboard",
-            icon: LayoutDashboard,
+            title: "Projects",
+            href: "/quicklists",
+            icon: ListChecks,
           },
+        ],
+      },
+      mobile: {
+        items: [
           {
             title: "Projects",
             href: "/quicklists",
             icon: ListChecks,
-            policy: {
-              require: { feature: "page:quicklists" },
-            },
+          },
+          {
+            title: "Account",
+            href: "/profile",
+            icon: User,
           },
         ],
       },

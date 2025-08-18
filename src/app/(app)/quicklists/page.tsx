@@ -97,13 +97,18 @@ export default function ProjectsPage() {
 
   return (
     <AppLayout
-      title="Your Lists"
+      title="QuickList"
+      subtitle="Todos made simple"
       actions={[
         {
           type: "component",
           component: ({ disabled }: { disabled?: boolean }) => (
-            <Button onClick={handleCreate} disabled={creating || disabled}>
-              {creating ? "Creating…" : "New List"}
+            <Button
+              onClick={handleCreate}
+              disabled={creating || disabled}
+              variant={"ghost"}
+            >
+              {creating ? "Creating…" : "+"}
             </Button>
           ),
         } as TActionItem,

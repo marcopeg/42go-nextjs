@@ -16,7 +16,6 @@ export default function ProfilePage() {
   return (
     <AppLayout
       title="Profile"
-      subtitle="Manage your account settings and preferences"
       stickyHeader={true}
       actions={[
         {
@@ -50,50 +49,7 @@ export default function ProfilePage() {
             <Button className="w-full">Edit Profile</Button>
           </div>
         </SimplePanel>
-
-        <SimplePanel title="Preferences">
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Theme</label>
-              <p className="text-sm text-muted-foreground mt-1">System</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Language</label>
-              <p className="text-sm text-muted-foreground mt-1">English</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Timezone</label>
-              <p className="text-sm text-muted-foreground mt-1">UTC</p>
-            </div>
-            <Button variant="outline" className="w-full">
-              Update Preferences
-            </Button>
-          </div>
-        </SimplePanel>
       </div>
-
-      <SimplePanel title="Security">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Two-Factor Authentication</p>
-              <p className="text-sm text-muted-foreground">
-                Add an extra layer of security to your account
-              </p>
-            </div>
-            <Button variant="outline">Enable</Button>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Change Password</p>
-              <p className="text-sm text-muted-foreground">
-                Update your account password
-              </p>
-            </div>
-            <Button variant="outline">Change</Button>
-          </div>
-        </div>
-      </SimplePanel>
 
       {/* Guarded content now via SimplePanel policy prop */}
       <SimplePanel
