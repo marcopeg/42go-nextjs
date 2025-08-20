@@ -29,6 +29,7 @@ exports.seed = async function (knex) {
     // Add Admin user
     const adminId = uuidv4();
     await trx("auth.users").insert({
+      app_id: "default",
       id: adminId,
       name: "admin",
       email: "admin@admin.com",
@@ -42,6 +43,7 @@ exports.seed = async function (knex) {
     // Add John Doe user
     const johnDoeId = uuidv4();
     await trx("auth.users").insert({
+      app_id: "default",
       id: johnDoeId,
       name: "john",
       email: "john.doe@example.com",
@@ -55,6 +57,7 @@ exports.seed = async function (knex) {
     // Add Jane Doe user
     const janeDoeId = uuidv4();
     await trx("auth.users").insert({
+      app_id: "default",
       id: janeDoeId,
       name: "jane",
       email: "jane.doe@example.com",

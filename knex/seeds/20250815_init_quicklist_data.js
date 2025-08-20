@@ -5,17 +5,54 @@
  */
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { v4: uuidv4 } = require("uuid");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const bcrypt = require("bcrypt");
+
+const hashPassword = async (password) => {
+  const saltRounds = 10;
+  return bcrypt.hash(password, saltRounds);
+};
 
 exports.seed = async function seed(knex) {
   await knex.transaction(async (trx) => {
     // Resolve users by email
     const getUserByEmail = async (email) => {
-      const row = await trx("auth.users").select("id").where({ email }).first();
+      const row = await trx("auth.users")
+        .select("id")
+        .where({ app_id: "default" })
+        .andWhere({ email })
+        .first();
       if (!row) throw new Error(`Missing user with email ${email}`);
       return row.id;
     };
 
-    const adminId = await getUserByEmail("admin@admin.com");
+    const johnDoeId = uuidv4();
+    await trx("auth.users").insert({
+      app_id: "quicklist",
+      id: johnDoeId,
+      name: "john",
+      email: "john.doe@example.com",
+      password: await hashPassword("john"),
+      image: "https://api.dicebear.com/8.x/adventurer/svg?seed=john-doe",
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    console.log(`Created John Doe user with ID: ${johnDoeId}`);
+
+    const janeDoeId = uuidv4();
+    await trx("auth.users").insert({
+      app_id: "quicklist",
+      id: janeDoeId,
+      name: "jane",
+      email: "jane.doe@example.com",
+      password: await hashPassword("jane"),
+      image: "https://api.dicebear.com/8.x/adventurer/svg?seed=jane-doe",
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    console.log(`Created jane Doe user with ID: ${janeDoeId}`);
+
+    // Seed admin data
     const johnId = await getUserByEmail("john.doe@example.com");
     const janeId = await getUserByEmail("jane.doe@example.com");
 

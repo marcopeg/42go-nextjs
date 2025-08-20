@@ -1,20 +1,28 @@
+import { v4 as uuidv4 } from "uuid";
 import { getDB } from "@/42go/db";
 import { getUserGrants, getUserRoles } from "@/42go/policy/access";
+import { getAppID } from "@/42go/config/app-config";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const signIn = async ({ user, account }: any) => {
+  // ProviderID will store the tokens as unique tokens per app/user
+  const appID = await getAppID();
+  // Use explicit app_id column instead of overloading provider
+
   if (account?.provider === "github" || account?.provider === "google") {
     try {
       const db = getDB();
       const existingUser = await db("auth.users")
-        .where("email", user.email!)
+        .where("app_id", appID)
+        .andWhere("email", user.email!)
         .first();
 
       if (existingUser) {
         const existingAccount = await db("auth.accounts")
           .where({
             provider: account.provider,
-            provider_account_id: account.providerAccountId,
+            account_id: account.providerAccountId,
+            app_id: appID,
           })
           .first();
 
@@ -23,7 +31,8 @@ export const signIn = async ({ user, account }: any) => {
             user_id: existingUser.id,
             type: account.type,
             provider: account.provider,
-            provider_account_id: account.providerAccountId,
+            account_id: account.providerAccountId,
+            app_id: appID,
             access_token: account.access_token,
             refresh_token: account.refresh_token,
             expires_at: account.expires_at,
@@ -31,7 +40,27 @@ export const signIn = async ({ user, account }: any) => {
             scope: account.scope,
             id_token: account.id_token,
             session_state: account.session_state,
+            created_at: new Date(),
+            updated_at: new Date(),
           });
+        } else {
+          // Keep provider account tokens fresh on subsequent sign-ins
+          await db("auth.accounts")
+            .where({
+              provider: account.provider,
+              account_id: account.providerAccountId,
+              app_id: appID,
+            })
+            .update({
+              access_token: account.access_token,
+              refresh_token: account.refresh_token,
+              expires_at: account.expires_at,
+              token_type: account.token_type,
+              scope: account.scope,
+              id_token: account.id_token,
+              session_state: account.session_state,
+              updated_at: new Date(),
+            });
         }
 
         await db("auth.users")
@@ -44,11 +73,11 @@ export const signIn = async ({ user, account }: any) => {
 
         user.id = existingUser.id;
       } else {
-        const newUserId = `usr_${Date.now()}_${Math.random()
-          .toString(36)
-          .substring(2)}`;
+        // const newUserId = `${account.provider}_${account.providerAccountId}`;
+        const newUserId = uuidv4();
 
         await db("auth.users").insert({
+          app_id: appID,
           id: newUserId,
           name: user.name,
           email: user.email,
@@ -62,7 +91,8 @@ export const signIn = async ({ user, account }: any) => {
           user_id: newUserId,
           type: account.type,
           provider: account.provider,
-          provider_account_id: account.providerAccountId,
+          account_id: account.providerAccountId,
+          app_id: appID,
           access_token: account.access_token,
           refresh_token: account.refresh_token,
           expires_at: account.expires_at,
@@ -70,6 +100,8 @@ export const signIn = async ({ user, account }: any) => {
           scope: account.scope,
           id_token: account.id_token,
           session_state: account.session_state,
+          created_at: new Date(),
+          updated_at: new Date(),
         });
 
         user.id = newUserId;

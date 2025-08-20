@@ -20,14 +20,13 @@ exports.up = function (knex) {
 
     // Create auth.roles_users table
     await trx.schema.withSchema("auth").createTable("roles_users", (table) => {
+      table.text("app_id").notNullable().defaultTo("default");
       table.text("role_id").notNullable();
       table.text("user_id").notNullable();
-      // App scope for multi-tenant RBAC
-      table.text("app_id").notNullable().defaultTo("default");
       table.timestamp("created_at").notNullable().defaultTo(trx.fn.now());
 
       // Primary key constraint for uniqueness
-      table.primary(["role_id", "user_id", "app_id"]);
+      table.primary(["app_id", "user_id", "role_id"]);
 
       // Foreign key constraints
       table
@@ -58,14 +57,13 @@ exports.up = function (knex) {
 
     // Create auth.roles_grants table
     await trx.schema.withSchema("auth").createTable("roles_grants", (table) => {
+      table.text("app_id").notNullable().defaultTo("default");
       table.text("role_id").notNullable();
       table.text("grant_id").notNullable();
-      // App scope for multi-tenant RBAC
-      table.text("app_id").notNullable().defaultTo("default");
       table.timestamp("created_at").notNullable().defaultTo(trx.fn.now());
 
       // Primary key constraint for uniqueness
-      table.primary(["role_id", "grant_id", "app_id"]);
+      table.primary(["app_id", "role_id", "grant_id"]);
 
       // Foreign key constraints
       table

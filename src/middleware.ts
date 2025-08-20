@@ -3,10 +3,10 @@ import type { NextRequest } from "next/server";
 import { matchAppID, APP_ID_HEADER } from "@/42go/lib/app-id";
 
 export async function middleware(request: NextRequest) {
-  console.log("@@@@@ MIDDLEWARE :: START");
+  // console.log("@@@@@ MIDDLEWARE :: START");
   // Resolve the AppID
   const appID = await matchAppID(request);
-  console.log("@matched appID", appID);
+  console.log("@appID:", appID);
 
   // Set the AppID header if resolved
   const requestHeaders = new Headers(request.headers);
@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
       "";
     response.headers.set("x-mw-host", host);
   } catch {}
-  console.log("@@@@@ MIDDLEWARE :: END");
+  // console.log("@@@@@ MIDDLEWARE :: END");
   return response;
 }
 

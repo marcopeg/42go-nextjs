@@ -22,7 +22,6 @@ export default async function LoginPage() {
   const callbackUrl = safeInternalPath(configured) ?? fallback;
   const providers: string[] =
     appConfig?.auth?.providers.map((provider) => provider.type) || [];
-  const isDev = process.env.NODE_ENV !== "production";
 
   let tabIndex = 0;
   const socialLogins = providers
@@ -54,9 +53,6 @@ export default async function LoginPage() {
   return (
     <div className="login-page max-w-md mx-auto mt-8 p-6">
       <h1 className="text-2xl font-bold text-center mb-6">Sign In</h1>
-      {isDev && (
-        <p data-callback-url={callbackUrl}>callbackUrl: {callbackUrl}</p>
-      )}
 
       {/* Error Display */}
       <AuthError />

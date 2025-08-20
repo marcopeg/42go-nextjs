@@ -9,22 +9,27 @@ exports.up = function (knex) {
 
     // Create users table in auth schema
     knex.schema.withSchema("auth").createTable("users", (table) => {
+      table.text("app_id").notNullable();
       table.text("id").primary().notNullable();
       table.text("name");
-      table.text("email").notNullable().unique();
+      table.text("email").notNullable();
       table.timestamp("email_verified");
       table.text("image");
       table.text("password");
       table.timestamp("created_at").notNullable().defaultTo(knex.fn.now());
       table.timestamp("updated_at").notNullable().defaultTo(knex.fn.now());
+
+      table.unique(["app_id", "name"]);
+      table.unique(["app_id", "email"]);
     }),
 
     // Create accounts table in auth schema
     knex.schema.withSchema("auth").createTable("accounts", (table) => {
+      table.text("app_id").notNullable();
+      table.text("account_id").notNullable();
       table.text("user_id").notNullable();
-      table.text("type").notNullable();
       table.text("provider").notNullable();
-      table.text("provider_account_id").notNullable();
+      table.text("type").notNullable();
       table.text("refresh_token");
       table.text("access_token");
       table.integer("expires_at");
@@ -32,9 +37,11 @@ exports.up = function (knex) {
       table.text("scope");
       table.text("id_token");
       table.text("session_state");
+      table.timestamp("created_at").notNullable().defaultTo(knex.fn.now());
+      table.timestamp("updated_at").notNullable().defaultTo(knex.fn.now());
 
       // Create primary key constraint
-      table.primary(["provider", "provider_account_id"]);
+      table.primary(["app_id", "account_id", "provider"]);
 
       // Create foreign key constraint
       table

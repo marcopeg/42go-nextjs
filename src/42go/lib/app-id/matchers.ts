@@ -74,7 +74,7 @@ export const matchByHeaderPatterns = (
   request: NextRequest,
   apps: Record<string, TAppConfigItem>
 ): TAppID | null => {
-  console.log("@headers", request.headers);
+  // console.log("@headers", request.headers);
   for (const [key, cfg] of Object.entries(apps)) {
     const matchCfg = cfg.match;
     if (matchCfg?.header) {
@@ -95,7 +95,7 @@ export const matchByUrl = (
   apps: Record<string, TAppConfigItem>
 ): TAppID | null => {
   const host = request.headers.get("host");
-  console.log("@host", host);
+  // console.log("@host", host);
   for (const [key, cfg] of Object.entries(apps)) {
     const p = cfg.match?.url;
     if (!p) continue;

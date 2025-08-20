@@ -114,7 +114,7 @@ export const matchByHeaderPatterns = (
     if (matchConfig && "header" in matchConfig && matchConfig.header) {
       try {
         if (matchHeaderConfig(request.headers, matchConfig.header)) {
-          console.log(`Header match found for app: ${appKey}`);
+          // console.log(`Header match found for app: ${appKey}`);
           return appKey as TAppID;
         }
       } catch (error) {

@@ -18,6 +18,8 @@ type InviteRow = {
   email: string;
   title: string;
   created_at: Date;
+  owner_username: string;
+  owner_email: string;
 };
 
 const toISO = (d: Date | string): string =>
@@ -128,15 +130,22 @@ const getQuicklists = async (req: Request) => {
     updated_at: toISO(r.updated_at),
   }));
 
-  // Invites for current email
+  // Invites for current email, include owner's username and email
   const invitesRows = (
     await db
       .select<InviteRow[]>(
-        db.raw(`i.project_id, i.email, p.title, i.created_at`)
+        db.raw(
+          `i.project_id, i.email, p.title, i.created_at,
+           COALESCE(u.name, split_part(u.email, '@', 1)) as owner_username,
+           u.email as owner_email`
+        )
       )
       .from("quicklist.invites as i")
       .join("quicklist.projects as p", "p.id", "i.project_id")
-      .where("i.email", userEmail)
+      .join("auth.users as u", function () {
+        this.on("p.owned_by", "=", "u.id").andOn("u.app_id", "=", "p.app_id");
+      })
+      .whereRaw("LOWER(i.email) = LOWER(?)", [userEmail])
       .andWhere("p.app_id", appId)
       .andWhere((qb) => {
         qb.whereNull("i.expires_at").orWhere("i.expires_at", ">", db.fn.now());
@@ -147,6 +156,8 @@ const getQuicklists = async (req: Request) => {
     email: r.email,
     title: r.title,
     created_at: toISO(r.created_at),
+    owner_username: r.owner_username,
+    owner_email: r.owner_email,
   }));
 
   return Response.json({ projects, invites: invitesRows, nextCursor });

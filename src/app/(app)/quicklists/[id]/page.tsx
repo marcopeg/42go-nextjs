@@ -24,6 +24,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS, type Transform } from "@dnd-kit/utilities";
+import { useToast } from "@/components/ui/toast";
 
 type TProject = {
   id: string;
@@ -419,6 +420,7 @@ export default function ProjectDetailsPage() {
   const desktopInputRef = useRef<HTMLInputElement | null>(null);
   const mobileInputRef = useRef<HTMLInputElement | null>(null);
   const [mounted, setMounted] = useState(false);
+  const { toast } = useToast();
 
   const focusComposer = () => {
     const isDesktop = typeof window !== "undefined" && window.innerWidth >= 768;
@@ -540,6 +542,13 @@ export default function ProjectDetailsPage() {
           prev.map((t) => (t.id === editingId ? { ...t, ...result.task } : t))
         );
       }
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Failed to edit item",
+        description:
+          e instanceof Error ? e.message : "Unknown error editing item",
+      });
     } finally {
       setSavingEdit(false);
       handleCancelEdit();
@@ -578,6 +587,13 @@ export default function ProjectDetailsPage() {
       setNewTitle("");
       // keep focus for rapid entry
       focusComposer();
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Failed to create item",
+        description:
+          e instanceof Error ? e.message : "Unknown error creating item",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -634,13 +650,6 @@ export default function ProjectDetailsPage() {
     });
   };
 
-  // Calculate subtitle for AppLayout
-  const subtitle = projectData?.project?.updated_at
-    ? `Last updated: ${new Date(
-        projectData.project.updated_at
-      ).toLocaleString()}`
-    : undefined;
-
   // List title editing handlers
   const startEditList = () => {
     setDraftListTitle(listTitle);
@@ -670,6 +679,13 @@ export default function ProjectDetailsPage() {
         project: { id: string; title: string; updated_at: string };
       };
       if (data?.project?.title) setListTitle(data.project.title);
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Failed to edit list title",
+        description:
+          e instanceof Error ? e.message : "Unknown error editing list title",
+      });
     } finally {
       setSavingList(false);
       cancelEditList();
@@ -738,12 +754,22 @@ export default function ProjectDetailsPage() {
     </div>
   );
 
+  const actions = [
+    {
+      type: "link" as const,
+      label: "Info",
+      href: `/quicklists/${projectId}/info`,
+      size: "sm" as const,
+      variant: "outline" as const,
+    },
+  ];
+
   return (
     <AppLayout
       hideMobileMenu
       title={HeaderTitle}
-      subtitle={subtitle}
-      backBtn={{ to: "/quicklists", hideDesktop: true }}
+      backBtn={{ to: "/quicklists" }}
+      actions={actions}
       policy={{ require: { feature: "page:quicklists" } }}
     >
       {/* Align list with header: remove extra horizontal padding */}

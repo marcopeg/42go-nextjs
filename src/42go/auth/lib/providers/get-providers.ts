@@ -3,9 +3,10 @@ import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
 import { getDB } from "@/42go/db";
-import { getAppConfig } from "@/42go/config/app-config";
+import { getAppConfig, getAppID } from "@/42go/config/app-config";
 
 export const getProviders = async () => {
+  const appID = await getAppID();
   const config = await getAppConfig();
 
   return (config?.auth?.providers || [])
@@ -32,7 +33,14 @@ export const getProviders = async () => {
               try {
                 const db = getDB();
                 const user = await db("auth.users")
-                  .where("name", "ilike", credentials.username)
+                  .where("app_id", appID)
+                  .andWhere(function () {
+                    this.where("name", "ilike", credentials.username).orWhere(
+                      "email",
+                      "ilike",
+                      credentials.username
+                    );
+                  })
                   .first();
 
                 if (!user) {

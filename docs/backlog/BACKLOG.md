@@ -2,21 +2,27 @@
 
 A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
 
-(LastID: acu)
+(LastID: adc)
 
 ## Current Task
 
-<!-- none -->
-
 ## Upcoming Tasks
+
+### QuickList
+
+- [adb] Reject invite [🔗](./draft/adb-reject-invite.md)
+
+### Boilerplate
+
+- [adc] Add tenants table [🔗](./tasks/adc-tenants.md)
 
 ## Drafts
 
 ### QuickList
 
+- [acz] Make the app iPhone home-screen compatible [🔗](./draft/acz-make-the-app-iphone-home-screen-compatible.md)
 - [ack] quicklist - API: delete task [🔗](./draft/ack-quicklist-api-delete-task.md)
 - [acr] quicklist - API: delete project [🔗](./draft/acr-quicklist-api-delete-project.md)
-- [aba] quicklist - invite collaborator [🔗](./draft/aba-quicklist-invite-collaborator.md)
 
 ### RBAC
 
@@ -62,29 +68,31 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ### QuickList
 
-- [acu] quicklist - isolate data by app-id [🔗](./draft/acu-isolate-data-appid.md) ✅ COMPLETE - Projects.app_id added, APIs scoped by app, seeds updated, QA passed
-- [aax] quicklist - create new list [🔗](./draft/aax-quicklist-create-new-list.md)
-- [act] quicklist - support check/uncheck task in UI [🔗](./draft/act-quicklist-support-check-uncheck-task-ui.md)
-- [acu] quicklist - support edit task title in task list UI [🔗](./draft/acu-quicklist-support-edit-task-title-ui.md)
-- [aaz] quicklist - edit list page [🔗](./draft/aaz-quicklist-edit-list-page.md)
-- [aby] quicklist - API: create project with initial task [🔗](./draft/aby-quicklist-api-create-project.md)
-- [acg] quicklist - API: update task (title/position/completed) [🔗](./draft/acg-quicklist-api-update-task.md)
-- [aay] quicklist - view list page [🔗](./draft/aay-quicklist-view-list-page.md)
-- [acc] quicklist - API: get project with tasks (conditional) [🔗](./draft/acc-quicklist-api-get-project.md) ✅ COMPLETE - ETag conditional caching, timestamp format, query param support, access control
-- [aaw] quicklist - projects page [🔗](./draft/aaw-quicklist-projects-page.md)
-- [abw] quicklist - API: list projects and invites [🔗](./draft/abw-quicklist-api-get-projects.md)
-- [abb] quicklist - data model [🔗](./draft/abb-quicklist-data-model.md)
+- [ada] Accept invite [🔗](./archive/ada-accept-invite.md)
+- [aba] quicklist - invite collaborator [🔗](./archive/aba-quicklist-invite-collaborator.md)
+- [acu] quicklist - isolate data by app-id [🔗](./archive/acu-isolate-data-appid.md) ✅ COMPLETE - Projects.app_id added, APIs scoped by app, seeds updated, QA passed
+- [aax] quicklist - create new list [🔗](./archive/aax-quicklist-create-new-list.md)
+- [act] quicklist - support check/uncheck task in UI [🔗](./archive/act-quicklist-support-check-uncheck-task-ui.md)
+- [acu] quicklist - support edit task title in task list UI [🔗](./archive/acu-quicklist-support-edit-task-title-ui.md)
+- [aaz] quicklist - edit list page [🔗](./archive/aaz-quicklist-edit-list-page.md)
+- [aby] quicklist - API: create project with initial task [🔗](./archive/aby-quicklist-api-create-project.md)
+- [acg] quicklist - API: update task (title/position/completed) [🔗](./archive/acg-quicklist-api-update-task.md)
+- [aay] quicklist - view list page [🔗](./archive/aay-quicklist-view-list-page.md)
+- [acc] quicklist - API: get project with tasks (conditional) [🔗](./archive/acc-quicklist-api-get-project.md) ✅ COMPLETE - ETag conditional caching, timestamp format, query param support, access control
+- [aaw] quicklist - projects page [🔗](./archive/aaw-quicklist-projects-page.md)
+- [abw] quicklist - API: list projects and invites [🔗](./archive/abw-quicklist-api-get-projects.md)
+- [abb] quicklist - data model [🔗](./archive/abb-quicklist-data-model.md)
 
 ### Boilerplate
 
-- [acs] devise how to test api through authenticated curl calls [🔗](./draft/acs-test-api.md)
-- [act] App default page [🔗](./draft/act-app-default-page.md)
+- [acs] devise how to test api through authenticated curl calls [🔗](./archive/acs-test-api.md)
+- [act] App default page [🔗](./archive/act-app-default-page.md)
 - [aao] Add app name to waitlist table
 - [aap] Add app name to feedback table
-- [aee] Protect feedback route with feature flag [🔗](./draft/aee-protect-feedback-route-with-feature-flag.md)
-- [aed] Protect waitlist route with feature flag [🔗](./draft/aed-protect-waitlist-route-with-feature-flag.md)
-- [aen] Move logout button to the profile's page top bar [🔗](./draft/aen-move-logout-button-to-profile-top-bar.md)
-- [aal] RBAC Menu Integration 🔗 [story](./tasks/aal-rbac-menu-integration.md)
+- [aee] Protect feedback route with feature flag [🔗](./archive/aee-protect-feedback-route-with-feature-flag.md)
+- [aed] Protect waitlist route with feature flag [🔗](./archive/aed-protect-waitlist-route-with-feature-flag.md)
+- [aen] Move logout button to the profile's page top bar [🔗](./archive/aen-move-logout-button-to-profile-top-bar.md)
+- [aal] RBAC Menu Integration 🔗 [story](./archive/aal-rbac-menu-integration.md)
 - [acj] 🦲 Next standalone has `.env` file [🔗](./archive/acj-next-standalone.md) ✅ COMPLETE - .env excluded from images, runtime env injection, docs + verification script
 - [ael] Stack Block Component [🔗](./archive/ael-stack-block-component.md)
 - [aek] Add Call To Action content block [🔗](./archive/aek-add-call-to-action-content-block.md) (refined – ready to plan k2)

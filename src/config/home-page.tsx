@@ -10,8 +10,8 @@ export const HomePage: Page = {
       subtitle: "NextJS, Tailwind CSS, and 🤖",
       actions: [
         {
-          label: "Buy",
-          href: "/buy",
+          label: "Join",
+          href: "/login",
           style: "primary",
         },
         {

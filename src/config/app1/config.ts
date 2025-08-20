@@ -1,5 +1,5 @@
 import { TAppConfigItem } from "../../AppConfig";
-import { CheckSquare } from "lucide-react";
+import { CheckSquare, User } from "lucide-react";
 
 import { HomePage } from "@/config/home-page";
 import { AboutPage } from "@/config/about-page";
@@ -56,6 +56,20 @@ export default {
     },
     docs: {
       source: "/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default",
+    },
+  },
+  app: {
+    menu: {
+      mobile: {
+        disableMore: true,
+        items: [
+          {
+            title: "Account",
+            href: "/profile",
+            icon: User,
+          },
+        ],
+      },
     },
   },
   auth: {
