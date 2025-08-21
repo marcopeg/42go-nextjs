@@ -1,9 +1,9 @@
 import { TAppConfigItem } from "../../AppConfig";
 
-import { User, ListChecks } from "lucide-react";
+import { User, ListTodo } from "lucide-react";
 
 export default {
-  name: "quicklist",
+  name: "",
   match: {
     url: ["^quicklist\\.localhost:\\d+$", "^42go.ngrok.app+$"],
   },
@@ -83,7 +83,7 @@ export default {
           {
             title: "Projects",
             href: "/quicklists",
-            icon: ListChecks,
+            icon: ListTodo,
           },
         ],
       },
@@ -93,7 +93,7 @@ export default {
           {
             title: "Projects",
             href: "/quicklists",
-            icon: ListChecks,
+            icon: ListTodo,
           },
           {
             title: "Account",

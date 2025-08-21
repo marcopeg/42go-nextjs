@@ -21,6 +21,7 @@ export const AppLayout = ({
   children,
   title,
   subtitle,
+  icon,
   actions,
   stickyHeader = true,
   backBtn,
@@ -83,6 +84,7 @@ export const AppLayout = ({
         <Toolbar
           title={title}
           subtitle={subtitle}
+          icon={icon}
           actions={actions}
           backBtn={backBtn}
         />

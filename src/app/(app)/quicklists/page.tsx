@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import type { TActionItem } from "@/42go/layouts/app/types";
 import { AppLayout } from "@/42go/layouts/app/AppLayout";
 import { DisplayDate } from "@/42go/components/DisplayDate";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight, ChevronDown, ListTodo } from "lucide-react";
 import * as RadixPopover from "@radix-ui/react-popover";
 
 interface ProjectsResponse {
@@ -126,6 +126,7 @@ export default function ProjectsPage() {
 
   return (
     <AppLayout
+      icon={ListTodo}
       title="QuickList"
       subtitle="Todos made simple"
       actions={[

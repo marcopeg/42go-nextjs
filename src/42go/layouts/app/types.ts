@@ -48,6 +48,7 @@ export interface AppLayoutProps {
   children: React.ReactNode;
   title: React.ReactNode;
   subtitle?: string;
+  icon?: React.ComponentType<{ className?: string }> | string;
   actions?: TActionItem[];
   stickyHeader?: boolean;
   // Rich back button configuration for the top toolbar
