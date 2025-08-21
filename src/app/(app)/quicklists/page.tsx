@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
-import type { TActionItem } from "@/42go/layouts/app/types";
 import { AppLayout } from "@/42go/layouts/app/AppLayout";
 import { DisplayDate } from "@/42go/components/DisplayDate";
 import { ChevronRight, ChevronDown, ListTodo } from "lucide-react";
@@ -129,105 +128,120 @@ export default function ProjectsPage() {
       icon={ListTodo}
       title="QuickList"
       subtitle="Todos made simple"
-      actions={[
-        {
-          type: "component",
-          component: ({ disabled }: { disabled?: boolean }) => (
-            <Button
-              onClick={handleCreate}
-              disabled={creating || disabled}
-              variant={"ghost"}
-            >
-              {creating ? "Creating…" : "+"}
-            </Button>
-          ),
-        } as TActionItem,
-      ]}
+      disablePadding
       policy={{ require: { feature: "page:quicklists" } }}
     >
-      <div className="max-w-3xl w-full pt-2 pb-24 md:pb-0">
+      {/* Align list with header on desktop; no horizontal padding on mobile */}
+      <div className="max-w-3xl w-full pt-2 pb-24 md:pb-0 px-0">
         {error && (
-          <div className="text-sm text-red-600 dark:text-red-400">{error}</div>
+          <div className="text-sm text-red-600 dark:text-red-400 p-4 border border-red-200 dark:border-red-800 rounded-md bg-red-50 dark:bg-red-950/20 mx-4 md:mx-6">
+            {error}
+          </div>
         )}
-        {/* Unified list: invitations and projects */}
-        {data.invites.length > 0 || data.projects.length > 0 ? (
-          <ul className="divide-y rounded-md border">
-            {/* Invitations first */}
-            {data.invites.map((invite) => (
-              <li
-                key={invite.project_id + invite.email}
-                className="p-3 flex items-center justify-between hover:bg-muted/20"
-              >
-                <div className="space-y-1">
-                  <div className="font-medium">
-                    {invite.title}
-                    <span className="ml-2 text-xs rounded px-2 py-0.5 bg-yellow-400/15 text-yellow-700 dark:text-yellow-400 border border-yellow-600/30">
-                      invite
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-1">
-                    <DisplayDate date={invite.created_at} />
-                    <span className="text-muted-foreground">|</span>
-                    <span>invited by:</span>
-                    <span className="relative group font-medium text-muted-foreground cursor-pointer">
-                      {invite.owner_username}
-                      <span className="absolute left-1/2 -translate-x-1/2 mt-2 z-10 hidden group-hover:block bg-popover text-xs text-muted-foreground px-2 py-1 rounded shadow-lg border">
-                        {invite.owner_email}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-                <SplitAcceptReject
-                  busy={busyInvite === invite.project_id}
-                  onAccept={() => handleJoin(invite.project_id)}
-                  onReject={() => handleReject(invite.project_id, invite.email)}
-                />
-              </li>
-            ))}
-            {/* Projects */}
-            {data.projects.map((p) => (
-              <li key={p.id} className="p-3 hover:bg-muted/20">
-                <Link
-                  href={`/quicklists/${p.id}`}
-                  className="flex items-center justify-between"
+
+        {/* Projects list container */}
+        <div className="overflow-hidden md:border md:rounded-md md:mx-6 md:mt-6 md:mb-6">
+          {/* Unified list: invitations and projects */}
+          {data.invites.length > 0 || data.projects.length > 0 ? (
+            <ul className="divide-y">
+              {/* Invitations first */}
+              {data.invites.map((invite) => (
+                <li
+                  key={invite.project_id + invite.email}
+                  className="p-3 flex items-center justify-between hover:bg-muted/20"
                 >
                   <div className="space-y-1">
                     <div className="font-medium">
-                      {p.title}{" "}
-                      {p.owned ? (
-                        <span className="ml-2 text-xs rounded px-2 py-0.5 bg-green-600/15 text-green-700 dark:text-green-400 border border-green-600/30">
-                          owner
-                        </span>
-                      ) : (
-                        <span className="ml-2 text-xs rounded px-2 py-0.5 bg-blue-600/15 text-blue-700 dark:text-blue-400 border border-blue-600/30">
-                          {p.role}
-                        </span>
-                      )}
+                      {invite.title}
+                      <span className="ml-2 text-xs rounded px-2 py-0.5 bg-yellow-400/15 text-yellow-700 dark:text-yellow-400 border border-yellow-600/30">
+                        invite
+                      </span>
                     </div>
-                    <DisplayDate
-                      date={p.updated_at}
-                      className="text-xs text-muted-foreground"
-                    />
+                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                      <DisplayDate date={invite.created_at} />
+                      <span className="text-muted-foreground">|</span>
+                      <span>invited by:</span>
+                      <span className="relative group font-medium text-muted-foreground cursor-pointer">
+                        {invite.owner_username}
+                        <span className="absolute left-1/2 -translate-x-1/2 mt-2 z-10 hidden group-hover:block bg-popover text-xs text-muted-foreground px-2 py-1 rounded shadow-lg border">
+                          {invite.owner_email}
+                        </span>
+                      </span>
+                    </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="text-sm text-muted-foreground">No lists yet.</div>
-        )}
-        <div className="pt-2">
-          {cursor && (
+                  <SplitAcceptReject
+                    busy={busyInvite === invite.project_id}
+                    onAccept={() => handleJoin(invite.project_id)}
+                    onReject={() =>
+                      handleReject(invite.project_id, invite.email)
+                    }
+                  />
+                </li>
+              ))}
+              {/* Projects */}
+              {data.projects.map((p) => (
+                <li key={p.id} className="p-3 hover:bg-muted/20">
+                  <Link
+                    href={`/quicklists/${p.id}`}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="space-y-1">
+                      <div className="font-medium">
+                        {p.title}{" "}
+                        {p.owned ? (
+                          <span className="ml-2 text-xs rounded px-2 py-0.5 bg-green-600/15 text-green-700 dark:text-green-400 border border-green-600/30">
+                            owner
+                          </span>
+                        ) : (
+                          <span className="ml-2 text-xs rounded px-2 py-0.5 bg-blue-600/15 text-blue-700 dark:text-blue-400 border border-blue-600/30">
+                            {p.role}
+                          </span>
+                        )}
+                      </div>
+                      <DisplayDate
+                        date={p.updated_at}
+                        className="text-xs text-muted-foreground"
+                      />
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <ListTodo className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No lists yet</p>
+              <p className="text-sm">Create your first list to get started</p>
+            </div>
+          )}
+        </div>
+
+        {/* Add new list button - separated by divider */}
+        <div className="px-4 md:px-6">
+          <div className="border-t my-6"></div>
+          <Button
+            onClick={handleCreate}
+            disabled={creating}
+            className="w-full"
+            size="lg"
+          >
+            {creating ? "Creating…" : "Add new list"}
+          </Button>
+        </div>
+
+        {/* Load more button */}
+        {cursor && (
+          <div className="px-4 md:px-6 pt-4">
             <button
-              className="btn btn-secondary"
+              className="btn btn-secondary w-full"
               onClick={() => load(cursor)}
               disabled={loading}
             >
               {loading ? "Loading…" : "Load more"}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </AppLayout>
   );
