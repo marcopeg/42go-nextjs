@@ -40,6 +40,7 @@ import {
   useProject,
   useRefreshProject,
   useInvalidateProjectCache,
+  useUpdateProjectInCache,
   ProjectData,
 } from "@/hooks/useQuicklists";
 import {
@@ -416,6 +417,7 @@ export default function ProjectDetailsPage() {
   } = useProject(projectId);
   const refreshProject = useRefreshProject(projectId);
   const invalidateProjectCache = useInvalidateProjectCache();
+  const updateProjectInCache = useUpdateProjectInCache();
   const [tasks, setTasks] = useState<TTask[]>(projectData?.tasks || []);
   const [listTitle, setListTitle] = useState<string>(
     projectData?.project?.title || ""
@@ -550,21 +552,42 @@ export default function ProjectDetailsPage() {
     return [...pending, ...done];
   }, [tasks]);
 
-  // Handler for check/uncheck
+  // Handler for check/uncheck with optimistic updates
   const handleToggle = async (taskId: string, completed: boolean) => {
+    // Store original task for rollback on error
+    const originalTask = tasks.find((t) => t.id === taskId);
+    if (!originalTask) return;
+
+    // Optimistic update: update local state immediately
+    const now = new Date().toISOString();
+    const optimisticUpdates = {
+      completed_at: completed ? now : null,
+      updated_at: now,
+    };
+
+    // If marking as completed, add visual feedback before sorting moves it
+    if (completed) {
+      setMovingDownIds((prev) => new Set(prev).add(taskId));
+      // remove after brief delay ~500ms
+      setTimeout(() => {
+        setMovingDownIds((prev) => {
+          const n = new Set(prev);
+          n.delete(taskId);
+          return n;
+        });
+      }, 600);
+    }
+
+    // Apply optimistic update immediately
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, ...optimisticUpdates } : t))
+    );
+
+    // Update the projects list cache with new updated_at without refetch
+    updateProjectInCache(projectId, { updated_at: now });
+
+    // Call server in background
     try {
-      // If marking as completed, add visual feedback before sorting moves it
-      if (completed) {
-        setMovingDownIds((prev) => new Set(prev).add(taskId));
-        // remove after brief delay ~500ms
-        setTimeout(() => {
-          setMovingDownIds((prev) => {
-            const n = new Set(prev);
-            n.delete(taskId);
-            return n;
-          });
-        }, 600);
-      }
       const res = await fetch(`/api/quicklists/${projectId}/${taskId}`, {
         method: "PATCH",
         headers: {
@@ -573,24 +596,34 @@ export default function ProjectDetailsPage() {
         credentials: "same-origin",
         body: JSON.stringify({ completed }),
       });
+
       if (!res.ok) {
         throw new Error(`Failed to update task: ${res.status}`);
       }
+
       const result = await res.json();
       if (result?.task) {
+        // Server returned updated data, sync local state with server response
         setTasks((prev) =>
           prev.map((t) => (t.id === taskId ? { ...t, ...result.task } : t))
         );
-        // Invalidate the project cache since task changes update the project's updated_at
-        invalidateProjectCache(projectId, { taskUpdated: true });
-        // If completed, leave in-place very briefly so users see it change, then resort naturally via derived sortedTasks
-        if (completed) {
-          // noop: movingDownIds supplies transient animation; sortedTasks will move it next render anyway
-        }
+        // Update projects list cache with actual server timestamp
+        updateProjectInCache(projectId, { updated_at: result.task.updated_at });
       }
-    } catch {
-      // Optionally show error
-      // setError("Failed to update task");
+    } catch (error) {
+      // Rollback optimistic update on error
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? originalTask : t)));
+
+      // Show error toast
+      toast({
+        variant: "destructive",
+        title: "Failed to update task",
+        description:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      });
+
+      // Refetch data from server to ensure consistency
+      refetch();
     }
   };
 
