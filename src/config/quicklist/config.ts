@@ -66,7 +66,7 @@ export default {
       themeColor: "dark",
       backgroundColor: "dark",
       startUrl: "/quicklists",
-      scope: "/quicklists",
+      scope: "/",
       display: "standalone",
       icons: {
         appleTouch180: "/images/icons/quicklist-180.png",
