@@ -9,10 +9,10 @@ export interface TPricingBlock {
   title?: string;
   subtitle?: string;
   tiers: Array<{
-    name: string;
-    price: string;
-    period: string;
-    description: string;
+    name?: string;
+    price?: string;
+    period?: string;
+    description?: string;
     features: Array<{
       text: string;
       status: "included" | "excluded" | "coming-soon";
@@ -61,81 +61,95 @@ export const PricingBlock = ({ data }: { data: TPricingBlock }) => {
             </div>
           </ScrollAnimation>
         )}
-        <div
-          className={`grid grid-cols-1 md:grid-cols-${Math.min(
-            tiers.length,
-            3
-          )} gap-6 items-end`}
-        >
-        {tiers.map((tier, index) => (
-          <ScrollAnimation key={index} type="slideUp" delay={0.1 * (index + 1)}>
-            <div
-              className={`relative flex flex-col h-full p-8 rounded-lg border bg-background shadow-sm transition-transform duration-300 ${
-                tier.highlighted
-                  ? "border-primary shadow-lg scale-105 z-10"
-                  : ""
-              }`}
-            >
-              {tier.badge && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span
-                    className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                      tier.highlighted
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-accent text-accent-foreground"
-                    }`}
-                  >
-                    {tier.badge}
-                  </span>
-                </div>
-              )}
-              <div className="mb-4">
-                <h3 className="text-2xl font-bold text-center">
-                  <Markdown source={tier.name} />
-                </h3>
-                <div className="flex items-baseline justify-center mt-4">
-                  <span className="text-4xl font-bold">{tier.price}</span>
-                  <span className="text-muted-foreground ml-1">
-                    {tier.period}
-                  </span>
-                </div>
-                <div className="mt-2 text-center text-muted-foreground">
-                  <Markdown source={tier.description} />
-                </div>
-              </div>
-              <ul className="space-y-3 flex-1 min-h-[180px]">
-                {tier.features.map((feature, i) => (
-                  <li key={i} className="flex items-start">
-                    <span className="mr-2 mt-1">
-                      {getFeatureIcon(feature.status)}
-                    </span>
-                    <span
-                      className={
-                        feature.status === "excluded"
-                          ? "text-muted-foreground line-through"
-                          : ""
-                      }
-                    >
-                      {feature.text}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div
-                className={`mt-auto pt-8 flex items-end`}
-                style={{
-                  transform: tier.highlighted ? "translateY(-10px)" : "",
-                }}
+        <div className="flex justify-center">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-${Math.min(
+              tiers.length,
+              3
+            )} gap-6 items-end max-w-md mx-auto md:max-w-4xl`}
+          >
+            {tiers.map((tier, index) => (
+              <ScrollAnimation
+                key={index}
+                type="slideUp"
+                delay={0.1 * (index + 1)}
               >
-                <Link href={tier.cta.href} className="w-full">
-                  <Button className="w-full" variant="default">
-                    {tier.cta.label}
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </ScrollAnimation>
-        ))}
+                <div
+                  className={`relative flex flex-col h-full p-8 rounded-lg border bg-background shadow-sm transition-transform duration-300 ${
+                    tier.highlighted
+                      ? "border-primary shadow-lg scale-105 z-10"
+                      : ""
+                  }`}
+                >
+                  {tier.badge && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <span
+                        className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                          tier.highlighted
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-accent text-accent-foreground"
+                        }`}
+                      >
+                        {tier.badge}
+                      </span>
+                    </div>
+                  )}
+                  <div className="mb-4">
+                    {tier.name && (
+                      <h3 className="text-2xl font-bold text-center">
+                        <Markdown source={tier.name} />
+                      </h3>
+                    )}
+                    {tier.price && (
+                      <div className="flex items-baseline justify-center mt-4">
+                        <span className="text-4xl font-bold">{tier.price}</span>
+                        {tier.period && (
+                          <span className="text-muted-foreground ml-1">
+                            {tier.period}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {tier.description && (
+                      <div className="mt-2 text-center text-muted-foreground">
+                        <Markdown source={tier.description} />
+                      </div>
+                    )}
+                  </div>
+                  <ul className="space-y-3 flex-1 min-h-[180px]">
+                    {tier.features.map((feature, i) => (
+                      <li key={i} className="flex items-start">
+                        <span className="mr-2 mt-1">
+                          {getFeatureIcon(feature.status)}
+                        </span>
+                        <span
+                          className={
+                            feature.status === "excluded"
+                              ? "text-muted-foreground line-through"
+                              : ""
+                          }
+                        >
+                          {feature.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div
+                    className={`mt-auto pt-8 flex items-end`}
+                    style={{
+                      transform: tier.highlighted ? "translateY(-10px)" : "",
+                    }}
+                  >
+                    <Link href={tier.cta.href} className="w-full">
+                      <Button className="w-full" variant="default">
+                        {tier.cta.label}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </ScrollAnimation>
+            ))}
+          </div>
         </div>
       </div>
     </section>

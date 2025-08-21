@@ -37,7 +37,7 @@ export default {
           {
             type: "hero",
             title: "Quick**List**",
-            subtitle: "todos, **made simple**",
+            subtitle: "todos, **made simple** ❤️",
             actions: [
               {
                 href: "/login",
@@ -46,17 +46,28 @@ export default {
               },
             ],
           },
-          // {
-          //   type: "waitlist",
-          //   title: "Join the **Waitlist**",
-          //   subtitle: "Get early access. **No spam.**",
-          //   placeholder: "Your email address",
-          //   buttonLabel: "Join Now",
-          //   feedback: {
-          //     type: "message",
-          //     content: "You're on the list!",
-          //   },
-          // },
+          {
+            type: "pricing",
+            title: "Features",
+            subtitle: "For personal & Family use.",
+            tiers: [
+              {
+                // name: "Features",
+                // description: "For personal & Family use.",
+                features: [
+                  { text: "Unlimited lists", status: "included" },
+                  { text: "Unlimited tasks", status: "included" },
+                  { text: "Share up to 5 people", status: "included" },
+                  { text: "Drag and drop ordering", status: "included" },
+                  { text: "Checked items to the bottom", status: "included" },
+                  { text: "Mobile Web App", status: "included" },
+                ],
+                cta: { label: "Go!", href: "/login" },
+                highlighted: true,
+                badge: "free",
+              },
+            ],
+          },
         ],
       },
     },
