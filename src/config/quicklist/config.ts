@@ -14,6 +14,14 @@ export default {
         type: "credentials" as const,
         config: {},
       },
+      {
+        type: "google" as const,
+        config: {
+          clientId: process.env.GOOGLE_CLIENT_ID!,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+          prompt: "select_account",
+        },
+      },
     ],
   },
   public: {
