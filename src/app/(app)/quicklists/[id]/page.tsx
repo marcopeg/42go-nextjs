@@ -35,6 +35,7 @@ import { CSS, type Transform } from "@dnd-kit/utilities";
 import { useToast } from "@/components/ui/toast";
 import { DisplayDate } from "@/42go/components/DisplayDate";
 import { Button } from "@/components/ui/button";
+import { useInvalidateQuicklistsOnProjectChange } from "@/hooks/useQuicklists";
 
 type TProject = {
   id: string;
@@ -464,6 +465,7 @@ export default function ProjectDetailsPage() {
   const projectId = Array.isArray(idParam) ? idParam[0] : idParam || "";
 
   const { data: projectData, loading, error } = useProjectData(projectId);
+  const invalidateQuicklistsCache = useInvalidateQuicklistsOnProjectChange();
   const [tasks, setTasks] = useState<TTask[]>(projectData?.tasks || []);
   const [listTitle, setListTitle] = useState<string>(
     projectData?.project?.title || ""
@@ -629,6 +631,10 @@ export default function ProjectDetailsPage() {
         setTasks((prev) =>
           prev.map((t) => (t.id === taskId ? { ...t, ...result.task } : t))
         );
+        // Invalidate the quicklists cache since task changes update the project's updated_at
+        invalidateQuicklistsCache(projectId, {
+          updated_at: new Date().toISOString(),
+        });
         // If completed, leave in-place very briefly so users see it change, then resort naturally via derived sortedTasks
         if (completed) {
           // noop: movingDownIds supplies transient animation; sortedTasks will move it next render anyway
@@ -653,6 +659,10 @@ export default function ProjectDetailsPage() {
       });
       if (!res.ok) throw new Error(`Failed to delete: ${res.status}`);
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      // Invalidate the quicklists cache since task deletion updates the project's updated_at
+      invalidateQuicklistsCache(projectId, {
+        updated_at: new Date().toISOString(),
+      });
       return true;
     } catch {
       // Optionally surface error toast
@@ -805,6 +815,10 @@ export default function ProjectDetailsPage() {
       }
       if (created.length > 0) {
         setTasks((prev) => [...prev, ...created]);
+        // Invalidate the quicklists cache since new tasks update the project's updated_at
+        invalidateQuicklistsCache(projectId, {
+          updated_at: new Date().toISOString(),
+        });
       }
       // Reset and keep focus for rapid entry
       setNewTitle("");
@@ -928,7 +942,14 @@ export default function ProjectDetailsPage() {
         ok: boolean;
         project: { id: string; title: string; updated_at: string };
       };
-      if (data?.project?.title) setListTitle(data.project.title);
+      if (data?.project?.title) {
+        setListTitle(data.project.title);
+        // Invalidate the quicklists cache since the project title changed
+        invalidateQuicklistsCache(projectId, {
+          title: data.project.title,
+          updated_at: data.project.updated_at,
+        });
+      }
     } catch (e) {
       toast({
         variant: "destructive",
