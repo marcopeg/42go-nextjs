@@ -12,6 +12,7 @@ import {
   GripVertical,
   X,
   Plus,
+  RotateCcw,
 } from "lucide-react";
 import {
   DndContext,
@@ -35,75 +36,18 @@ import { CSS, type Transform } from "@dnd-kit/utilities";
 import { useToast } from "@/components/ui/toast";
 import { DisplayDate } from "@/42go/components/DisplayDate";
 import { Button } from "@/components/ui/button";
-import { useInvalidateQuicklistsOnProjectChange } from "@/hooks/useQuicklists";
+import {
+  useProject,
+  useRefreshProject,
+  useInvalidateProjectCache,
+  ProjectData,
+} from "@/hooks/useQuicklists";
+import {
+  ProjectDetailsSkeleton,
+  ProjectDetailsErrorState,
+} from "@/components/quicklists/ProjectListSkeleton";
 
-type TProject = {
-  id: string;
-  title: string;
-  updated_at: string;
-};
-
-type TTask = {
-  id: string;
-  title: string;
-  position: number;
-  updated_at: string;
-  completed_at: string | null;
-};
-
-interface ProjectData {
-  project: TProject;
-  tasks: TTask[];
-}
-
-const fetchProject = async (projectId: string): Promise<ProjectData> => {
-  const res = await fetch(`/api/quicklists/${projectId}`, {
-    credentials: "same-origin",
-    cache: "no-store", // always hit API in the browser
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to load project: ${res.status} ${res.statusText}`);
-  }
-
-  return res.json();
-};
-
-const useProjectData = (projectId: string) => {
-  const [data, setData] = useState<ProjectData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!projectId) return;
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const projectData = await fetchProject(projectId);
-        setData(projectData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load project");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [projectId]);
-
-  return { data, loading, error };
-};
-
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center py-8">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-  </div>
-);
-
-const ErrorMessage = ({ message }: { message: string }) => (
-  <div className="text-sm text-red-600 dark:text-red-400 p-4 border border-red-200 dark:border-red-800 rounded-md bg-red-50 dark:bg-red-950/20">
-    {message}
-  </div>
-);
+type TTask = ProjectData["tasks"][0];
 
 import { MouseEvent } from "react";
 
@@ -464,8 +408,14 @@ export default function ProjectDetailsPage() {
   const idParam = params?.id;
   const projectId = Array.isArray(idParam) ? idParam[0] : idParam || "";
 
-  const { data: projectData, loading, error } = useProjectData(projectId);
-  const invalidateQuicklistsCache = useInvalidateQuicklistsOnProjectChange();
+  const {
+    data: projectData,
+    isLoading,
+    error,
+    refetch,
+  } = useProject(projectId);
+  const refreshProject = useRefreshProject(projectId);
+  const invalidateProjectCache = useInvalidateProjectCache();
   const [tasks, setTasks] = useState<TTask[]>(projectData?.tasks || []);
   const [listTitle, setListTitle] = useState<string>(
     projectData?.project?.title || ""
@@ -631,10 +581,8 @@ export default function ProjectDetailsPage() {
         setTasks((prev) =>
           prev.map((t) => (t.id === taskId ? { ...t, ...result.task } : t))
         );
-        // Invalidate the quicklists cache since task changes update the project's updated_at
-        invalidateQuicklistsCache(projectId, {
-          updated_at: new Date().toISOString(),
-        });
+        // Invalidate the project cache since task changes update the project's updated_at
+        invalidateProjectCache(projectId, { taskUpdated: true });
         // If completed, leave in-place very briefly so users see it change, then resort naturally via derived sortedTasks
         if (completed) {
           // noop: movingDownIds supplies transient animation; sortedTasks will move it next render anyway
@@ -659,10 +607,8 @@ export default function ProjectDetailsPage() {
       });
       if (!res.ok) throw new Error(`Failed to delete: ${res.status}`);
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
-      // Invalidate the quicklists cache since task deletion updates the project's updated_at
-      invalidateQuicklistsCache(projectId, {
-        updated_at: new Date().toISOString(),
-      });
+      // Invalidate the project cache since task deletion updates the project's updated_at
+      invalidateProjectCache(projectId, { taskDeleted: true });
       return true;
     } catch {
       // Optionally surface error toast
@@ -815,10 +761,8 @@ export default function ProjectDetailsPage() {
       }
       if (created.length > 0) {
         setTasks((prev) => [...prev, ...created]);
-        // Invalidate the quicklists cache since new tasks update the project's updated_at
-        invalidateQuicklistsCache(projectId, {
-          updated_at: new Date().toISOString(),
-        });
+        // Invalidate the project cache since new tasks update the project's updated_at
+        invalidateProjectCache(projectId, { taskAdded: true });
       }
       // Reset and keep focus for rapid entry
       setNewTitle("");
@@ -944,8 +888,8 @@ export default function ProjectDetailsPage() {
       };
       if (data?.project?.title) {
         setListTitle(data.project.title);
-        // Invalidate the quicklists cache since the project title changed
-        invalidateQuicklistsCache(projectId, {
+        // Invalidate the project cache since the project title changed
+        invalidateProjectCache(projectId, {
           title: data.project.title,
           updated_at: data.project.updated_at,
         });
@@ -1027,7 +971,22 @@ export default function ProjectDetailsPage() {
     </div>
   );
 
+  const RefreshButton = () => (
+    <Button
+      onClick={refreshProject}
+      size="sm"
+      variant="outline"
+      aria-label="Refresh project"
+    >
+      <RotateCcw className="h-4 w-4" />
+    </Button>
+  );
+
   const actions = [
+    {
+      type: "component" as const,
+      component: RefreshButton,
+    },
     {
       type: "link" as const,
       label: "Info",
@@ -1081,8 +1040,13 @@ export default function ProjectDetailsPage() {
     >
       {/* Align list with header on desktop; no horizontal padding on mobile */}
       <div className="max-w-3xl w-full pt-2 pb-24 md:pb-0 px-0">
-        {loading && <LoadingSpinner />}
-        {error && <ErrorMessage message={error} />}
+        {isLoading && <ProjectDetailsSkeleton />}
+        {error && (
+          <ProjectDetailsErrorState
+            error={error instanceof Error ? error.message : "Unknown error"}
+            onRetry={() => refetch()}
+          />
+        )}
         {projectData && (
           <>
             <DndContext
