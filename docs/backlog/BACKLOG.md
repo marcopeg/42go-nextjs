@@ -15,7 +15,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 ### Boilerplate
 
 - [adc] Add tenants table [🔗](./tasks/adc-tenants.md)
-- [acz] Make the app iPhone home-screen compatible [🔗](./draft/acz-make-the-app-iphone-home-screen-compatible.md)
 
 ## Drafts
 
@@ -84,6 +83,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ### Boilerplate
 
+- [acz] Make the app iPhone home-screen compatible [🔗](./archive/acz-make-the-app-iphone-home-screen-compatible.md)
 - [acs] devise how to test api through authenticated curl calls [🔗](./archive/acs-test-api.md)
 - [act] App default page [🔗](./archive/act-app-default-page.md)
 - [aao] Add app name to waitlist table
