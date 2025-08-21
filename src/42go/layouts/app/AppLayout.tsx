@@ -27,13 +27,16 @@ export const AppLayout = ({
   policy,
   renderOnLoading,
   renderOnError,
+  footer,
   hideMobileMenu,
+  disablePadding = false,
 }: AppLayoutProps) => {
   const config = useAppConfig();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     getSideMenuState()
   );
+  const hasFooter = !!footer;
 
   // Save sidebar state to localStorage when it changes
   useEffect(() => {
@@ -56,7 +59,7 @@ export const AppLayout = ({
     <div className="min-h-screen bg-background">
       {/* Desktop Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-full transition-all duration-300 ease-in-out hidden md:block ${
+        className={`fixed top-0 left-0 z-50 h-full transition-all duration-300 ease-in-out hidden md:block ${
           isSidebarCollapsed ? "w-20" : "w-64"
         }`}
       >
@@ -92,7 +95,27 @@ export const AppLayout = ({
         }`}
       >
         {/* Page Content */}
-        <div className="h-full flex flex-col p-6 pb-20 md:pb-6">
+        <div
+          className={`h-full flex flex-col ${(() => {
+            // Base paddings for left/right and top
+            const base = disablePadding ? [] : ["px-6", "pt-6"];
+            // Bottom padding: always ensure content isn't hidden by footer
+            let pbMobile = "";
+            let pbDesktop = "";
+            if (hasFooter) {
+              // Footer height: h-16 (4rem). If mobile bottom nav exists, add both.
+              pbMobile = hideMobileMenu ? "pb-16" : "pb-32";
+              pbDesktop = "md:pb-16";
+            } else {
+              // Legacy behavior when no footer
+              if (!disablePadding) {
+                pbMobile = !hideMobileMenu ? "pb-20" : "pb-6";
+                pbDesktop = "md:pb-6";
+              }
+            }
+            return `${base.join(" ")} ${pbMobile} ${pbDesktop}`.trim();
+          })()}`}
+        >
           {policy ? (
             <ProtectComponent
               policy={policy}
@@ -138,6 +161,19 @@ export const AppLayout = ({
             }
           />
         </aside>
+      )}
+
+      {/* Sticky Footer (matches top bar style) */}
+      {footer && (
+        <footer
+          className={`fixed ${
+            hideMobileMenu ? "bottom-0" : "bottom-16 md:bottom-0"
+          } right-0 bg-background border-t h-16 flex items-center z-30 transition-all duration-300 ease-in-out ${
+            isSidebarCollapsed ? "left-0 md:left-20" : "left-0 md:left-64"
+          }`}
+        >
+          <div className="w-full px-6">{footer}</div>
+        </footer>
       )}
     </div>
   );

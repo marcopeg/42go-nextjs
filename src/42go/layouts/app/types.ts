@@ -60,8 +60,19 @@ export interface AppLayoutProps {
     detail?: string;
   }) => React.ReactNode;
   /**
+   * Optional sticky footer content. When provided, a sticky bottom bar is
+   * rendered matching the top toolbar style (height/border) and aligned with
+   * the desktop sidebar width.
+   */
+  footer?: React.ReactNode;
+  /**
    * When true, hides the mobile bottom navigation and the slide-in mobile menu.
    * Desktop sidebar remains unaffected.
    */
   hideMobileMenu?: boolean;
+  /**
+   * When true, removes internal page paddings from the main content wrapper.
+   * Default is false (keep paddings: px-6 pt-6 pb-20 md:pb-6).
+   */
+  disablePadding?: boolean;
 }

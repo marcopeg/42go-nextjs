@@ -4,14 +4,22 @@ import { AppLayout } from "@/42go/layouts/app/AppLayout";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CheckCircle2, Circle, Clock, Trash2 } from "lucide-react";
+import {
+  CheckCircle2,
+  Circle,
+  Clock,
+  Trash2,
+  GripVertical,
+  X,
+  Plus,
+} from "lucide-react";
 import {
   DndContext,
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
   KeyboardSensor,
-  MouseSensor,
+  PointerSensor,
   TouchSensor,
   UniqueIdentifier,
   useSensor,
@@ -25,6 +33,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS, type Transform } from "@dnd-kit/utilities";
 import { useToast } from "@/components/ui/toast";
+import { DisplayDate } from "@/42go/components/DisplayDate";
+import { Button } from "@/components/ui/button";
 
 type TProject = {
   id: string;
@@ -107,6 +117,7 @@ const TaskItem = ({
   onSaveEdit,
   onCancelEdit,
   sortable,
+  movingDown,
 }: {
   task: ProjectData["tasks"][0];
   onToggle: (taskId: string, completed: boolean) => void;
@@ -126,17 +137,16 @@ const TaskItem = ({
     isDragging?: boolean;
     disabled?: boolean;
   };
+  movingDown?: boolean;
 }) => {
   const isCompleted = task.completed_at !== null;
-  const updatedAt = new Date(task.updated_at);
   const inputRef = useRef<HTMLInputElement | null>(null);
-
+  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 768;
   const handleToggle = (e: MouseEvent) => {
     e.preventDefault();
     onToggle(task.id, !isCompleted);
   };
 
-  // Autofocus when this row enters editing mode (desktop inline only)
   useEffect(() => {
     if (isEditing) {
       const isDesktop =
@@ -145,7 +155,6 @@ const TaskItem = ({
         const el = inputRef.current;
         if (el) {
           el.focus();
-          // Select all for quick overwrite
           el.select();
         }
       }
@@ -155,21 +164,29 @@ const TaskItem = ({
   return (
     <li
       ref={sortable?.setNodeRef}
-      className={`group flex items-center gap-3 p-3 hover:bg-muted/20 ${
-        sortable && !sortable.disabled
-          ? "cursor-grab active:cursor-grabbing select-none touch-none"
+      className={`group flex items-center gap-3 p-3 hover:bg-muted/20  min-h-16 ${
+        sortable && !sortable.disabled && !isEditing
+          ? "select-none touch-pan-y md:hover:cursor-grab md:active:cursor-grabbing py-4"
           : ""
-      } ${sortable?.isDragging ? "opacity-60 ring-2 ring-primary/40" : ""}`}
+      } ${
+        sortable?.isDragging
+          ? "opacity-60 ring-2 ring-primary/40 md:cursor-grabbing py-4"
+          : ""
+      } ${movingDown ? "transition-all duration-500 ease-out opacity-70" : ""}`}
       style={{
         transform: CSS.Transform.toString(sortable?.transform || null),
         transition: sortable?.transition,
       }}
-      {...(sortable?.attributes as Record<string, unknown>)}
-      {...(sortable?.listeners as Record<string, unknown>)}
       data-taskid={task.id}
+      {...(isDesktop && !isEditing && sortable && !sortable.disabled
+        ? ({
+            ...(sortable.attributes as unknown as Record<string, unknown>),
+            ...(sortable.listeners as unknown as Record<string, unknown>),
+          } as Record<string, unknown>)
+        : {})}
     >
       <button
-        className="flex-shrink-0 focus:outline-none"
+        className="flex-shrink-0 focus:outline-none md:cursor-pointer"
         aria-label={isCompleted ? "Uncheck task" : "Check task"}
         onClick={handleToggle}
         type="button"
@@ -180,7 +197,8 @@ const TaskItem = ({
           <Circle className="h-5 w-5 text-muted-foreground" />
         )}
       </button>
-      <div className="flex-1 min-w-0">
+
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
         {/* Desktop inline edit (md+) */}
         <div className="hidden md:block">
           {isEditing ? (
@@ -190,6 +208,7 @@ const TaskItem = ({
               value={draftTitle}
               onChange={(e) => onChangeDraft(e.target.value)}
               onKeyDown={(e) => {
+                e.stopPropagation();
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   onSaveEdit();
@@ -201,42 +220,77 @@ const TaskItem = ({
               onBlur={onCancelEdit}
             />
           ) : (
-            <div onClick={() => onStartEdit(task)} className="cursor-text">
+            <div onClick={() => onStartEdit(task)}>
               <p
-                className={`font-medium ${
+                className={`font-medium leading-tight m-0 ${
                   isCompleted ? "line-through text-muted-foreground" : ""
                 }`}
               >
                 {task.title}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Position: {task.position} • Updated:{" "}
-                {updatedAt.toLocaleString()}
-              </p>
+              {isCompleted ? (
+                <div className="mt-1 h-4 flex items-center text-xs text-muted-foreground gap-1">
+                  <span>completed</span>
+                  <DisplayDate date={task.completed_at} />
+                </div>
+              ) : null}
             </div>
           )}
         </div>
-        {/* Mobile view (always shows static text; editing via bottom sheet) */}
+
+        {/* Mobile view: tap title to edit */}
         <div className="md:hidden" onClick={() => onStartEdit(task)}>
           <p
-            className={`font-medium ${
+            className={`font-medium leading-tight m-0 ${
               isCompleted ? "line-through text-muted-foreground" : ""
             }`}
           >
             {task.title}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Position: {task.position} • Updated: {updatedAt.toLocaleString()}
-          </p>
+          {isCompleted ? (
+            <div className="mt-1 h-4 flex items-center text-xs text-muted-foreground gap-1">
+              <span>completed</span>
+              <DisplayDate date={task.completed_at} />
+            </div>
+          ) : null}
         </div>
       </div>
+
+      {/* Drag handle for mobile only (hidden on desktop) */}
+      {!isCompleted && (
+        <button
+          type="button"
+          title="Reorder"
+          aria-label="Reorder task"
+          className={`md:hidden inline-flex items-center justify-center text-muted-foreground hover:text-foreground touch-none select-none ${
+            isEditing ? "pointer-events-none opacity-40" : ""
+          }`}
+          onContextMenu={(e) => {
+            e.preventDefault();
+          }}
+          style={{
+            WebkitTouchCallout: "none",
+            WebkitUserSelect: "none",
+            userSelect: "none",
+          }}
+          {...(!isEditing
+            ? (sortable?.listeners as unknown as Record<string, unknown>) || {}
+            : {})}
+          {...(!isEditing
+            ? (sortable?.attributes as unknown as Record<string, unknown>) || {}
+            : {})}
+        >
+          <GripVertical className="h-5 w-5" />
+        </button>
+      )}
+
       {/* Desktop-only hover delete */}
       <button
         type="button"
         title="Delete"
         aria-label="Delete task"
         onClick={() => onDelete(task.id)}
-        className="hidden md:inline-flex opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-muted-foreground hover:text-red-600"
+        className="hidden md:inline-flex md:cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-muted-foreground hover:text-red-600"
       >
         <Trash2 className="h-4 w-4" />
       </button>
@@ -256,6 +310,7 @@ interface TasksListProps {
   onCancelEdit: () => void;
   enableDnd?: boolean;
   sortableIds?: string[];
+  movingDownIds?: Set<string>;
 }
 
 const TasksList = ({
@@ -270,6 +325,7 @@ const TasksList = ({
   onCancelEdit,
   enableDnd = false,
   sortableIds = [],
+  movingDownIds,
 }: TasksListProps) => {
   if (tasks.length === 0) {
     return (
@@ -282,7 +338,7 @@ const TasksList = ({
   }
 
   return (
-    <div className="border rounded-md overflow-hidden">
+    <div className="overflow-hidden md:border md:rounded-md md:mx-6 md:mt-6 md:mb-6">
       <SortableContext
         items={enableDnd ? sortableIds : []}
         strategy={verticalListSortingStrategy}
@@ -303,6 +359,7 @@ const TasksList = ({
                   onChangeDraft={onChangeDraft}
                   onSaveEdit={onSaveEdit}
                   onCancelEdit={onCancelEdit}
+                  movingDown={!!movingDownIds?.has(task.id)}
                 />
               );
             }
@@ -326,6 +383,7 @@ const TasksList = ({
                   transition: undefined,
                   disabled: true,
                 }}
+                movingDown={!!movingDownIds?.has(task.id)}
               />
             );
           })}
@@ -346,6 +404,7 @@ const SortableItem = ({
   onChangeDraft,
   onSaveEdit,
   onCancelEdit,
+  movingDown,
 }: {
   task: ProjectData["tasks"][0];
   onToggle: (taskId: string, completed: boolean) => void;
@@ -356,6 +415,7 @@ const SortableItem = ({
   onChangeDraft: (value: string) => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
+  movingDown?: boolean;
 }) => {
   const {
     setNodeRef,
@@ -364,7 +424,7 @@ const SortableItem = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id });
+  } = useSortable({ id: task.id, disabled: isEditing });
 
   return (
     <TaskItem
@@ -381,10 +441,11 @@ const SortableItem = ({
         setNodeRef,
         attributes: attributes as unknown as Record<string, unknown>,
         listeners: listeners as unknown as Record<string, unknown>,
-        transform: transform,
+        transform,
         transition,
         isDragging,
       }}
+      movingDown={movingDown}
     />
   );
 };
@@ -418,9 +479,30 @@ export default function ProjectDetailsPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   // dnd ephemeral state could be added here if needed
   const desktopInputRef = useRef<HTMLInputElement | null>(null);
-  const mobileInputRef = useRef<HTMLInputElement | null>(null);
+  const mobileInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const mobileEditInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const mobileListInputRef = useRef<HTMLInputElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const { toast } = useToast();
+  const [creatingMobile, setCreatingMobile] = useState(false);
+  const [kbInset, setKbInset] = useState(0);
+  const [movingDownIds, setMovingDownIds] = useState<Set<string>>(new Set());
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Split helper: supports ',' and ';' as dividers, trims and removes empties
+  const parseNewTitle = (input: string): string[] =>
+    input
+      .split(/[\r\n;,]+/g)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  const canSubmitNew = useMemo(
+    () => parseNewTitle(newTitle).length > 0,
+    [newTitle]
+  );
+  const canSubmitEdit = useMemo(() => {
+    const first = parseNewTitle(draftTitle)[0] || "";
+    return first.trim().length > 0;
+  }, [draftTitle]);
 
   const focusComposer = () => {
     const isDesktop = typeof window !== "undefined" && window.innerWidth >= 768;
@@ -446,6 +528,52 @@ export default function ProjectDetailsPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Track viewport to render footer only on desktop
+  useEffect(() => {
+    const update = () =>
+      setIsDesktop(typeof window !== "undefined" && window.innerWidth >= 768);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // Lock scroll when any full-screen panel is open on mobile
+  useEffect(() => {
+    const open = editingId || editingList || creatingMobile;
+    if (open) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [editingId, editingList, creatingMobile]);
+
+  // Track on-screen keyboard overlap using VisualViewport when panels are open
+  useEffect(() => {
+    const open = editingId || editingList || creatingMobile;
+    if (!open) {
+      setKbInset(0);
+      return;
+    }
+    if (typeof window === "undefined" || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const update = () => {
+      const inset = Math.max(
+        0,
+        window.innerHeight - (vv.height + vv.offsetTop)
+      );
+      setKbInset(Math.round(inset));
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, [editingId, editingList, creatingMobile]);
 
   // Derived client-side sort:
   // - unchecked first (by position asc)
@@ -473,13 +601,25 @@ export default function ProjectDetailsPage() {
   // Handler for check/uncheck
   const handleToggle = async (taskId: string, completed: boolean) => {
     try {
+      // If marking as completed, add visual feedback before sorting moves it
+      if (completed) {
+        setMovingDownIds((prev) => new Set(prev).add(taskId));
+        // remove after brief delay ~500ms
+        setTimeout(() => {
+          setMovingDownIds((prev) => {
+            const n = new Set(prev);
+            n.delete(taskId);
+            return n;
+          });
+        }, 600);
+      }
       const res = await fetch(`/api/quicklists/${projectId}/${taskId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ completed }),
         credentials: "same-origin",
+        body: JSON.stringify({ completed }),
       });
       if (!res.ok) {
         throw new Error(`Failed to update task: ${res.status}`);
@@ -489,6 +629,10 @@ export default function ProjectDetailsPage() {
         setTasks((prev) =>
           prev.map((t) => (t.id === taskId ? { ...t, ...result.task } : t))
         );
+        // If completed, leave in-place very briefly so users see it change, then resort naturally via derived sortedTasks
+        if (completed) {
+          // noop: movingDownIds supplies transient animation; sortedTasks will move it next render anyway
+        }
       }
     } catch {
       // Optionally show error
@@ -496,11 +640,11 @@ export default function ProjectDetailsPage() {
     }
   };
 
-  const handleDelete = async (taskId: string) => {
+  const handleDelete = async (taskId: string): Promise<boolean> => {
     // Confirm once; keep it simple for now
     if (typeof window !== "undefined") {
       const ok = window.confirm("Delete this item?");
-      if (!ok) return;
+      if (!ok) return false;
     }
     try {
       const res = await fetch(`/api/quicklists/${projectId}/${taskId}`, {
@@ -509,8 +653,10 @@ export default function ProjectDetailsPage() {
       });
       if (!res.ok) throw new Error(`Failed to delete: ${res.status}`);
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      return true;
     } catch {
       // Optionally surface error toast
+      return false;
     }
   };
 
@@ -525,22 +671,107 @@ export default function ProjectDetailsPage() {
   };
   const handleSaveEdit = async () => {
     if (!editingId) return;
-    const title = draftTitle.trim();
-    if (!title) return handleCancelEdit();
+    const parts = parseNewTitle(draftTitle);
+    const first = parts[0]?.trim() || "";
+    if (!first) return handleCancelEdit();
     try {
       setSavingEdit(true);
-      const res = await fetch(`/api/quicklists/${projectId}/${editingId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ title }),
-      });
-      if (!res.ok) throw new Error(`Failed to save: ${res.status}`);
-      const result = (await res.json()) as { ok: boolean; task: TTask };
-      if (result?.task) {
+      // 1) Rename current task to first token
+      const renameRes = await fetch(
+        `/api/quicklists/${projectId}/${editingId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ title: first }),
+        }
+      );
+      if (!renameRes.ok) throw new Error(`Failed to save: ${renameRes.status}`);
+      const renameJson = (await renameRes.json()) as {
+        ok: boolean;
+        task: TTask;
+      };
+      let editedTask: TTask | null = null;
+      if (renameJson?.task) {
         setTasks((prev) =>
-          prev.map((t) => (t.id === editingId ? { ...t, ...result.task } : t))
+          prev.map((t) => {
+            if (t.id === editingId) {
+              editedTask = { ...t, ...renameJson.task };
+              return editedTask;
+            }
+            return t;
+          })
         );
+      }
+
+      // 2) If there are additional tokens, insert them right after the edited task
+      const rest = parts.slice(1);
+      if (rest.length > 0) {
+        // Get a stable snapshot for calculations
+        const snapshot =
+          editedTask || tasks.find((t) => t.id === editingId) || null;
+        if (!snapshot) throw new Error("Edited task not found after rename");
+        const isCompleted = !!snapshot.completed_at;
+        if (!isCompleted) {
+          // Work within pending list order (position asc)
+          const pendingList = tasks
+            .filter((t) => !t.completed_at)
+            .sort((a, b) => a.position - b.position);
+          const idx = pendingList.findIndex((t) => t.id === snapshot.id);
+          if (idx !== -1) {
+            const insertAfterPos = pendingList[idx].position;
+            const shiftBy = rest.length;
+            // Bump positions of subsequent pending tasks
+            const toBump = pendingList.slice(idx + 1);
+            for (const item of toBump) {
+              const newPos = item.position + shiftBy;
+              try {
+                await fetch(`/api/quicklists/${projectId}/${item.id}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  credentials: "same-origin",
+                  body: JSON.stringify({ position: newPos }),
+                });
+                setTasks((prev) =>
+                  prev.map((t) =>
+                    t.id === item.id ? { ...t, position: newPos } : t
+                  )
+                );
+              } catch {}
+            }
+            // Create new tasks at immediate next positions
+            const created: TTask[] = [];
+            for (let i = 0; i < rest.length; i++) {
+              try {
+                const t = await createTask(
+                  projectId,
+                  rest[i],
+                  insertAfterPos + i + 1
+                );
+                created.push(t);
+              } catch {}
+            }
+            if (created.length > 0) {
+              setTasks((prev) => [...prev, ...created]);
+            }
+          }
+        } else {
+          // If edited task is completed, positions don't affect done list
+          // Create new tasks appended to end of pending
+          const maxPos = tasks
+            .filter((t) => !t.completed_at)
+            .reduce((m, t) => Math.max(m, t.position || 0), 0);
+          const created: TTask[] = [];
+          for (let i = 0; i < rest.length; i++) {
+            try {
+              const t = await createTask(projectId, rest[i], maxPos + i + 1);
+              created.push(t);
+            } catch {}
+          }
+          if (created.length > 0) {
+            setTasks((prev) => [...prev, ...created]);
+          }
+        }
       }
     } catch (e) {
       toast({
@@ -554,8 +785,49 @@ export default function ProjectDetailsPage() {
       handleCancelEdit();
     }
   };
-
-  // Real create task API
+  const handleCreate = async () => {
+    if (!projectId) return;
+    const titles = parseNewTitle(newTitle);
+    if (titles.length === 0) return;
+    try {
+      setSubmitting(true);
+      // Base on current max position to avoid collisions and keep order stable
+      const maxPos = tasks.reduce((m, t) => Math.max(m, t.position || 0), 0);
+      const created: TTask[] = [];
+      let failed = 0;
+      for (let i = 0; i < titles.length; i++) {
+        try {
+          const item = await createTask(projectId, titles[i], maxPos + i + 1);
+          created.push(item);
+        } catch {
+          failed += 1;
+        }
+      }
+      if (created.length > 0) {
+        setTasks((prev) => [...prev, ...created]);
+      }
+      // Reset and keep focus for rapid entry
+      setNewTitle("");
+      focusComposer();
+      if (created.length > 1 || failed > 0) {
+        toast({
+          title: "Items created",
+          description: `${created.length} created${
+            failed ? `, ${failed} failed` : ""
+          }`,
+        });
+      }
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Failed to create item(s)",
+        description:
+          e instanceof Error ? e.message : "Unknown error creating item(s)",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
   const createTask = async (
     pid: string,
     title: string,
@@ -577,37 +849,15 @@ export default function ProjectDetailsPage() {
     return data.task;
   };
 
-  const handleCreate = async () => {
-    const title = newTitle.trim();
-    if (!title || !projectId) return;
-    try {
-      setSubmitting(true);
-      const created = await createTask(projectId, title, tasks.length + 1);
-      setTasks((prev) => [...prev, created]);
-      setNewTitle("");
-      // keep focus for rapid entry
-      focusComposer();
-    } catch (e) {
-      toast({
-        variant: "destructive",
-        title: "Failed to create item",
-        description:
-          e instanceof Error ? e.message : "Unknown error creating item",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   // Pending/done splits for DnD logic
   const pending = useMemo(() => tasks.filter((t) => !t.completed_at), [tasks]);
   const pendingIds = useMemo(() => pending.map((t) => t.id), [pending]);
   const sensors = useSensors(
-    // Desktop mouse drag starts after a small move to avoid click conflicts
-    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    // Mobile/tablet long-press to start drag to avoid scroll/tap conflicts
+    // Pointer sensor: small distance to allow clicks without dragging (desktop)
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    // Touch sensor on the row with a press delay for long-press-to-drag
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 150, tolerance: 8 },
+      activationConstraint: { delay: 450, tolerance: 8 },
     }),
     useSensor(KeyboardSensor)
   );
@@ -742,14 +992,16 @@ export default function ProjectDetailsPage() {
       </div>
       {/* Mobile: tap to open bottom sheet (keeps text visible in header) */}
       <div className="md:hidden">
-        <button
-          type="button"
-          onClick={startEditList}
-          title="Rename list"
-          className="truncate text-left hover:opacity-80"
-        >
-          {listTitle || "Loading..."}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={startEditList}
+            title="Rename list"
+            className="truncate text-left hover:opacity-80 flex-1"
+          >
+            {listTitle || "Loading..."}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -764,16 +1016,50 @@ export default function ProjectDetailsPage() {
     },
   ];
 
+  // Desktop footer composer (rendered via AppLayout footer on md+ only)
+  const footerNode = isDesktop ? (
+    <div className="w-full">
+      <div className="flex items-center gap-3">
+        <div className="flex-1">
+          <input
+            ref={desktopInputRef}
+            type="text"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleCreate();
+              }
+            }}
+            placeholder="New item..."
+            className="w-full px-3 py-2 rounded-md border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleCreate}
+          disabled={submitting || !canSubmitNew}
+          className="px-4 py-2 rounded-md bg-primary text-primary-foreground disabled:opacity-50"
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  ) : undefined;
+
   return (
     <AppLayout
       hideMobileMenu
+      disablePadding
       title={HeaderTitle}
       backBtn={{ to: "/quicklists" }}
       actions={actions}
       policy={{ require: { feature: "page:quicklists" } }}
+      footer={footerNode}
     >
-      {/* Align list with header: remove extra horizontal padding */}
-      <div className="max-w-3xl w-full pt-2 pb-24 md:pb-0">
+      {/* Align list with header on desktop; no horizontal padding on mobile */}
+      <div className="max-w-3xl w-full pt-2 pb-24 md:pb-0 px-0">
         {loading && <LoadingSpinner />}
         {error && <ErrorMessage message={error} />}
         {projectData && (
@@ -795,6 +1081,7 @@ export default function ProjectDetailsPage() {
                 onCancelEdit={handleCancelEdit}
                 enableDnd
                 sortableIds={pendingIds}
+                movingDownIds={movingDownIds}
               />
               <DragOverlay>
                 {activeTask ? (
@@ -823,37 +1110,81 @@ export default function ProjectDetailsPage() {
               </DragOverlay>
             </DndContext>
             {tasks.length === 0 && <EmptyState />}
-            {/* Mobile bottom sheet editor */}
+            {/* Mobile full-screen panels */}
             {editingId && (
-              <div className="md:hidden fixed inset-0 z-[500]">
+              <div className="md:hidden fixed inset-0 z-[500] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
                 <div
-                  className="absolute inset-0 bg-black/40 transition-opacity"
-                  onClick={handleCancelEdit}
-                />
-                <div className="absolute left-0 right-0 bottom-0 bg-background border-t rounded-t-xl shadow-2xl p-4 transition-transform">
-                  <div className="space-y-3">
-                    <input
-                      type="text"
+                  className="absolute inset-0 flex flex-col"
+                  style={{ height: "100dvh" }}
+                >
+                  <div className="px-4 pt-4 pb-3 border-b flex items-center justify-between">
+                    <div className="text-base font-semibold">Edit task</div>
+                    <button
+                      type="button"
+                      aria-label="Cancel"
+                      title="Close"
+                      onClick={handleCancelEdit}
+                      className="p-2 rounded-md hover:bg-muted/20"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-4 py-3">
+                    <textarea
+                      ref={mobileEditInputRef}
                       value={draftTitle}
                       onChange={(e) => setDraftTitle(e.target.value)}
-                      className="w-full px-3 py-2 rounded-md border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Edit item title"
+                      className="w-full px-3 py-3 rounded-md border bg-background focus:outline-none focus:ring-2 focus:ring-primary text-base resize-none min-h-[120px]"
+                      placeholder="Edit title (newline, , or ; add more items)"
                       autoFocus
+                      enterKeyHint="enter"
                       onFocus={(e) => e.currentTarget.select()}
                     />
-                    <div className="flex gap-2">
+                  </div>
+                  <div
+                    className="px-4 pb-4 pt-2 border-t bg-background"
+                    style={{
+                      paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)",
+                      transform: kbInset
+                        ? `translateY(-${kbInset}px)`
+                        : undefined,
+                      willChange: kbInset ? "transform" : undefined,
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
                       <button
                         type="button"
-                        onClick={handleCancelEdit}
-                        className="flex-1 px-4 py-2 rounded-md border"
+                        title="Delete task"
+                        aria-label="Delete task"
+                        onClick={() => {
+                          // Hide the keyboard first, then confirm delete
+                          mobileEditInputRef.current?.blur();
+                          if (typeof document !== "undefined") {
+                            const ae =
+                              document.activeElement as HTMLElement | null;
+                            ae?.blur?.();
+                          }
+                          const id = editingId;
+                          // Give iOS a moment to dismiss the keyboard before confirm()
+                          setTimeout(() => {
+                            if (!id) return;
+                            handleDelete(id).then((deleted) => {
+                              if (deleted) handleCancelEdit();
+                            });
+                          }, 150);
+                        }}
+                        className="p-3 rounded-md text-destructive hover:bg-destructive/10"
                       >
-                        Cancel
+                        <Trash2 className="h-5 w-5" />
                       </button>
                       <button
                         type="button"
-                        onClick={handleSaveEdit}
-                        disabled={savingEdit || draftTitle.trim().length === 0}
-                        className="flex-1 px-4 py-2 rounded-md bg-primary text-primary-foreground disabled:opacity-50"
+                        onClick={() => {
+                          mobileEditInputRef.current?.blur();
+                          handleSaveEdit();
+                        }}
+                        disabled={savingEdit || !canSubmitEdit}
+                        className="px-4 py-3 rounded-md bg-primary text-primary-foreground disabled:opacity-50"
                       >
                         Save
                       </button>
@@ -862,39 +1193,65 @@ export default function ProjectDetailsPage() {
                 </div>
               </div>
             )}
-            {/* Mobile bottom sheet for list title */}
             {editingList && (
-              <div className="md:hidden fixed inset-0 z-[500]">
+              <div className="md:hidden fixed inset-0 z-[500] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
                 <div
-                  className="absolute inset-0 bg-black/40 transition-opacity"
-                  onClick={cancelEditList}
-                />
-                <div className="absolute left-0 right-0 bottom-0 bg-background border-t rounded-t-xl shadow-2xl p-4 transition-transform">
-                  <div className="space-y-3">
+                  className="absolute inset-0 flex flex-col"
+                  style={{ height: "100dvh" }}
+                >
+                  <div className="px-4 pt-4 pb-3 border-b text-base font-semibold">
+                    Rename list
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-4 py-3">
                     <input
+                      ref={mobileListInputRef}
                       type="text"
                       value={draftListTitle}
                       onChange={(e) => setDraftListTitle(e.target.value)}
-                      className="w-full px-3 py-2 rounded-md border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Rename list"
+                      className="w-full px-3 py-3 rounded-md border bg-background focus:outline-none focus:ring-2 focus:ring-primary text-base"
+                      placeholder="List name"
                       autoFocus
+                      enterKeyHint="done"
                       onFocus={(e) => e.currentTarget.select()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (draftListTitle.trim().length > 0) {
+                            mobileListInputRef.current?.blur();
+                            saveEditList();
+                          }
+                        }
+                      }}
                     />
+                  </div>
+                  <div
+                    className="px-4 pb-4 pt-2 border-t bg-background"
+                    style={{
+                      paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)",
+                      transform: kbInset
+                        ? `translateY(-${kbInset}px)`
+                        : undefined,
+                      willChange: kbInset ? "transform" : undefined,
+                    }}
+                  >
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={cancelEditList}
-                        className="flex-1 px-4 py-2 rounded-md border"
+                        className="flex-1 px-4 py-3 rounded-md border"
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
-                        onClick={saveEditList}
+                        onClick={() => {
+                          mobileListInputRef.current?.blur();
+                          saveEditList();
+                        }}
                         disabled={
                           savingList || draftListTitle.trim().length === 0
                         }
-                        className="flex-1 px-4 py-2 rounded-md bg-primary text-primary-foreground disabled:opacity-50"
+                        className="flex-1 px-4 py-3 rounded-md bg-primary text-primary-foreground disabled:opacity-50"
                       >
                         Save
                       </button>
@@ -903,77 +1260,117 @@ export default function ProjectDetailsPage() {
                 </div>
               </div>
             )}
-            {/* Desktop input: looks like a new item at the bottom */}
-            <div className="hidden md:block">
-              <div className="mt-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <input
-                      ref={desktopInputRef}
-                      type="text"
-                      value={newTitle}
-                      onChange={(e) => setNewTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleCreate();
-                        }
-                      }}
-                      placeholder="New item..."
-                      className="w-full px-3 py-2 rounded-md border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleCreate}
-                    disabled={submitting || newTitle.trim().length === 0}
-                    className="px-4 py-2 rounded-md bg-primary text-primary-foreground disabled:opacity-50"
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-            </div>
+            {/* Desktop input moved to AppLayout footer */}
           </>
         )}
       </div>
 
-      {/* Mobile sticky chat-like input; elevated via portal above AppLayout toolbar */}
+      {/* Mobile create task launcher + panel */}
       {mounted &&
         !editingId &&
         !editingList &&
         createPortal(
-          <div
-            className="md:hidden fixed bottom-0 left-0 right-0 z-[200] border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3"
-            style={{
-              paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)",
-            }}
-          >
-            <div className="max-w-3xl flex items-center gap-2">
-              <input
-                ref={mobileInputRef}
-                type="text"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleCreate();
-                  }
+          <>
+            {!creatingMobile && (
+              <Button
+                size="fab"
+                aria-label="Add task"
+                title="Add task"
+                className="md:hidden fixed z-[300] shadow-lg hover:shadow-xl active:scale-95"
+                style={{
+                  right: "1rem",
+                  bottom: "calc(env(safe-area-inset-bottom) + 1rem)",
+                  WebkitAppearance: "none",
+                  appearance: "none",
+                  minWidth: 56,
+                  minHeight: 56,
+                  maxWidth: 56,
+                  maxHeight: 56,
                 }}
-                placeholder="New item..."
-                className="flex-1 px-3 py-2 rounded-full border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <button
-                type="button"
-                onClick={handleCreate}
-                disabled={submitting || newTitle.trim().length === 0}
-                className="px-4 py-2 rounded-full bg-primary text-primary-foreground disabled:opacity-50"
+                onClick={() => {
+                  setCreatingMobile(true);
+                  setTimeout(() => mobileInputRef.current?.focus(), 0);
+                }}
               >
-                Send
-              </button>
-            </div>
-          </div>,
+                <Plus className="h-7 w-7" />
+              </Button>
+            )}
+            {creatingMobile && (
+              <div className="md:hidden fixed inset-0 z-[500] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                <div
+                  className="absolute inset-0 flex flex-col"
+                  style={{ height: "100dvh" }}
+                >
+                  <div className="px-4 pt-4 pb-3 border-b flex items-center justify-between">
+                    <div className="text-base font-semibold">Create task</div>
+                    <button
+                      type="button"
+                      aria-label="Cancel"
+                      title="Close"
+                      onClick={() => {
+                        mobileInputRef.current?.blur();
+                        setCreatingMobile(false);
+                      }}
+                      className="p-2 rounded-md hover:bg-muted/20"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-4 py-3">
+                    <textarea
+                      ref={mobileInputRef}
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      className="w-full px-3 py-3 rounded-md border bg-background focus:outline-none focus:ring-2 focus:ring-primary text-base resize-none min-h-[140px]"
+                      placeholder="Task title (use newline, , or ; to add many)"
+                      autoFocus
+                      enterKeyHint="enter"
+                      inputMode="text"
+                      autoCapitalize="sentences"
+                      onFocus={(e) => e.currentTarget.select()}
+                    />
+                  </div>
+                  <div
+                    className="px-4 pb-4 pt-2 border-t bg-background"
+                    style={{
+                      paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)",
+                      transform: kbInset
+                        ? `translateY(-${kbInset}px)`
+                        : undefined,
+                      willChange: kbInset ? "transform" : undefined,
+                    }}
+                  >
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          mobileInputRef.current?.blur();
+                          setCreatingMobile(false);
+                        }}
+                        className="flex-1 px-4 py-3 rounded-md border border-transparent bg-transparent hover:bg-muted/20"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (canSubmitNew) {
+                            mobileInputRef.current?.blur();
+                            handleCreate();
+                            setCreatingMobile(false);
+                          }
+                        }}
+                        disabled={submitting || !canSubmitNew}
+                        className="flex-1 px-4 py-3 rounded-md bg-primary text-primary-foreground disabled:opacity-50"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>,
           document.body
         )}
     </AppLayout>

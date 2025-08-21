@@ -158,7 +158,7 @@ export const SidebarMenu = ({
       {!closeMobileMenu && (
         <div
           className={cn(
-            "absolute -right-3 z-10 hidden md:block",
+            "absolute -right-3 z-50 hidden md:block",
             // when we compute a dynamic top, rely on inline style
             collapsePosition === "top" && "top-[21px]"
           )}
@@ -249,7 +249,9 @@ export const SidebarMenu = ({
           {session?.user && (
             <div
               className={cn(
-                "p-3",
+                // Lock bottom area total height to match footer (h-16)
+                // When collapsed, inner content still centers within this area
+                "p-3 h-16 flex items-center",
                 bottomMenuItems.length > 0 && "border-t border-border"
               )}
             >

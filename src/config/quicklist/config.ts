@@ -52,6 +52,18 @@ export default {
         ],
       },
     },
+    pwa: {
+      name: "QuickList",
+      shortName: "QuickList",
+      themeColor: "dark",
+      backgroundColor: "dark",
+      startUrl: "/quicklists",
+      scope: "/quicklists",
+      display: "standalone",
+      icons: {
+        appleTouch180: "/images/icons/quicklist-180.png",
+      },
+    },
   },
   app: {
     default: {

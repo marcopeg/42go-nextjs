@@ -15,13 +15,12 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 ### Boilerplate
 
 - [adc] Add tenants table [🔗](./tasks/adc-tenants.md)
+- [acz] Make the app iPhone home-screen compatible [🔗](./draft/acz-make-the-app-iphone-home-screen-compatible.md)
 
 ## Drafts
 
 ### QuickList
 
-- [acz] Make the app iPhone home-screen compatible [🔗](./draft/acz-make-the-app-iphone-home-screen-compatible.md)
-- [ack] quicklist - API: delete task [🔗](./draft/ack-quicklist-api-delete-task.md)
 - [acr] quicklist - API: delete project [🔗](./draft/acr-quicklist-api-delete-project.md)
 
 ### RBAC
@@ -41,7 +40,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [aan] App-Specific Session Configuration [🔗](./draft/aan-app-specific-session-config.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
-- [acz] Document Getting started with README's information
+- [acw] Document Getting started with README's information
 - [acm] 🪲 docs: Parse relative url in articles [🔗](./draft/acm-relative-url.md)
 - [aat] Support i18n
 - [abd] Optimize Database Documentation [🔗](./draft/abd-optimize-database-documentation.md)

@@ -4,6 +4,7 @@ import type { ComponentType, ReactNode } from "react";
 import type { TAuthProviders } from "@/42go/auth/lib/providers/types";
 import type { TDynamicPage } from "@/42go/components/DynamicPage";
 import type { TPublicLayoutToolbar } from "@/42go/layouts/public/types";
+import type { TPWAConfig } from "@/42go/pwa/types";
 import type { TAppLayoutNavItem } from "@/42go/layouts/app/types";
 import type { TAppConfigMatch } from "@/42go/lib/app-id/matchers";
 
@@ -34,6 +35,10 @@ export interface TAppConfigItem {
       disabled?: boolean;
     };
     meta?: Partial<Metadata>;
+    /**
+     * Explicit PWA configuration; authoritative source for PWA meta/manifest.
+     */
+    pwa?: TPWAConfig;
     pages?: TDynamicPage; // CMS pages configuration
     docs?: {
       source?: string; // Path to the documentation source
