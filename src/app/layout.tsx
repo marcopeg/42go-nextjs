@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { getAppInfo } from "@/42go/config/app-config";
 import { InjectAppID } from "@/42go/config/InjectAppID";
@@ -19,11 +19,9 @@ export const generateMetadata = async (): Promise<Metadata> => {
 
   if (!pwa) return base;
 
-  // Derive supported fields from public.pwa
-  const themeColorInput = pwa.themeColor as TColorInput | undefined;
+  // Derive supported fields from public.pwa (excluding themeColor - moved to viewport)
   const derived: Metadata = {
     applicationName: pwa.name || base.applicationName,
-    themeColor: resolvePWAColor(themeColorInput) || base.themeColor,
     // Next metadata appleWebApp
     appleWebApp: {
       capable: true,
@@ -35,6 +33,20 @@ export const generateMetadata = async (): Promise<Metadata> => {
   };
 
   return { ...base, ...derived };
+};
+
+export const generateViewport = async (): Promise<Viewport> => {
+  const { config } = await getAppInfo();
+  const pwa = config?.public?.pwa;
+
+  if (!pwa) return {};
+
+  // themeColor goes in viewport as of Next.js 15
+  const themeColorInput = pwa.themeColor as TColorInput | undefined;
+
+  return {
+    themeColor: resolvePWAColor(themeColorInput) || "#000000",
+  };
 };
 
 const RootLayout = async ({

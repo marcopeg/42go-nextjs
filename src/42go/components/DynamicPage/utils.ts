@@ -9,6 +9,7 @@ export const getPageId = (params: DynamicPageParams) =>
 
 /**
  * Get the metadata for a specific page with fallback on app's meta.
+ * Filters out themeColor as it should be handled in viewport (Next.js 15+)
  *
  * @param pageId
  * @returns
@@ -16,7 +17,16 @@ export const getPageId = (params: DynamicPageParams) =>
 export const getPageMeta = async (pageId: string) => {
   const config = await getAppConfig();
   const pageData = config?.public?.pages?.[pageId];
-  return pageData?.meta || config?.public?.meta || {};
+  const meta = pageData?.meta || config?.public?.meta || {};
+
+  // Filter out themeColor as it should be in viewport, not metadata (Next.js 15+)
+  if ("themeColor" in meta) {
+    const cleanMeta = { ...meta };
+    delete (cleanMeta as Record<string, unknown>).themeColor;
+    return cleanMeta;
+  }
+
+  return meta;
 };
 
 export const getPageData = async (pageId: string) => {
