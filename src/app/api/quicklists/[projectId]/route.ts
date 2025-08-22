@@ -3,7 +3,7 @@ import { getDB } from "@/42go/db";
 import { getServerSession } from "next-auth";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { z } from "zod";
-import { getAppID } from "@/42go/config/app-config";
+import { getAppIDFromHeaders } from "@/42go/config/app-config";
 
 type FreshnessRow = {
   id: string;
@@ -92,7 +92,7 @@ const getProject = async (
   }
 
   const db = getDB();
-  const appId = (await getAppID()) || "default";
+  const appId = getAppIDFromHeaders(req.headers) || "default";
 
   // Access control baked into WHERE clause: owner or collab
   const freshnessSql = `
@@ -226,7 +226,7 @@ const createTask = async (
   };
 
   const db = getDB();
-  const appId = (await getAppID()) || "default";
+  const appId = getAppIDFromHeaders(req.headers) || "default";
   try {
     return await db.transaction(async (trx) => {
       // Ensure user has access to the project (owner or collaborator)

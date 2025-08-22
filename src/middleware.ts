@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { matchAppID, APP_ID_HEADER } from "@/42go/lib/app-id";
+// import { matchAppID, APP_ID_HEADER } from "@/42go/lib/app-id";
 
 export async function middleware(request: NextRequest) {
   // console.log("@@@@@ MIDDLEWARE :: START");
+
+  // App resolution has been moved to getAppID() functions
   // Resolve the AppID
-  const appID = await matchAppID(request);
-  console.log("@appID:", appID);
+  // const appID = await matchAppID(request);
+  // console.log("@appID:", appID);
 
   // Set the AppID header if resolved
   const requestHeaders = new Headers(request.headers);
-  if (appID) {
-    requestHeaders.set(APP_ID_HEADER, appID);
-  }
+  // if (appID) {
+  //   requestHeaders.set(APP_ID_HEADER, appID);
+  // }
 
   // Forward the request
   const response = NextResponse.next({
@@ -20,11 +22,12 @@ export async function middleware(request: NextRequest) {
       headers: requestHeaders,
     },
   });
+
   // Set lightweight debug headers to confirm middleware execution in prod
   // These are safe, short-lived, and can be removed after debugging
   try {
     response.headers.set("x-mw-probe", "1");
-    response.headers.set("x-mw-appid", String(appID ?? ""));
+    response.headers.set("x-mw-appid", "disabled"); // String(appID ?? ""));
     const host =
       request.headers.get("x-forwarded-host") ||
       request.headers.get("host") ||

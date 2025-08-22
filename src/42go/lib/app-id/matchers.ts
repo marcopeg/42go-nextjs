@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import type { TAppID, TAppConfigItem } from "@/AppConfig";
+import type { AbstractHeaders } from "@/42go/config/abstract-headers";
 
 export interface HeaderMatchRule {
   key: string;
@@ -41,28 +42,23 @@ const parsePattern = (
   return { type: "literal", value: pattern };
 };
 
-const matchHeaderKey = (name: string, pattern: string) => {
-  const p = parsePattern(pattern);
-  return p.type === "regex"
-    ? p.re.test(name)
-    : name.toLowerCase() === p.value.toLowerCase();
-};
 const matchHeaderValue = (value: string, pattern: string) => {
   const p = parsePattern(pattern);
   return p.type === "regex" ? p.re.test(value) : value === p.value;
 };
 
-const matchHeaderRule = (headers: Headers, rule: HeaderMatchRule): boolean => {
-  const values: string[] = [];
-  headers.forEach((v, n) => {
-    if (matchHeaderKey(n, rule.key)) values.push(v);
-  });
-  if (!values.length) return false;
-  return values.some((v) => matchHeaderValue(v, rule.value));
+const matchHeaderRule = (
+  headers: AbstractHeaders,
+  rule: HeaderMatchRule
+): boolean => {
+  // Try to get the header value using the standardized get method
+  const value = headers.get(rule.key);
+  if (!value) return false;
+  return matchHeaderValue(value, rule.value);
 };
 
 const matchHeaderConfig = (
-  headers: Headers,
+  headers: AbstractHeaders,
   config: HeaderMatchConfig
 ): boolean => {
   const mode = config.mode || "any";
@@ -90,12 +86,57 @@ export const matchByHeaderPatterns = (
   return null;
 };
 
+/**
+ * Matches apps by header patterns using AbstractHeaders interface.
+ * This version works with both NextRequest headers and API route headers.
+ */
+export const matchAppByHeaders = (
+  headers: AbstractHeaders,
+  apps: Record<string, TAppConfigItem>
+): TAppID | null => {
+  for (const [key, cfg] of Object.entries(apps)) {
+    const matchCfg = cfg.match;
+    if (matchCfg?.header) {
+      try {
+        if (matchHeaderConfig(headers, matchCfg.header)) {
+          return key as TAppID;
+        }
+      } catch (e) {
+        console.error(`Header matching error for app ${key}:`, e);
+      }
+    }
+  }
+  return null;
+};
+
 export const matchByUrl = (
   request: NextRequest,
   apps: Record<string, TAppConfigItem>
 ): TAppID | null => {
   const host = request.headers.get("host");
   // console.log("@host", host);
+  for (const [key, cfg] of Object.entries(apps)) {
+    const p = cfg.match?.url;
+    if (!p) continue;
+    const patterns = Array.isArray(p) ? p : [p];
+    for (const pattern of patterns) {
+      try {
+        if (host && new RegExp(pattern).test(host)) return key as TAppID;
+      } catch {}
+    }
+  }
+  return null;
+};
+
+/**
+ * Matches apps by URL patterns using AbstractHeaders interface.
+ * This version works with both NextRequest headers and API route headers.
+ */
+export const matchAppByUrl = (
+  headers: AbstractHeaders,
+  apps: Record<string, TAppConfigItem>
+): TAppID | null => {
+  const host = headers.get("host");
   for (const [key, cfg] of Object.entries(apps)) {
     const p = cfg.match?.url;
     if (!p) continue;
