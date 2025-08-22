@@ -72,3 +72,6 @@ https://nextjs.org/docs/app/getting-started/deploying
 
 Docker example for running nextjs:
 https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile
+
+This claims it works:
+https://github.com/VogelVlug/teleprompter/tree/main

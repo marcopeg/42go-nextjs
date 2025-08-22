@@ -6,6 +6,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
+- [aem] fix docker build [🔗](./draft/aem-fix-docker-build.md)
+
 ## Upcoming Tasks
 
 ### QuickList
@@ -35,7 +37,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ### Boilerplate
 
-- [aem] fix docker build [🔗](./draft/aem-fix-docker-build.md)
 - [abx] Improve user's menu [🔗](./draft/abx-improve-user-menu.md)
 - [aan] App-Specific Session Configuration [🔗](./draft/aan-app-specific-session-config.md)
 - [ade] [DynamicPages with custom layout](./draft/ade-dynamic-pages-layout.md)
