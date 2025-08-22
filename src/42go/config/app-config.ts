@@ -98,10 +98,10 @@ export const getAppID = async (request?: Request): Promise<TAppID> => {
   return null;
 };
 
-export const getAppConfig = async (): Promise<TAppConfig> => {
-  const appID = await getAppID();
-  if (!appID) return null;
-  return apps[appID as keyof typeof apps] || null;
+export const getAppConfig = async (appID?: TAppID): Promise<TAppConfig> => {
+  const resolvedAppID = appID || (await getAppID());
+  if (!resolvedAppID) return null;
+  return apps[resolvedAppID as keyof typeof apps] || null;
 };
 
 export const getAppInfo = async (): Promise<{
@@ -109,6 +109,6 @@ export const getAppInfo = async (): Promise<{
   config: TAppConfig;
 }> => {
   const id = await getAppID();
-  const config = await getAppConfig();
+  const config = await getAppConfig(id);
   return { id, config };
 };

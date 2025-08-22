@@ -3,11 +3,10 @@ import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
 import { getDB } from "@/42go/db";
-import { getAppID, getAppConfig } from "@/42go/config/app-config";
+import { getAppInfo } from "@/42go/config/app-config";
 
 export const getProviders = async () => {
-  const appID = await getAppID();
-  const config = await getAppConfig();
+  const { id: appID, config } = await getAppInfo();
 
   return (config?.auth?.providers || [])
     .map((provider) => {
