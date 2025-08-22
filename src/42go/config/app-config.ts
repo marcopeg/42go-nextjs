@@ -13,11 +13,11 @@ import {
 export type { TAppConfig, TAppID } from "@/AppConfig";
 
 /**
- * Unified app ID resolution that works for both server components and API routes.
- * @param request Optional Request object for API routes
+ * Main app ID resolution function that works for both server components and API routes.
+ * @param request Optional Request for API route context
  * @returns The resolved app ID or null if no match found
  */
-const resolveAppID = async (request?: Request): Promise<TAppID> => {
+export const getAppID = async (request?: Request): Promise<TAppID> => {
   // Step 1: Headers resolution
   let headers: Headers;
   if (request) {
@@ -100,75 +100,11 @@ const resolveAppID = async (request?: Request): Promise<TAppID> => {
 };
 
 /**
- * Main app ID resolution function that works for both server components and API routes.
- * @param request Optional Request for API route context
- * @returns The resolved app ID or null if no match found
- */
-export const getAppID = async (request?: Request): Promise<TAppID> => {
-  return await resolveAppID(request);
-};
-
-/**
  * Cached version for server components (no request parameter)
  */
 export const getAppIDCached = cache(async (): Promise<TAppID> => {
-  return await resolveAppID();
+  return await getAppID();
 });
-
-/**
- * Legacy function for API routes using Headers directly.
- * @deprecated Use getAppID(request) instead for better integration
- */
-export const getAppIDFromHeaders = (headers: Headers): TAppID => {
-  // Step 2: Check for explicit header (set by middleware)
-  const appIDHeader = headers.get(APP_ID_HEADER);
-  if (appIDHeader && apps[appIDHeader as keyof typeof apps]) {
-    return appIDHeader as TAppID;
-  }
-
-  // Step 3: Run the matchers
-  const abstractHeaders = fromHeaders(headers);
-
-  // Try environment matching
-  const envMatch = matchByEnvironment(apps);
-  if (envMatch) {
-    return envMatch;
-  }
-
-  // Try header pattern matching
-  const headerMatch = matchAppByHeaders(abstractHeaders, apps);
-  if (headerMatch) {
-    return headerMatch;
-  }
-
-  // Try URL pattern matching
-  const urlMatch = matchAppByUrl(abstractHeaders, apps);
-  if (urlMatch) {
-    return urlMatch;
-  }
-
-  // Step 4 & 5: No fallback for security - return null
-  return null;
-};
-
-/**
- * Secure helper for API routes - resolves app ID or returns 404 response.
- * @deprecated Use getAppID(request) with proper error handling instead
- */
-export const getSecureAppID = (
-  req: Request
-): { appId: TAppID; error?: never } | { appId?: never; error: Response } => {
-  const appId = getAppIDFromHeaders(req.headers);
-  if (!appId) {
-    return {
-      error: Response.json(
-        { error: "app_not_found", message: "Unable to determine app context" },
-        { status: 404 }
-      ),
-    };
-  }
-  return { appId };
-};
 
 export const getAppConfig = cache(async (): Promise<TAppConfig> => {
   const appID = await getAppIDCached();
