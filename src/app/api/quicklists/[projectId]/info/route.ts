@@ -94,7 +94,13 @@ const getInfo = async (
   }
 
   const db = getDB();
-  const appId = (await getAppID()) || "default";
+  const appId = await getAppID(req);
+  if (!appId) {
+    return Response.json(
+      { error: "app_not_found", message: "Unable to determine app context" },
+      { status: 404 }
+    );
+  }
 
   // Compute freshness including invites and collabs (and tasks for safety)
   const freshnessSql = `

@@ -58,7 +58,13 @@ const feedback = async (request: Request) => {
     const user_agent = request.headers.get("user-agent") || "unknown";
 
     const db = getDB();
-    const app_id = (await getAppID()) || "default";
+    const app_id = await getAppID(request);
+    if (!app_id) {
+      return NextResponse.json(
+        { error: "Unable to determine app context" },
+        { status: 404 }
+      );
+    }
     // Insert feedback into database
     await db("feedbacks").insert({
       id: uuidv4(),

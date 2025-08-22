@@ -3,7 +3,7 @@ import { getDB } from "@/42go/db";
 import { getServerSession } from "next-auth";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { z } from "zod";
-import { getAppIDFromHeaders } from "@/42go/config/app-config";
+import { getAppID } from "@/42go/config/app-config";
 
 type FreshnessRow = {
   id: string;
@@ -92,7 +92,13 @@ const getProject = async (
   }
 
   const db = getDB();
-  const appId = getAppIDFromHeaders(req.headers) || "default";
+  const appId = await getAppID(req);
+  if (!appId) {
+    return Response.json(
+      { error: "app_not_found", message: "Unable to determine app context" },
+      { status: 404 }
+    );
+  }
 
   // Access control baked into WHERE clause: owner or collab
   const freshnessSql = `
@@ -226,7 +232,13 @@ const createTask = async (
   };
 
   const db = getDB();
-  const appId = getAppIDFromHeaders(req.headers) || "default";
+  const appId = await getAppID(req);
+  if (!appId) {
+    return Response.json(
+      { error: "app_not_found", message: "Unable to determine app context" },
+      { status: 404 }
+    );
+  }
   try {
     return await db.transaction(async (trx) => {
       // Ensure user has access to the project (owner or collaborator)

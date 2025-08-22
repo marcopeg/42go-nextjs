@@ -72,7 +72,13 @@ const handler = async (
   };
 
   const db = getDB();
-  const appId = (await getAppID()) || "default";
+  const appId = await getAppID(req);
+  if (!appId) {
+    return Response.json(
+      { error: "app_not_found", message: "Unable to determine app context" },
+      { status: 404 }
+    );
+  }
   try {
     return await db.transaction(async (trx) => {
       const currentRes = await trx.raw(
@@ -202,7 +208,13 @@ const deleteHandler = async (
   }
 
   const db = getDB();
-  const appId = (await getAppID()) || "default";
+  const appId = await getAppID(req);
+  if (!appId) {
+    return Response.json(
+      { error: "app_not_found", message: "Unable to determine app context" },
+      { status: 404 }
+    );
+  }
   try {
     return await db.transaction(async (trx) => {
       // Load task and verify access

@@ -8,7 +8,7 @@ import { getAppID } from "@/42go/config/app-config";
 export async function GET(request: NextRequest) {
   try {
     // Get the app name identified by middleware
-    const appID = await getAppID();
+    const appID = await getAppID(request);
 
     // Collect debug information
     const debugInfo = {

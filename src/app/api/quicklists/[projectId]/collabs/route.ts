@@ -28,7 +28,13 @@ export const POST = protectRoute(
     }
 
     const db = getDB();
-    const appId = (await getAppID()) || "default";
+    const appId = await getAppID(req);
+    if (!appId) {
+      return Response.json(
+        { error: "app_not_found", message: "Unable to determine app context" },
+        { status: 404 }
+      );
+    }
     try {
       return await db.transaction(async (trx) => {
         // Ensure invite exists for this project/email in current app

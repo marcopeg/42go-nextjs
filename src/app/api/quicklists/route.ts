@@ -3,7 +3,7 @@ import { getDB } from "@/42go/db";
 import { getServerSession } from "next-auth";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { z } from "zod";
-import { getSecureAppID } from "@/42go/config/app-config";
+import { getAppID } from "@/42go/config/app-config";
 
 type ProjectRow = {
   id: string;
@@ -72,9 +72,13 @@ const getQuicklists = async (req: Request) => {
   const cursor = decodeCursor(cursorParam);
 
   const db = getDB();
-  const result = getSecureAppID(req);
-  if (result.error) return result.error;
-  const appId = result.appId;
+  const appId = await getAppID(req);
+  if (!appId) {
+    return Response.json(
+      { error: "app_not_found", message: "Unable to determine app context" },
+      { status: 404 }
+    );
+  }
 
   // Build projects query via raw SQL for DISTINCT ON semantics and stable ordering.
   const params: unknown[] = [userId, appId, userId, appId];
@@ -213,9 +217,13 @@ const createProject = async (req: Request) => {
   const tasks = parsed.data?.tasks ?? ["Task 1", "Task 2"];
 
   const db = getDB();
-  const result = getSecureAppID(req);
-  if (result.error) return result.error;
-  const appId = result.appId;
+  const appId = await getAppID(req);
+  if (!appId) {
+    return Response.json(
+      { error: "app_not_found", message: "Unable to determine app context" },
+      { status: 404 }
+    );
+  }
 
   try {
     return await db.transaction(async (trx) => {
@@ -306,9 +314,13 @@ const deleteProject = async (req: Request) => {
 
   const { id } = parsed.data;
   const db = getDB();
-  const result = getSecureAppID(req);
-  if (result.error) return result.error;
-  const appId = result.appId;
+  const appId = await getAppID(req);
+  if (!appId) {
+    return Response.json(
+      { error: "app_not_found", message: "Unable to determine app context" },
+      { status: 404 }
+    );
+  }
 
   try {
     return await db.transaction(async (trx) => {

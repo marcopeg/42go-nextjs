@@ -9,7 +9,13 @@ export const GET = async () => {
     return Response.json({ error: "No session" }, { status: 401 });
   }
   const userId = session.user.id;
-  const appId = (await getAppID()) || "default";
+  const appId = await getAppID();
+  if (!appId) {
+    return Response.json(
+      { error: "Unable to determine app context" },
+      { status: 404 }
+    );
+  }
   const [roles, grants] = await Promise.all([
     getUserRoles(userId, appId),
     getUserGrants(userId, appId),
