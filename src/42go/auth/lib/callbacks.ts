@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { getDB } from "@/42go/db";
 import { getUserGrants, getUserRoles } from "@/42go/policy/access";
-import { getAppIDCached as getAppID } from "@/42go/config/app-config";
+import { getAppID } from "@/42go/config/app-config";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const signIn = async ({ user, account }: any) => {

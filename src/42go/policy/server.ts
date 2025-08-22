@@ -2,10 +2,7 @@ import "server-only";
 import { getServerSession } from "next-auth";
 import { warnOnce } from "./warn";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
-import {
-  getAppIDCached as getAppID,
-  getAppConfig,
-} from "@/42go/config/app-config";
+import { getAppID, getAppConfig } from "@/42go/config/app-config";
 import { checkAccess, getSessionUserId } from "./access";
 import type {
   EvaluatePoliciesResult,
