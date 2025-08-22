@@ -19,7 +19,7 @@ import { PricingPage } from "@/config/pricing-page";
 export default {
   name: "DEFAULT APP",
   match: {
-    url: ["^localhost:3000+$", "^localhost:4000+$"],
+    url: ["^42go.vercel.app+$", "^localhost:3000+$"],
     header: {
       mode: "all",
       keys: [

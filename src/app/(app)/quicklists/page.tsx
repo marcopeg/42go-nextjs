@@ -6,7 +6,7 @@ import { ListTodo, RotateCcw } from "lucide-react";
 import {
   ProjectListSkeleton,
   ProjectListErrorState,
-} from "@/components/quicklists/ProjectListSkeleton";
+} from "@/lib/quicklists/components/ProjectListSkeleton";
 import { useQuicklistsData } from "@/lib/quicklists/hooks/useQuicklistsData";
 import { ProjectsList } from "@/lib/quicklists/components/ProjectsList";
 

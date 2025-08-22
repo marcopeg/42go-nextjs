@@ -5,7 +5,11 @@ import { User, ListTodo } from "lucide-react";
 export default {
   name: "",
   match: {
-    url: ["^quicklist\\.localhost:\\d+$", "^42go.ngrok.app+$"],
+    url: [
+      "^quicklist42go.vercel.app+$",
+      "^42go.ngrok.app+$",
+      "^quicklist\\.localhost:\\d+$",
+    ],
   },
   features: ["api:waitlist", "api:quicklists", "page:quicklists"],
   auth: {

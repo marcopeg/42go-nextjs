@@ -16,7 +16,10 @@ import { DisplayDate } from "@/42go/components/DisplayDate";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import { useRemoveProjectFromCache, useRefreshQuicklists } from "@/hooks/useQuicklists";
+import {
+  useRemoveProjectFromCache,
+  useRefreshQuicklists,
+} from "@/lib/quicklists/hooks/useQuicklists";
 
 type Invite = {
   email: string;
@@ -313,7 +316,7 @@ export default function QuicklistInfoPage() {
           const deepMsg = extractMessage(data);
           if (deepMsg) msg = deepMsg;
         } catch {}
-        
+
         toast({
           title: "Failed to delete project",
           description: msg,

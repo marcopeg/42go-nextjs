@@ -8,7 +8,7 @@ import {
   useInvalidateProjectCache,
   useUpdateProjectInCache,
   ProjectData,
-} from "@/hooks/useQuicklists";
+} from "@/lib/quicklists/hooks/useQuicklists";
 
 export type Task = ProjectData["tasks"][0];
 
@@ -22,48 +22,58 @@ export interface UseQuicklistDataReturn {
   isLoading: boolean;
   error: unknown;
   refetch: () => void;
-  
+
   // Task state
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
-  
+
   // Project title state
   listTitle: string;
   setListTitle: React.Dispatch<React.SetStateAction<string>>;
-  
+
   // UI state
   movingDownIds: Set<string>;
   setMovingDownIds: React.Dispatch<React.SetStateAction<Set<string>>>;
-  
+
   // Task operations
   handleToggleTask: (taskId: string, completed: boolean) => Promise<void>;
   handleDeleteTask: (taskId: string) => Promise<boolean>;
-  handleCreateTask: (projectId: string, title: string, position: number) => Promise<Task>;
+  handleCreateTask: (
+    projectId: string,
+    title: string,
+    position: number
+  ) => Promise<Task>;
   handleUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
-  
-  // Project operations  
-  handleUpdateProject: (updates: Partial<ProjectData["project"]>) => Promise<void>;
-  
+
+  // Project operations
+  handleUpdateProject: (
+    updates: Partial<ProjectData["project"]>
+  ) => Promise<void>;
+
   // Cache operations
   invalidateCache: () => void;
   refreshData: () => void;
 }
 
-export function useQuicklistData({ projectId }: UseQuicklistDataProps): UseQuicklistDataReturn {
+export function useQuicklistData({
+  projectId,
+}: UseQuicklistDataProps): UseQuicklistDataReturn {
   const {
     data: projectData,
     isLoading,
     error,
     refetch,
   } = useProject(projectId);
-  
+
   const refreshProject = useRefreshProject(projectId);
   const invalidateProjectCache = useInvalidateProjectCache();
   const updateProjectInCache = useUpdateProjectInCache();
   const { toast } = useToast();
-  
+
   const [tasks, setTasks] = useState<Task[]>(projectData?.tasks || []);
-  const [listTitle, setListTitle] = useState<string>(projectData?.project?.title || "");
+  const [listTitle, setListTitle] = useState<string>(
+    projectData?.project?.title || ""
+  );
   const [movingDownIds, setMovingDownIds] = useState<Set<string>>(new Set());
 
   // Sync tasks when projectData changes
@@ -153,9 +163,9 @@ export function useQuicklistData({ projectId }: UseQuicklistDataProps): UseQuick
         method: "DELETE",
         credentials: "same-origin",
       });
-      
+
       if (!res.ok) throw new Error(`Failed to delete: ${res.status}`);
-      
+
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
       invalidateProjectCache(projectId, { taskDeleted: true });
       return true;
@@ -175,11 +185,11 @@ export function useQuicklistData({ projectId }: UseQuicklistDataProps): UseQuick
       credentials: "same-origin",
       body: JSON.stringify({ title, position: nextPosition }),
     });
-    
+
     if (!res.ok) {
       throw new Error(`Failed to create task: ${res.status}`);
     }
-    
+
     const data = (await res.json()) as {
       ok: boolean;
       task: Task;
@@ -194,11 +204,11 @@ export function useQuicklistData({ projectId }: UseQuicklistDataProps): UseQuick
       credentials: "same-origin",
       body: JSON.stringify(updates),
     });
-    
+
     if (!res.ok) {
       throw new Error(`Failed to update task: ${res.status}`);
     }
-    
+
     const result = await res.json();
     if (result?.task) {
       setTasks((prev) =>
@@ -207,18 +217,20 @@ export function useQuicklistData({ projectId }: UseQuicklistDataProps): UseQuick
     }
   };
 
-  const handleUpdateProject = async (updates: Partial<ProjectData["project"]>) => {
+  const handleUpdateProject = async (
+    updates: Partial<ProjectData["project"]>
+  ) => {
     const res = await fetch(`/api/quicklists/${projectId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
       body: JSON.stringify(updates),
     });
-    
+
     if (!res.ok) {
       throw new Error(`Failed to update project: ${res.status}`);
     }
-    
+
     const data = await res.json();
     if (data?.project) {
       if (data.project.title) {
@@ -226,7 +238,7 @@ export function useQuicklistData({ projectId }: UseQuicklistDataProps): UseQuick
       }
       invalidateProjectCache(projectId, data.project);
     }
-    
+
     return data;
   };
 

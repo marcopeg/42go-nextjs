@@ -118,11 +118,11 @@ export const DEFAULT_APP: TAppID = null;
  * Available applications with their configurations.
  */
 export const apps = {
-  default: DefaultApp,
+  quicklist: QuicklistApp,
   app1: App1App,
   app2: App2App,
   calendar: CalendarApp,
-  quicklist: QuicklistApp,
+  default: DefaultApp,
 } as const satisfies Record<string, TAppConfigItem>;
 
 // Helper derived type including optional features on each app entry

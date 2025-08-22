@@ -21,8 +21,11 @@ import { Button } from "@/components/ui/button";
 import {
   ProjectDetailsSkeleton,
   ProjectDetailsErrorState,
-} from "@/components/quicklists/ProjectListSkeleton";
-import { useQuicklistData, Task } from "@/lib/quicklists/hooks/useQuicklistData";
+} from "@/lib/quicklists/components/ProjectListSkeleton";
+import {
+  useQuicklistData,
+  Task,
+} from "@/lib/quicklists/hooks/useQuicklistData";
 import { TaskItem } from "@/lib/quicklists/components/TaskItem";
 import { TasksList } from "@/lib/quicklists/components/TasksList";
 import { HeaderTitle } from "@/lib/quicklists/components/HeaderTitle";
@@ -182,60 +185,68 @@ export default function ProjectDetailsPage() {
     setEditingId(null);
     setDraftTitle("");
   };
-  
+
   const handleSaveEdit = async () => {
     if (!editingId) return;
     const parts = parseNewTitle(draftTitle);
     const first = parts[0]?.trim() || "";
     if (!first) return handleCancelEdit();
-    
+
     try {
       setSavingEdit(true);
       // Update the task title
       await handleUpdateTask(editingId, { title: first });
-      
+
       // If there are additional parts, create new tasks
       const rest = parts.slice(1);
       if (rest.length > 0) {
         const maxPos = tasks
           .filter((t) => !t.completed_at)
           .reduce((m, t) => Math.max(m, t.position || 0), 0);
-        
+
         for (let i = 0; i < rest.length; i++) {
           try {
-            const newTask = await handleCreateTask(projectId, rest[i], maxPos + i + 1);
-            setTasks(prev => [...prev, newTask]);
+            const newTask = await handleCreateTask(
+              projectId,
+              rest[i],
+              maxPos + i + 1
+            );
+            setTasks((prev) => [...prev, newTask]);
           } catch (error) {
-            console.error('Failed to create additional task:', error);
+            console.error("Failed to create additional task:", error);
           }
         }
       }
     } catch (error) {
-      console.error('Failed to save edit:', error);
+      console.error("Failed to save edit:", error);
     } finally {
       setSavingEdit(false);
       handleCancelEdit();
     }
   };
-  
+
   const handleCreate = async () => {
     if (!projectId) return;
     const titles = parseNewTitle(newTitle);
     if (titles.length === 0) return;
-    
+
     try {
       setSubmitting(true);
       const maxPos = tasks.reduce((m, t) => Math.max(m, t.position || 0), 0);
-      
+
       for (let i = 0; i < titles.length; i++) {
         try {
-          const newTask = await handleCreateTask(projectId, titles[i], maxPos + i + 1);
-          setTasks(prev => [...prev, newTask]);
+          const newTask = await handleCreateTask(
+            projectId,
+            titles[i],
+            maxPos + i + 1
+          );
+          setTasks((prev) => [...prev, newTask]);
         } catch (error) {
-          console.error('Failed to create task:', error);
+          console.error("Failed to create task:", error);
         }
       }
-      
+
       setNewTitle("");
       focusComposer();
     } finally {
@@ -314,7 +325,7 @@ export default function ProjectDetailsPage() {
       await handleUpdateProject({ title });
       cancelEditList();
     } catch (error) {
-      console.error('Failed to save list title:', error);
+      console.error("Failed to save list title:", error);
     } finally {
       setSavingList(false);
     }
@@ -456,7 +467,7 @@ export default function ProjectDetailsPage() {
               </DragOverlay>
             </DndContext>
             {tasks.length === 0 && <EmptyState />}
-            
+
             {/* Mobile panels using extracted components */}
             <MobileEditPanel
               isOpen={!!editingId}
@@ -464,14 +475,19 @@ export default function ProjectDetailsPage() {
               onChangeDraft={setDraftTitle}
               onSave={handleSaveEdit}
               onCancel={handleCancelEdit}
-              onDelete={editingId ? () => handleDelete(editingId).then((deleted) => {
-                if (deleted) handleCancelEdit();
-              }) : undefined}
+              onDelete={
+                editingId
+                  ? () =>
+                      handleDelete(editingId).then((deleted) => {
+                        if (deleted) handleCancelEdit();
+                      })
+                  : undefined
+              }
               saving={savingEdit}
               canSubmit={canSubmitEdit}
               kbInset={kbInset}
             />
-            
+
             <MobileListEditPanel
               isOpen={editingList}
               draftTitle={draftListTitle}

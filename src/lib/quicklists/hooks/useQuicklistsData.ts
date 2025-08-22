@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
-import { useQuicklists, useRefreshQuicklists } from "@/hooks/useQuicklists";
+import {
+  useQuicklists,
+  useRefreshQuicklists,
+} from "@/lib/quicklists/hooks/useQuicklists";
 
 export interface Project {
   id: string;
@@ -34,11 +37,11 @@ export interface UseQuicklistsDataReturn {
   isLoading: boolean;
   error: unknown;
   refetch: () => void;
-  
+
   // UI state
   creating: boolean;
   busyInvite: string | null;
-  
+
   // Operations
   handleRefresh: () => void;
   handleCreate: () => Promise<void>;
@@ -51,7 +54,7 @@ export function useQuicklistsData(): UseQuicklistsDataReturn {
   const refreshQuicklists = useRefreshQuicklists();
   const router = useRouter();
   const { toast } = useToast();
-  
+
   const [creating, setCreating] = useState(false);
   const [busyInvite, setBusyInvite] = useState<string | null>(null);
 
@@ -72,17 +75,17 @@ export function useQuicklistsData(): UseQuicklistsDataReturn {
         }),
         credentials: "same-origin",
       });
-      
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.message || `Create failed (${res.status})`);
       }
-      
+
       const resp = (await res.json()) as { id: string };
-      
+
       // Redirect to the new project's UUID
       router.push(`/quicklists/${resp.id}`);
-      
+
       // Invalidate the projects list cache and trigger background reload
       // This ensures the next time we land on the page everything is still there
       refreshQuicklists();
@@ -104,7 +107,7 @@ export function useQuicklistsData(): UseQuicklistsDataReturn {
         method: "POST",
         credentials: "same-origin",
       });
-      
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.message || `Join failed (${res.status})`);
