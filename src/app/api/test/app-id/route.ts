@@ -7,6 +7,7 @@ import { getAppID } from "@/42go/config/app-config";
  */
 export async function GET(request: NextRequest) {
   try {
+    console.log("@route: app-id");
     const appID = await getAppID(request);
 
     const debugInfo = {

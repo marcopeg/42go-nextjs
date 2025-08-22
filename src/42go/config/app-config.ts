@@ -25,7 +25,27 @@ const resolveAppID = async (request?: Request): Promise<TAppID> => {
     headers = request.headers;
   } else {
     // Server component context - use next/headers
-    headers = await getHeaders();
+    try {
+      headers = await getHeaders();
+    } catch {
+      // In Docker or build context, next/headers might not be available
+      console.warn(
+        "Cannot access next/headers, falling back to environment matching only"
+      );
+
+      // Try environment matching only
+      const envMatch = matchByEnvironment(apps);
+      if (envMatch) {
+        return envMatch;
+      }
+
+      // Use default app if available
+      if (DEFAULT_APP && apps[DEFAULT_APP as keyof typeof apps]) {
+        return DEFAULT_APP;
+      }
+
+      return null;
+    }
   }
 
   // Step 2: Check for explicit header (set by middleware)
@@ -84,8 +104,15 @@ const resolveAppID = async (request?: Request): Promise<TAppID> => {
  * @param request Optional Request for API route context
  * @returns The resolved app ID or null if no match found
  */
-export const getAppID = cache(async (request?: Request): Promise<TAppID> => {
+export const getAppID = async (request?: Request): Promise<TAppID> => {
   return await resolveAppID(request);
+};
+
+/**
+ * Cached version for server components (no request parameter)
+ */
+export const getAppIDCached = cache(async (): Promise<TAppID> => {
+  return await resolveAppID();
 });
 
 /**
@@ -144,14 +171,14 @@ export const getSecureAppID = (
 };
 
 export const getAppConfig = cache(async (): Promise<TAppConfig> => {
-  const appID = await getAppID();
+  const appID = await getAppIDCached();
   if (!appID) return null;
   return apps[appID as keyof typeof apps] || null;
 });
 
 export const getAppInfo = cache(
   async (): Promise<{ id: TAppID; config: TAppConfig }> => {
-    const id = await getAppID();
+    const id = await getAppIDCached();
     const config = await getAppConfig();
     return { id, config };
   }
