@@ -173,3 +173,26 @@ export function useInvalidateProjectCache() {
     }
   };
 }
+
+// Hook to remove a project from the cache (for optimistic deletion)
+export function useRemoveProjectFromCache() {
+  const queryClient = useQueryClient();
+
+  return (projectId: string) => {
+    queryClient.setQueryData(
+      QUICKLISTS_QUERY_KEY,
+      (oldData: ProjectsResponse | undefined) => {
+        if (!oldData) return oldData;
+
+        return {
+          ...oldData,
+          projects: oldData.projects.filter((project) => project.id !== projectId),
+          invites: oldData.invites.filter((invite) => invite.project_id !== projectId),
+        };
+      }
+    );
+
+    // Also remove the individual project cache
+    queryClient.removeQueries({ queryKey: PROJECT_QUERY_KEY(projectId) });
+  };
+}

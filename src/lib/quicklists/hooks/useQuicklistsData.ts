@@ -62,6 +62,7 @@ export function useQuicklistsData(): UseQuicklistsDataReturn {
   const handleCreate = async () => {
     setCreating(true);
     try {
+      // Run the backend request and await full completion
       const res = await fetch("/api/quicklists", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -78,8 +79,13 @@ export function useQuicklistsData(): UseQuicklistsDataReturn {
       }
       
       const resp = (await res.json()) as { id: string };
-      refreshQuicklists();
+      
+      // Redirect to the new project's UUID
       router.push(`/quicklists/${resp.id}`);
+      
+      // Invalidate the projects list cache and trigger background reload
+      // This ensures the next time we land on the page everything is still there
+      refreshQuicklists();
     } catch (e) {
       toast({
         variant: "destructive",

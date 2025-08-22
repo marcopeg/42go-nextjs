@@ -264,3 +264,88 @@ export const POST = protectRoute(createProject, {
     session: true,
   },
 });
+
+const deleteProjectSchema = z.object({
+  id: z.string().uuid(),
+});
+
+const deleteProject = async (req: Request) => {
+  void req.url;
+
+  const session = await getServerSession(await getAuthOptions());
+  const userId = session?.user?.id as string | undefined;
+  if (!userId) {
+    return Response.json(
+      { error: "session", message: "login required" },
+      { status: 401 }
+    );
+  }
+
+  let body: unknown = undefined;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json(
+      { error: "bad_request", message: "Invalid JSON" },
+      { status: 400 }
+    );
+  }
+
+  const parsed = deleteProjectSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      { error: "bad_request", message: parsed.error.message },
+      { status: 400 }
+    );
+  }
+
+  const { id } = parsed.data;
+  const db = getDB();
+  const appId = (await getAppID()) || "default";
+
+  try {
+    return await db.transaction(async (trx) => {
+      // Check if user owns this project
+      const project = await trx("quicklist.projects")
+        .where({ id, app_id: appId })
+        .first();
+
+      if (!project) {
+        return Response.json(
+          { error: "not_found", message: "Project not found" },
+          { status: 404 }
+        );
+      }
+
+      if (project.owned_by !== userId) {
+        return Response.json(
+          { error: "forbidden", message: "Only project owner can delete" },
+          { status: 403 }
+        );
+      }
+
+      // Delete related data first (tasks, collabs, invites)
+      await trx("quicklist.tasks").where({ project_id: id }).del();
+      await trx("quicklist.collabs").where({ project_id: id }).del();
+      await trx("quicklist.invites").where({ project_id: id }).del();
+      
+      // Delete the project
+      await trx("quicklist.projects").where({ id }).del();
+
+      return Response.json({ success: true });
+    });
+  } catch (err) {
+    console.error("DELETE quicklists project failed", err);
+    return Response.json(
+      { error: "server_error", message: (err as Error)?.message || "Unknown" },
+      { status: 500 }
+    );
+  }
+};
+
+export const DELETE = protectRoute(deleteProject, {
+  require: {
+    feature: "api:quicklists",
+    session: true,
+  },
+});

@@ -15,6 +15,8 @@ import { useSession } from "next-auth/react";
 import { DisplayDate } from "@/42go/components/DisplayDate";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
+import { useRemoveProjectFromCache, useRefreshQuicklists } from "@/hooks/useQuicklists";
 
 type Invite = {
   email: string;
@@ -110,6 +112,11 @@ export default function QuicklistInfoPage() {
   const [submitting, setSubmitting] = useState(false);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const { toast } = useToast();
+  const removeProjectFromCache = useRemoveProjectFromCache();
+  const refreshQuicklists = useRefreshQuicklists();
 
   useEffect(() => {
     if (!projectId) return;
@@ -272,6 +279,52 @@ export default function QuicklistInfoPage() {
       router.push("/quicklists");
     } finally {
       setLeaving(false);
+    }
+  };
+
+  const deleteProject = async () => {
+    if (typeof window !== "undefined") {
+      const ok = window.confirm(
+        "Are you sure you want to delete this project? This action cannot be undone and will remove all tasks and collaborators."
+      );
+      if (!ok) return;
+    }
+
+    try {
+      setDeleting(true);
+
+      // Optimistically remove from cache and redirect immediately
+      removeProjectFromCache(projectId);
+      router.push("/quicklists");
+
+      // Run the actual delete request in the background
+      const res = await fetch("/api/quicklists", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ id: projectId }),
+      });
+
+      if (!res.ok) {
+        // If deletion failed, show error and refresh to restore state
+        let msg = `Delete failed (${res.status})`;
+        try {
+          const data = await res.json();
+          const deepMsg = extractMessage(data);
+          if (deepMsg) msg = deepMsg;
+        } catch {}
+        
+        toast({
+          title: "Failed to delete project",
+          description: msg,
+          variant: "destructive",
+        });
+
+        // Force refresh the list to restore the project if deletion failed
+        refreshQuicklists();
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -500,6 +553,21 @@ export default function QuicklistInfoPage() {
                   disabled={leaving || !session?.user?.id}
                 >
                   Leave this list
+                </Button>
+              </section>
+            )}
+
+            {/* Delete button for owners */}
+            {data.project.is_owner && (
+              <section className="pt-4">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="w-full"
+                  onClick={deleteProject}
+                  disabled={deleting}
+                >
+                  Delete this project
                 </Button>
               </section>
             )}
