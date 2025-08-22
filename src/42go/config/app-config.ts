@@ -90,16 +90,27 @@ export const getAppIDFromHeaders = (headers: Headers): TAppID => {
     return urlMatch;
   }
 
-  // Step 5: Fall back to default
-  if (DEFAULT_APP === null) {
-    console.warn(
-      `No app could be resolved and no DEFAULT_APP set. Returning null.`
-    );
-    return null;
-  }
+  // Step 5: SECURITY: Never default - return null to force explicit handling
+  return null;
+};
 
-  console.warn(`No app could be resolved, using default: ${DEFAULT_APP}`);
-  return DEFAULT_APP;
+/**
+ * Secure helper for API routes - resolves app ID or returns 404 response.
+ * Use this in API routes to avoid security issues with app defaulting.
+ */
+export const getSecureAppID = (
+  req: Request
+): { appId: TAppID; error?: never } | { appId?: never; error: Response } => {
+  const appId = getAppIDFromHeaders(req.headers);
+  if (!appId) {
+    return {
+      error: Response.json(
+        { error: "app_not_found", message: "Unable to determine app context" },
+        { status: 404 }
+      ),
+    };
+  }
+  return { appId };
 };
 
 export const getAppConfig = cache(async (): Promise<TAppConfig> => {

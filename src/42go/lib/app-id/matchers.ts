@@ -42,6 +42,13 @@ const parsePattern = (
   return { type: "literal", value: pattern };
 };
 
+const matchHeaderKey = (name: string, pattern: string) => {
+  const p = parsePattern(pattern);
+  return p.type === "regex"
+    ? p.re.test(name)
+    : name.toLowerCase() === p.value.toLowerCase();
+};
+
 const matchHeaderValue = (value: string, pattern: string) => {
   const p = parsePattern(pattern);
   return p.type === "regex" ? p.re.test(value) : value === p.value;
@@ -51,10 +58,32 @@ const matchHeaderRule = (
   headers: AbstractHeaders,
   rule: HeaderMatchRule
 ): boolean => {
-  // Try to get the header value using the standardized get method
-  const value = headers.get(rule.key);
-  if (!value) return false;
-  return matchHeaderValue(value, rule.value);
+  const values: string[] = [];
+
+  // For regex patterns in header keys, we need to iterate through all headers
+  if ("forEach" in headers && typeof headers.forEach === "function") {
+    // NextRequest.headers case
+    (headers as Headers).forEach((v: string, n: string) => {
+      if (matchHeaderKey(n, rule.key)) values.push(v);
+    });
+  } else {
+    // API route headers case - need to iterate manually
+    const headerEntries = Object.entries(
+      headers as unknown as Record<string, string | string[] | undefined>
+    );
+    for (const [name, value] of headerEntries) {
+      if (matchHeaderKey(name, rule.key)) {
+        if (Array.isArray(value)) {
+          values.push(...value);
+        } else if (value) {
+          values.push(value);
+        }
+      }
+    }
+  }
+
+  if (!values.length) return false;
+  return values.some((v) => matchHeaderValue(v, rule.value));
 };
 
 const matchHeaderConfig = (

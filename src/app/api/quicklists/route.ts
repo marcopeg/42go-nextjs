@@ -3,7 +3,7 @@ import { getDB } from "@/42go/db";
 import { getServerSession } from "next-auth";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { z } from "zod";
-import { getAppID } from "@/42go/config/app-config";
+import { getSecureAppID } from "@/42go/config/app-config";
 
 type ProjectRow = {
   id: string;
@@ -72,7 +72,9 @@ const getQuicklists = async (req: Request) => {
   const cursor = decodeCursor(cursorParam);
 
   const db = getDB();
-  const appId = (await getAppID()) || "default";
+  const result = getSecureAppID(req);
+  if (result.error) return result.error;
+  const appId = result.appId;
 
   // Build projects query via raw SQL for DISTINCT ON semantics and stable ordering.
   const params: unknown[] = [userId, appId, userId, appId];
@@ -211,7 +213,10 @@ const createProject = async (req: Request) => {
   const tasks = parsed.data?.tasks ?? ["Task 1", "Task 2"];
 
   const db = getDB();
-  const appId = (await getAppID()) || "default";
+  const result = getSecureAppID(req);
+  if (result.error) return result.error;
+  const appId = result.appId;
+
   try {
     return await db.transaction(async (trx) => {
       const projectRows = await trx("quicklist.projects")
@@ -301,7 +306,9 @@ const deleteProject = async (req: Request) => {
 
   const { id } = parsed.data;
   const db = getDB();
-  const appId = (await getAppID()) || "default";
+  const result = getSecureAppID(req);
+  if (result.error) return result.error;
+  const appId = result.appId;
 
   try {
     return await db.transaction(async (trx) => {
@@ -328,7 +335,7 @@ const deleteProject = async (req: Request) => {
       await trx("quicklist.tasks").where({ project_id: id }).del();
       await trx("quicklist.collabs").where({ project_id: id }).del();
       await trx("quicklist.invites").where({ project_id: id }).del();
-      
+
       // Delete the project
       await trx("quicklist.projects").where({ id }).del();
 
