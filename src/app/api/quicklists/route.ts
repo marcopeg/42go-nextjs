@@ -72,7 +72,7 @@ const getQuicklists = async (req: Request) => {
   const cursor = decodeCursor(cursorParam);
 
   const db = getDB();
-  const appId = await getAppID(req);
+  const appId = await getAppID();
   if (!appId) {
     return Response.json(
       { error: "app_not_found", message: "Unable to determine app context" },
@@ -217,7 +217,7 @@ const createProject = async (req: Request) => {
   const tasks = parsed.data?.tasks ?? ["Task 1", "Task 2"];
 
   const db = getDB();
-  const appId = await getAppID(req);
+  const appId = await getAppID();
   if (!appId) {
     return Response.json(
       { error: "app_not_found", message: "Unable to determine app context" },
@@ -314,7 +314,7 @@ const deleteProject = async (req: Request) => {
 
   const { id } = parsed.data;
   const db = getDB();
-  const appId = await getAppID(req);
+  const appId = await getAppID();
   if (!appId) {
     return Response.json(
       { error: "app_not_found", message: "Unable to determine app context" },

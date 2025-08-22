@@ -18,7 +18,7 @@ const waitlist = async (request: Request) => {
     const ip = request.headers.get("x-forwarded-for") || "unknown";
     const userAgent = request.headers.get("user-agent") || "unknown";
     const db = getDB();
-    const app_id = await getAppID(request);
+    const app_id = await getAppID();
     if (!app_id) {
       return NextResponse.json(
         { error: "Unable to determine app context" },

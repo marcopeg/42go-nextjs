@@ -47,7 +47,7 @@ export const POST = protectRoute(
     const email = parsed.data.email.trim().toLowerCase();
 
     const db = getDB();
-    const appId = await getAppID(req);
+    const appId = await getAppID();
     if (!appId) {
       return Response.json(
         { error: "app_not_found", message: "Unable to determine app context" },

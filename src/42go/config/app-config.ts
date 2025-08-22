@@ -13,44 +13,38 @@ export type { TAppConfig, TAppID } from "@/AppConfig";
 
 /**
  * Main app ID resolution function that works for both server components and API routes.
- * @param request Optional Request for API route context
+ * Uses Next.js headers() which works in both contexts in Next.js 15+
  * @returns The resolved app ID or null if no match found
  */
-export const getAppID = async (request?: Request): Promise<TAppID> => {
-  // Step 1: Headers resolution
+export const getAppID = async (): Promise<TAppID> => {
+  // Step 1: Headers resolution using Next.js headers()
   let headers: Headers;
-  if (request) {
-    // API route context - use Request headers
-    headers = request.headers;
-  } else {
-    // Server component context - use next/headers
-    try {
-      headers = await getHeaders();
-    } catch {
-      // In Docker or build context, next/headers might not be available
-      console.warn(
-        "Cannot access next/headers, falling back to environment matching only"
-      );
+  try {
+    headers = await getHeaders();
+  } catch {
+    // In Docker or build context, next/headers might not be available
+    console.warn(
+      "Cannot access next/headers, falling back to environment matching only"
+    );
 
-      // Try environment matching only
-      const envMatch = matchByEnvironment(apps);
-      if (envMatch) {
-        return envMatch;
-      }
-
-      // Use default app if available
-      if (DEFAULT_APP && apps[DEFAULT_APP as keyof typeof apps]) {
-        return DEFAULT_APP;
-      }
-
-      return null;
+    // Try environment matching only
+    const envMatch = matchByEnvironment(apps);
+    if (envMatch) {
+      return envMatch;
     }
+
+    // Use default app if available
+    if (DEFAULT_APP && apps[DEFAULT_APP as keyof typeof apps]) {
+      return DEFAULT_APP;
+    }
+
+    return null;
   }
 
   // Step 2: Check for explicit header (set by middleware)
   const appIDHeader = headers.get(APP_ID_HEADER);
   if (appIDHeader) {
-    // Step 5: Check if the resolved appID is valid
+    // Check if the resolved appID is valid
     if (apps[appIDHeader as keyof typeof apps]) {
       return appIDHeader as TAppID;
     }
@@ -58,9 +52,7 @@ export const getAppID = async (request?: Request): Promise<TAppID> => {
   }
 
   // Step 3: Run the matchers
-  const abstractHeaders = request
-    ? fromHeaders(request.headers)
-    : fromHeaders(headers);
+  const abstractHeaders = fromHeaders(headers);
 
   // Try environment matching
   const envMatch = matchByEnvironment(apps);

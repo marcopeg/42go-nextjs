@@ -58,7 +58,7 @@ const feedback = async (request: Request) => {
     const user_agent = request.headers.get("user-agent") || "unknown";
 
     const db = getDB();
-    const app_id = await getAppID(request);
+    const app_id = await getAppID();
     if (!app_id) {
       return NextResponse.json(
         { error: "Unable to determine app context" },
