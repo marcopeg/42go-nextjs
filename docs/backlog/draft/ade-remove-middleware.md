@@ -1,6 +1,6 @@
 # Remove middleware [ade]
 
-I want to remove the `@/middleware.ts` from the codebase by making `getAppID()` self-sufficient.
+I want to remove the `@/middleware.ts` from the codebase by making `getAppID()` self-sufficient, with a gradual transition strategy.
 
 ## Current Situation
 
@@ -10,76 +10,226 @@ The middleware's only purpose is to identify an appID from the incoming request 
 2. **Middleware** sets `X-42Go-AppID` header with the resolved appID
 3. **getAppID()** (`src/42go/config/app-config.ts`) reads this header and returns it
 
-This creates unnecessary complexity and an extra layer of indirection.
+This creates unnecessary complexity and causes **Docker production issues** where middleware doesn't execute in standalone builds.
 
-## Proposed Refactoring
+## Proposed Refactoring Strategy
 
-Make `getAppID()` completely self-sufficient by moving the matching logic directly into it. Instead of reading the middleware-injected header:
+### Phase 1: Abstract Headers System
+
+Create a unified header abstraction that works with both `NextRequest` and `Headers`:
 
 ```ts
-// Current implementation
-const headerList = await getHeaders();
-const appIDHeader = headerList.get(APP_ID_HEADER);
+// NextRequest -> abstract headers
+// await getHeaders() -> abstract headers
 ```
 
-The function should directly run the matching logic using the request headers. This logic should be moved from `@/42go/lib/app-id/index.ts` into the `@/42go/config` module with nicely structured methods that work with both Headers and NextRequest objects.
+### Phase 2: Unified Matching Logic
 
-## Technical Challenge
+Move matching logic to use abstract headers, allowing both middleware and `getAppID()` to use the same code.
 
-The main challenge is that:
+### Phase 3: Graceful Fallback in getAppID()
 
-- **API Routes**: Have access to `NextRequest` object, so matching logic works directly
-- **Server Components**: Only have access to `headers()` from `next/headers`, which returns a `Headers` object
+Implement fallback strategy in `getAppID()`:
 
-We need to create a unified matching system that can:
+1. **Try middleware header** (current behavior)
+2. **Fallback to direct resolution** (new capability)
+3. **Fallback to default app** (existing behavior)
+4. **Return null** (existing behavior)
 
-1. Extract necessary request information from `headers()` or `NextRequest`
-2. Run the existing matching logic (`matchByEnvironment`, `matchByHeaderPatterns`, `matchByUrl`)
-3. Be organized within the `@/42go/config` module for better cohesion
+### Phase 4: Optional Middleware Removal
+
+Once stable, we can choose to keep or remove middleware entirely.
 
 ## Benefits
 
-- **Simplicity**: One less middleware layer to maintain
-- **Performance**: Eliminate middleware overhead for requests that don't need app resolution
-- **Clarity**: Direct relationship between `getAppID()` and matching logic
-- **Flexibility**: Easier to test and modify matching behavior
+- **Docker Production Fix**: Resolves middleware execution issues in standalone builds
+- **Gradual Migration**: No breaking changes during transition
+- **Flexibility**: System works with or without middleware
+- **Performance**: Direct resolution when middleware fails
+- **Testing**: Easy to validate both paths work
+
+## Technical Challenge
+
+The main challenge is creating a unified system that works in multiple contexts:
+
+- **API Routes**: Have access to `NextRequest` object
+- **Server Components**: Only have access to `headers()` from `next/headers`
+- **Middleware**: Has `NextRequest` but may not execute in Docker standalone
+
+**Solution**: Create an abstract headers interface that normalizes both contexts, allowing shared matching logic.
 
 ## Implementation Notes
 
-The existing matching functions in `@/42go/lib/app-id/matchers.ts` should be moved into `@/42go/config` and refactored to work with both Headers and NextRequest objects. They primarily rely on:
+**Abstract Headers System**: Create a unified interface that extracts necessary information from either `NextRequest.headers` or `Headers` from `next/headers`.
 
-- Environment variables (already accessible)
-- Headers object (available from `headers()` or `NextRequest.headers`)
-- Host header (accessible via `headers().get("host")`)
+**Matching Logic**: Existing functions in `@/42go/lib/app-id/matchers.ts` should be adapted to work with the abstract headers interface.
 
-**Architecture Improvement**: Moving matching logic into `@/42go/config` creates better cohesion between app identification and configuration management.
+**Fallback Strategy**: The new `getAppID()` will try multiple resolution strategies in order, ensuring compatibility during transition and robustness in production.
 
-**Optimization Requirement**: The computed value must be memoized per request scope to avoid re-running matching logic on multiple calls within the same request.
+**Debug Headers**: Skip debug headers for now - they were temporary for troubleshooting middleware issues.
 
-## Goals
+**Testing**: Focus on development environment initially - Docker testing will be manual after dev validation.## Goals
 
-- [ ] Remove `src/middleware.ts` file completely
-- [ ] Refactor `getAppID()` to run matching logic directly
-- [ ] Move matching logic from `@/42go/lib/app-id` to `@/42go/config` module
-- [ ] Create unified matching system that works with Headers and NextRequest
-- [ ] Maintain all existing matching functionality (environment, header patterns, URL)
+- [ ] Create abstract headers interface for unified request handling
+- [ ] Move matching logic to work with abstract headers
+- [ ] Implement fallback strategy in `getAppID()` (middleware → direct → default → null)
+- [ ] Maintain backward compatibility during transition
+- [ ] Resolve Docker production middleware execution issues
+- [ ] Update test API routes to work with new approach
 - [ ] Preserve request-scoped memoization behavior
-- [ ] Update any dependent code that relies on middleware headers
-- [ ] Ensure no regression in app identification logic
+- [ ] Keep middleware file but comment out app resolution (optional cleanup later)
 
 ## Acceptance Criteria
 
-- [ ] `src/middleware.ts` file deleted
-- [ ] `getAppID()` function works without middleware-injected headers
-- [ ] Matching logic moved from `@/42go/lib/app-id` to `@/42go/config` module
+- [ ] Abstract headers interface created and working with both NextRequest and Headers
+- [ ] Matching logic adapted to use abstract headers interface
+- [ ] `getAppID()` implements fallback strategy: middleware → direct → default → null
 - [ ] All existing app matching logic continues to work (env, header patterns, URL)
-- [ ] System works with both Headers (server components) and NextRequest (API routes)
+- [ ] System resolves apps in Docker production environment (fixes [aem] issue)
+- [ ] Test API routes updated to work with new approach
 - [ ] Request-scoped caching/memoization is maintained
+- [ ] Development environment works identically to current behavior
 - [ ] All tests pass and QA check succeeds
-- [ ] No breaking changes to API routes or server components
-- [ ] Debug headers (if needed) are handled appropriately
-- [ ] Performance is maintained or improved
+- [ ] Middleware file preserved but app resolution commented out (for optional future removal)
 
 ## Next Steps
 
 plan task (k2)
+
+## Development Plan
+
+### Phase 1: Abstract Headers Interface ⚡
+
+**Goal**: Create a unified headers abstraction that works with both `NextRequest` and `Headers`
+
+1. **Create abstract headers interface** (`src/42go/config/abstract-headers.ts`):
+
+   ```ts
+   interface AbstractHeaders {
+     get(name: string): string | null;
+     has(name: string): boolean;
+     host?: string;
+     url?: string;
+   }
+
+   // NextRequest -> AbstractHeaders
+   export const fromNextRequest = (req: NextRequest): AbstractHeaders
+
+   // Headers (from next/headers) -> AbstractHeaders
+   export const fromHeaders = (headers: Headers): AbstractHeaders
+   ```
+
+2. **Test the abstraction** works with both contexts
+
+### Phase 2: Unified Matching Logic ⚡
+
+**Goal**: Adapt existing matchers to use abstract headers
+
+1. **Update matchers** (`src/42go/lib/app-id/matchers.ts`):
+
+   - Modify `matchByHeaderPatterns` to accept `AbstractHeaders`
+   - Modify `matchByUrl` to accept `AbstractHeaders`
+   - Keep `matchByEnvironment` unchanged (no headers needed)
+
+2. **Create unified match function**:
+   ```ts
+   export const matchAppIDFromHeaders = (headers: AbstractHeaders): TAppID => {
+     // Environment (highest priority)
+     const envMatch = matchByEnvironment(apps);
+     if (envMatch) return envMatch;
+
+     // Header patterns
+     const headerMatch = matchByHeaderPatterns(headers, apps);
+     if (headerMatch) return headerMatch;
+
+     // URL patterns
+     const urlMatch = matchByUrl(headers, apps);
+     if (urlMatch) return urlMatch;
+
+     return null;
+   };
+   ```
+
+### Phase 3: Enhanced getAppID() with Fallback ⚡
+
+**Goal**: Implement graceful fallback strategy in `getAppID()`
+
+1. **Update `getAppID()`** (`src/42go/config/app-config.ts`):
+   ```ts
+   export const getAppID = cache(async (): Promise<TAppID> => {
+     const headerList = await getHeaders();
+
+     // 1. Try middleware header (current behavior)
+     const middlewareHeader = headerList.get(APP_ID_HEADER);
+     if (middlewareHeader && apps[middlewareHeader]) {
+       return middlewareHeader as TAppID;
+     }
+
+     // 2. Fallback to direct resolution (new capability)
+     try {
+       const abstractHeaders = fromHeaders(headerList);
+       const directMatch = matchAppIDFromHeaders(abstractHeaders);
+       if (directMatch) return directMatch;
+     } catch (error) {
+       console.warn("Direct app resolution failed:", error);
+     }
+
+     // 3. Fallback to default app (existing behavior)
+     if (DEFAULT_APP) {
+       console.warn("Using default app:", DEFAULT_APP);
+       return DEFAULT_APP;
+     }
+
+     // 4. Return null (existing behavior)
+     console.warn("No app matched, returning null");
+     return null;
+   });
+   ```
+
+### Phase 4: Update API Routes & Testing ⚡
+
+**Goal**: Ensure API routes work with the new system
+
+1. **Update test API route** (`src/app/api/test/app-name/route.ts`):
+
+   - Test both middleware path and direct resolution path
+   - Add debug info showing which resolution method was used
+
+2. **Update other affected API routes**:
+   - Any routes using `getAppID()` should continue working
+   - Routes with `NextRequest` can optionally use direct matching for better performance
+
+### Phase 5: Optional Middleware Cleanup ⚡
+
+**Goal**: Prepare middleware for optional removal
+
+1. **Comment out app resolution in middleware**:
+
+   ```ts
+   export async function middleware(request: NextRequest) {
+     // Comment out app resolution for now - getAppID() handles it
+     // const appID = await matchAppID(request);
+     // if (appID) {
+     //   requestHeaders.set(APP_ID_HEADER, appID);
+     // }
+
+     // Keep other middleware functionality if any
+     return NextResponse.next();
+   }
+   ```
+
+2. **Test thoroughly** that system works without middleware app resolution
+
+### Phase 6: Validation & Performance ⚡
+
+**Goal**: Ensure the solution is robust and performant
+
+1. **Test development environment** thoroughly
+2. **Verify request-scoped caching** works correctly
+3. **Check performance impact** of fallback strategy
+4. **Validate** that Docker production issues are resolved
+
+## Related Tasks
+
+- **Supersedes [aem]**: This solution should resolve Docker middleware execution issues
+- **Updates test routes**: API routes that depend on app resolution will be updated
