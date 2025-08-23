@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Install dependencies only when needed
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # ==========================================
 # STAGE 2: Build Dependencies
@@ -52,6 +52,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 ENV NODE_OPTIONS="--max-old-space-size=512"
 
 WORKDIR /app

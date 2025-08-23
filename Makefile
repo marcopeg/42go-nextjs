@@ -2,6 +2,9 @@
 ### Development Utilities
 ###
 
+# Dynamic version from package.json
+VERSION := $(shell node -p "require('./package.json').version")
+
 boot: app.install start migrate seed app.start
 
 reboot: clear boot
@@ -135,6 +138,21 @@ prod: prod.build prod.start prod.init
 	@echo "🎉 Production environment is ready!"
 	@echo "🌐 Access the application at: http://localhost:4000"
 	@echo "📋 View logs with: make prod.logs"
+
+
+
+###
+### Publish to DockerHUB
+###
+publish:
+	@echo "Building version: $(VERSION)"
+	@docker buildx build --platform linux/amd64,linux/arm64 \
+		--build-arg NODE_ENV=production \
+		-t marcopeg/42go-next:latest \
+		-t marcopeg/42go-next:$(VERSION) \
+		--push \
+		.
+
 
 
 ###
