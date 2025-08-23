@@ -41,7 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# lock files
+# lock files (keep package-lock.json for npm builds)
 yarn.lock
-package-lock.json
 pnpm-lock.yaml
