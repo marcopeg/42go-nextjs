@@ -74,12 +74,16 @@ RUN rm -f .env .env.* || true
 # Switch to non-root user
 USER nextjs
 
-# Health check for Next.js application
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+# Health check for Next.js application (disabled for debugging)
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+#     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 # Expose port
 EXPOSE 3000
 
 # Start the Next.js application
-CMD ["node", "server.js"]
+CMD echo "Starting Next.js server..." && \
+    echo "Environment: NODE_ENV=$NODE_ENV, PORT=$PORT, HOSTNAME=$HOSTNAME" && \
+    echo "Files in /app:" && ls -la && \
+    echo "Starting server.js..." && \
+    node server.js
