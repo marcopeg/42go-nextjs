@@ -167,7 +167,8 @@ export const TaskItem = ({
           type="button"
           title="Reorder"
           aria-label="Reorder task"
-          className={`md:hidden inline-flex items-center justify-center text-muted-foreground hover:text-foreground touch-none select-none ${
+          /* Enlarged touch target for mobile drag handle */
+          className={`md:hidden flex items-center justify-center text-muted-foreground hover:text-foreground touch-none select-none w-14 h-14 -my-5 ml-1 rounded-md active:bg-muted/50 ${
             isEditing ? "pointer-events-none opacity-40" : ""
           }`}
           onContextMenu={(e) => {
@@ -185,7 +186,7 @@ export const TaskItem = ({
             ? (sortable?.attributes as unknown as Record<string, unknown>) || {}
             : {})}
         >
-          <GripVertical className="h-5 w-5" />
+          <GripVertical className="h-5 w-5 pointer-events-none" />
         </button>
       )}
 
