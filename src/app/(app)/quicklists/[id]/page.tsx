@@ -78,7 +78,7 @@ export default function ProjectDetailsPage() {
   const [kbInset, setKbInset] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
 
-  // Split helper: supports ',' and ';' as dividers, trims and removes empties
+  // Split helper
   const parseNewTitle = (input: string): string[] =>
     input
       .split(/[\r\n;,]+/g)
@@ -98,12 +98,7 @@ export default function ProjectDetailsPage() {
     el?.focus();
   };
 
-  // Mark mounted to safely use portals without SSR mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Track viewport to render footer only on desktop
+  useEffect(() => setMounted(true), []);
   useEffect(() => {
     const update = () =>
       setIsDesktop(typeof window !== "undefined" && window.innerWidth >= 768);
@@ -111,8 +106,6 @@ export default function ProjectDetailsPage() {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-
-  // Lock scroll when any full-screen panel is open on mobile
   useEffect(() => {
     const open = editingId || editingList || creatingMobile;
     if (open) {
@@ -123,8 +116,6 @@ export default function ProjectDetailsPage() {
       };
     }
   }, [editingId, editingList, creatingMobile]);
-
-  // Track on-screen keyboard overlap using VisualViewport when panels are open
   useEffect(() => {
     const open = editingId || editingList || creatingMobile;
     if (!open) {
@@ -149,34 +140,24 @@ export default function ProjectDetailsPage() {
     };
   }, [editingId, editingList, creatingMobile]);
 
-  // Derived client-side sort:
-  // - unchecked first (by position asc)
-  // - checked at bottom (by completed_at desc -> last checked on top within done section)
   const sortedTasks = useMemo(() => {
     const pending = tasks
       .filter((t) => !t.completed_at)
-      .sort((a, b) => {
-        if (a.position !== b.position) return a.position - b.position;
-        // tie-breaker by updated_at asc for stability
-        return (
-          new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
-        );
-      });
+      .sort(
+        (a, b) => a.position - b.position || a.title.localeCompare(b.title)
+      );
     const done = tasks
       .filter((t) => !!t.completed_at)
       .sort((a, b) => {
         const at = a.completed_at ? new Date(a.completed_at).getTime() : 0;
         const bt = b.completed_at ? new Date(b.completed_at).getTime() : 0;
-        return bt - at; // latest first
+        return bt - at;
       });
     return [...pending, ...done];
   }, [tasks]);
 
-  // Task handlers - now use the hook methods
   const handleToggle = handleToggleTask;
   const handleDelete = handleDeleteTask;
-
-  // Edit handlers
   const handleStartEdit = (task: Task) => {
     setEditingId(task.id);
     setDraftTitle(task.title);
@@ -191,86 +172,47 @@ export default function ProjectDetailsPage() {
     const parts = parseNewTitle(draftTitle);
     const first = parts[0]?.trim() || "";
     if (!first) return handleCancelEdit();
-
     try {
       setSavingEdit(true);
-      // Update the task title
       await handleUpdateTask(editingId, { title: first });
-
-      // If there are additional parts, create new tasks
       const rest = parts.slice(1);
       if (rest.length > 0) {
-        // New behavior: insert new tasks immediately after the edited task
-        // 1. Snapshot current pending tasks ordered by position
-        const pendingOrdered = tasks
-          .filter((t) => !t.completed_at)
-          .sort((a, b) => (a.position || 0) - (b.position || 0));
-        const editedIdx = pendingOrdered.findIndex((t) => t.id === editingId);
-        const editedTask = pendingOrdered[editedIdx];
-        // Fallback position calculation if missing
-        const basePosition = editedTask
-          ? editedTask.position || editedIdx + 1
-          : editedIdx + 1;
-
-        // 2. Shift positions of tasks that follow the edited task to make room.
-        // Update from the end to avoid temporary position collisions.
-        const following = pendingOrdered.slice(editedIdx + 1);
-        if (following.length > 0) {
-          for (let i = following.length - 1; i >= 0; i--) {
-            const t = following[i];
-            try {
-              await handleUpdateTask(t.id, {
-                position: (t.position || 0) + rest.length,
-              });
-            } catch (error) {
-              console.error("Failed to shift task position:", t.id, error);
-            }
+        // Bulk create new tasks after current editingId
+        const res = await fetch(
+          `/api/quicklists/${projectId}/tasks/bulk-create`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ titles: rest, afterId: editingId }),
           }
+        );
+        if (res.ok) {
+          const data: { ok: boolean; created: Task[] } = await res.json();
+          const created = data.created;
+          setTasks((prev) => {
+            const pending = prev
+              .filter((t) => !t.completed_at)
+              .sort((a, b) => a.position - b.position);
+            const done = prev.filter((t) => !!t.completed_at);
+            const idx = pending.findIndex((t) => t.id === editingId);
+            if (idx === -1) return [...prev, ...created];
+            const before = pending.slice(0, idx + 1);
+            const after = pending.slice(idx + 1);
+            const newPending = [...before, ...created, ...after].map(
+              (t, i) => ({
+                ...t,
+                position: i + 1,
+              })
+            );
+            return [...newPending, ...done];
+          });
+        } else {
+          console.error("Bulk create failed", res.status);
         }
-
-        // 3. Create new tasks with consecutive positions right after the edited task.
-        const created: Task[] = [];
-        for (let i = 0; i < rest.length; i++) {
-          const title = rest[i];
-          const position = basePosition + i + 1; // +1 because edited task keeps its current spot
-          try {
-            const newTask = await handleCreateTask(projectId, title, position);
-            created.push(newTask);
-          } catch (error) {
-            console.error("Failed to create additional task:", error);
-          }
-        }
-
-        // 4. Optimistically update local state ordering (robust for both desktop & mobile):
-        //    Build the new pending list inserting created tasks right after edited, then reindex.
-        setTasks((prev) => {
-          const prevPending = prev
-            .filter((t) => !t.completed_at)
-            .sort((a, b) => (a.position || 0) - (b.position || 0));
-          const prevDone = prev.filter((t) => !!t.completed_at);
-          const idx = prevPending.findIndex((t) => t.id === editingId);
-          if (idx === -1) {
-            // Fallback: append created at end (shouldn't happen normally)
-            return [...prev, ...created];
-          }
-          const before = prevPending.slice(0, idx + 1); // include edited task
-          const after = prevPending.slice(idx + 1).map((t) => ({
-            ...t,
-            position: (t.position || 0) + created.length, // shift
-          }));
-          // Assign provisional positions to created tasks in correct sequence
-          const createdWithPositions = created.map((t, i) => ({
-            ...t,
-            position: (before[before.length - 1].position || idx + 1) + i + 1,
-          }));
-          const newPending = [...before, ...createdWithPositions, ...after].map(
-            (t, i) => ({ ...t, position: i + 1 })
-          ); // normalize positions sequentially
-          return [...newPending, ...prevDone];
-        });
       }
-    } catch (error) {
-      console.error("Failed to save edit:", error);
+    } catch (e) {
+      console.error("Failed to save edit", e);
     } finally {
       setSavingEdit(false);
       handleCancelEdit();
@@ -281,24 +223,50 @@ export default function ProjectDetailsPage() {
     if (!projectId) return;
     const titles = parseNewTitle(newTitle);
     if (titles.length === 0) return;
-
     try {
       setSubmitting(true);
-      const maxPos = tasks.reduce((m, t) => Math.max(m, t.position || 0), 0);
-
-      for (let i = 0; i < titles.length; i++) {
-        try {
-          const newTask = await handleCreateTask(
-            projectId,
-            titles[i],
-            maxPos + i + 1
-          );
-          setTasks((prev) => [...prev, newTask]);
-        } catch (error) {
-          console.error("Failed to create task:", error);
+      if (titles.length === 1) {
+        const maxPos = tasks.reduce((m, t) => Math.max(m, t.position || 0), 0);
+        const newTask = await handleCreateTask(
+          projectId,
+          titles[0],
+          maxPos + 1
+        );
+        setTasks((prev) => [...prev, newTask]);
+      } else {
+        // Bulk append at end: afterId = last pending task id
+        const lastPending = tasks
+          .filter((t) => !t.completed_at)
+          .sort((a, b) => a.position - b.position)
+          .slice(-1)[0];
+        const afterId = lastPending ? lastPending.id : null;
+        const res = await fetch(
+          `/api/quicklists/${projectId}/tasks/bulk-create`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ titles, afterId }),
+          }
+        );
+        if (res.ok) {
+          const data: { ok: boolean; created: Task[] } = await res.json();
+          const created = data.created;
+          setTasks((prev) => {
+            const pending = prev
+              .filter((t) => !t.completed_at)
+              .sort((a, b) => a.position - b.position);
+            const done = prev.filter((t) => !!t.completed_at);
+            const newPending = [...pending, ...created].map((t, i) => ({
+              ...t,
+              position: i + 1,
+            }));
+            return [...newPending, ...done];
+          });
+        } else {
+          console.error("Bulk create failed", res.status);
         }
       }
-
       setNewTitle("");
       focusComposer();
     } finally {
@@ -306,13 +274,10 @@ export default function ProjectDetailsPage() {
     }
   };
 
-  // Pending/done splits for DnD logic
   const pending = useMemo(() => tasks.filter((t) => !t.completed_at), [tasks]);
   const pendingIds = useMemo(() => pending.map((t) => t.id), [pending]);
   const sensors = useSensors(
-    // Pointer sensor: small distance to allow clicks without dragging (desktop)
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    // Touch sensor on the row with a press delay for long-press-to-drag
     useSensor(TouchSensor, {
       activationConstraint: { delay: 450, tolerance: 8 },
     }),
@@ -323,18 +288,15 @@ export default function ProjectDetailsPage() {
     () => (activeId ? tasks.find((t) => t.id === activeId) || null : null),
     [activeId, tasks]
   );
-
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = (event: DragStartEvent) =>
     setActiveId(event.active.id);
-  };
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
     if (!over) return;
     const oldIndex = pendingIds.indexOf(String(active.id));
     const newIndex = pendingIds.indexOf(String(over.id));
-    if (oldIndex === -1 || newIndex === -1) return; // only reorder pending
-
+    if (oldIndex === -1 || newIndex === -1) return;
     setTasks((prev) => {
       const pendingList = prev.filter((t) => !t.completed_at);
       const doneList = prev.filter((t) => !!t.completed_at);
@@ -345,7 +307,6 @@ export default function ProjectDetailsPage() {
         ...t,
         position: idx + 1,
       }));
-      // Persist new position for dragged item
       const newPos = to + 1;
       fetch(`/api/quicklists/${projectId}/${String(active.id)}`, {
         method: "PATCH",
@@ -357,7 +318,6 @@ export default function ProjectDetailsPage() {
     });
   };
 
-  // List title editing handlers
   const startEditList = () => {
     setDraftListTitle(listTitle);
     setEditingList(true);
@@ -368,16 +328,13 @@ export default function ProjectDetailsPage() {
   };
   const saveEditList = async () => {
     const title = draftListTitle.trim();
-    if (!title || !projectId) {
-      cancelEditList();
-      return;
-    }
+    if (!title || !projectId) return cancelEditList();
     try {
       setSavingList(true);
       await handleUpdateProject({ title });
       cancelEditList();
-    } catch (error) {
-      console.error("Failed to save list title:", error);
+    } catch (e) {
+      console.error("Failed to save list title", e);
     } finally {
       setSavingList(false);
     }
