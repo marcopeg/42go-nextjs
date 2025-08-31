@@ -241,19 +241,32 @@ export default function ProjectDetailsPage() {
           }
         }
 
-        // 4. Optimistically update local state ordering.
+        // 4. Optimistically update local state ordering (robust for both desktop & mobile):
+        //    Build the new pending list inserting created tasks right after edited, then reindex.
         setTasks((prev) => {
-          // Rebuild pending list with updated/shifted positions + new tasks
-          const updated = prev.map((t) => {
-            if (t.completed_at) return t; // done tasks unaffected
-            const shifted = following.find((f) => f.id === t.id);
-            if (shifted) {
-              // reflect shifted position (already patched on server)
-              return { ...t, position: (t.position || 0) + rest.length };
-            }
-            return t;
-          });
-          return [...updated, ...created];
+          const prevPending = prev
+            .filter((t) => !t.completed_at)
+            .sort((a, b) => (a.position || 0) - (b.position || 0));
+          const prevDone = prev.filter((t) => !!t.completed_at);
+          const idx = prevPending.findIndex((t) => t.id === editingId);
+          if (idx === -1) {
+            // Fallback: append created at end (shouldn't happen normally)
+            return [...prev, ...created];
+          }
+          const before = prevPending.slice(0, idx + 1); // include edited task
+          const after = prevPending.slice(idx + 1).map((t) => ({
+            ...t,
+            position: (t.position || 0) + created.length, // shift
+          }));
+          // Assign provisional positions to created tasks in correct sequence
+          const createdWithPositions = created.map((t, i) => ({
+            ...t,
+            position: (before[before.length - 1].position || idx + 1) + i + 1,
+          }));
+          const newPending = [...before, ...createdWithPositions, ...after].map(
+            (t, i) => ({ ...t, position: i + 1 })
+          ); // normalize positions sequentially
+          return [...newPending, ...prevDone];
         });
       }
     } catch (error) {
