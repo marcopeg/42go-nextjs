@@ -200,22 +200,61 @@ export default function ProjectDetailsPage() {
       // If there are additional parts, create new tasks
       const rest = parts.slice(1);
       if (rest.length > 0) {
-        const maxPos = tasks
+        // New behavior: insert new tasks immediately after the edited task
+        // 1. Snapshot current pending tasks ordered by position
+        const pendingOrdered = tasks
           .filter((t) => !t.completed_at)
-          .reduce((m, t) => Math.max(m, t.position || 0), 0);
+          .sort((a, b) => (a.position || 0) - (b.position || 0));
+        const editedIdx = pendingOrdered.findIndex((t) => t.id === editingId);
+        const editedTask = pendingOrdered[editedIdx];
+        // Fallback position calculation if missing
+        const basePosition = editedTask
+          ? editedTask.position || editedIdx + 1
+          : editedIdx + 1;
 
+        // 2. Shift positions of tasks that follow the edited task to make room.
+        // Update from the end to avoid temporary position collisions.
+        const following = pendingOrdered.slice(editedIdx + 1);
+        if (following.length > 0) {
+          for (let i = following.length - 1; i >= 0; i--) {
+            const t = following[i];
+            try {
+              await handleUpdateTask(t.id, {
+                position: (t.position || 0) + rest.length,
+              });
+            } catch (error) {
+              console.error("Failed to shift task position:", t.id, error);
+            }
+          }
+        }
+
+        // 3. Create new tasks with consecutive positions right after the edited task.
+        const created: Task[] = [];
         for (let i = 0; i < rest.length; i++) {
+          const title = rest[i];
+          const position = basePosition + i + 1; // +1 because edited task keeps its current spot
           try {
-            const newTask = await handleCreateTask(
-              projectId,
-              rest[i],
-              maxPos + i + 1
-            );
-            setTasks((prev) => [...prev, newTask]);
+            const newTask = await handleCreateTask(projectId, title, position);
+            created.push(newTask);
           } catch (error) {
             console.error("Failed to create additional task:", error);
           }
         }
+
+        // 4. Optimistically update local state ordering.
+        setTasks((prev) => {
+          // Rebuild pending list with updated/shifted positions + new tasks
+          const updated = prev.map((t) => {
+            if (t.completed_at) return t; // done tasks unaffected
+            const shifted = following.find((f) => f.id === t.id);
+            if (shifted) {
+              // reflect shifted position (already patched on server)
+              return { ...t, position: (t.position || 0) + rest.length };
+            }
+            return t;
+          });
+          return [...updated, ...created];
+        });
       }
     } catch (error) {
       console.error("Failed to save edit:", error);
