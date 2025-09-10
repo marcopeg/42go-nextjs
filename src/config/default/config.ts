@@ -35,6 +35,7 @@ export default {
     "api:feedback",
     "api:todos",
     "api:quicklists",
+    "api:notes",
     "page:quicklists",
   ],
   theme: {
