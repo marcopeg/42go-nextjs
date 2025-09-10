@@ -1,5 +1,20 @@
 import { getDB } from "@/42go/db";
 import { protectRoute } from "@/42go/policy/protectRoute";
+import { z } from "zod";
+
+// Enhanced parameter validation schemas
+const bucketSchema = z
+  .string()
+  .min(4, "Invalid bucket ID")
+  .max(14, "Invalid bucket ID")
+  .regex(/^[0-9]+$/, "Bucket ID must contain only digits")
+  .refine(
+    (val) => [4, 6, 8, 10, 12, 14].includes(val.length),
+    "Invalid bucket ID length"
+  )
+  .refine((val) => !/['"`;\\<>]/.test(val), "Invalid bucket ID characters");
+
+const uuidSchema = z.string().uuid("Invalid UUID format");
 
 const getNote = async (req: Request) => {
   void req.url;
@@ -16,11 +31,32 @@ const getNote = async (req: Request) => {
     );
   }
 
+  // Validate bucket parameter against injection
+  const bucketValidation = bucketSchema.safeParse(bucket);
+  if (!bucketValidation.success) {
+    return Response.json(
+      { error: "bad_request", message: "Invalid bucket ID format" },
+      { status: 400 }
+    );
+  }
+
+  // Validate UUID parameter
+  const uuidValidation = uuidSchema.safeParse(uuid);
+  if (!uuidValidation.success) {
+    return Response.json(
+      { error: "bad_request", message: "Invalid UUID format" },
+      { status: 400 }
+    );
+  }
+
+  const safeBucket = bucketValidation.data;
+  const safeUuid = uuidValidation.data;
+
   const db = getDB();
   try {
     const res = await db.raw("SELECT * FROM notes.get(?, ?, ?)", [
-      bucket,
-      uuid,
+      safeBucket,
+      safeUuid,
       "1 hour",
     ]);
     const rows = res.rows as Array<{
@@ -37,7 +73,10 @@ const getNote = async (req: Request) => {
     if (url.searchParams.has("raw")) {
       return new Response(r.body, {
         status: 200,
-        headers: { "Content-Type": "text/plain; charset=utf-8" },
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Content-Type-Options": "nosniff",
+        },
       });
     }
     return Response.json({
@@ -51,8 +90,9 @@ const getNote = async (req: Request) => {
     });
   } catch (err) {
     console.error("GET /api/notes/{bucket}/{uuid} failed", err);
+    // Don't expose internal error details
     return Response.json(
-      { error: "server_error", message: (err as Error)?.message || "Unknown" },
+      { error: "server_error", message: "Failed to retrieve note" },
       { status: 500 }
     );
   }

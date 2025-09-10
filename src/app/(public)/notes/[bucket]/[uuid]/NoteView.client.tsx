@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import Card from "@/components/ui/card";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
 import matter from "gray-matter";
 import { useToast } from "@/components/ui/toast";
 
@@ -128,7 +129,6 @@ export default function NoteView({ bucket, uuid }: Props) {
     const hrs = Math.floor(mins / 60);
     return `${hrs} hour${hrs === 1 ? "" : "s"} left`;
   };
-  // copy helper used by frontmatter rows
   const copyToClipboard = async (key: string, value: string) => {
     try {
       await navigator.clipboard.writeText(value);
@@ -293,7 +293,10 @@ export default function NoteView({ bucket, uuid }: Props) {
 
       <Card>
         <div className="prose dark:prose-invert">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeSanitize]}
+          >
             {convertSingleNewlinesToHardBreaks(note.body)}
           </ReactMarkdown>
         </div>

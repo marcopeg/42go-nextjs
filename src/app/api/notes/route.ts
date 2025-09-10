@@ -2,6 +2,7 @@ import { getDB } from "@/42go/db";
 import { protectRoute } from "@/42go/policy/protectRoute";
 import { z } from "zod";
 
+// Enhanced validation schemas
 const createNote = async (req: Request) => {
   void req.url;
 
@@ -48,20 +49,44 @@ const createNote = async (req: Request) => {
     );
   }
 
+  // Enhanced validation with SQL injection protection
   const bodySchema = z.object({
-    title: z.string().min(1).max(255),
-    body: z.string().min(1).max(10000),
+    title: z
+      .string()
+      .min(1, "Title cannot be empty")
+      .max(255, "Title too long (max 255 chars)")
+      .refine(
+        (val) => !val.match(/[\x00-\x1f\x7f-\x9f]/),
+        "Title contains invalid characters"
+      )
+      .refine(
+        (val) => !/['"`;\\]/.test(val),
+        "Title contains potentially unsafe characters"
+      ),
+    body: z
+      .string()
+      .min(1, "Body cannot be empty")
+      .max(10000, "Body too long (max 10KB)")
+      .refine(
+        (val) => !val.match(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/),
+        "Body contains invalid control characters"
+      ),
   });
 
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
     return Response.json(
-      { error: "bad_request", message: parsed.error.message },
+      {
+        error: "validation_error",
+        message: "Invalid input data",
+        details: parsed.error.issues.map((i) => i.message),
+      },
       { status: 400 }
     );
   }
 
-  const safeTitle = parsed.data.title.trim();
+  // Additional sanitization
+  const safeTitle = parsed.data.title.trim().replace(/\s+/g, " ");
   const safeBody = parsed.data.body;
 
   const db = getDB();
@@ -77,7 +102,7 @@ const createNote = async (req: Request) => {
     const row = res.rows && res.rows[0];
     if (!row) {
       return Response.json(
-        { error: "server_error", message: "no result from notes.add" },
+        { error: "server_error", message: "Failed to create note" },
         { status: 500 }
       );
     }
@@ -88,8 +113,9 @@ const createNote = async (req: Request) => {
     );
   } catch (err) {
     console.error("POST /api/notes failed", err);
+    // Don't expose internal error details
     return Response.json(
-      { error: "server_error", message: (err as Error)?.message || "Unknown" },
+      { error: "server_error", message: "Failed to create note" },
       { status: 500 }
     );
   }
