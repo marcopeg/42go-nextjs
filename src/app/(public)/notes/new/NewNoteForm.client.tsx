@@ -16,20 +16,21 @@ export default function NewNoteForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !body.trim()) {
+    if (!body.trim()) {
       toast({
-        title: "Missing fields",
-        description: "Title and body are required",
+        title: "Missing field",
+        description: "Body is required",
         variant: "destructive",
       });
       return;
     }
     setLoading(true);
     try {
+      const titleToSend = title.trim() || new Date().toLocaleString();
       const res = await fetch("/api/notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), body }),
+        body: JSON.stringify({ title: titleToSend, body }),
         credentials: "same-origin",
       });
       if (!res.ok) {
@@ -69,7 +70,7 @@ export default function NewNoteForm() {
 
   return (
     <main className="p-8 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Create note</h1>
+      <h1 className="text-2xl font-bold mb-4">New Note</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Title</label>
@@ -81,6 +82,9 @@ export default function NewNoteForm() {
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Body</label>
+          <p className="text-sm text-gray-500 mb-2">
+            Use Markdown to format your note
+          </p>
           <Textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
