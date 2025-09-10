@@ -23,12 +23,25 @@ const getNote = async (req: Request) => {
       uuid,
       "1 hour",
     ]);
-    const rows = res.rows as Array<{ title: string; body: string }>;
+    const rows = res.rows as Array<{
+      title: string;
+      body: string;
+      created_at: string | Date;
+      time_left_seconds: number;
+    }>;
     if (!rows || rows.length === 0) {
       return Response.json({ error: "not_found" }, { status: 404 });
     }
     const r = rows[0];
-    return Response.json({ title: r.title, body: r.body });
+    return Response.json({
+      title: r.title,
+      body: r.body,
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : null,
+      timeLeft:
+        typeof r.time_left_seconds === "number"
+          ? r.time_left_seconds
+          : Number(r.time_left_seconds),
+    });
   } catch (err) {
     console.error("GET /api/notes/{bucket}/{uuid} failed", err);
     return Response.json(

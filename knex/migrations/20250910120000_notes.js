@@ -181,13 +181,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 -------------------------------------------------------------------------------
--- Public get with expiration
+-- Public get with expiration (returns created_at and time left in seconds)
 -------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION notes.get(
   p_bucket text,
   p_uuid uuid,
   p_expire interval DEFAULT '1 hour'
-) RETURNS TABLE(title text, body text)
+) RETURNS TABLE(title text, body text, created_at timestamptz, time_left_seconds bigint)
 SECURITY DEFINER
 SET search_path = notes, pg_temp
 AS $$
@@ -202,8 +202,10 @@ BEGIN
   END IF;
 
   BEGIN
+    -- return title, body, created_at and the remaining time in seconds
     v_sql := format(
-      'SELECT n.title, n.body
+      'SELECT n.title, n.body, n.created_at,
+              GREATEST(0, floor(EXTRACT(epoch FROM (n.created_at + $2) - now())))::bigint AS time_left_seconds
          FROM %I.%I n
         WHERE n.note_id = $1
           AND n.created_at >= now() - $2',
