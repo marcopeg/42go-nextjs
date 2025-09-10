@@ -14,6 +14,7 @@ import App1App from "./config/app1/config";
 import App2App from "./config/app2/config";
 import CalendarApp from "./config/calendar/config";
 import QuicklistApp from "./config/quicklist/config";
+import NotesApp from "./config/notes/config";
 
 // This should be moved into 42go somewhere
 export type ThemeValue = "light" | "dark" | "system";
@@ -119,6 +120,7 @@ export const DEFAULT_APP: TAppID = null;
  */
 export const apps = {
   quicklist: QuicklistApp,
+  notes: NotesApp,
   app1: App1App,
   app2: App2App,
   calendar: CalendarApp,
