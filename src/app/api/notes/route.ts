@@ -35,9 +35,11 @@ const createNote = async (req: Request) => {
 
   try {
     // Call the Postgres function notes.add(title, body) which returns bucket_id and out_id
-    const res = await db.raw("SELECT * FROM notes.add(?, ?)", [
+    const res = await db.raw("SELECT * FROM notes.add(?, ?, ?, ?)", [
       safeTitle,
       safeBody,
+      "1 hour",
+      3,
     ]);
     const row = res.rows && res.rows[0];
     if (!row) {

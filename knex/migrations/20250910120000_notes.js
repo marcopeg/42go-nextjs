@@ -194,8 +194,10 @@ AS $$
 DECLARE
   v_sql text;
 BEGIN
-  -- validate bucket name strictly
-  IF p_bucket !~ '^[0-9]{4}(?:[0-9]{2}){0,5}$' THEN
+  -- validate bucket id
+  p_bucket := btrim(p_bucket);
+
+  IF length(p_bucket) NOT IN (4,6,8,10,12,14) OR p_bucket !~ '^[0-9]+$' THEN
     RAISE EXCEPTION 'Invalid bucket id %', p_bucket;
   END IF;
 
