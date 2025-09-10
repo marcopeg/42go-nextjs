@@ -2,7 +2,22 @@ import { getDB } from "@/42go/db";
 import { protectRoute } from "@/42go/policy/protectRoute";
 import { z } from "zod";
 
-// Enhanced validation schemas
+// CORS headers for Obsidian plugin
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "app://obsidian.md",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+// Handle OPTIONS preflight for CORS
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
+// Enhanced schema with stricter validation
 const createNote = async (req: Request) => {
   void req.url;
 
@@ -19,7 +34,7 @@ const createNote = async (req: Request) => {
           error: "payload_too_large",
           message: "Request body exceeds allowed limits",
         },
-        { status: 413 }
+        { status: 413, headers: corsHeaders }
       );
     }
   }
@@ -32,7 +47,7 @@ const createNote = async (req: Request) => {
       if (buffer.byteLength > MAX_BYTES) {
         return Response.json(
           { error: "payload_too_large", message: "Request body exceeds 100KB" },
-          { status: 413 }
+          { status: 413, headers: corsHeaders }
         );
       }
 
@@ -45,7 +60,7 @@ const createNote = async (req: Request) => {
   } catch {
     return Response.json(
       { error: "bad_request", message: "Invalid JSON" },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   }
 
@@ -81,7 +96,7 @@ const createNote = async (req: Request) => {
         message: "Invalid input data",
         details: parsed.error.issues.map((i) => i.message),
       },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   }
 
@@ -103,20 +118,20 @@ const createNote = async (req: Request) => {
     if (!row) {
       return Response.json(
         { error: "server_error", message: "Failed to create note" },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
     return Response.json(
       { bucket: row.bucket_id, uuid: row.out_id },
-      { status: 201 }
+      { status: 201, headers: corsHeaders }
     );
   } catch (err) {
     console.error("POST /api/notes failed", err);
     // Don't expose internal error details
     return Response.json(
       { error: "server_error", message: "Failed to create note" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 };
