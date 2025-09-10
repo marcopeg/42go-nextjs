@@ -29,7 +29,7 @@ export default {
             subtitle: "notes, **made simple** ❤️",
             actions: [
               {
-                href: "/notesnew",
+                href: "/notes/new",
                 label: "New Note",
                 style: "primary",
               },
