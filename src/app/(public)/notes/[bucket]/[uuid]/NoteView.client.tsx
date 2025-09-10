@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import Card from "@/components/ui/card";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -147,12 +148,21 @@ export default function NoteView({ bucket, uuid }: Props) {
 
   return (
     <main className="p-8 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-1">{note.title}</h1>
-      {note.createdAt && (
-        <p className="text-sm text-gray-500 mb-2">
-          Created: {new Date(note.createdAt).toLocaleString()}
-        </p>
-      )}
+      <div className="flex items-start justify-between mb-1">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">{note.title}</h1>
+          {note.createdAt && (
+            <p className="text-sm text-gray-500 mb-2">
+              Created: {new Date(note.createdAt).toLocaleString()}
+            </p>
+          )}
+        </div>
+        <div className="hidden sm:flex items-center">
+          <Button onClick={() => router.push("/notes/new")} className="ml-4">
+            New note
+          </Button>
+        </div>
+      </div>
 
       <div className="flex items-center justify-between mb-4">
         <div className="text-sm text-gray-600">
@@ -263,6 +273,27 @@ export default function NoteView({ bucket, uuid }: Props) {
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{note.body}</ReactMarkdown>
         </div>
       </Card>
+
+      {/* Mobile FAB (use same styles as Quicklists MobileCreatePanel) */}
+      <Button
+        size="fab"
+        aria-label="New note"
+        title="New note"
+        className="md:hidden fixed z-[300] shadow-lg hover:shadow-xl active:scale-95"
+        style={{
+          right: "1rem",
+          bottom: "calc(env(safe-area-inset-bottom) + 1rem)",
+          WebkitAppearance: "none",
+          appearance: "none",
+          minWidth: 56,
+          minHeight: 56,
+          maxWidth: 56,
+          maxHeight: 56,
+        }}
+        onClick={() => router.push("/notes/new")}
+      >
+        <Plus className="h-7 w-7" />
+      </Button>
     </main>
   );
 }
