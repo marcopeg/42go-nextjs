@@ -142,6 +142,29 @@ export default function NoteView({ bucket, uuid }: Props) {
     }
   };
 
+  // Convert single newlines into markdown hard breaks (two spaces + newline)
+  // while preserving fenced code blocks. This is a light-weight preprocessor.
+  const convertSingleNewlinesToHardBreaks = (text: string) => {
+    if (!text) return text;
+    const lines = text.split(/\n/);
+    let inFence = false;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (/^\s*```/.test(line)) {
+        inFence = !inFence;
+        continue;
+      }
+      if (!inFence) {
+        // if next line is not empty, and current line is not empty, make it a hard break
+        const next = lines[i + 1];
+        if (next !== undefined && next.trim() !== "" && line.trim() !== "") {
+          lines[i] = line + "  "; // markdown hard break
+        }
+      }
+    }
+    return lines.join("\n");
+  };
+
   if (!note) {
     return <div className="p-8">No note</div>;
   }
@@ -270,7 +293,9 @@ export default function NoteView({ bucket, uuid }: Props) {
 
       <Card>
         <div className="prose dark:prose-invert">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{note.body}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {convertSingleNewlinesToHardBreaks(note.body)}
+          </ReactMarkdown>
         </div>
       </Card>
 
