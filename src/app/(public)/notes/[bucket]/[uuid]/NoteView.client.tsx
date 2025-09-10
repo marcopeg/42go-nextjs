@@ -4,6 +4,9 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Card from "@/components/ui/card";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { useToast } from "@/components/ui/toast";
 
 type Props = { bucket: string; uuid: string };
 
@@ -18,6 +21,7 @@ export default function NoteView({ bucket, uuid }: Props) {
   } | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     let cancelled = false;
@@ -114,16 +118,53 @@ export default function NoteView({ bucket, uuid }: Props) {
     <main className="p-8 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-1">{note.title}</h1>
       {note.createdAt && (
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-500 mb-2">
           Created: {new Date(note.createdAt).toLocaleString()}
         </p>
       )}
-      {timeLeft != null && (
-        <p className="text-sm text-gray-600 mb-4">{fmtTimeLeft(timeLeft)}</p>
-      )}
+
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-sm text-gray-600">
+          {timeLeft != null ? fmtTimeLeft(timeLeft) : null}
+        </div>
+        <div className="text-sm text-gray-500 flex items-center gap-2">
+          <a
+            href={`/api/notes/${encodeURIComponent(
+              bucket
+            )}/${encodeURIComponent(uuid)}?raw`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-500 hover:text-gray-700"
+          >
+            raw
+          </a>
+          <span className="text-gray-400">|</span>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(note.body);
+                toast({
+                  title: "Copied",
+                  description: "Note body copied to clipboard",
+                });
+              } catch {
+                toast({
+                  title: "Copy failed",
+                  description: "Unable to copy note to clipboard",
+                  variant: "destructive",
+                });
+              }
+            }}
+            className="text-gray-500 hover:text-gray-700 cursor-pointer"
+          >
+            copy
+          </button>
+        </div>
+      </div>
       <Card>
-        <div className="prose dark:prose-invert whitespace-pre-wrap">
-          {note.body}
+        <div className="prose dark:prose-invert">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{note.body}</ReactMarkdown>
         </div>
       </Card>
     </main>
