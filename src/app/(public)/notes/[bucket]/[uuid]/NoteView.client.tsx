@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import Card from "@/components/ui/card";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import matter from "gray-matter";
 import { useToast } from "@/components/ui/toast";
 
 type Props = { bucket: string; uuid: string };
@@ -20,6 +21,10 @@ export default function NoteView({ bucket, uuid }: Props) {
     timeLeft?: number | null;
   } | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [frontmatter, setFrontmatter] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -46,9 +51,21 @@ export default function NoteView({ bucket, uuid }: Props) {
         }
         const data = await res.json();
         if (!cancelled) {
+          // parse frontmatter (YAML) if present and extract content
+          const rawBody = data.body ?? "";
+          let parsed;
+          try {
+            parsed = matter(String(rawBody));
+          } catch {
+            parsed = { content: rawBody, data: {} };
+          }
+          const content = parsed.content ?? rawBody;
+          const fm =
+            parsed.data && Object.keys(parsed.data).length ? parsed.data : null;
+          setFrontmatter(fm);
           setNote({
             title: data.title,
-            body: data.body,
+            body: content,
             createdAt: data.createdAt ?? null,
             timeLeft: data.timeLeft ?? null,
           });
@@ -110,6 +127,20 @@ export default function NoteView({ bucket, uuid }: Props) {
     const hrs = Math.floor(mins / 60);
     return `${hrs} hour${hrs === 1 ? "" : "s"} left`;
   };
+  // copy helper used by frontmatter rows
+  const copyToClipboard = async (key: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast({ title: `${key} copied` });
+    } catch {
+      toast({
+        title: "Copy failed",
+        description: `Unable to copy ${key}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!note) {
     return <div className="p-8">No note</div>;
   }
@@ -162,6 +193,71 @@ export default function NoteView({ bucket, uuid }: Props) {
           </button>
         </div>
       </div>
+      {frontmatter && (
+        <div className="mb-4 overflow-hidden rounded-md border border-gray-200 dark:border-gray-800">
+          <table className="w-full text-sm">
+            <tbody>
+              {Object.entries(frontmatter).map(([k, v]) => {
+                const val = String(v ?? "");
+                return (
+                  <tr
+                    key={k}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => copyToClipboard(k, val)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        copyToClipboard(k, val);
+                      }
+                    }}
+                    className="group hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer"
+                  >
+                    <td className="px-4 py-2 font-medium text-gray-700 dark:text-gray-300 w-1/3">
+                      {k}
+                    </td>
+                    <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
+                      <div className="relative">
+                        <span className="block pr-12 break-words">{val}</span>
+                        <button
+                          type="button"
+                          aria-hidden
+                          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 pointer-events-none z-10"
+                        >
+                          {/* copy icon (simple) */}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <rect
+                              x="9"
+                              y="9"
+                              width="13"
+                              height="13"
+                              rx="2"
+                              ry="2"
+                            ></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <Card>
         <div className="prose dark:prose-invert">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{note.body}</ReactMarkdown>
