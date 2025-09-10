@@ -5,9 +5,42 @@ import { z } from "zod";
 const createNote = async (req: Request) => {
   void req.url;
 
+  // Enforce request size limit (100 KB)
+  const MAX_BYTES = 100 * 1024; // 100 KB
+  const contentLengthHeader = req.headers.get("content-length");
+
+  // If Content-Length is present, trust it and block early
+  if (contentLengthHeader) {
+    const parsedLen = Number(contentLengthHeader);
+    if (!Number.isNaN(parsedLen) && parsedLen > MAX_BYTES) {
+      return Response.json(
+        {
+          error: "payload_too_large",
+          message: "Request body exceeds allowed limits",
+        },
+        { status: 413 }
+      );
+    }
+  }
+
   let body: unknown = undefined;
   try {
-    body = await req.json();
+    if (!contentLengthHeader) {
+      // Fallback: measure the actual incoming body size before parsing
+      const buffer = await req.arrayBuffer();
+      if (buffer.byteLength > MAX_BYTES) {
+        return Response.json(
+          { error: "payload_too_large", message: "Request body exceeds 100KB" },
+          { status: 413 }
+        );
+      }
+
+      // Parse JSON from the buffer
+      const text = new TextDecoder().decode(buffer);
+      body = JSON.parse(text);
+    } else {
+      body = await req.json();
+    }
   } catch {
     return Response.json(
       { error: "bad_request", message: "Invalid JSON" },
