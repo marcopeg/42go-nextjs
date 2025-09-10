@@ -33,6 +33,13 @@ const getNote = async (req: Request) => {
       return Response.json({ error: "not_found" }, { status: 404 });
     }
     const r = rows[0];
+    const url = new URL(req.url);
+    if (url.searchParams.has("raw")) {
+      return new Response(r.body, {
+        status: 200,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
     return Response.json({
       title: r.title,
       body: r.body,
