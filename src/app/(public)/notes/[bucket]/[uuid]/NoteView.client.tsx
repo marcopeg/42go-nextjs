@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Card from "@/components/ui/card";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeSanitize from "rehype-sanitize";
+import { Markdown } from "@/42go/components/Markdown/Markdown";
 import matter from "gray-matter";
 import { useToast } from "@/components/ui/toast";
 
@@ -293,12 +291,7 @@ export default function NoteView({ bucket, uuid }: Props) {
 
       <Card>
         <div className="prose dark:prose-invert">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeSanitize]}
-          >
-            {convertSingleNewlinesToHardBreaks(note.body)}
-          </ReactMarkdown>
+          <Markdown source={convertSingleNewlinesToHardBreaks(note.body)} />
         </div>
       </Card>
 

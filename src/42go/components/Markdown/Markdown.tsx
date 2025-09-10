@@ -1,6 +1,7 @@
 // import MarkdownRenderer from "@/components/docs/MarkdownRenderer";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
 import { createHeading } from "./heading";
 import { createLI, createOL, createUL } from "./list";
 import { createLink } from "./link";
@@ -26,6 +27,7 @@ export const Markdown = ({ source, basePath, components }: MarkdownProps) => {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeSanitize]}
       components={{
         h1: createHeading("h1", "text-3xl font-bold mt-8 mb-4 group"),
         h2: createHeading("h2", "text-2xl font-bold mt-8 mb-3 group"),
