@@ -52,6 +52,9 @@ qa: npm run qa
 ngrok:
 	ngrok http --url=42go.ngrok.app 3000
 
+ngrok.notes:
+	ngrok http --url=notes42go.ngrok.app 3000
+
 ###
 ### JS Prod Tasks
 ###

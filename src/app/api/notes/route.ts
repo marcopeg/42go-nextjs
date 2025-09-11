@@ -3,23 +3,33 @@ import { protectRoute } from "@/42go/policy/protectRoute";
 import { z } from "zod";
 
 // CORS headers for Obsidian plugin
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "app://obsidian.md",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+const allowedOrigins = ["app://obsidian.md", "capacitor://localhost"];
+
+function getCorsHeaders(origin?: string) {
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+
+  if (origin && allowedOrigins.includes(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
+
+  return headers;
+}
 
 // Handle OPTIONS preflight for CORS
-export async function OPTIONS() {
+export async function OPTIONS(req: Request) {
   return new Response(null, {
     status: 200,
-    headers: corsHeaders,
+    headers: getCorsHeaders(req.headers.get("origin") ?? undefined),
   });
 }
 
 // Enhanced schema with stricter validation
 const createNote = async (req: Request) => {
   void req.url;
+  const corsHeaders = getCorsHeaders(req.headers.get("origin") ?? undefined);
 
   // Enforce request size limit (100 KB)
   const MAX_BYTES = 100 * 1024; // 100 KB
