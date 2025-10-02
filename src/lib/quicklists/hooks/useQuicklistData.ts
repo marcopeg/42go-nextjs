@@ -44,6 +44,7 @@ export interface UseQuicklistDataReturn {
     position: number
   ) => Promise<Task>;
   handleUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  handleReorderTasks: (taskIds: string[]) => Promise<void>;
 
   // Project operations
   handleUpdateProject: (
@@ -250,6 +251,34 @@ export function useQuicklistData({
     refreshProject();
   };
 
+  const handleReorderTasks = async (taskIds: string[]) => {
+    try {
+      const res = await fetch(`/api/quicklists/${projectId}/reorder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ taskIds }),
+      });
+      if (!res.ok) throw new Error(`Failed to reorder: ${res.status}`);
+      const data = await res.json();
+      if (data?.tasks) {
+        // replace tasks positions from server
+        setTasks((prev) => {
+          const done = prev.filter((t) => !!t.completed_at);
+          const pending = data.tasks as Task[];
+          return [...pending, ...done];
+        });
+      }
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Failed to reorder list",
+        description: e instanceof Error ? e.message : "Unknown",
+      });
+      refetch();
+    }
+  };
+
   return {
     projectData,
     isLoading,
@@ -265,6 +294,7 @@ export function useQuicklistData({
     handleDeleteTask,
     handleCreateTask,
     handleUpdateTask,
+    handleReorderTasks,
     handleUpdateProject,
     invalidateCache,
     refreshData,

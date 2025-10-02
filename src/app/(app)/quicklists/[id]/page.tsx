@@ -307,13 +307,25 @@ export default function ProjectDetailsPage() {
         ...t,
         position: idx + 1,
       }));
-      const newPos = to + 1;
-      fetch(`/api/quicklists/${projectId}/${String(active.id)}`, {
-        method: "PATCH",
+      const orderedIds = reOrdered.map((t) => t.id);
+
+      // Fire-and-forget bulk reorder. If it fails we'll refresh to recover state.
+      fetch(`/api/quicklists/${projectId}/reorder`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ position: newPos }),
-      }).catch(() => {});
+        body: JSON.stringify({ taskIds: orderedIds }),
+      })
+        .then((res) => {
+          if (!res.ok) {
+            // attempt to recover authoritative state
+            refetch();
+          }
+        })
+        .catch(() => {
+          refetch();
+        });
+
       return [...reOrdered, ...doneList];
     });
   };

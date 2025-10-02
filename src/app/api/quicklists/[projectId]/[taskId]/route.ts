@@ -65,9 +65,8 @@ const handler = async (
     );
   }
 
-  const { title, position, completed } = parsed.data as {
+  const { title, completed } = parsed.data as {
     title?: string;
-    position?: number;
     completed?: boolean;
   };
 
@@ -109,8 +108,6 @@ const handler = async (
         Pick<TaskRow, "title" | "completed_at" | "completed_by" | "updated_at">
       >;
       const updates: Updates = {};
-      let positionChanged = false;
-
       if (typeof title === "string" && title !== task.title)
         updates.title = title;
       if (typeof completed === "boolean") {
@@ -122,36 +119,14 @@ const handler = async (
           updates.completed_by = null;
         }
       }
-      if (typeof position === "number" && position !== task.position)
-        positionChanged = true;
-
       updates.updated_at = new Date();
 
+      // Apply title/completed changes only. Position updates are handled by bulk reorder endpoint.
       if (Object.keys(updates).length > 0) {
         await trx("quicklist.tasks")
           .where({ id: taskId, project_id: projectId })
           .update(updates);
       }
-
-      if (positionChanged) {
-        const list = (await trx("quicklist.tasks")
-          .where({ project_id: projectId })
-          .orderBy(["position", "created_at"])) as TaskRow[];
-        const filtered = list.filter((t) => t.id !== taskId);
-        const newPos = Math.max(1, position!);
-        filtered.splice(newPos - 1, 0, {
-          ...task,
-          ...updates,
-          position: newPos,
-        });
-        for (let i = 0; i < filtered.length; i++) {
-          const t = filtered[i];
-          await trx("quicklist.tasks")
-            .where({ id: t.id })
-            .update({ position: i + 1 });
-        }
-      }
-
       await trx("quicklist.projects")
         .where({ id: projectId })
         .update({ updated_at: new Date() });
