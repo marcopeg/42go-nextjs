@@ -6,12 +6,13 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [ade] remove middleware [🔗](./draft/ade-remove-middleware.md)
+- [aqa] fix quicklist reorder api [🔗](./draft/aqa-fix-quicklist-reorder-api.md)
 
 ## Upcoming Tasks
 
 ### QuickList
 
+- [ade] remove middleware [🔗](./draft/ade-remove-middleware.md)
 - [adb] Reject invite [🔗](./draft/adb-reject-invite.md)
 
 ### Boilerplate
@@ -24,7 +25,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 ### QuickList
 
 - [acr] quicklist - API: delete project [🔗](./draft/acr-quicklist-api-delete-project.md)
-- [aqa] fix quicklist reorder api [🔗](./draft/aqa-fix-quicklist-reorder-api.md)
 - [aqb] delete checked items [🔗](./draft/aqb-delete-checked-items.md)
 - [aqc] copy email from project's shared list [🔗](./draft/aqc-copy-email-from-shared-list.md)
 - [aqd] animate check item as visible collapse [🔗](./draft/aqd-animate-check-item-collapse.md)
