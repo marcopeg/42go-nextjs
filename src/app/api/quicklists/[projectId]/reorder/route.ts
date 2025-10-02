@@ -90,13 +90,23 @@ const handler = async (
         }
       }
 
-      // Update positions in-order; simple loop inside transaction is fine for typical list sizes
-      for (let i = 0; i < taskIds.length; i++) {
-        const id = taskIds[i];
-        await trx("quicklist.tasks")
-          .where({ id, project_id: projectId })
-          .update({ position: i + 1, updated_at: new Date() });
-      }
+      // Single UPDATE using unnest with ordinality for efficient bulk position update
+      await trx.raw(
+        `
+        WITH new_pos AS (
+          SELECT id, ordinality AS new_order
+          FROM unnest(?::uuid[]) WITH ORDINALITY AS u(id, ordinality)
+        )
+        UPDATE quicklist.tasks t
+        SET position = np.new_order,
+            updated_at = NOW()
+        FROM new_pos np
+        WHERE t.id = np.id
+          AND t.project_id = ?
+          AND t.position IS DISTINCT FROM np.new_order
+        `,
+        [taskIds, projectId]
+      );
 
       // update project freshness
       await trx("quicklist.projects")
