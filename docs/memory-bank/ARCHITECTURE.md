@@ -117,6 +117,26 @@ This structure is intended to be recursive: A very complex component can be simp
 **Access**: Singleton `getDB()` from `src/lib/db`, Knex migrations in `./knex/`
 **Usage details**: See [docs/DATABASE.md](../docs/DATABASE.md)
 
+### Bulk Update Optimization Pattern
+
+For bulk position/ordering updates, use PostgreSQL's `unnest()` with `WITH ORDINALITY` for efficient single-statement updates:
+
+```sql
+WITH new_pos AS (
+  SELECT id, ordinality AS new_order
+  FROM unnest($1::uuid[]) WITH ORDINALITY AS u(id, ordinality)
+)
+UPDATE table_name t
+SET position = np.new_order, updated_at = NOW()
+FROM new_pos np
+WHERE t.id = np.id
+  AND t.position IS DISTINCT FROM np.new_order
+```
+
+**Benefits**: Single UPDATE vs N UPDATEs, minimal WAL, `IS DISTINCT FROM` skips no-op writes
+**Use case**: Drag-and-drop reordering, bulk position updates
+**Example**: QuickList task reordering (`/api/quicklists/[projectId]/reorder`)
+
 ## Feature Flags (Unified)
 
 See also `docs/articles/POLICY.md` (policy evaluation, prefixes, dev warnings, experimental flags).

@@ -6,8 +6,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aqa] fix quicklist reorder api [🔗](./draft/aqa-fix-quicklist-reorder-api.md)
-
 ## Upcoming Tasks
 
 ### QuickList
@@ -72,6 +70,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ### QuickList
 
+- [aqa] fix quicklist reorder api [🔗](./draft/aqa-fix-quicklist-reorder-api.md) ✅ COMPLETE - Bulk reorder endpoint with PostgreSQL unnest+ordinality optimization, atomic updates, fire-and-forget frontend pattern
 - [ada] Accept invite [🔗](./archive/ada-accept-invite.md)
 - [aba] quicklist - invite collaborator [🔗](./archive/aba-quicklist-invite-collaborator.md)
 - [acu] quicklist - isolate data by app-id [🔗](./archive/acu-isolate-data-appid.md) ✅ COMPLETE - Projects.app_id added, APIs scoped by app, seeds updated, QA passed
