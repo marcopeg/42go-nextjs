@@ -17,7 +17,20 @@ exports.seed = async function (knex) {
   // Create a transaction to ensure all operations succeed or fail together
   await knex.transaction(async (trx) => {
     // Delete existing data in reverse order of dependencies
+    // Clear other schemas that reference auth.users first (quicklist)
     console.log("Clearing existing data...");
+    // quicklist dependent tables must be cleared before deleting users
+    try {
+      await trx.withSchema("quicklist").from("collabs").del();
+      await trx.withSchema("quicklist").from("invites").del();
+      await trx.withSchema("quicklist").from("tasks").del();
+      await trx.withSchema("quicklist").from("projects").del();
+    } catch (e) {
+      // If quicklist schema/tables don't exist yet, ignore the error
+      // (this seed may run in environments without quicklist)
+      console.log("quicklist cleanup skipped:", e.message || e);
+    }
+
     await trx("auth.roles_grants").del();
     await trx("auth.roles_users").del();
     await trx("auth.grants").del();
