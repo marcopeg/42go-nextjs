@@ -54,6 +54,10 @@ export interface UseQuicklistDataReturn {
   // Cache operations
   invalidateCache: () => void;
   refreshData: () => void;
+
+  // Bulk ops
+  hasCompleted: boolean;
+  handleDropCompleted: () => Promise<void>;
 }
 
 export function useQuicklistData({
@@ -279,6 +283,54 @@ export function useQuicklistData({
     }
   };
 
+  const hasCompleted = tasks.some((t) => !!t.completed_at);
+
+  const handleDropCompleted = async () => {
+    if (!hasCompleted) return;
+    if (typeof window !== "undefined") {
+      const ok = window.confirm("Drop all completed tasks?");
+      if (!ok) return;
+    }
+    // Optimistic: remove completed immediately
+    const prevTasks = tasks;
+    const optimistic = prevTasks.filter((t) => !t.completed_at);
+    setTasks(optimistic);
+    try {
+      const res = await fetch(`/api/quicklists/${projectId}/drop-completed`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      if (!res.ok) throw new Error(`Failed to drop completed: ${res.status}`);
+      const data: {
+        ok: boolean;
+        deleted: number;
+        tasks: Array<
+          Pick<
+            Task,
+            "id" | "title" | "position" | "updated_at" | "completed_at"
+          >
+        >;
+      } = await res.json();
+      if (data?.tasks) {
+        setTasks(() => {
+          const mapped = data.tasks.map((t) => ({ ...t } as Task));
+          return mapped;
+        });
+      } else {
+        // fallback: already optimistic
+      }
+    } catch (e) {
+      // revert
+      setTasks(prevTasks);
+      toast({
+        variant: "destructive",
+        title: "Failed to drop completed",
+        description: e instanceof Error ? e.message : "Unknown error",
+      });
+      refetch();
+    }
+  };
+
   return {
     projectData,
     isLoading,
@@ -298,5 +350,7 @@ export function useQuicklistData({
     handleUpdateProject,
     invalidateCache,
     refreshData,
+    hasCompleted,
+    handleDropCompleted,
   };
 }

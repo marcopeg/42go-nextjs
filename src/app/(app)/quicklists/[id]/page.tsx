@@ -62,6 +62,8 @@ export default function ProjectDetailsPage() {
     handleUpdateTask,
     handleUpdateProject,
     refreshData,
+    hasCompleted,
+    handleDropCompleted,
   } = useQuicklistData({ projectId });
 
   const [editingList, setEditingList] = useState(false);
@@ -488,6 +490,19 @@ export default function ProjectDetailsPage() {
               </DragOverlay>
             </DndContext>
             {tasks.length === 0 && <EmptyState />}
+
+            {hasCompleted && (
+              <div className="mt-4 mb-8 flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleDropCompleted}
+                  aria-label="Drop completed tasks"
+                  className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition"
+                >
+                  Drop completed tasks
+                </button>
+              </div>
+            )}
 
             {/* Mobile panels using extracted components */}
             <MobileEditPanel
