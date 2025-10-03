@@ -88,7 +88,8 @@ This project uses the modern OKLCH color space for better color consistency:
 | `--secondary`   | Secondary elements   | Light gray      | Medium gray    |
 | `--muted`       | Muted backgrounds    | Very light gray | Dark gray      |
 | `--accent`      | Accent elements      | Light gray      | Medium gray    |
-| `--destructive` | Error/danger states  | Red             | Red (adjusted) |
+| `--destructive` | Error/danger bg      | Red             | Red (adjusted) |
+| `--destructive-foreground` | Error/danger fg | White           | White          |
 | `--border`      | Borders and dividers | Light gray      | Dark gray      |
 | `--ring`        | Focus rings          | Medium gray     | Medium gray    |
 

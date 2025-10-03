@@ -22,7 +22,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ### QuickList
 
-- [acr] quicklist - API: delete project [🔗](./draft/acr-quicklist-api-delete-project.md)
 - [aqc] copy email from project's shared list [🔗](./draft/aqc-copy-email-from-shared-list.md)
 - [aqd] animate check item as visible collapse [🔗](./draft/aqd-animate-check-item-collapse.md)
 
@@ -69,6 +68,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ### QuickList
 
+- [acr] quicklist - API: delete project [🔗](./draft/acr-quicklist-api-delete-project.md)
 - [aqb] delete checked items [🔗](./draft/aqb-delete-checked-items.md)
 - [aqa] fix quicklist reorder api [🔗](./draft/aqa-fix-quicklist-reorder-api.md) ✅ COMPLETE - Bulk reorder endpoint with PostgreSQL unnest+ordinality optimization, atomic updates, fire-and-forget frontend pattern
 - [ada] Accept invite [🔗](./archive/ada-accept-invite.md)
