@@ -37,28 +37,6 @@ const isUUID = (v: string): boolean =>
     v
   );
 
-const weakETag = (freshness: Date): string => {
-  const year = freshness.getUTCFullYear().toString().slice(-2);
-  const month = (freshness.getUTCMonth() + 1).toString().padStart(2, "0");
-  const day = freshness.getUTCDate().toString().padStart(2, "0");
-  const hour = freshness.getUTCHours().toString().padStart(2, "0");
-  const minute = freshness.getUTCMinutes().toString().padStart(2, "0");
-  const second = freshness.getUTCSeconds().toString().padStart(2, "0");
-  return `${year}${month}${day}${hour}${minute}${second}`;
-};
-
-const parseIfNoneMatch = (req: Request): string | null => {
-  const v = req.headers.get("if-none-match");
-  if (!v) return null;
-  return v.split(",")[0].trim();
-};
-
-const normalizeETag = (s: string | null | undefined): string | null => {
-  if (!s) return null;
-  const withoutWeak = s.trim().replace(/^W\//i, "");
-  return withoutWeak.replace(/^\"|\"$/g, "");
-};
-
 const notFound = () =>
   Response.json(
     {
@@ -129,22 +107,6 @@ const getInfo = async (
   if (fres.length === 0) return notFound();
 
   const p = fres[0];
-  const eTag = weakETag(p.freshness);
-  const lastMod = p.freshness.toUTCString();
-
-  const url = new URL(req.url);
-  const tParam = url.searchParams.get("t");
-  const inm = parseIfNoneMatch(req);
-  if ((tParam && tParam === eTag) || (inm && normalizeETag(inm) === eTag)) {
-    return new Response(null, {
-      status: 304,
-      headers: {
-        ETag: eTag,
-        "Last-Modified": lastMod,
-        "Cache-Control": "private, must-revalidate",
-      },
-    });
-  }
 
   // Fetch invites and collabs (sorted newest first)
   const invitesSql = `
@@ -189,7 +151,6 @@ const getInfo = async (
   }));
 
   const body = {
-    etag: eTag,
     project: {
       id: p.id,
       title: p.title,
@@ -203,9 +164,7 @@ const getInfo = async (
 
   return Response.json(body, {
     headers: {
-      ETag: eTag,
-      "Last-Modified": lastMod,
-      "Cache-Control": "private, must-revalidate",
+      "Cache-Control": "no-store",
     },
   });
 };

@@ -38,7 +38,6 @@ type Collab = {
 };
 
 type InfoResponse = {
-  etag: string;
   project: {
     id: string;
     title: string;

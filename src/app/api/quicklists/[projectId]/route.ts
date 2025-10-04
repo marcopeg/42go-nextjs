@@ -30,32 +30,6 @@ const isUUID = (v: string): boolean =>
     v
   );
 
-const weakETag = (projectId: string, freshness: Date): string => {
-  // Format: YYMMDDhhmmss (simple, URL-safe timestamp)
-  const year = freshness.getUTCFullYear().toString().slice(-2);
-  const month = (freshness.getUTCMonth() + 1).toString().padStart(2, "0");
-  const day = freshness.getUTCDate().toString().padStart(2, "0");
-  const hour = freshness.getUTCHours().toString().padStart(2, "0");
-  const minute = freshness.getUTCMinutes().toString().padStart(2, "0");
-  const second = freshness.getUTCSeconds().toString().padStart(2, "0");
-  return `${year}${month}${day}${hour}${minute}${second}`;
-};
-
-const parseIfNoneMatch = (req: Request): string | null => {
-  const v = req.headers.get("if-none-match");
-  if (!v) return null;
-  // Could be a list; we only support single-value usage here
-  return v.split(",")[0].trim();
-};
-
-// Normalize ETag: drop weak prefix and quotes for stable comparisons
-const normalizeETag = (s: string | null | undefined): string | null => {
-  if (!s) return null;
-  const trimmed = s.trim();
-  const withoutWeak = trimmed.replace(/^W\//i, "");
-  return withoutWeak.replace(/^\"|\"$/g, "");
-};
-
 const notFound = () =>
   Response.json(
     {
@@ -123,26 +97,6 @@ const getProject = async (
   if (fres.length === 0) return notFound();
 
   const p = fres[0];
-  const eTag = weakETag(p.id, p.freshness);
-  console.log("Project freshness:", p.freshness, eTag);
-  const lastMod = p.freshness.toUTCString();
-
-  // Support either header If-None-Match or query param ?t=<etag>
-  const url = new URL(req.url);
-  const tParam = url.searchParams.get("t");
-  const inm = parseIfNoneMatch(req);
-
-  // Simple string comparison for timestamp-based etags
-  if ((tParam && tParam === eTag) || (inm && normalizeETag(inm) === eTag)) {
-    return new Response(null, {
-      status: 304,
-      headers: {
-        ETag: eTag,
-        "Last-Modified": lastMod,
-        "Cache-Control": "private, must-revalidate",
-      },
-    });
-  }
 
   const tasksSql = `
     SELECT id, title, position, created_at, updated_at, completed_at
@@ -153,7 +107,6 @@ const getProject = async (
   const tasks = (await db.raw(tasksSql, [projectId])).rows as TaskRow[];
 
   const body = {
-    etag: eTag,
     project: {
       id: p.id,
       title: p.title,
@@ -171,9 +124,7 @@ const getProject = async (
 
   return Response.json(body, {
     headers: {
-      ETag: eTag,
-      "Last-Modified": lastMod,
-      "Cache-Control": "private, must-revalidate",
+      "Cache-Control": "no-store",
     },
   });
 };

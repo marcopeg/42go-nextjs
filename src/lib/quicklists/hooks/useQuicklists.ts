@@ -38,6 +38,7 @@ const fetchProjects = async (cursor?: string): Promise<ProjectsResponse> => {
   const search = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
   const res = await fetch(`/api/quicklists${search}`, {
     credentials: "same-origin",
+    cache: "no-store",
   });
   if (!res.ok) throw new Error("Failed to load projects");
   return res.json();
@@ -46,6 +47,7 @@ const fetchProjects = async (cursor?: string): Promise<ProjectsResponse> => {
 const fetchProject = async (projectId: string): Promise<ProjectData> => {
   const res = await fetch(`/api/quicklists/${projectId}`, {
     credentials: "same-origin",
+    cache: "no-store",
   });
   if (!res.ok) {
     throw new Error(`Failed to load project: ${res.status} ${res.statusText}`);
@@ -60,7 +62,11 @@ export function useQuicklists() {
   return useQuery({
     queryKey: QUICKLISTS_QUERY_KEY,
     queryFn: () => fetchProjects(),
-    staleTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: "always",
   });
 }
 
@@ -68,7 +74,11 @@ export function useProject(projectId: string) {
   return useQuery({
     queryKey: PROJECT_QUERY_KEY(projectId),
     queryFn: () => fetchProject(projectId),
-    staleTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: "always",
     enabled: !!projectId,
   });
 }

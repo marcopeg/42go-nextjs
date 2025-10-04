@@ -166,7 +166,14 @@ const getQuicklists = async (req: Request) => {
     owner_email: r.owner_email,
   }));
 
-  return Response.json({ projects, invites: invitesRows, nextCursor });
+  return Response.json(
+    { projects, invites: invitesRows, nextCursor },
+    {
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    }
+  );
 };
 
 export const GET = protectRoute(getQuicklists, {
