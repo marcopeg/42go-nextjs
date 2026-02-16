@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AuthError } from "@/42go/auth/components/AuthError";
 import {
   CredentialsLogin,
@@ -55,7 +56,9 @@ export default async function LoginPage() {
       <h1 className="text-2xl font-bold text-center mb-6">Sign In</h1>
 
       {/* Error Display */}
-      <AuthError />
+      <Suspense fallback={null}>
+        <AuthError />
+      </Suspense>
 
       {/* OAuth Section */}
       {socialLogins.length > 0 && (

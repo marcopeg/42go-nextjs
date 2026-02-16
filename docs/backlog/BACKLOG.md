@@ -2,7 +2,7 @@
 
 A NextJS boilerplate that supports multi-website configuration, dynamic theming, user management, config-based feature flags and RBAC control and feature flags.
 
-(LastID: aqd)
+(LastID: aqe)
 
 ## Current Task
 
@@ -16,6 +16,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 ### Boilerplate
 
 - [aem] fix docker build [🔗](./draft/aem-fix-docker-build.md)
+- [aqe] upgrade to major versions [🔗](./draft/aqe-upgrade-to-major-versions.md)
 - [adc] Add tenants table [🔗](./tasks/adc-tenants.md)
 
 ## Drafts
