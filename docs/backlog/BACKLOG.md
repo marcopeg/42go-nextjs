@@ -6,7 +6,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
-- [aqe] upgrade to major versions [🔗](./draft/aqe-upgrade-to-major-versions.md)
+(none - ready for next task)
 
 
 
@@ -92,6 +92,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ### Boilerplate
 
+- [aqe] upgrade to major versions [🔗](./archive/aqe-upgrade-to-major-versions.md) ✅ COMPLETE - Next.js 16.1.6, React 19.2.4, @dnd-kit 10, ESLint 9, all features tested and validated
 - [acz] Make the app iPhone home-screen compatible [🔗](./archive/acz-make-the-app-iphone-home-screen-compatible.md)
 - [acs] devise how to test api through authenticated curl calls [🔗](./archive/acs-test-api.md)
 - [act] App default page [🔗](./archive/act-app-default-page.md)
