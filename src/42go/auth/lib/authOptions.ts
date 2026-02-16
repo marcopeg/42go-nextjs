@@ -14,7 +14,7 @@ export async function getAuthOptions(): Promise<NextAuthOptions> {
     },
     pages: {
       signIn: "/login",
-      error: "/error",
+      error: "/login", // Redirect errors to login page (AuthError component handles display)
       verifyRequest: "/verify-request",
       newUser: "/signup",
     },

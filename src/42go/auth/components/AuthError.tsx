@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 
 interface AuthErrorProps {
   className?: string;
@@ -9,46 +9,32 @@ interface AuthErrorProps {
 
 export function AuthError({ className }: AuthErrorProps) {
   const searchParams = useSearchParams();
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const error = useMemo(() => {
     const errorParam = searchParams?.get("error");
-    if (errorParam) {
-      switch (errorParam) {
-        case "OAuthSignin":
-          setError("Error occurred during GitHub sign-in. Please try again.");
-          break;
-        case "OAuthCallback":
-          setError("Error occurred during GitHub callback. Please try again.");
-          break;
-        case "OAuthCreateAccount":
-          setError("Could not create account with GitHub. Please try again.");
-          break;
-        case "EmailCreateAccount":
-          setError("Could not create account with this email address.");
-          break;
-        case "Callback":
-          setError("Error occurred during authentication. Please try again.");
-          break;
-        case "OAuthAccountNotLinked":
-          setError(
-            "This GitHub account is already linked to another user account."
-          );
-          break;
-        case "EmailSignin":
-          setError(
-            "Error occurred during email sign-in. Please check your credentials."
-          );
-          break;
-        case "CredentialsSignin":
-          setError("Invalid username or password. Please try again.");
-          break;
-        case "SessionRequired":
-          setError("Please sign in to access this page.");
-          break;
-        default:
-          setError("Authentication error occurred. Please try again.");
-      }
+    if (!errorParam) return null;
+
+    switch (errorParam) {
+      case "OAuthSignin":
+        return "Error occurred during GitHub sign-in. Please try again.";
+      case "OAuthCallback":
+        return "Error occurred during GitHub callback. Please try again.";
+      case "OAuthCreateAccount":
+        return "Could not create account with GitHub. Please try again.";
+      case "EmailCreateAccount":
+        return "Could not create account with this email address.";
+      case "Callback":
+        return "Error occurred during authentication. Please try again.";
+      case "OAuthAccountNotLinked":
+        return "This GitHub account is already linked to another user account.";
+      case "EmailSignin":
+        return "Error occurred during email sign-in. Please check your credentials.";
+      case "CredentialsSignin":
+        return "Invalid username or password. Please try again.";
+      case "SessionRequired":
+        return "Please sign in to access this page.";
+      default:
+        return "Authentication error occurred. Please try again.";
     }
   }, [searchParams]);
 

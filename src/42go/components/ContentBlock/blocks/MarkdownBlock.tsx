@@ -1,10 +1,12 @@
 import fs from "fs";
 import path from "path";
-import React from "react";
+import React, { cache } from "react";
 import Markdown from "@/42go/components/Markdown";
 
-// Chuck Norris style: roundhouse cache
-const markdownCache: Record<string, string> = {};
+// Chuck Norris style: roundhouse cache using React's cache()
+const readMarkdownFile = cache(async (filePath: string): Promise<string> => {
+  return await fs.promises.readFile(filePath, "utf8");
+});
 
 export type TMarkdownBlock =
   | { type: "markdown"; source: string; path?: never }
@@ -25,30 +27,26 @@ export async function MarkdownBlock({ data }: { data: TMarkdownBlock }) {
     const filePath = path.isAbsolute(data.path)
       ? data.path
       : path.join(process.cwd(), data.path);
-    if (markdownCache[filePath]) {
-      content = markdownCache[filePath];
-    } else {
-      try {
-        content = await fs.promises.readFile(filePath, "utf8");
-        markdownCache[filePath] = content;
-      } catch {
-        // Render error in classic warning style
-        return (
-          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
-            <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
-              ⚠️ Unable to load markdown file
-            </h3>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              <strong>Path:</strong> {data.path}
-              <br />
-              <i>
-                This warning is only visible when Chuck Norris isn&apos;t
-                looking.
-              </i>
-            </p>
-          </div>
-        );
-      }
+
+    try {
+      content = await readMarkdownFile(filePath);
+    } catch {
+      // Render error in classic warning style
+      return (
+        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
+          <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+            ⚠️ Unable to load markdown file
+          </h3>
+          <p className="text-sm text-yellow-700 dark:text-yellow-300">
+            <strong>Path:</strong> {data.path}
+            <br />
+            <i>
+              This warning is only visible when Chuck Norris isn&apos;t
+              looking.
+            </i>
+          </p>
+        </div>
+      );
     }
   }
 

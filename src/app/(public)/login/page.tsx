@@ -24,14 +24,15 @@ export default async function LoginPage() {
   const providers: string[] =
     appConfig?.auth?.providers.map((provider) => provider.type) || [];
 
-  let tabIndex = 0;
   const socialLogins = providers
-    .map((name) => {
+    .map((name, index) => {
+      const tabIndex = index + 1;
+
       if (name === "github") {
         return (
           <GitHubLogin
             key="github"
-            tabIndex={(tabIndex += 1)}
+            tabIndex={tabIndex}
             callbackUrl={callbackUrl}
           />
         );
@@ -41,7 +42,7 @@ export default async function LoginPage() {
         return (
           <GoogleLogin
             key="google"
-            tabIndex={(tabIndex += 1)}
+            tabIndex={tabIndex}
             callbackUrl={callbackUrl}
           />
         );
@@ -50,6 +51,8 @@ export default async function LoginPage() {
       return null;
     })
     .filter((_) => _ !== null);
+
+  const credentialsTabIndex = providers.length + 1;
 
   return (
     <div className="login-page max-w-md mx-auto mt-8 p-6">
@@ -88,7 +91,7 @@ export default async function LoginPage() {
       {/* Credentials Form */}
       {providers.includes("credentials") && (
         <div className="w-full">
-          <CredentialsLogin tabIndex={tabIndex} callbackUrl={callbackUrl} />
+          <CredentialsLogin tabIndex={credentialsTabIndex} callbackUrl={callbackUrl} />
         </div>
       )}
     </div>

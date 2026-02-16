@@ -193,8 +193,11 @@ export function useEvaluatePolicy(policy: Policy | Policy[]): HookResult {
       setState({ loading: false, pass: true });
     };
 
-    setState((s) => ({ ...s, loading: true }));
-    run();
+    // Set loading state and run evaluation
+    queueMicrotask(() => {
+      setState((s) => ({ ...s, loading: true }));
+      run();
+    });
 
     return () => {
       isMounted = false;

@@ -6,6 +6,10 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Current Task
 
+- [aqe] upgrade to major versions [🔗](./draft/aqe-upgrade-to-major-versions.md)
+
+
+
 ## Upcoming Tasks
 
 ### QuickList
@@ -16,7 +20,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 ### Boilerplate
 
 - [aem] fix docker build [🔗](./draft/aem-fix-docker-build.md)
-- [aqe] upgrade to major versions [🔗](./draft/aqe-upgrade-to-major-versions.md)
 - [adc] Add tenants table [🔗](./tasks/adc-tenants.md)
 
 ## Drafts

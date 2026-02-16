@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { getAppID } from "@/42go/config/app-config";
 import { APP_ID_HEADER } from "@/42go/lib/app-id";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   console.log("@@@@@ MIDDLEWARE :: START");
 
   // Resolve the AppID using the unified resolution function

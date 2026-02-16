@@ -111,12 +111,14 @@ export const SidebarMenu = ({
 
   useEffect(() => {
     if (closeMobileMenu) return; // desktop only
-    if (collapsePosition === "top") {
-      setCollapseBtnTop(21); // px to align with header
-      return;
-    }
-    // bottom mode: center on the user item row
+
     const updatePosition = () => {
+      if (collapsePosition === "top") {
+        setCollapseBtnTop(21); // px to align with header
+        return;
+      }
+
+      // bottom mode: center on the user item row
       if (!sidebarRef.current) return;
       const containerRect = sidebarRef.current.getBoundingClientRect();
       const anchorEl = userItemRef.current;
