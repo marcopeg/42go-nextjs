@@ -6,9 +6,21 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Ready Tasks
 
-- [UG00] 🔴 3/5 — Update Dependencies | [task](./ready/UG00.update-dependencies.md) | [plan](./ready/UG00.update-dependencies.plan.md)
-
 ## Drafts
+
+### Dependency Updates (from UG00 research)
+
+> **Execution order**: PE62 first → then DQ53+VD22+KB55+YW51 in parallel → WP85 → QQ22 → UT41 → XI41 last
+
+- ① [PE62] 🔴 2/5 — Fix Stale Lockfile + Remove Dead Deps | [task](./drafts/PE62.fix-stale-lockfile.md) | `aexecute`
+- ② [DQ53] 🟢 1/5 — Patch Updates | [task](./drafts/DQ53.patch-updates.md) | `aexecute` | after PE62
+- ② [VD22] 🟢 1/5 — Minor Updates (Utilities) | [task](./drafts/VD22.minor-updates-utilities.md) | `aexecute` | after PE62
+- ② [KB55] 🟢 1/5 — Minor Updates (React + Tailwind + Types) | [task](./drafts/KB55.minor-updates-react-tailwind.md) | `aexecute` | after PE62
+- ② [YW51] 🔴 2/5 — Next.js 16.2.4 Security Bump | [task](./drafts/YW51.nextjs-security-bump.md) | `aexecute` | after PE62
+- ③ [WP85] 🟡 2/5 — Lucide React 0.x → 1.x | [task](./drafts/WP85.lucide-react-v1.md) | `aexecute` | after ②
+- ④ [QQ22] 🟡 3/5 — TypeScript 5 → 6 | [task](./drafts/QQ22.typescript-6-upgrade.md) | `arefine` → `aplan` | after ③
+- ⑤ [UT41] 🟡 2/5 — ESLint 9 → 10 | [task](./drafts/UT41.eslint-10-upgrade.md) | `arefine` → `aplan` | after QQ22
+- ⑥ [XI41] 🟢 1/5 — Pin All Dependency Versions | [task](./drafts/XI41.pin-all-versions.md) | `aexecute` | after all
 
 ### Tier 1: Deployable Baseline 🔴
 
@@ -78,6 +90,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Completed
 
+- [UG00] Update Dependencies (Research) | [task](./completed/UG00.update-dependencies.md) | [plan](./completed/UG00.update-dependencies.plan.md) | [notes](./completed/UG00.update-dependencies.notes.md) | [outcome](./completed/UG00.update-dependencies.outcome.md)
 - [ADE] Remove middleware | [task](./completed/ADE.remove-middleware.md)
 - [ACR] QuickList - API: delete project | [task](./completed/ACR.quicklist-api-delete-project.md)
 - [AQB] Delete checked items | [task](./completed/AQB.delete-checked-items.md)
