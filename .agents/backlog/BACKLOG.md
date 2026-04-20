@@ -4,6 +4,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## In Progress
 
+
+
 ## Ready Tasks
 
 ## Drafts
@@ -12,7 +14,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 > **Execution order**: PE62 first → then DQ53+VD22+KB55+YW51 in parallel → WP85 → QQ22 → UT41 → XI41 last
 
-- ① [PE62] 🔴 2/5 — Fix Stale Lockfile + Remove Dead Deps | [task](./drafts/PE62.fix-stale-lockfile.md) | `aexecute`
+- ① ~~[PE62] — moved to In Progress~~
 - ② [DQ53] 🟢 1/5 — Patch Updates | [task](./drafts/DQ53.patch-updates.md) | `aexecute` | after PE62
 - ② [VD22] 🟢 1/5 — Minor Updates (Utilities) | [task](./drafts/VD22.minor-updates-utilities.md) | `aexecute` | after PE62
 - ② [KB55] 🟢 1/5 — Minor Updates (React + Tailwind + Types) | [task](./drafts/KB55.minor-updates-react-tailwind.md) | `aexecute` | after PE62
@@ -213,5 +215,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [AAQ] Page routes ACL with App config feature flags
 - [AAR] Identify App config by Request properties
 - [AEC] Abstract Panel Component | [task](./completed/AEC.abstract-panel-component.md)
+- [PE62] 🔴 2/5 — Fix Stale Lockfile + Remove Dead Deps | [task](./completed/PE62.fix-stale-lockfile.md) | [plan](./completed/PE62.fix-stale-lockfile.plan.md) | [notes](./completed/PE62.fix-stale-lockfile.notes.md)
 
 ## Archived
