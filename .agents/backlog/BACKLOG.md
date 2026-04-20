@@ -6,64 +6,79 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Ready Tasks
 
-### QuickList
-
-- [ADE] Remove middleware | [task](./ready/ADE.remove-middleware.md)
-- [ADB] Reject invite | [task](./ready/ADB.reject-invite.md)
-
-### Boilerplate
-
-- [AEM] Fix docker build | [task](./ready/AEM.fix-docker-build.md)
-- [ADC] Add tenants table | [task](./ready/ADC.add-tenants-table.md)
+- [UG00] 🔴 3/5 — Update Dependencies | [task](./ready/UG00.update-dependencies.md) | [plan](./ready/UG00.update-dependencies.plan.md)
 
 ## Drafts
 
-### QuickList
+### Tier 1: Deployable Baseline 🔴
 
-- [AQC] Copy email from project's shared list | [task](./drafts/AQC.copy-email-from-shared-list.md)
-- [AQD] Animate check item as visible collapse | [task](./drafts/AQD.animate-check-item-collapse.md)
+- [AEM] 🔴 3/5 — Fix Docker build | [task](./ready/AEM.fix-docker-build.md)
+- [TK89] 🔴 3/5 — Docker Image Security Review | [task](./drafts/TK89.docker-image-security-review.md)
+- [ADO] 🔴 1/5 — If config.auth not defined, /login returns 404 | [task](./drafts/ADO.login-404-without-auth-config.md)
+- [ADP] 🔴 1/5 — config.public.docs should enable docs without feature flag | [task](./drafts/ADP.docs-config-as-feature-flag.md)
 
-### RBAC
+### Tier 2: Policy & Auth Integrity 🔴/🟡
 
-- [AEI] Extract Policy Utilities & Refactor Imports | [task](./drafts/AEI.extract-policy-utilities.md)
-- [AAM] RBAC Advanced Features | [task](./drafts/AAM.rbac-advanced-features.md)
-- [ADS] RBAC SQL Functions | [task](./drafts/ADS.sql-functions.md)
-- [ADR] EPIC - RBAC Refactor Policies | [task](./drafts/ADR.refactor-rbac-policies.md)
-- [ADW] Client Policy Hook and Component | [task](./drafts/ADW.client-policy-hook-component.md)
-- [AEA] Policy & RBAC Testing Strategy | [task](./drafts/AEA.policy-testing-strategy.md)
-- [AEG] Unified Policy Engine Tests Implementation | [task](./drafts/AEG.policy-engine-tests.md)
-- [AEF] Design anyPolicy OR Helper | [task](./drafts/AEF.design-anypolicy-or-helper.md)
+- [AEI] 🔴 2/5 — Extract Policy Utilities & Refactor Imports | [task](./drafts/AEI.extract-policy-utilities.md)
+- [AEA] 🟡 2/5 — Policy & RBAC Testing Strategy | [task](./drafts/AEA.policy-testing-strategy.md)
+- [AEG] 🔴 3/5 — Unified Policy Engine Tests Implementation | [task](./drafts/AEG.policy-engine-tests.md)
+- [AEF] 🟡 2/5 — Design anyPolicy OR Helper | [task](./drafts/AEF.design-anypolicy-or-helper.md)
+- [ADW] 🟡 3/5 — Client Policy Hook and Component | [task](./drafts/ADW.client-policy-hook-component.md)
+- [AR08] 🟡 2/5 — Refactor 42go/auth/providers to expose single provider modules | [task](./drafts/AR08.refactor-auth-providers.md)
+- [AAN] 🟡 2/5 — App-Specific Session Configuration | [task](./drafts/AAN.app-specific-session-config.md)
 
-### Boilerplate
+### Tier 3: Framework Plumbing 🟡
 
-- [ABX] Improve user's menu | [task](./drafts/ABX.improve-user-menu.md)
-- [AAN] App-Specific Session Configuration | [task](./drafts/AAN.app-specific-session-config.md)
-- [ADE] DynamicPages with custom layout | [task](./drafts/ADE.dynamic-pages-layout.md)
-- [ACW] Document Getting Started with README information | [task](./drafts/ACW.document-getting-started.md)
-- [ACM] docs: Parse relative url in articles | [task](./drafts/ACM.relative-url.md)
-- [AAT] Support i18n | [task](./drafts/AAT.support-i18n.md)
-- [ABD] Optimize Database Documentation | [task](./drafts/ABD.optimize-database-documentation.md)
-- [ABE] Optimize Theming Documentation | [task](./drafts/ABE.optimize-theming-documentation.md)
-- [ABF] Optimize Route Groups Documentation | [task](./drafts/ABF.optimize-route-groups-documentation.md)
-- [ABG] Optimize Feature Flags Documentation | [task](./drafts/ABG.optimize-feature-flags-documentation.md)
-- [ABH] Optimize App Config Documentation | [task](./drafts/ABH.optimize-app-config-documentation.md)
-- [ADB] Refactor 42go/auth/providers to expose single provider modules | [task](./drafts/ADB.refactor-auth-providers.md)
-- [ABL] Add social login: LinkedIn | [task](./drafts/ABL.add-social-login-linkedin.md)
-- [ABK] Add social login: X | [task](./drafts/ABK.add-social-login-x.md)
-- [AAM] Add social login: Facebook | [task](./drafts/AAM.add-social-login-facebook.md)
-- [AAO] Add social login: Apple | [task](./drafts/AAO.add-social-login-apple.md)
-- [ABN] Migrate to Prisma ORM | [task](./drafts/ABN.migrate-to-prisma-orm.md)
-- [ADD] Implement CLI scripts | [task](./drafts/ADD.implement-cli-scripts.md)
-- [ADO] If config.auth not defined, /login returns 404 | [task](./drafts/ADO.login-404-without-auth-config.md)
-- [ADP] config.public.docs should enable docs without feature flag | [task](./drafts/ADP.docs-config-as-feature-flag.md)
-- [GQ36] Add YouTube ContentBlock | [task](./drafts/GQ36.add-youtube-contentblock.md)
-- [TR02] Add Image ContentBlock | [task](./drafts/TR02.add-image-contentblock.md)
-- [AK87] HeroBlock: optional fields (title, subtitle, or actions only) | [task](./drafts/AK87.heroblock-optional-fields.md)
-- [NC71] HeroBlock: add alignment option | [task](./drafts/NC71.heroblock-add-alignment.md)
-- [ADN] Config match function | [task](./drafts/ADN.config-match-function.md)
+- [ADN] 🟡 3/5 — Config match function | [task](./drafts/ADN.config-match-function.md)
+- [HX68] 🟡 3/5 — DynamicPages with custom layout | [task](./drafts/HX68.dynamic-pages-layout.md)
+- [ABX] 🟡 2/5 — Improve user's menu | [task](./drafts/ABX.improve-user-menu.md)
+- [ACM] 🟡 2/5 — docs: Parse relative url in articles | [task](./drafts/ACM.relative-url.md)
+- [ADC] 🟡 3/5 — Add tenants table | [task](./ready/ADC.add-tenants-table.md)
+
+### Tier 4: Content Blocks 🟢/🟡
+
+- [AK87] 🟡 1/5 — HeroBlock: optional fields (title, subtitle, or actions only) | [task](./drafts/AK87.heroblock-optional-fields.md)
+- [NC71] 🟢 1/5 — HeroBlock: add alignment option | [task](./drafts/NC71.heroblock-add-alignment.md)
+- [GQ36] 🟢 2/5 — Add YouTube ContentBlock | [task](./drafts/GQ36.add-youtube-contentblock.md)
+- [TR02] 🟢 2/5 — Add Image ContentBlock | [task](./drafts/TR02.add-image-contentblock.md)
+
+### Tier 5: QuickList Domain Features 🟢
+
+- [ADB] 🟡 2/5 — Reject invite | [task](./ready/ADB.reject-invite.md)
+- [AQC] 🟢 1/5 — Copy email from project's shared list | [task](./drafts/AQC.copy-email-from-shared-list.md)
+- [AQD] 🟢 2/5 — Animate check item as visible collapse | [task](./drafts/AQD.animate-check-item-collapse.md)
+
+### Tier 6: RBAC Advanced (Defer) 🟢
+
+- [ADR] 🟢 5/5 — EPIC - RBAC Refactor Policies | [task](./drafts/ADR.refactor-rbac-policies.md)
+- [ADS] 🟢 3/5 — RBAC SQL Functions | [task](./drafts/ADS.sql-functions.md)
+- [AAM] 🟢 4/5 — RBAC Advanced Features | [task](./drafts/AAM.rbac-advanced-features.md)
+
+### Tier 7: Social Logins (On Demand) 🟢
+
+- [ABL] 🟢 2/5 — Add social login: LinkedIn | [task](./drafts/ABL.add-social-login-linkedin.md)
+- [ABK] 🟢 2/5 — Add social login: X | [task](./drafts/ABK.add-social-login-x.md)
+- [TO37] 🟢 3/5 — Add social login: Apple | [task](./drafts/TO37.add-social-login-apple.md)
+- [IK47] 🟢 2/5 — Add social login: Facebook | [task](./drafts/IK47.add-social-login-facebook.md)
+
+### Tier 8: Documentation 🟢
+
+- [ABH] 🟢 1/5 — Optimize App Config Documentation | [task](./drafts/ABH.optimize-app-config-documentation.md)
+- [ABG] 🟢 1/5 — Optimize Feature Flags Documentation | [task](./drafts/ABG.optimize-feature-flags-documentation.md)
+- [ABF] 🟢 1/5 — Optimize Route Groups Documentation | [task](./drafts/ABF.optimize-route-groups-documentation.md)
+- [ABE] 🟢 1/5 — Optimize Theming Documentation | [task](./drafts/ABE.optimize-theming-documentation.md)
+- [ABD] 🟢 1/5 — Optimize Database Documentation | [task](./drafts/ABD.optimize-database-documentation.md)
+- [ACW] 🟢 2/5 — Document Getting Started with README information | [task](./drafts/ACW.document-getting-started.md)
+
+### Tier 9: Big Bets (Park) 🟢
+
+- [ABN] 🟢 5/5 — Migrate to Prisma ORM | [task](./drafts/ABN.migrate-to-prisma-orm.md)
+- [AAT] 🟢 5/5 — Support i18n | [task](./drafts/AAT.support-i18n.md)
+- [ADD] 🟢 2/5 — Implement CLI scripts | [task](./drafts/ADD.implement-cli-scripts.md)
 
 ## Completed
 
+- [ADE] Remove middleware | [task](./completed/ADE.remove-middleware.md)
 - [ACR] QuickList - API: delete project | [task](./completed/ACR.quicklist-api-delete-project.md)
 - [AQB] Delete checked items | [task](./completed/AQB.delete-checked-items.md)
 - [AQA] Fix quicklist reorder API | [task](./completed/AQA.fix-quicklist-reorder-api.md)
@@ -98,6 +113,22 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [AEH] Remove Wildcard Grant Support | [task](./completed/AEH.remove-wildcard-grant-support.md)
 - [ADT] Unified Policy Engine | [task](./completed/ADT.unified-policy-engine.md)
 - [ADV] Protect SSR Pages with Policies | [task](./completed/ADV.protect-ssr-pages.md)
+- [ADZ] API Route Policy Guard uses Policies | [task](./completed/ADZ.api-route-policy-guard.md)
+- [ADX] AppLayout Policy Integration | [task](./completed/ADX.applayout-policy-integration.md)
+- [AEB] Consolidate RBAC Into Policy Engine | [task](./completed/AEB.consolidate-rbac-into-policy-engine.md)
+- [ADU] Feature Flags Unification to AppConfig.features | [task](./completed/ADU.feature-flags-unification.md)
+- [ADY] Cleanup Legacy Feature Flags | [task](./completed/ADY.cleanup-legacy-feature-flags.md)
+- [AAK] RBAC Page & Route Protection | [task](./completed/AAK.rbac-page-route-protection.md)
+- [AAJ] RBAC useGrants Hook & Client Components | [task](./completed/AAJ.rbac-usegrants-hook.md)
+- [AAI] RBAC Database Schema & Core Infrastructure | [task](./completed/AAI.add-rbac.md)
+- [ADL] docs: Links from the docs index page don't work | [task](./completed/ADL.docs-article-walls-links.md)
+- [ADQ] Clean up AppConfig matching logic | [task](./completed/ADQ.clean-appconfig-match.md)
+- [ACI] Add config.match.header | [task](./completed/ACI.config-match-header.md)
+- [ADM] Import feedback block | [task](./completed/ADM.import-feedback-block.md)
+- [ABT] Import waitlist block | [task](./completed/ABT.import-waitlist-block.md)
+- [ABS] Import pricing block | [task](./completed/ABS.import-pricing-block.md)
+- [ADF] Custom Actions Type (SUPERSEDED) | [task](./completed/ADF.custom-actions-type.md)
+- [ADI] Create PublicLayout TActionItem Type | [task](./completed/ADI.create-publiclayout-tactionitem-type.md)
 - [ADZ] API Route Policy Guard uses Policies | [task](./completed/ADZ.api-route-policy-guard.md)
 - [ADX] AppLayout Policy Integration | [task](./completed/ADX.applayout-policy-integration.md)
 - [AEB] Consolidate RBAC Into Policy Engine | [task](./completed/AEB.consolidate-rbac-into-policy-engine.md)
