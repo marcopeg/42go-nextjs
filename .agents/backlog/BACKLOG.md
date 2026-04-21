@@ -4,8 +4,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## In Progress
 
-- ② [VD22] 🟢 1/5 — Minor Updates (Utilities) | [task](./VD22.minor-updates-utilities.md) | [plan](./VD22.minor-updates-utilities.plan.md) | [notes](./VD22.minor-updates-utilities.notes.md) | `aexecute` | after PE62
-
 ## Ready Tasks
 
 ### Dependency Updates (from UG00 research)
@@ -17,7 +15,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 > **Execution order**: PE62 first → then DQ53+VD22+KB55+YW51 in parallel → WP85 → QQ22 → UT41 → XI41 last
 
 - ① ~~[PE62] — moved to In Progress~~
-- ② [KB55] 🟢 1/5 — Minor Updates (React + Tailwind + Types) | [task](./drafts/KB55.minor-updates-react-tailwind.md) | `aexecute` | after PE62
 - ② [YW51] 🔴 2/5 — Next.js 16.2.4 Security Bump | [task](./drafts/YW51.nextjs-security-bump.md) | `aexecute` | after PE62
 - ③ [WP85] 🟡 2/5 — Lucide React 0.x → 1.x | [task](./drafts/WP85.lucide-react-v1.md) | `aexecute` | after ②
 - ④ [QQ22] 🟡 3/5 — TypeScript 5 → 6 | [task](./drafts/QQ22.typescript-6-upgrade.md) | `arefine` → `aplan` | after ③
@@ -217,5 +214,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [AEC] Abstract Panel Component | [task](./completed/AEC.abstract-panel-component.md)
 - [PE62] 🔴 2/5 — Fix Stale Lockfile + Remove Dead Deps | [task](./completed/PE62.fix-stale-lockfile.md) | [plan](./completed/PE62.fix-stale-lockfile.plan.md) | [notes](./completed/PE62.fix-stale-lockfile.notes.md)
 - [DQ53] Patch Updates | [task](./completed/DQ53.patch-updates.md) | [plan](./completed/DQ53.patch-updates.plan.md) | [notes](./completed/DQ53.patch-updates.notes.md)
+- [VD22] Minor Updates — Utilities | [task](./completed/VD22.minor-updates-utilities.md) | [plan](./completed/VD22.minor-updates-utilities.plan.md) | [notes](./completed/VD22.minor-updates-utilities.notes.md)
+- [KB55] Minor Updates — React, Tailwind & Types | [task](./completed/KB55.minor-updates-react-tailwind.md) | [plan](./completed/KB55.minor-updates-react-tailwind.plan.md) | [notes](./completed/KB55.minor-updates-react-tailwind.notes.md)
 
 ## Archived
