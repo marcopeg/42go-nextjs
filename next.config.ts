@@ -1,5 +1,19 @@
 import type { NextConfig } from "next";
 
+const isDevelopment = process.env.NODE_ENV === "development";
+
+// React/Turbopack dev tooling needs eval and live HMR connections.
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: https:",
+  isDevelopment
+    ? "connect-src 'self' ws: wss: http: https:"
+    : "connect-src 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
 const nextConfig: NextConfig = {
   // Enable standalone output for optimized production builds
   output: "standalone",
@@ -17,8 +31,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none';",
+            value: contentSecurityPolicy,
           },
           {
             key: "X-Frame-Options",
