@@ -4,6 +4,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## In Progress
 
+- ⑤ [UT41] 🟡 2/5 — ESLint 9 → 10 | [task](./UT41.eslint-10-upgrade.md) | [plan](./UT41.eslint-10-upgrade.plan.md) | [notes](./UT41.eslint-10-upgrade.notes.md) | `aexecute` | after QQ22 | paused; not before 2026-07-15
+
 ## Ready Tasks
 
 ### Dependency Updates (from UG00 research)
@@ -14,7 +16,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 > **Execution order**: PE62 first → then DQ53+VD22+KB55+YW51 in parallel → WP85 → QQ22 → UT41 → XI41 last
 
-- ⑤ [UT41] 🟡 2/5 — ESLint 9 → 10 | [task](./drafts/UT41.eslint-10-upgrade.md) | `arefine` → `aplan` | after QQ22
 - ⑥ [XI41] 🟢 1/5 — Pin All Dependency Versions | [task](./drafts/XI41.pin-all-versions.md) | `aexecute` | after all
 
 ### Tier 1: Deployable Baseline 🔴
