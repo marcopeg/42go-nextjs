@@ -8,17 +8,12 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ### Dependency Updates (from UG00 research)
 
-- ④ [QQ22] 🟡 3/5 — TypeScript 5 → 6 | [task](./ready/QQ22.typescript-6-upgrade.md) | [plan](./ready/QQ22.typescript-6-upgrade.plan.md) | `aexecute` | after ③
-
 ## Drafts
 
 ### Dependency Updates (from UG00 research)
 
 > **Execution order**: PE62 first → then DQ53+VD22+KB55+YW51 in parallel → WP85 → QQ22 → UT41 → XI41 last
 
-- ① ~~[PE62] — moved to In Progress~~
-- ① ~~[YW51] — moved to In Progress~~
-- ③ [WP85] 🟡 2/5 — (moved to In Progress)
 - ⑤ [UT41] 🟡 2/5 — ESLint 9 → 10 | [task](./drafts/UT41.eslint-10-upgrade.md) | `arefine` → `aplan` | after QQ22
 - ⑥ [XI41] 🟢 1/5 — Pin All Dependency Versions | [task](./drafts/XI41.pin-all-versions.md) | `aexecute` | after all
 
@@ -219,5 +214,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [KB55] Minor Updates — React, Tailwind & Types | [task](./completed/KB55.minor-updates-react-tailwind.md) | [plan](./completed/KB55.minor-updates-react-tailwind.plan.md) | [notes](./completed/KB55.minor-updates-react-tailwind.notes.md)
 - [YW51] Next.js 16.2.4 Security Bump | [task](./completed/YW51.nextjs-security-bump.md) | [plan](./completed/YW51.nextjs-security-bump.plan.md) | [notes](./completed/YW51.nextjs-security-bump.notes.md)
 - [WP85] Lucide React 0.x → 1.x | [task](./completed/WP85.lucide-react-v1.md) | [plan](./completed/WP85.lucide-react-v1.plan.md) | [notes](./completed/WP85.lucide-react-v1.notes.md)
+- [QQ22] TypeScript 5 → 6 | [task](./completed/QQ22.typescript-6-upgrade.md) | [plan](./completed/QQ22.typescript-6-upgrade.plan.md) | [notes](./completed/QQ22.typescript-6-upgrade.notes.md)
 
 ## Archived
