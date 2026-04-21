@@ -4,6 +4,8 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## In Progress
 
+- ② [VD22] 🟢 1/5 — Minor Updates (Utilities) | [task](./VD22.minor-updates-utilities.md) | [plan](./VD22.minor-updates-utilities.plan.md) | [notes](./VD22.minor-updates-utilities.notes.md) | `aexecute` | after PE62
+
 ## Ready Tasks
 
 ### Dependency Updates (from UG00 research)
@@ -15,7 +17,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 > **Execution order**: PE62 first → then DQ53+VD22+KB55+YW51 in parallel → WP85 → QQ22 → UT41 → XI41 last
 
 - ① ~~[PE62] — moved to In Progress~~
-- ② [VD22] 🟢 1/5 — Minor Updates (Utilities) | [task](./drafts/VD22.minor-updates-utilities.md) | `aexecute` | after PE62
 - ② [KB55] 🟢 1/5 — Minor Updates (React + Tailwind + Types) | [task](./drafts/KB55.minor-updates-react-tailwind.md) | `aexecute` | after PE62
 - ② [YW51] 🔴 2/5 — Next.js 16.2.4 Security Bump | [task](./drafts/YW51.nextjs-security-bump.md) | `aexecute` | after PE62
 - ③ [WP85] 🟡 2/5 — Lucide React 0.x → 1.x | [task](./drafts/WP85.lucide-react-v1.md) | `aexecute` | after ②

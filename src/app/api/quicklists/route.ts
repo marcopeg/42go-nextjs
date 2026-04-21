@@ -36,7 +36,7 @@ const encodeCursor = (row: { updated_at: Date; id: string }): string => {
 };
 
 const decodeCursor = (
-  cursor: string | null
+  cursor: string | null,
 ): { updatedAt: Date; id: string } | null => {
   if (!cursor) return null;
   try {
@@ -61,7 +61,7 @@ const getQuicklists = async (req: Request) => {
   if (!userId || !userEmail) {
     return Response.json(
       { error: "session", message: "login required" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -76,12 +76,12 @@ const getQuicklists = async (req: Request) => {
   if (!appId) {
     return Response.json(
       { error: "app_not_found", message: "Unable to determine app context" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
   // Build projects query via raw SQL for DISTINCT ON semantics and stable ordering.
-  const params: unknown[] = [userId, appId, userId, appId];
+  const params: Array<string | Date | number> = [userId, appId, userId, appId];
   let whereCursor = "";
   if (cursor) {
     // (updated_at, id) < (cursorUpdatedAt, cursorId)
@@ -143,8 +143,8 @@ const getQuicklists = async (req: Request) => {
         db.raw(
           `i.project_id, i.email, p.title, i.created_at,
            COALESCE(u.name, split_part(u.email, '@', 1)) as owner_username,
-           u.email as owner_email`
-        )
+           u.email as owner_email`,
+        ),
       )
       .from("quicklist.invites as i")
       .join("quicklist.projects as p", "p.id", "i.project_id")
@@ -172,7 +172,7 @@ const getQuicklists = async (req: Request) => {
       headers: {
         "Cache-Control": "no-store",
       },
-    }
+    },
   );
 };
 
@@ -200,7 +200,7 @@ const createProject = async (req: Request) => {
   if (!userId) {
     return Response.json(
       { error: "session", message: "login required" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -216,7 +216,7 @@ const createProject = async (req: Request) => {
   if (!parsed.success) {
     return Response.json(
       { error: "bad_request", message: parsed.error.message },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -228,7 +228,7 @@ const createProject = async (req: Request) => {
   if (!appId) {
     return Response.json(
       { error: "app_not_found", message: "Unable to determine app context" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -266,14 +266,14 @@ const createProject = async (req: Request) => {
         { id: project.id, title: project.title },
         {
           status: 201,
-        }
+        },
       );
     });
   } catch (err) {
     console.error("POST quicklists create project failed", err);
     return Response.json(
       { error: "server_error", message: (err as Error)?.message || "Unknown" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 };
@@ -297,7 +297,7 @@ const deleteProject = async (req: Request) => {
   if (!userId) {
     return Response.json(
       { error: "session", message: "login required" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -307,7 +307,7 @@ const deleteProject = async (req: Request) => {
   } catch {
     return Response.json(
       { error: "bad_request", message: "Invalid JSON" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -315,7 +315,7 @@ const deleteProject = async (req: Request) => {
   if (!parsed.success) {
     return Response.json(
       { error: "bad_request", message: parsed.error.message },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -325,7 +325,7 @@ const deleteProject = async (req: Request) => {
   if (!appId) {
     return Response.json(
       { error: "app_not_found", message: "Unable to determine app context" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -339,14 +339,14 @@ const deleteProject = async (req: Request) => {
       if (!project) {
         return Response.json(
           { error: "not_found", message: "Project not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
       if (project.owned_by !== userId) {
         return Response.json(
           { error: "forbidden", message: "Only project owner can delete" },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
@@ -364,7 +364,7 @@ const deleteProject = async (req: Request) => {
     console.error("DELETE quicklists project failed", err);
     return Response.json(
       { error: "server_error", message: (err as Error)?.message || "Unknown" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 };
