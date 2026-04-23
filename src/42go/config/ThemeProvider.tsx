@@ -24,12 +24,12 @@ export const ThemeProvider = ({
 );
 
 export const useTheme = () => {
-  const [mounted, setMounted] = React.useState(false);
   const { setTheme, theme, resolvedTheme } = useNextTheme();
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   return { setTheme, theme, resolvedTheme, mounted };
 };

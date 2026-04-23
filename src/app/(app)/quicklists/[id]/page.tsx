@@ -2,7 +2,7 @@
 
 import { AppLayout } from "@/42go/layouts/app/AppLayout";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { RotateCcw } from "lucide-react";
 import {
   DndContext,
@@ -75,10 +75,22 @@ export default function ProjectDetailsPage() {
   const [draftTitle, setDraftTitle] = useState<string>("");
   const [savingEdit, setSavingEdit] = useState(false);
   const desktopInputRef = useRef<HTMLInputElement | null>(null);
-  const [mounted, setMounted] = useState(false);
   const [creatingMobile, setCreatingMobile] = useState(false);
-  const [kbInset, setKbInset] = useState(0);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+  const isDesktop = useSyncExternalStore(
+    (onChange) => {
+      if (typeof window === "undefined") return () => {};
+
+      window.addEventListener("resize", onChange);
+      return () => window.removeEventListener("resize", onChange);
+    },
+    () => typeof window !== "undefined" && window.innerWidth >= 768,
+    () => false
+  );
 
   // Split helper
   const parseNewTitle = (input: string): string[] =>
@@ -100,14 +112,6 @@ export default function ProjectDetailsPage() {
     el?.focus();
   };
 
-  useEffect(() => setMounted(true), []);
-  useEffect(() => {
-    const update = () =>
-      setIsDesktop(typeof window !== "undefined" && window.innerWidth >= 768);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
   useEffect(() => {
     const open = editingId || editingList || creatingMobile;
     if (open) {
@@ -118,29 +122,34 @@ export default function ProjectDetailsPage() {
       };
     }
   }, [editingId, editingList, creatingMobile]);
-  useEffect(() => {
-    const open = editingId || editingList || creatingMobile;
-    if (!open) {
-      setKbInset(0);
-      return;
-    }
-    if (typeof window === "undefined" || !window.visualViewport) return;
-    const vv = window.visualViewport;
-    const update = () => {
-      const inset = Math.max(
-        0,
-        window.innerHeight - (vv.height + vv.offsetTop)
+  const kbInset = useSyncExternalStore(
+    (onChange) => {
+      const open = editingId || editingList || creatingMobile;
+      if (!open || typeof window === "undefined" || !window.visualViewport) {
+        return () => {};
+      }
+
+      const vv = window.visualViewport;
+      vv.addEventListener("resize", onChange);
+      vv.addEventListener("scroll", onChange);
+      return () => {
+        vv.removeEventListener("resize", onChange);
+        vv.removeEventListener("scroll", onChange);
+      };
+    },
+    () => {
+      const open = editingId || editingList || creatingMobile;
+      if (!open || typeof window === "undefined" || !window.visualViewport) {
+        return 0;
+      }
+
+      const vv = window.visualViewport;
+      return Math.round(
+        Math.max(0, window.innerHeight - (vv.height + vv.offsetTop))
       );
-      setKbInset(Math.round(inset));
-    };
-    update();
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-    };
-  }, [editingId, editingList, creatingMobile]);
+    },
+    () => 0
+  );
 
   const sortedTasks = useMemo(() => {
     const pending = tasks

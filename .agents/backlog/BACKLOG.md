@@ -8,15 +8,7 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 
 ## Ready Tasks
 
-### Dependency Updates (from UG00 research)
-
 ## Drafts
-
-### Dependency Updates (from UG00 research)
-
-> **Execution order**: PE62 first → then DQ53+VD22+KB55+YW51 in parallel → WP85 → QQ22 → UT41 → XI41 last
-
-- ⑥ [XI41] 🟢 1/5 — Pin All Dependency Versions | [task](./drafts/XI41.pin-all-versions.md) | `aexecute` | after all
 
 ### Tier 1: Deployable Baseline 🔴
 
@@ -216,5 +208,6 @@ A NextJS boilerplate that supports multi-website configuration, dynamic theming,
 - [YW51] Next.js 16.2.4 Security Bump | [task](./completed/YW51.nextjs-security-bump.md) | [plan](./completed/YW51.nextjs-security-bump.plan.md) | [notes](./completed/YW51.nextjs-security-bump.notes.md)
 - [WP85] Lucide React 0.x → 1.x | [task](./completed/WP85.lucide-react-v1.md) | [plan](./completed/WP85.lucide-react-v1.plan.md) | [notes](./completed/WP85.lucide-react-v1.notes.md)
 - [QQ22] TypeScript 5 → 6 | [task](./completed/QQ22.typescript-6-upgrade.md) | [plan](./completed/QQ22.typescript-6-upgrade.plan.md) | [notes](./completed/QQ22.typescript-6-upgrade.notes.md)
+- [XI41] Pin All Dependency Versions | [task](./completed/XI41.pin-all-versions.md) | [plan](./completed/XI41.pin-all-versions.plan.md) | [notes](./completed/XI41.pin-all-versions.notes.md)
 
 ## Archived

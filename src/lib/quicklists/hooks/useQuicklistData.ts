@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { useToast } from "@/components/ui/toast";
 import {
   useProject,
@@ -75,25 +76,27 @@ export function useQuicklistData({
   const updateProjectInCache = useUpdateProjectInCache();
   const { toast } = useToast();
 
-  const [tasks, setTasks] = useState<Task[]>(projectData?.tasks || []);
-  const [listTitle, setListTitle] = useState<string>(
-    projectData?.project?.title || ""
-  );
+  const [tasksState, setTasks] = useState<Task[] | null>(null);
+  const [listTitleState, setListTitle] = useState<string | null>(null);
   const [movingDownIds, setMovingDownIds] = useState<Set<string>>(new Set());
-
-  // Sync tasks when projectData changes
-  useEffect(() => {
-    if (projectData?.tasks) {
-      setTasks(projectData.tasks);
-    }
-  }, [projectData?.tasks]);
-
-  // Sync list title when data changes
-  useEffect(() => {
-    if (projectData?.project?.title) {
-      setListTitle(projectData.project.title);
-    }
-  }, [projectData?.project?.title]);
+  const tasks = tasksState ?? projectData?.tasks ?? [];
+  const listTitle = listTitleState ?? projectData?.project?.title ?? "";
+  const setResolvedTasks: Dispatch<SetStateAction<Task[]>> = (value) => {
+    setTasks((prev) => {
+      const current = prev ?? projectData?.tasks ?? [];
+      return typeof value === "function"
+        ? (value as (previous: Task[]) => Task[])(current)
+        : value;
+    });
+  };
+  const setResolvedListTitle: Dispatch<SetStateAction<string>> = (value) => {
+    setListTitle((prev) => {
+      const current = prev ?? projectData?.project?.title ?? "";
+      return typeof value === "function"
+        ? (value as (previous: string) => string)(current)
+        : value;
+    });
+  };
 
   const handleToggleTask = async (taskId: string, completed: boolean) => {
     const originalTask = tasks.find((t) => t.id === taskId);
@@ -116,7 +119,7 @@ export function useQuicklistData({
       }, 600);
     }
 
-    setTasks((prev) =>
+    setResolvedTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, ...optimisticUpdates } : t))
     );
 
@@ -138,13 +141,15 @@ export function useQuicklistData({
 
       const result = await res.json();
       if (result?.task) {
-        setTasks((prev) =>
+        setResolvedTasks((prev) =>
           prev.map((t) => (t.id === taskId ? { ...t, ...result.task } : t))
         );
         updateProjectInCache(projectId, { updated_at: result.task.updated_at });
       }
     } catch (error) {
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? originalTask : t)));
+      setResolvedTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? originalTask : t))
+      );
 
       toast({
         variant: "destructive",
@@ -171,7 +176,7 @@ export function useQuicklistData({
 
       if (!res.ok) throw new Error(`Failed to delete: ${res.status}`);
 
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setResolvedTasks((prev) => prev.filter((t) => t.id !== taskId));
       invalidateProjectCache(projectId, { taskDeleted: true });
       return true;
     } catch {
@@ -216,7 +221,7 @@ export function useQuicklistData({
 
     const result = await res.json();
     if (result?.task) {
-      setTasks((prev) =>
+      setResolvedTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, ...result.task } : t))
       );
     }
@@ -239,7 +244,7 @@ export function useQuicklistData({
     const data = await res.json();
     if (data?.project) {
       if (data.project.title) {
-        setListTitle(data.project.title);
+        setResolvedListTitle(data.project.title);
       }
       invalidateProjectCache(projectId, data.project);
     }
@@ -267,7 +272,7 @@ export function useQuicklistData({
       const data = await res.json();
       if (data?.tasks) {
         // replace tasks positions from server
-        setTasks((prev) => {
+        setResolvedTasks((prev) => {
           const done = prev.filter((t) => !!t.completed_at);
           const pending = data.tasks as Task[];
           return [...pending, ...done];
@@ -294,7 +299,7 @@ export function useQuicklistData({
     // Optimistic: remove completed immediately
     const prevTasks = tasks;
     const optimistic = prevTasks.filter((t) => !t.completed_at);
-    setTasks(optimistic);
+    setResolvedTasks(optimistic);
     try {
       const res = await fetch(`/api/quicklists/${projectId}/drop-completed`, {
         method: "POST",
@@ -312,7 +317,7 @@ export function useQuicklistData({
         >;
       } = await res.json();
       if (data?.tasks) {
-        setTasks(() => {
+        setResolvedTasks(() => {
           const mapped = data.tasks.map((t) => ({ ...t } as Task));
           return mapped;
         });
@@ -321,7 +326,7 @@ export function useQuicklistData({
       }
     } catch (e) {
       // revert
-      setTasks(prevTasks);
+      setResolvedTasks(prevTasks);
       toast({
         variant: "destructive",
         title: "Failed to drop completed",
@@ -337,9 +342,9 @@ export function useQuicklistData({
     error,
     refetch,
     tasks,
-    setTasks,
+    setTasks: setResolvedTasks,
     listTitle,
-    setListTitle,
+    setListTitle: setResolvedListTitle,
     movingDownIds,
     setMovingDownIds,
     handleToggleTask,

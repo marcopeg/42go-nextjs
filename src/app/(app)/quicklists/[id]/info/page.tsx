@@ -334,10 +334,9 @@ export default function QuicklistInfoPage() {
     () => data?.project?.title || "Collaborators",
     [data?.project?.title]
   );
-  const subtitle = useMemo(() => {
-    if (!data?.project?.updated_at) return undefined;
-    return `Updated: ${new Date(data.project.updated_at).toLocaleString()}`;
-  }, [data?.project?.updated_at]);
+  const subtitle = data?.project?.updated_at
+    ? `Updated: ${new Date(data.project.updated_at).toLocaleString()}`
+    : undefined;
 
   // Merge and sort collabs and invites
   const mergedList = useMemo(() => {

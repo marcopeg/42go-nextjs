@@ -1,79 +1,171 @@
 # Dependencies
 
-Key libraries with project-specific integration context.
+This file captures macro dependencies and the proven update playbook from the PE62 -> XI41 sequence.
 
-## Core Framework
+## Update Guidelines
 
-### Next.js
+Use this process when running a full dependency maintenance cycle.
 
-🔗 https://nextjs.org/  
-Full-stack React framework with App Router
+### 1. Work in explicit phases
 
-### TypeScript
+1. Patch updates first.
+2. Minor updates second, grouped by domain.
+3. Major updates next, split by risk type.
+4. Exact pinning last.
 
-Type safety across client and server
+Rationale: this isolates blast radius and keeps rollback cheap.
 
-## UI & Styling
+### 2. Assess risk before touching versions
 
-### Tailwind CSS
+Classify each candidate dependency:
 
-🔗 https://tailwindcss.com/  
-Utility-first CSS framework  
-**Integration**: `darkMode: ["class"]` for theme system
+- Framework/security critical: Next.js, React runtime, auth runtime.
+- Toolchain strictness: TypeScript, ESLint, eslint-config-next.
+- Data-path critical: knex, pg, pg-query-stream.
+- UI surface: Radix/shadcn, lucide-react, Tailwind stack.
+- Utility/low blast radius: date-fns, clsx, cva, gray-matter, sanitize-html.
 
-### shadcn/ui
+Use this confidence model:
 
-🔗 https://ui.shadcn.com/  
-Accessible components on Radix UI  
-**Integration**: `src/components/ui/`, install via `npx shadcn@latest add <component>` from project root
+- Patch or conservative minor updates: medium-high confidence after qa plus smoke tests.
+- Major tooling updates: medium confidence until lint and type strictness issues are fixed.
+- Major framework updates: medium confidence until runtime/browser checks pass.
+- Final pinning: high confidence only after cold reinstall validation.
 
-### next-themes (^0.4.6)
+### 3. Split into independent tasks
 
-🔗 https://github.com/pacocoursey/next-themes  
-Theme management with SSR support  
-**Integration**: `ThemeProvider` with AppConfig defaults, class-based switching
+Use small, narrow tasks with one concern each.
 
-## Database & Backend
+Recommended split pattern:
 
-### Knex.js (^3.1.0)
+1. Lockfile hygiene and dead dependency cleanup.
+2. Patch-only refreshes.
+3. Minor utilities.
+4. Minor React and styling stack.
+5. Framework security bumps.
+6. Higher-risk major upgrades (TypeScript, then ESLint).
+7. Final pin-all pass.
 
-🔗 https://knexjs.org/  
-SQL query builder and migrations  
-**Integration**: Singleton `getDB()`, migrations in `./knex/`  
-**Config**: `PGSTRING` + optional `PGPOOL`, `serverExternalPackages: ["knex"]`  
-**Constraint**: PostgreSQL-only
+Rule: if a task needs both broad dependency changes and source refactors, split it.
 
-### pg (^8.16.0)
+### 4. Validation gates for every step
 
-PostgreSQL client driver used by Knex
+Required for each dependency task:
 
-## Authentication
+1. Run install and ensure no invalid tree state.
+2. Run qa gate (`eslint` plus production build).
+3. Run app/API smoke checks on key auth and core routes.
+4. Record warning deltas as baseline vs regression.
 
-### NextAuth.js (^4.24.11)
+Required for final pinning and risky majors:
 
-🔗 https://next-auth.js.org/  
-Authentication solution for Next.js  
-**Integration**: `src/lib/auth/authOptions.ts`  
-**Config**: JWT sessions, 30-day max, 30-minute refresh, HTTP-only cookies  
-**Providers**: Credentials (bcrypt), GitHub OAuth 2.0, Google OAuth 2.0 / OpenID Connect  
-**Features**: Multi-provider account linking, OAuth token storage, comprehensive error handling, account selection prompts
+1. Delete `node_modules`.
+2. Delete lockfile.
+3. Clear caches.
+4. Reinstall from `package.json` only.
+5. Run qa again.
 
-### bcrypt
+This catches warm-lockfile illusions.
 
-Password hashing library  
-**Integration**: Database authentication in NextAuth credentials provider
+### 5. Confidence and stop rules
 
-### @types/bcrypt
+Stop and park when upstream ecosystem compatibility is not ready.
 
-TypeScript definitions for bcrypt
+Example already seen here: ESLint 10 is parked because Next plugin chain compatibility is incomplete. Avoid forcing local long-lived shims unless explicitly chosen as policy.
 
-## Development
+### 6. Repository-proven gotchas
 
-### ESLint
+- Cold install revealed a hidden dnd-kit peer mismatch that warm installs masked.
+- Next security bump required CSP adjustments in development.
+- TypeScript 6 required explicit `types` declaration in tsconfig.
+- Type package pins and overrides must stay aligned to avoid resolver drift.
 
-Code quality and consistency  
-**Integration**: Arrow functions, absolute imports
+## Macro Dependencies
 
----
+### Framework Core
 
-**Key Constraints**: PostgreSQL-only, JWT-first auth, shadcn/ui install from project root
+- `next`
+- `react`
+- `react-dom`
+
+Why it matters: routing, server rendering, build pipeline, and runtime behavior all flow through this layer.
+
+### Toolchain and Quality Gates
+
+- `typescript`
+- `eslint`
+- `eslint-config-next`
+
+Why it matters: defines strictness and compatibility boundaries. Most upgrade friction appears here first.
+
+### Database and Data Access
+
+- `knex`
+- `pg`
+- `pg-query-stream`
+
+Why it matters: these power authentication and application data paths; query typing and runtime driver behavior can break silently if unverified.
+
+### Authentication
+
+- `next-auth`
+- `bcrypt`
+
+Why it matters: login/session stability and provider behavior are business critical. Keep updates conservative and validated.
+
+### UI Primitives and Design System Base
+
+- `@radix-ui/react-dropdown-menu`
+- `@radix-ui/react-popover`
+- `@radix-ui/react-slot`
+- shadcn/ui generated components
+
+Why it matters: these are the shared interaction primitives used across app surfaces.
+
+### Styling and Theming Stack
+
+- `tailwindcss`
+- `@tailwindcss/postcss`
+- `tw-animate-css`
+- `tailwind-merge`
+- `next-themes`
+
+Why it matters: controls build-time CSS generation and runtime theme behavior.
+
+### Client Data and Validation
+
+- `@tanstack/react-query`
+- `zod`
+
+Why it matters: determines client-side fetch/cache behavior and server payload validation discipline.
+
+### Content and Markdown Rendering
+
+- `react-markdown`
+- `react-syntax-highlighter`
+- `remark-gfm`
+- `rehype-sanitize`
+- `sanitize-html`
+- `gray-matter`
+
+Why it matters: docs/content rendering and sanitization are both functionality and security concerns.
+
+### Interaction Utilities
+
+- `@dnd-kit/core`
+- `@dnd-kit/sortable`
+- `@dnd-kit/utilities`
+- `lucide-react`
+- `date-fns`
+- `uuid`
+- `clsx`
+- `class-variance-authority`
+
+Why it matters: powers drag-drop flows, iconography, date and id handling, and UI class composition.
+
+## Constraints To Preserve
+
+- PostgreSQL-only runtime support.
+- JWT-first NextAuth session model.
+- Absolute import conventions and repository lint policy.
+- Dependency updates must stay observable through task-level notes and qa proofs.
