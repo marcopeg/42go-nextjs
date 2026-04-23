@@ -12,6 +12,10 @@ This skill is for one-time structural migration work.
 Script support:
 - use the dedicated migration runner for filesystem and frontmatter work:
   - `python3 scripts/migrate_backlog.py`
+  - optional flags:
+    - `--source-root <path>` to migrate a backlog from any legacy location
+    - `--target-root <path>` to choose where the folderized backlog should be written
+    - `--id-policy canonical|legacy` to control which TaskID formats are accepted while reading the old backlog
 
 ## Source and Target Models
 
@@ -30,6 +34,7 @@ Supported source models:
 - source task files may already contain partial YAML frontmatter such as `status:` or `title:`
 - source task, plan, and notes files may still carry inline metadata lines such as `**TaskID**:` or `**Status**:`
 - canonical TaskIDs are typically `AA11`, but the migration must tolerate mixed case in filenames, links, and task headers because real repos may already contain drift
+- some legacy repos may also use short alphanumeric TaskIDs such as `AAM` or `UT41`; the migration runner should support that in `legacy` ID policy mode without inventing new IDs
 
 Target model:
 - backlog root: `docs/backlog`
@@ -226,6 +231,16 @@ Default policy:
 - if an orphan is clearly a stale or superseded duplicate, migrate it into `Archived`
 - if it is a legitimate active task omitted from the backlog, migrate it into the state implied by its folder
 - if the correct state is ambiguous and the file is not clearly stale, ask the operator
+- if a repo keeps one task instance listed in `BACKLOG.md` and another unlisted flat copy with the same TaskID, prefer the listed instance and archive the unlisted duplicate conservatively
+
+## Portability Notes
+
+This skill is intended to be portable across repos.
+
+- It should work when the legacy backlog lives in `.agents/backlog` or when the operator points to another source root explicitly.
+- It should preserve meaningful sibling markdown artifacts beyond `plan` and `notes` when they belong to a task, for example `outcome` or other repo-specific sidecars.
+- It should preserve source backlog ordering by seeding the new indexes from the old `BACKLOG.md` before rebuilding them.
+- It should still succeed when git history is unavailable; timestamp inference must fall back gracefully instead of failing the migration.
 
 ## Migration Procedure
 

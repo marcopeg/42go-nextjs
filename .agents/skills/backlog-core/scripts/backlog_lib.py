@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 
 TASK_ID_RE = re.compile(r"\b([a-z]{2})(\d{1,2})\b", re.IGNORECASE)
+LEGACY_TASK_ID_RE = re.compile(r"^[A-Za-z]{2,4}\d{0,4}$")
 PLAIN_YAML_RE = re.compile(r"^[A-Za-z0-9_.:+/@-]+$")
 MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 INLINE_TASK_ID_RE = re.compile(r"^\*\*TaskID\*\*:\s*(.+?)\s*$", re.IGNORECASE)
@@ -68,6 +69,7 @@ class TaskRecord:
     task_file: Path
     plan_file: Path | None
     notes_file: Path | None
+    extra_files: list[Path]
     task_id: str
     title: str
     meta: dict[str, str]
@@ -78,10 +80,39 @@ def now_iso() -> str:
 
 
 def normalize_task_id(raw: str) -> str:
-    match = TASK_ID_RE.search(raw.strip())
-    if not match:
-        raise ValueError(f"Could not parse task ID from: {raw}")
-    return f"{match.group(1).upper()}{int(match.group(2)):02d}"
+    token = raw.strip()
+    match = TASK_ID_RE.search(token)
+    if match:
+        return f"{match.group(1).upper()}{int(match.group(2)):02d}"
+    if LEGACY_TASK_ID_RE.fullmatch(token):
+        return token.upper()
+    bracket = re.search(r"\[([A-Za-z0-9]{2,8})\]", token)
+    if bracket and LEGACY_TASK_ID_RE.fullmatch(bracket.group(1)):
+        return bracket.group(1).upper()
+    raise ValueError(f"Could not parse task ID from: {raw}")
+
+
+def looks_like_task_id(raw: str) -> bool:
+    try:
+        normalize_task_id(raw)
+    except ValueError:
+        return False
+    return True
+
+
+def extract_filename_task_id(path: Path) -> str | None:
+    stem = path.name
+    if stem.endswith(".task.md"):
+        stem = stem[: -len(".task.md")]
+    elif stem.endswith(".md"):
+        stem = stem[: -len(".md")]
+    first_chunk = re.split(r"[.\-_ ]", stem, 1)[0].strip()
+    if first_chunk and LEGACY_TASK_ID_RE.fullmatch(first_chunk):
+        return first_chunk
+    match = TASK_ID_RE.search(stem)
+    if match:
+        return match.group(0)
+    return None
 
 
 def repo_root(cwd: Path | None = None) -> Path:
@@ -181,7 +212,7 @@ def detect_task_kind(path: Path) -> str:
     if suffixes[-2:] == [".notes", ".md"]:
         return "notes"
     if suffixes[-1:] == [".md"]:
-        return "task"
+        return "artifact"
     raise ValueError(f"Unsupported markdown artifact kind for {path}")
 
 
@@ -246,6 +277,18 @@ def discover_tasks(backlog_root: Path) -> list[TaskRecord]:
                     task_file=task_file,
                     plan_file=plan_path if plan_path.exists() else None,
                     notes_file=notes_path if notes_path.exists() else None,
+                    extra_files=sorted(
+                        [
+                            extra
+                            for extra in folder.glob("*.md")
+                            if extra
+                            not in {
+                                task_file,
+                                plan_path,
+                                notes_path,
+                            }
+                        ]
+                    ),
                     task_id=task_id,
                     title=title,
                     meta=meta,
@@ -336,12 +379,23 @@ def render_active_entry(record: TaskRecord, backlog_root: Path) -> str:
     return " | ".join(parts)
 
 
+def artifact_label(path: Path) -> str:
+    name = path.name
+    if name.endswith(".md"):
+        name = name[: -len(".md")]
+    if "." in name:
+        return name.split(".")[-1]
+    return "artifact"
+
+
 def render_history_entry(record: TaskRecord, log_path: Path) -> str:
     parts = [f"- [{task_label(record)}]({relative_link(log_path.parent, record.task_file)})"]
     if record.plan_file:
         parts.append(f"[plan]({relative_link(log_path.parent, record.plan_file)})")
     if record.notes_file:
         parts.append(f"[notes]({relative_link(log_path.parent, record.notes_file)})")
+    for extra_file in record.extra_files:
+        parts.append(f"[{artifact_label(extra_file)}]({relative_link(log_path.parent, extra_file)})")
     return " | ".join(parts)
 
 
@@ -459,7 +513,11 @@ def update_frontmatter(
 
 
 def read_git_history_timestamps(path: Path, *, semantic_only: bool = False) -> list[tuple[str, str]]:
-    root = repo_root(path.parent)
+    path = path.resolve()
+    try:
+        root = repo_root(path.parent)
+    except subprocess.CalledProcessError:
+        return []
     try:
         result = subprocess.run(
             ["git", "log", "--follow", "--format=%aI%x09%s", "--", str(path.relative_to(root))],
@@ -519,14 +577,14 @@ def strip_inline_metadata(body: str) -> tuple[str, str | None, str | None]:
 
 def derive_task_id(path: Path, meta: dict[str, str], body: str) -> str:
     if meta.get("taskId"):
-        return str(meta["taskId"])
+        return str(meta["taskId"]).strip()
     _, inline_task_id, _ = strip_inline_metadata(body)
     if inline_task_id:
-        return normalize_task_id(inline_task_id)
-    match = TASK_ID_RE.search(path.name)
-    if not match:
+        return inline_task_id.strip()
+    filename_token = extract_filename_task_id(path)
+    if not filename_token:
         raise ValueError(f"Could not derive task ID for {path}")
-    return normalize_task_id(match.group(0))
+    return filename_token
 
 
 def derive_task_slug(path: Path, task_id: str, title: str) -> str:
