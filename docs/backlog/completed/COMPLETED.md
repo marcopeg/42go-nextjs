@@ -101,3 +101,4 @@
 - [AQA: Fix QuickList reorder API [aqa]](./AQA-fix-quicklist-reorder-api-aqa/AQA.task.md)
 - [AQB: Delete checked items [aqb]](./AQB-delete-checked-items-aqb/AQB.task.md)
 - [AQE: Upgrade project to latest major versions [aqe]](./AQE-upgrade-project-to-latest-major-versions-aqe/AQE.task.md)
+- [HU36: Create LingoCafe App Config](./HU36-create-lingocafe-app-config/HU36.task.md) | [plan](./HU36-create-lingocafe-app-config/HU36.plan.md) | [notes](./HU36-create-lingocafe-app-config/HU36.notes.md)

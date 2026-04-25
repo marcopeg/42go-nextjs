@@ -15,6 +15,7 @@ import App2App from "./config/app2/config";
 import CalendarApp from "./config/calendar/config";
 import QuicklistApp from "./config/quicklist/config";
 import NotesApp from "./config/notes/config";
+import LingoCafeApp from "./config/lingocafe/config";
 
 // This should be moved into 42go somewhere
 export type ThemeValue = "light" | "dark" | "system";
@@ -124,6 +125,7 @@ export const apps = {
   app1: App1App,
   app2: App2App,
   calendar: CalendarApp,
+  lingocafe: LingoCafeApp,
   default: DefaultApp,
 } as const satisfies Record<string, TAppConfigItem>;
 
