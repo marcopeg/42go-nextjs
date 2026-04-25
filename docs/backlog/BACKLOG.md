@@ -6,7 +6,6 @@
 
 ## Blocked
 
-
 ## Ready Tasks
 
 - [ADC: Add Tenants Table](./ready/ADC-add-tenants-table/ADC.task.md)
@@ -15,6 +14,8 @@
 
 ## Drafts
 
+- [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
+- [OG12: LingoCafe Data Model and Knex Migrations](./drafts/OG12-lingocafe-data-model-and-knex-migrations/OG12.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)
 - [ABN: Migrate to Prisma ORM](./drafts/ABN-migrate-to-prisma-orm/ABN.task.md)
 - [ACW: Document Getting Started with README Information](./drafts/ACW-document-getting-started-with-readme-information/ACW.task.md)
@@ -27,7 +28,6 @@
 - [GQ36: Add YouTube ContentBlock](./drafts/GQ36-add-youtube-contentblock/GQ36.task.md)
 - [IK47: Add Social Login: Facebook](./drafts/IK47-add-social-login-facebook/IK47.task.md)
 - [NC71: HeroBlock: Add Alignment Option](./drafts/NC71-heroblock-add-alignment-option/NC71.task.md)
-- [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [TO37: Add Social Login: Apple](./drafts/TO37-add-social-login-apple/TO37.task.md)
 - [TR02: Add Image ContentBlock](./drafts/TR02-add-image-contentblock/TR02.task.md)
 - [AAM: RBAC Advanced Features [aam]](./drafts/AAM-rbac-advanced-features-aam/AAM.task.md)
