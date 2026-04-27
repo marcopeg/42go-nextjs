@@ -36,6 +36,10 @@ type BookRow = {
   updated_at: Date | string;
 };
 
+type BookInfoRow = BookRow & {
+  description: string;
+};
+
 const coverBaseUrl = "/images/lingocafe";
 const coverFallbackUrl = `${coverBaseUrl}/placeholder.jpg`;
 
@@ -164,6 +168,11 @@ const mapBook = (book: BookRow) => ({
   updatedAt: toISO(book.updated_at),
 });
 
+const mapBookInfo = (book: BookInfoRow) => ({
+  ...mapBook(book),
+  description: book.description,
+});
+
 export const loadReaderData = async (userId: string) => {
   const db = getDB();
   const languages = getReaderLanguages();
@@ -209,6 +218,56 @@ export const loadReaderData = async (userId: string) => {
     books: books.map(mapBook),
     languages,
   };
+};
+
+export const loadBookInfo = async (bookId: string) => {
+  const db = getDB();
+  const book = (await db("lingocafe.books")
+    .select(
+      "id",
+      "lang",
+      "level",
+      "title",
+      "author",
+      "tags",
+      "description",
+      "cover",
+      "published_at",
+      "created_at",
+      "updated_at"
+    )
+    .where({ id: bookId })
+    .first()) as BookInfoRow | undefined;
+
+  return book ? mapBookInfo(book) : null;
+};
+
+export const trackReaderEvent = async ({
+  userId,
+  name,
+  bookId,
+  pageId = null,
+  data = {},
+  meta = {},
+}: {
+  userId: string;
+  name: string;
+  bookId?: string | null;
+  pageId?: string | null;
+  data?: Record<string, unknown>;
+  meta?: Record<string, unknown>;
+}) => {
+  const db = getDB();
+
+  await db.raw("SELECT lingocafe.events_prepare_partitions()");
+  await db("lingocafe.events").insert({
+    user_id: userId,
+    name,
+    book_id: bookId ?? null,
+    page_id: pageId,
+    data,
+    meta,
+  });
 };
 
 const languageCodeSchema = (options: LanguageOption[]) =>
