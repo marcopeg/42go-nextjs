@@ -40,6 +40,27 @@ type BookInfoRow = BookRow & {
   description: string;
 };
 
+type BookPageRow = {
+  book_id: string;
+  id: string;
+  position: number;
+};
+
+type BookProgressRow = {
+  book_id: string;
+  page_id: string;
+  progress_bps: number;
+};
+
+type BookReadingAction = {
+  kind: "start" | "resume" | "unavailable";
+  label: "Read now" | "Continue reading" | "No pages available";
+  href: string | null;
+  bookId: string;
+  pageId: string | null;
+  progressBps: number | null;
+};
+
 const coverBaseUrl = "/images/lingocafe";
 const coverFallbackUrl = `${coverBaseUrl}/placeholder.jpg`;
 
@@ -115,6 +136,67 @@ const normalizePublicCoverUrl = (cover: string | null) => {
 const resolveBookCover = (book: BookRow) =>
   normalizePublicCoverUrl(book.cover) || `${coverBaseUrl}/${book.id}.jpg`;
 
+const buildReadPageHref = (
+  bookId: string,
+  pageId: string,
+  progressBps?: number | null
+) => {
+  const href = `/books/${encodeURIComponent(bookId)}/${encodeURIComponent(
+    pageId
+  )}`;
+
+  if (progressBps === null || progressBps === undefined) {
+    return href;
+  }
+
+  const params = new URLSearchParams({
+    progress_bps: String(progressBps),
+  });
+
+  return `${href}?${params.toString()}`;
+};
+
+const createReadingAction = ({
+  bookId,
+  progress,
+  firstPage,
+}: {
+  bookId: string;
+  progress?: BookProgressRow | null;
+  firstPage?: BookPageRow | null;
+}): BookReadingAction => {
+  if (progress) {
+    return {
+      kind: "resume",
+      label: "Continue reading",
+      href: buildReadPageHref(bookId, progress.page_id, progress.progress_bps),
+      bookId,
+      pageId: progress.page_id,
+      progressBps: progress.progress_bps,
+    };
+  }
+
+  if (firstPage) {
+    return {
+      kind: "start",
+      label: "Read now",
+      href: buildReadPageHref(bookId, firstPage.id),
+      bookId,
+      pageId: firstPage.id,
+      progressBps: null,
+    };
+  }
+
+  return {
+    kind: "unavailable",
+    label: "No pages available",
+    href: null,
+    bookId,
+    pageId: null,
+    progressBps: null,
+  };
+};
+
 export const getSessionUserId = async (): Promise<string | null> => {
   const session = await getServerSession(await getAuthOptions());
   const sessionUserId = session?.user?.id || null;
@@ -168,9 +250,10 @@ const mapBook = (book: BookRow) => ({
   updatedAt: toISO(book.updated_at),
 });
 
-const mapBookInfo = (book: BookInfoRow) => ({
+const mapBookInfo = (book: BookInfoRow, readingAction: BookReadingAction) => ({
   ...mapBook(book),
   description: book.description,
+  readingAction,
 });
 
 export const loadReaderData = async (userId: string) => {
@@ -220,7 +303,7 @@ export const loadReaderData = async (userId: string) => {
   };
 };
 
-export const loadBookInfo = async (bookId: string) => {
+export const loadBookInfo = async (bookId: string, userId: string) => {
   const db = getDB();
   const book = (await db("lingocafe.books")
     .select(
@@ -239,7 +322,29 @@ export const loadBookInfo = async (bookId: string) => {
     .where({ id: bookId })
     .first()) as BookInfoRow | undefined;
 
-  return book ? mapBookInfo(book) : null;
+  if (!book) return null;
+
+  const progress = (await db("lingocafe.books_progress")
+    .select("book_id", "page_id", "progress_bps")
+    .where({ user_id: userId, book_id: bookId })
+    .first()) as BookProgressRow | undefined;
+
+  const firstPage = progress
+    ? null
+    : ((await db("lingocafe.books_pages")
+        .select("book_id", "id", "position")
+        .where({ book_id: bookId })
+        .orderBy("position", "asc")
+        .first()) as BookPageRow | undefined);
+
+  return mapBookInfo(
+    book,
+    createReadingAction({
+      bookId: book.id,
+      progress,
+      firstPage,
+    })
+  );
 };
 
 export const trackReaderEvent = async ({

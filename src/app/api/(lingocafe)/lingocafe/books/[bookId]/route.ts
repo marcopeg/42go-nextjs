@@ -32,7 +32,7 @@ const getBookInfo = async (
   const { bookId } = await params;
   if (!bookId) return notFound();
 
-  const book = await loadBookInfo(bookId);
+  const book = await loadBookInfo(bookId, userId);
   if (!book) return notFound();
 
   await trackReaderEvent({

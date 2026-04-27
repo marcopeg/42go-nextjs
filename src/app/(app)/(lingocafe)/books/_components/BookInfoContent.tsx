@@ -1,9 +1,37 @@
+import Link from "next/link";
+import { BookOpen } from "lucide-react";
+
 import { BookCover } from "@/app/(app)/(lingocafe)/books/_components/BookCover";
 import { BookTags } from "@/app/(app)/(lingocafe)/books/_components/BookTags";
 import type { ReaderBookInfo } from "@/app/(app)/(lingocafe)/books/_components/book-types";
+import { Button } from "@/components/ui/button";
 
 type BookInfoContentProps = {
   book: ReaderBookInfo;
+};
+
+const BookReadingAction = ({
+  action,
+}: {
+  action: ReaderBookInfo["readingAction"];
+}) => {
+  if (!action.href) {
+    return (
+      <Button disabled className="w-full sm:w-auto">
+        <BookOpen className="h-4 w-4" />
+        {action.label}
+      </Button>
+    );
+  }
+
+  return (
+    <Button asChild className="w-full sm:w-auto">
+      <Link href={action.href}>
+        <BookOpen className="h-4 w-4" />
+        {action.label}
+      </Link>
+    </Button>
+  );
 };
 
 export const BookInfoContent = ({ book }: BookInfoContentProps) => (
@@ -23,6 +51,8 @@ export const BookInfoContent = ({ book }: BookInfoContentProps) => (
       </div>
 
       <BookTags tags={book.tags} />
+
+      <BookReadingAction action={book.readingAction} />
 
       <div className="space-y-2">
         <h3 className="text-sm font-medium uppercase tracking-normal text-muted-foreground">

@@ -12,6 +12,16 @@ export type ReaderBook = {
   updatedAt: string | null;
 };
 
+export type ReaderBookReadingAction = {
+  kind: "start" | "resume" | "unavailable";
+  label: "Read now" | "Continue reading" | "No pages available";
+  href: string | null;
+  bookId: string;
+  pageId: string | null;
+  progressBps: number | null;
+};
+
 export type ReaderBookInfo = ReaderBook & {
   description: string;
+  readingAction: ReaderBookReadingAction;
 };

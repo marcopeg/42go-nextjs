@@ -9,7 +9,10 @@ import { ChevronLeft } from "lucide-react";
 import { AppLayout } from "@/42go/layouts/app";
 import { Button } from "@/components/ui/button";
 import { BookInfoContent } from "@/app/(app)/(lingocafe)/books/_components/BookInfoContent";
-import type { ReaderBookInfo } from "@/app/(app)/(lingocafe)/books/_components/book-types";
+import type {
+  ReaderBookInfo,
+  ReaderBookReadingAction,
+} from "@/app/(app)/(lingocafe)/books/_components/book-types";
 
 type BookInfoResponse = {
   book: ReaderBookInfo;
@@ -17,9 +20,33 @@ type BookInfoResponse = {
 
 const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
 
+const createUnavailableReadingAction = (bookId: string): ReaderBookReadingAction => ({
+  kind: "unavailable",
+  label: "No pages available",
+  href: null,
+  bookId,
+  pageId: null,
+  progressBps: null,
+});
+
+const isReadingAction = (
+  action: ReaderBookInfo["readingAction"] | undefined
+): action is ReaderBookReadingAction =>
+  !!action &&
+  ["start", "resume", "unavailable"].includes(action.kind) &&
+  typeof action.label === "string" &&
+  (typeof action.href === "string" || action.href === null) &&
+  typeof action.bookId === "string" &&
+  (typeof action.pageId === "string" || action.pageId === null) &&
+  (typeof action.progressBps === "number" || action.progressBps === null);
+
 const normalizeBookInfo = (payload: Partial<BookInfoResponse>) => {
   const book = payload.book;
   if (!book) return null;
+
+  const readingAction = isReadingAction(book.readingAction)
+    ? book.readingAction
+    : createUnavailableReadingAction(book.id);
 
   return {
     ...book,
@@ -27,6 +54,7 @@ const normalizeBookInfo = (payload: Partial<BookInfoResponse>) => {
     coverFallback: book.coverFallback || coverFallbackUrl,
     tags: Array.isArray(book.tags) ? book.tags : [],
     description: book.description || "",
+    readingAction,
   };
 };
 
