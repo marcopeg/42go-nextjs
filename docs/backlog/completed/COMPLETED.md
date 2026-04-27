@@ -18,6 +18,7 @@
 - [PK51: Show Language-Filtered LingoCafe Books](./PK51-show-language-filtered-lingocafe-books/PK51.task.md) | [plan](./PK51-show-language-filtered-lingocafe-books/PK51.plan.md) | [notes](./PK51-show-language-filtered-lingocafe-books/PK51.notes.md)
 - [DG66: Display Book Covers](./DG66-display-book-covers/DG66.task.md) | [plan](./DG66-display-book-covers/DG66.plan.md) | [notes](./DG66-display-book-covers/DG66.notes.md)
 - [IL68: Open Book Info Page From Books List](./IL68-open-book-info-page-from-books-list/IL68.task.md) | [plan](./IL68-open-book-info-page-from-books-list/IL68.plan.md) | [notes](./IL68-open-book-info-page-from-books-list/IL68.notes.md)
+- [PR58: Show Read Now or Continue Reading on Book Details](./PR58-show-read-now-or-continue-reading-on-book-details/PR58.task.md) | [plan](./PR58-show-read-now-or-continue-reading-on-book-details/PR58.plan.md) | [notes](./PR58-show-read-now-or-continue-reading-on-book-details/PR58.notes.md)
 - [AAA: Initialize backlog [aaa]](./AAA-initialize-backlog-aaa/AAA.task.md)
 - [AAC: Support different public layout based on App-config [aac]](./AAC-support-different-public-layout-based-on-app-config-aac/AAC.task.md)
 - [AAD: General Dark Mode Support [aad]](./AAD-general-dark-mode-support-aad/AAD.task.md)
@@ -107,4 +108,4 @@
 - [AQA: Fix QuickList reorder API [aqa]](./AQA-fix-quicklist-reorder-api-aqa/AQA.task.md)
 - [AQB: Delete checked items [aqb]](./AQB-delete-checked-items-aqb/AQB.task.md)
 - [AQE: Upgrade project to latest major versions [aqe]](./AQE-upgrade-project-to-latest-major-versions-aqe/AQE.task.md)
-- [PR58: Show Read Now or Continue Reading on Book Details](./PR58-show-read-now-or-continue-reading-on-book-details/PR58.task.md) | [plan](./PR58-show-read-now-or-continue-reading-on-book-details/PR58.plan.md) | [notes](./PR58-show-read-now-or-continue-reading-on-book-details/PR58.notes.md)
+- [ZE11: Book Page Read UI](./ZE11-book-page-read-ui/ZE11.task.md) | [plan](./ZE11-book-page-read-ui/ZE11.plan.md) | [notes](./ZE11-book-page-read-ui/ZE11.notes.md)

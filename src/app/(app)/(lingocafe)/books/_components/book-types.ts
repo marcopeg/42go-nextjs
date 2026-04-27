@@ -25,3 +25,32 @@ export type ReaderBookInfo = ReaderBook & {
   description: string;
   readingAction: ReaderBookReadingAction;
 };
+
+export type ReaderBookPageNeighbor = {
+  bookId: string;
+  pageId: string;
+  position: number;
+  prefix: string | null;
+  title: string;
+  href: string;
+};
+
+export type ReaderBookPage = {
+  book: {
+    id: string;
+    title: string;
+    author: string;
+  };
+  page: {
+    bookId: string;
+    pageId: string;
+    position: number;
+    kind: string;
+    prefix: string | null;
+    title: string;
+    summary: string | null;
+    content: string;
+  };
+  previous: ReaderBookPageNeighbor | null;
+  next: ReaderBookPageNeighbor | null;
+};

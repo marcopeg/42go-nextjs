@@ -46,6 +46,16 @@ type BookPageRow = {
   position: number;
 };
 
+type BookPageDetailRow = BookPageRow & {
+  kind: string;
+  prefix: string | null;
+  title: string;
+  summary: string | null;
+  content: string | null;
+};
+
+type BookPageBookRow = Pick<BookInfoRow, "id" | "title" | "author">;
+
 type BookProgressRow = {
   book_id: string;
   page_id: string;
@@ -59,6 +69,35 @@ type BookReadingAction = {
   bookId: string;
   pageId: string | null;
   progressBps: number | null;
+};
+
+type BookPageNeighbor = {
+  bookId: string;
+  pageId: string;
+  position: number;
+  prefix: string | null;
+  title: string;
+  href: string;
+};
+
+export type BookPageDetail = {
+  book: {
+    id: string;
+    title: string;
+    author: string;
+  };
+  page: {
+    bookId: string;
+    pageId: string;
+    position: number;
+    kind: string;
+    prefix: string | null;
+    title: string;
+    summary: string | null;
+    content: string;
+  };
+  previous: BookPageNeighbor | null;
+  next: BookPageNeighbor | null;
 };
 
 const coverBaseUrl = "/images/lingocafe";
@@ -155,6 +194,55 @@ const buildReadPageHref = (
 
   return `${href}?${params.toString()}`;
 };
+
+const clampProgressBps = (value: number) =>
+  Math.min(10000, Math.max(0, Math.round(value)));
+
+const mapBookPageNeighbor = (
+  page: BookPageDetailRow | undefined,
+  bookId: string
+): BookPageNeighbor | null => {
+  if (!page) return null;
+
+  return {
+    bookId,
+    pageId: page.id,
+    position: page.position,
+    prefix: page.prefix,
+    title: page.title,
+    href: buildReadPageHref(bookId, page.id),
+  };
+};
+
+const mapBookPageDetail = ({
+  book,
+  page,
+  previous,
+  next,
+}: {
+  book: BookPageBookRow;
+  page: BookPageDetailRow;
+  previous?: BookPageDetailRow;
+  next?: BookPageDetailRow;
+}): BookPageDetail => ({
+  book: {
+    id: book.id,
+    title: book.title,
+    author: book.author,
+  },
+  page: {
+    bookId: page.book_id,
+    pageId: page.id,
+    position: page.position,
+    kind: page.kind,
+    prefix: page.prefix,
+    title: page.title,
+    summary: page.summary,
+    content: page.content ?? "",
+  },
+  previous: mapBookPageNeighbor(previous, book.id),
+  next: mapBookPageNeighbor(next, book.id),
+});
 
 const createReadingAction = ({
   bookId,
@@ -345,6 +433,71 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
       firstPage,
     })
   );
+};
+
+export const loadBookPage = async (bookId: string, pageId: string) => {
+  const db = getDB();
+  const book = (await db("lingocafe.books")
+    .select("id", "title", "author")
+    .where({ id: bookId })
+    .first()) as BookPageBookRow | undefined;
+
+  if (!book) return null;
+
+  const page = (await db("lingocafe.books_pages")
+    .select("book_id", "id", "position", "kind", "prefix", "title", "summary", "content")
+    .where({ book_id: bookId, id: pageId })
+    .first()) as BookPageDetailRow | undefined;
+
+  if (!page) return null;
+
+  const previous = (await db("lingocafe.books_pages")
+    .select("book_id", "id", "position", "kind", "prefix", "title", "summary", "content")
+    .where({ book_id: bookId })
+    .where("position", "<", page.position)
+    .orderBy("position", "desc")
+    .first()) as BookPageDetailRow | undefined;
+
+  const next = (await db("lingocafe.books_pages")
+    .select("book_id", "id", "position", "kind", "prefix", "title", "summary", "content")
+    .where({ book_id: bookId })
+    .where("position", ">", page.position)
+    .orderBy("position", "asc")
+    .first()) as BookPageDetailRow | undefined;
+
+  return mapBookPageDetail({ book, page, previous, next });
+};
+
+export const saveBookProgress = async ({
+  userId,
+  bookId,
+  pageId,
+  progressBps,
+}: {
+  userId: string;
+  bookId: string;
+  pageId: string;
+  progressBps: number;
+}) => {
+  const db = getDB();
+  const normalizedProgressBps = clampProgressBps(progressBps);
+
+  await db("lingocafe.books_progress")
+    .insert({
+      user_id: userId,
+      book_id: bookId,
+      page_id: pageId,
+      progress_bps: normalizedProgressBps,
+      updated_at: db.fn.now(),
+    })
+    .onConflict(["user_id", "book_id"])
+    .merge({
+      page_id: pageId,
+      progress_bps: normalizedProgressBps,
+      updated_at: db.fn.now(),
+    });
+
+  return normalizedProgressBps;
 };
 
 export const trackReaderEvent = async ({
