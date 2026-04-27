@@ -2,10 +2,9 @@
 
 ## WIP
 
-- [UT41: ESLint 9 → 10](./wip/UT41-eslint-9-10/UT41.task.md) | [plan](./wip/UT41-eslint-9-10/UT41.plan.md) | [notes](./wip/UT41-eslint-9-10/UT41.notes.md)
-
 ## Blocked
 
+- [UT41: ESLint 9 → 10](./wip/UT41-eslint-9-10/UT41.task.md) | [plan](./wip/UT41-eslint-9-10/UT41.plan.md) | [notes](./wip/UT41-eslint-9-10/UT41.notes.md)
 
 ## Ready Tasks
 
