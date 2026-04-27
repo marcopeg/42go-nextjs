@@ -11,11 +11,17 @@ type LanguageOption = {
   label: string;
 };
 
+type LevelOption = {
+  code: string;
+  label: string;
+};
+
 type ReaderProfile = {
   userId: string;
   ownLang: string | null;
   targetLang: string | null;
   targetLevel: string | null;
+  isComplete: boolean;
   data: unknown;
 };
 
@@ -39,14 +45,65 @@ type ReaderData = {
   languages: {
     own: LanguageOption[];
     target: LanguageOption[];
+    levels: LevelOption[];
   };
 };
+
+const fallbackLanguages = {
+  own: [
+    { code: "en", label: "English" },
+    { code: "it", label: "Italian" },
+    { code: "es", label: "Spanish" },
+    { code: "de", label: "German" },
+    { code: "sv", label: "Swedish" },
+    { code: "fr", label: "French" },
+    { code: "pt", label: "Portuguese" },
+    { code: "nl", label: "Dutch" },
+    { code: "da", label: "Danish" },
+    { code: "no", label: "Norwegian" },
+    { code: "fi", label: "Finnish" },
+    { code: "pl", label: "Polish" },
+    { code: "cs", label: "Czech" },
+    { code: "el", label: "Greek" },
+  ] satisfies LanguageOption[],
+  target: [
+    { code: "en", label: "English" },
+    { code: "it", label: "Italian" },
+    { code: "es", label: "Spanish" },
+    { code: "de", label: "German" },
+    { code: "sv", label: "Swedish" },
+  ] satisfies LanguageOption[],
+  levels: [
+    { code: "a2", label: "A2" },
+    { code: "b1", label: "B1" },
+  ] satisfies LevelOption[],
+};
+
+const normalizeReaderData = (payload: Partial<ReaderData>): ReaderData => ({
+  profile: payload.profile ?? null,
+  books: Array.isArray(payload.books) ? payload.books : [],
+  languages: {
+    own:
+      Array.isArray(payload.languages?.own) && payload.languages.own.length > 0
+        ? payload.languages.own
+        : fallbackLanguages.own,
+    target: Array.isArray(payload.languages?.target)
+      ? payload.languages.target
+      : fallbackLanguages.target,
+    levels:
+      Array.isArray(payload.languages?.levels) &&
+      payload.languages.levels.length > 0
+        ? payload.languages.levels
+        : fallbackLanguages.levels,
+  },
+});
 
 const BooksPage = () => {
   const { status } = useSession();
   const [data, setData] = useState<ReaderData | null>(null);
   const [ownLang, setOwnLang] = useState("");
   const [targetLang, setTargetLang] = useState("");
+  const [targetLevel, setTargetLevel] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,8 +120,9 @@ const BooksPage = () => {
       setError(null);
 
       try {
-        const res = await fetch("/api/books", {
+        const res = await fetch("/api/lingocafe/books", {
           credentials: "same-origin",
+          cache: "no-store",
           signal: controller.signal,
         });
 
@@ -72,10 +130,11 @@ const BooksPage = () => {
           throw new Error("Could not load books.");
         }
 
-        const payload = (await res.json()) as ReaderData;
+        const payload = normalizeReaderData(await res.json());
         setData(payload);
-        setOwnLang(payload.languages.own[0]?.code || "");
-        setTargetLang(payload.languages.target[0]?.code || "");
+        setOwnLang(payload.profile?.ownLang || "");
+        setTargetLang(payload.profile?.targetLang || "");
+        setTargetLevel(payload.profile?.targetLevel || "");
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Could not load books.");
@@ -95,18 +154,19 @@ const BooksPage = () => {
     setError(null);
 
     try {
-      const res = await fetch("/api/books", {
+      const res = await fetch("/api/lingocafe/profile", {
         method: "POST",
         credentials: "same-origin",
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownLang, targetLang }),
+        body: JSON.stringify({ ownLang, targetLang, targetLevel }),
       });
 
       if (!res.ok) {
         throw new Error("Could not save language preferences.");
       }
 
-      setData((await res.json()) as ReaderData);
+      setData(normalizeReaderData(await res.json()));
     } catch (err) {
       setError(
         err instanceof Error
@@ -122,14 +182,18 @@ const BooksPage = () => {
     data?.languages.target.find(
       (option) => option.code === data.profile?.targetLang
     )?.label || data?.profile?.targetLang;
+  const showProfileForm = !!data && !data.profile?.isComplete;
+  const languages = data?.languages || fallbackLanguages;
 
   return (
     <AppLayout
       title="Books"
       subtitle={
-        targetLabel
+        showProfileForm
+          ? "Welcome, complete your profile."
+          : targetLabel
           ? `Catalog filtered for ${targetLabel}.`
-          : "Choose your language pair to start reading."
+          : "Here are the books."
       }
       stickyHeader={true}
       policy={{ require: { feature: "page:books", session: true } }}
@@ -147,15 +211,17 @@ const BooksPage = () => {
           </div>
         )}
 
-        {!loading && data && !data.profile && (
+        {!loading && showProfileForm && (
           <form
             onSubmit={saveProfile}
             className="max-w-xl space-y-5 rounded-lg border bg-card p-5 shadow-sm"
           >
             <div>
-              <h2 className="text-lg font-semibold">Set your languages</h2>
+              <h2 className="text-lg font-semibold">
+                Welcome, complete your profile
+              </h2>
               <p className="text-sm text-muted-foreground">
-                Pick the language you know and the language you want to read.
+                Set your own language, target language, and reading level.
               </p>
             </div>
 
@@ -167,7 +233,8 @@ const BooksPage = () => {
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                 required
               >
-                {data.languages.own.map((option) => (
+                <option value="">Choose your language</option>
+                {languages.own.map((option) => (
                   <option key={option.code} value={option.code}>
                     {option.label}
                   </option>
@@ -183,7 +250,8 @@ const BooksPage = () => {
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                 required
               >
-                {data.languages.target.map((option) => (
+                <option value="">Choose reading language</option>
+                {languages.target.map((option) => (
                   <option key={option.code} value={option.code}>
                     {option.label}
                   </option>
@@ -191,19 +259,39 @@ const BooksPage = () => {
               </select>
             </label>
 
-            <Button type="submit" disabled={saving || !ownLang || !targetLang}>
+            <label className="block space-y-2 text-sm font-medium">
+              <span>Reading level</span>
+              <select
+                value={targetLevel}
+                onChange={(event) => setTargetLevel(event.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                required
+              >
+                <option value="">Choose reading level</option>
+                {languages.levels.map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <Button
+              type="submit"
+              disabled={saving || !ownLang || !targetLang || !targetLevel}
+            >
               {saving ? "Saving..." : "Save preferences"}
             </Button>
           </form>
         )}
 
-        {!loading && data?.profile && data.books.length === 0 && (
+        {!loading && !showProfileForm && data && data.books.length === 0 && (
           <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground shadow-sm">
             No books are available for this language yet.
           </div>
         )}
 
-        {!loading && data?.profile && data.books.length > 0 && (
+        {!loading && !showProfileForm && data && data.books.length > 0 && (
           <div className="grid gap-4 lg:grid-cols-2">
             {data.books.map((book) => (
               <article
@@ -236,29 +324,6 @@ const BooksPage = () => {
                     ))}
                   </div>
                 )}
-              </article>
-            ))}
-          </div>
-        )}
-
-        {!loading && data && !data.profile && data.books.length > 0 && (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {data.books.map((book) => (
-              <article
-                key={book.id}
-                className="rounded-lg border bg-card p-5 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 space-y-1">
-                    <h2 className="text-lg font-semibold">{book.title}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {book.author}
-                    </p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-muted px-3 py-1 text-xs font-medium uppercase">
-                    {book.lang} / {book.level}
-                  </span>
-                </div>
               </article>
             ))}
           </div>

@@ -2,12 +2,10 @@
 
 ## WIP
 
-- [MA68: Add LingoCafe Menu Entry to Default App](./wip/MA68-add-lingocafe-menu-entry-to-default-app/MA68.task.md) | [plan](./wip/MA68-add-lingocafe-menu-entry-to-default-app/MA68.plan.md) | [notes](./wip/MA68-add-lingocafe-menu-entry-to-default-app/MA68.notes.md)
-- [PK51: Show Language-Filtered LingoCafe Books](./wip/PK51-show-language-filtered-lingocafe-books/PK51.task.md) | [plan](./wip/PK51-show-language-filtered-lingocafe-books/PK51.plan.md) | [notes](./wip/PK51-show-language-filtered-lingocafe-books/PK51.notes.md)
+- [UT41: ESLint 9 → 10](./wip/UT41-eslint-9-10/UT41.task.md) | [plan](./wip/UT41-eslint-9-10/UT41.plan.md) | [notes](./wip/UT41-eslint-9-10/UT41.notes.md)
 
 ## Blocked
 
-- [UT41: ESLint 9 → 10](./wip/UT41-eslint-9-10/UT41.task.md) | [plan](./wip/UT41-eslint-9-10/UT41.plan.md) | [notes](./wip/UT41-eslint-9-10/UT41.notes.md)
 
 ## Ready Tasks
 
@@ -17,6 +15,7 @@
 
 ## Drafts
 
+- [IL68: Open Book Info Page From Books List](./drafts/IL68-open-book-info-page-from-books-list/IL68.task.md)
 - [DG66: Display Book Covers](./drafts/DG66-display-book-covers/DG66.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)

@@ -2,10 +2,15 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
+import { getAppID } from "@/42go/config/app-config";
 import { getDB } from "@/42go/db";
-import { protectRoute } from "@/42go/policy";
 
 type LanguageOption = {
+  code: string;
+  label: string;
+};
+
+type LevelOption = {
   code: string;
   label: string;
 };
@@ -57,10 +62,25 @@ const targetLanguages: LanguageOption[] = [
   { code: "sv", label: "Swedish" },
 ];
 
-const getReaderLanguages = () => ({
+const readingLevels: LevelOption[] = [
+  { code: "a2", label: "A2" },
+  { code: "b1", label: "B1" },
+];
+
+export const getReaderLanguages = () => ({
   own: [...ownLanguages],
   target: [...targetLanguages],
+  levels: [...readingLevels],
 });
+
+export const json = (data: unknown, init?: ResponseInit) =>
+  Response.json(data, {
+    ...init,
+    headers: {
+      "Cache-Control": "no-store",
+      ...init?.headers,
+    },
+  });
 
 const toISO = (value: Date | string | null): string | null => {
   if (!value) return null;
@@ -77,10 +97,31 @@ const normalizeTags = (tags: BookRow["tags"]): string[] => {
     .filter(Boolean);
 };
 
-const getSessionUserId = async (): Promise<string | null> => {
+export const getSessionUserId = async (): Promise<string | null> => {
   const session = await getServerSession(await getAuthOptions());
-  return session?.user?.id || null;
+  const sessionUserId = session?.user?.id || null;
+  const sessionEmail = session?.user?.email || null;
+  if (!sessionUserId) return null;
+
+  const db = getDB();
+  const user = await db("auth.users").where({ id: sessionUserId }).first();
+  if (user?.id) return user.id as string;
+
+  if (!sessionEmail) return null;
+
+  const appId = (await getAppID()) || "default";
+  const userByEmail = await db("auth.users")
+    .where("app_id", appId)
+    .andWhere("email", "ilike", sessionEmail)
+    .first();
+
+  if (userByEmail?.id) return userByEmail.id as string;
+
+  return null;
 };
+
+const isProfileComplete = (profile: ProfileRow | undefined) =>
+  !!profile?.own_lang && !!profile.target_lang && !!profile.target_level;
 
 const mapProfile = (profile: ProfileRow | undefined) => {
   if (!profile) return null;
@@ -90,6 +131,7 @@ const mapProfile = (profile: ProfileRow | undefined) => {
     ownLang: profile.own_lang,
     targetLang: profile.target_lang,
     targetLevel: profile.target_level,
+    isComplete: isProfileComplete(profile),
     data: profile.data ?? {},
   };
 };
@@ -108,12 +150,21 @@ const mapBook = (book: BookRow) => ({
   updatedAt: toISO(book.updated_at),
 });
 
-const loadReaderData = async (userId: string) => {
+export const loadReaderData = async (userId: string) => {
   const db = getDB();
   const languages = getReaderLanguages();
   const profile = (await db("lingocafe.profiles")
     .where({ user_id: userId })
     .first()) as ProfileRow | undefined;
+  const profileComplete = isProfileComplete(profile);
+
+  if (!profileComplete) {
+    return {
+      profile: mapProfile(profile),
+      books: [],
+      languages,
+    };
+  }
 
   const booksQuery = db("lingocafe.books").select("*").orderBy([
     { column: "level", order: "asc" },
@@ -138,66 +189,46 @@ const languageCodeSchema = (options: LanguageOption[]) =>
     message: "Unsupported language code",
   });
 
-const getBooks = async () => {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return Response.json(
-      { error: "session", message: "login required" },
-      { status: 401 }
-    );
-  }
+const levelCodeSchema = (options: LevelOption[]) =>
+  z.string().refine((value) => options.some((option) => option.code === value), {
+    message: "Unsupported reading level",
+  });
 
-  return Response.json(await loadReaderData(userId));
-};
-
-const saveProfile = async (req: Request) => {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return Response.json(
-      { error: "session", message: "login required" },
-      { status: 401 }
-    );
-  }
-
+export const parseProfilePayload = async (req: Request) => {
   const languages = getReaderLanguages();
   const schema = z.object({
     ownLang: languageCodeSchema(languages.own),
     targetLang: languageCodeSchema(languages.target),
+    targetLevel: levelCodeSchema(languages.levels),
   });
-  const parsed = schema.safeParse(await req.json().catch(() => null));
 
-  if (!parsed.success) {
-    return Response.json(
-      {
-        error: "validation",
-        message: "Invalid onboarding language selection",
-        issues: parsed.error.flatten().fieldErrors,
-      },
-      { status: 400 }
-    );
+  return schema.safeParse(await req.json().catch(() => null));
+};
+
+export const saveProfile = async (
+  userId: string,
+  profile: {
+    ownLang: string;
+    targetLang: string;
+    targetLevel: string;
   }
-
+) => {
   const db = getDB();
+
   await db("lingocafe.profiles")
     .insert({
       user_id: userId,
-      own_lang: parsed.data.ownLang,
-      target_lang: parsed.data.targetLang,
+      own_lang: profile.ownLang,
+      target_lang: profile.targetLang,
+      target_level: profile.targetLevel,
       data: {},
     })
     .onConflict("user_id")
     .merge({
-      own_lang: parsed.data.ownLang,
-      target_lang: parsed.data.targetLang,
+      own_lang: profile.ownLang,
+      target_lang: profile.targetLang,
+      target_level: profile.targetLevel,
     });
 
-  return Response.json(await loadReaderData(userId));
+  return loadReaderData(userId);
 };
-
-export const GET = protectRoute(getBooks, {
-  require: { feature: "api:books", session: true },
-});
-
-export const POST = protectRoute(saveProfile, {
-  require: { feature: "api:books", session: true },
-});

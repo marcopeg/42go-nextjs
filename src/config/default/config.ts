@@ -37,7 +37,7 @@ export default {
     "api:todos",
     "api:quicklists",
     "api:notes",
-    "api:books",
+    "api:lingocafe",
     "page:quicklists",
     "page:books",
   ],
