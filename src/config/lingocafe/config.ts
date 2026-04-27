@@ -10,7 +10,7 @@ export default {
       "^lingocafe\\.localhost:\\d+$",
     ],
   },
-  features: [],
+  features: ["page:books", "api:books"],
   theme: {
     default: "light",
   },

@@ -8,6 +8,7 @@ import {
   BarChart3,
   Home,
   User,
+  BookOpen,
 } from "lucide-react";
 import QuicklistIcon from "@/config/quicklist/QuicklistIcon";
 import { TAppConfigItem } from "../../AppConfig";
@@ -36,7 +37,9 @@ export default {
     "api:todos",
     "api:quicklists",
     "api:notes",
+    "api:books",
     "page:quicklists",
+    "page:books",
   ],
   theme: {
     default: "system",
@@ -179,6 +182,15 @@ export default {
             icon: QuicklistIcon,
             policy: {
               require: { feature: "page:quicklists" },
+            },
+          },
+          {
+            title: "LingoCafe",
+            href: "/books",
+            // Other icons worth trying later: Languages, GraduationCap, Library.
+            icon: BookOpen,
+            policy: {
+              require: { feature: "page:books" },
             },
           },
         ],

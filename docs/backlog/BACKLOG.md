@@ -2,21 +2,22 @@
 
 ## WIP
 
-- [UT41: ESLint 9 → 10](./wip/UT41-eslint-9-10/UT41.task.md) | [plan](./wip/UT41-eslint-9-10/UT41.plan.md) | [notes](./wip/UT41-eslint-9-10/UT41.notes.md)
+- [MA68: Add LingoCafe Menu Entry to Default App](./wip/MA68-add-lingocafe-menu-entry-to-default-app/MA68.task.md) | [plan](./wip/MA68-add-lingocafe-menu-entry-to-default-app/MA68.plan.md) | [notes](./wip/MA68-add-lingocafe-menu-entry-to-default-app/MA68.notes.md)
+- [PK51: Show Language-Filtered LingoCafe Books](./wip/PK51-show-language-filtered-lingocafe-books/PK51.task.md) | [plan](./wip/PK51-show-language-filtered-lingocafe-books/PK51.plan.md) | [notes](./wip/PK51-show-language-filtered-lingocafe-books/PK51.notes.md)
 
 ## Blocked
 
+- [UT41: ESLint 9 → 10](./wip/UT41-eslint-9-10/UT41.task.md) | [plan](./wip/UT41-eslint-9-10/UT41.plan.md) | [notes](./wip/UT41-eslint-9-10/UT41.notes.md)
 
 ## Ready Tasks
 
-- [PK51: Show Language-Filtered LingoCafe Books](./ready/PK51-show-language-filtered-lingocafe-books/PK51.task.md) | [plan](./ready/PK51-show-language-filtered-lingocafe-books/PK51.plan.md)
-- [MA68: Add LingoCafe Menu Entry to Default App](./ready/MA68-add-lingocafe-menu-entry-to-default-app/MA68.task.md) | [plan](./ready/MA68-add-lingocafe-menu-entry-to-default-app/MA68.plan.md)
 - [ADC: Add Tenants Table](./ready/ADC-add-tenants-table/ADC.task.md)
 - [ADB: Reject Invite [adb]](./ready/ADB-reject-invite-adb/ADB.task.md)
 - [AEM: Fix Docker build [aem]](./ready/AEM-fix-docker-build-aem/AEM.task.md)
 
 ## Drafts
 
+- [DG66: Display Book Covers](./drafts/DG66-display-book-covers/DG66.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)
 - [ABN: Migrate to Prisma ORM](./drafts/ABN-migrate-to-prisma-orm/ABN.task.md)
