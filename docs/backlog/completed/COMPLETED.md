@@ -12,6 +12,7 @@
 - [WP85: Lucide React 0.x → 1.x](./WP85-lucide-react-0-x-1-x/WP85.task.md) | [plan](./WP85-lucide-react-0-x-1-x/WP85.plan.md) | [notes](./WP85-lucide-react-0-x-1-x/WP85.notes.md)
 - [XI41: Pin All Dependency Versions](./XI41-pin-all-dependency-versions/XI41.task.md) | [plan](./XI41-pin-all-dependency-versions/XI41.plan.md) | [notes](./XI41-pin-all-dependency-versions/XI41.notes.md)
 - [YW51: Bump Next.js to 16.2.4 — Security Fix](./YW51-bump-next-js-to-16-2-4-security-fix/YW51.task.md) | [plan](./YW51-bump-next-js-to-16-2-4-security-fix/YW51.plan.md) | [notes](./YW51-bump-next-js-to-16-2-4-security-fix/YW51.notes.md)
+- [HU36: Create LingoCafe App Config](./HU36-create-lingocafe-app-config/HU36.task.md) | [plan](./HU36-create-lingocafe-app-config/HU36.plan.md) | [notes](./HU36-create-lingocafe-app-config/HU36.notes.md)
 - [AAA: Initialize backlog [aaa]](./AAA-initialize-backlog-aaa/AAA.task.md)
 - [AAC: Support different public layout based on App-config [aac]](./AAC-support-different-public-layout-based-on-app-config-aac/AAC.task.md)
 - [AAD: General Dark Mode Support [aad]](./AAD-general-dark-mode-support-aad/AAD.task.md)
@@ -101,4 +102,4 @@
 - [AQA: Fix QuickList reorder API [aqa]](./AQA-fix-quicklist-reorder-api-aqa/AQA.task.md)
 - [AQB: Delete checked items [aqb]](./AQB-delete-checked-items-aqb/AQB.task.md)
 - [AQE: Upgrade project to latest major versions [aqe]](./AQE-upgrade-project-to-latest-major-versions-aqe/AQE.task.md)
-- [HU36: Create LingoCafe App Config](./HU36-create-lingocafe-app-config/HU36.task.md) | [plan](./HU36-create-lingocafe-app-config/HU36.plan.md) | [notes](./HU36-create-lingocafe-app-config/HU36.notes.md)
+- [OG12: LingoCafe Data Model and Knex Migrations](./OG12-lingocafe-data-model-and-knex-migrations/OG12.task.md) | [plan](./OG12-lingocafe-data-model-and-knex-migrations/OG12.plan.md) | [notes](./OG12-lingocafe-data-model-and-knex-migrations/OG12.notes.md)
