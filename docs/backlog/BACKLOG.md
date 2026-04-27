@@ -2,20 +2,19 @@
 
 ## WIP
 
-- [UT41: ESLint 9 → 10](./wip/UT41-eslint-9-10/UT41.task.md) | [plan](./wip/UT41-eslint-9-10/UT41.plan.md) | [notes](./wip/UT41-eslint-9-10/UT41.notes.md)
-
 ## Blocked
+
+- [UT41: ESLint 9 → 10](./wip/UT41-eslint-9-10/UT41.task.md) | [plan](./wip/UT41-eslint-9-10/UT41.plan.md) | [notes](./wip/UT41-eslint-9-10/UT41.notes.md)
 
 ## Ready Tasks
 
-- [ADC: Add Tenants Table](./ready/ADC-add-tenants-table/ADC.task.md)
-- [ADB: Reject Invite [adb]](./ready/ADB-reject-invite-adb/ADB.task.md)
-- [AEM: Fix Docker build [aem]](./ready/AEM-fix-docker-build-aem/AEM.task.md)
-
 ## Drafts
 
-- [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [OG12: LingoCafe Data Model and Knex Migrations](./drafts/OG12-lingocafe-data-model-and-knex-migrations/OG12.task.md)
+- [AEM: Fix Docker build [aem]](./ready/AEM-fix-docker-build-aem/AEM.task.md)
+- [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
+- [ADC: Add Tenants Table](./ready/ADC-add-tenants-table/ADC.task.md)
+- [ADB: Reject Invite [adb]](./ready/ADB-reject-invite-adb/ADB.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)
 - [ABN: Migrate to Prisma ORM](./drafts/ABN-migrate-to-prisma-orm/ABN.task.md)
 - [ACW: Document Getting Started with README Information](./drafts/ACW-document-getting-started-with-readme-information/ACW.task.md)
