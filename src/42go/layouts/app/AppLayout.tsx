@@ -146,11 +146,9 @@ export const AppLayout = ({
       )}
 
       {/* Mobile Sidebar - Content */}
-      {!hideMobileMenu && (
+      {!hideMobileMenu && isMobileMenuOpen && (
         <aside
-          className={`fixed top-0 right-0 z-[60] h-full w-4/5 transition-transform duration-300 ease-in-out md:hidden ${
-            isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+          className="fixed top-0 right-0 z-[60] h-full w-4/5 transition-transform duration-300 ease-in-out md:hidden"
         >
           <SidebarMenu
             isCollapsed={false}

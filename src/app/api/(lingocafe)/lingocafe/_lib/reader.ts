@@ -28,7 +28,6 @@ type BookRow = {
   lang: string;
   level: string;
   title: string;
-  description: string;
   author: string;
   tags: string[] | string | null;
   cover: string | null;
@@ -36,6 +35,9 @@ type BookRow = {
   created_at: Date | string;
   updated_at: Date | string;
 };
+
+const coverBaseUrl = "/images/lingocafe";
+const coverFallbackUrl = `${coverBaseUrl}/placeholder.jpg`;
 
 const ownLanguages: LanguageOption[] = [
   { code: "en", label: "English" },
@@ -97,6 +99,18 @@ const normalizeTags = (tags: BookRow["tags"]): string[] => {
     .filter(Boolean);
 };
 
+const normalizePublicCoverUrl = (cover: string | null) => {
+  const value = cover?.trim();
+  if (!value) return null;
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return null;
+  }
+  return value.startsWith("/") ? value : `/${value}`;
+};
+
+const resolveBookCover = (book: BookRow) =>
+  normalizePublicCoverUrl(book.cover) || `${coverBaseUrl}/${book.id}.jpg`;
+
 export const getSessionUserId = async (): Promise<string | null> => {
   const session = await getServerSession(await getAuthOptions());
   const sessionUserId = session?.user?.id || null;
@@ -141,10 +155,10 @@ const mapBook = (book: BookRow) => ({
   lang: book.lang,
   level: book.level,
   title: book.title,
-  description: book.description,
   author: book.author,
   tags: normalizeTags(book.tags),
-  cover: book.cover,
+  cover: resolveBookCover(book),
+  coverFallback: coverFallbackUrl,
   publishedAt: toISO(book.published_at),
   createdAt: toISO(book.created_at),
   updatedAt: toISO(book.updated_at),
@@ -166,10 +180,23 @@ export const loadReaderData = async (userId: string) => {
     };
   }
 
-  const booksQuery = db("lingocafe.books").select("*").orderBy([
-    { column: "level", order: "asc" },
-    { column: "title", order: "asc" },
-  ]);
+  const booksQuery = db("lingocafe.books")
+    .select(
+      "id",
+      "lang",
+      "level",
+      "title",
+      "author",
+      "tags",
+      "cover",
+      "published_at",
+      "created_at",
+      "updated_at"
+    )
+    .orderBy([
+      { column: "level", order: "asc" },
+      { column: "title", order: "asc" },
+    ]);
 
   if (profile?.target_lang) {
     booksQuery.where({ lang: profile.target_lang });

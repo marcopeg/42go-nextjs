@@ -2,9 +2,10 @@
 
 ## WIP
 
+- [UT41: ESLint 9 → 10](./wip/UT41-eslint-9-10/UT41.task.md) | [plan](./wip/UT41-eslint-9-10/UT41.plan.md) | [notes](./wip/UT41-eslint-9-10/UT41.notes.md)
+
 ## Blocked
 
-- [UT41: ESLint 9 → 10](./wip/UT41-eslint-9-10/UT41.task.md) | [plan](./wip/UT41-eslint-9-10/UT41.plan.md) | [notes](./wip/UT41-eslint-9-10/UT41.notes.md)
 
 ## Ready Tasks
 
@@ -14,8 +15,10 @@
 
 ## Drafts
 
+- [BW36: Collect Profile Update Event](./drafts/BW36-collect-profile-update-event/BW36.task.md)
+- [ZE11: Book Page Read UI](./drafts/ZE11-book-page-read-ui/ZE11.task.md)
 - [IL68: Open Book Info Page From Books List](./drafts/IL68-open-book-info-page-from-books-list/IL68.task.md)
-- [DG66: Display Book Covers](./drafts/DG66-display-book-covers/DG66.task.md)
+- [PR58: Show Read Now or Continue Reading on Book Details](./drafts/PR58-show-read-now-or-continue-reading-on-book-details/PR58.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)
 - [ABN: Migrate to Prisma ORM](./drafts/ABN-migrate-to-prisma-orm/ABN.task.md)

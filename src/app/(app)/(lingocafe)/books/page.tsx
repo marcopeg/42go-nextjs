@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 
 import { AppLayout } from "@/42go/layouts/app";
@@ -30,10 +31,10 @@ type ReaderBook = {
   lang: string;
   level: string;
   title: string;
-  description: string;
   author: string;
   tags: string[];
   cover: string | null;
+  coverFallback: string;
   publishedAt: string | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -78,10 +79,17 @@ const fallbackLanguages = {
     { code: "b1", label: "B1" },
   ] satisfies LevelOption[],
 };
+const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
 
 const normalizeReaderData = (payload: Partial<ReaderData>): ReaderData => ({
   profile: payload.profile ?? null,
-  books: Array.isArray(payload.books) ? payload.books : [],
+  books: Array.isArray(payload.books)
+    ? payload.books.map((book) => ({
+        ...book,
+        cover: book.cover ?? null,
+        coverFallback: book.coverFallback || coverFallbackUrl,
+      }))
+    : [],
   languages: {
     own:
       Array.isArray(payload.languages?.own) && payload.languages.own.length > 0
@@ -97,6 +105,27 @@ const normalizeReaderData = (payload: Partial<ReaderData>): ReaderData => ({
         : fallbackLanguages.levels,
   },
 });
+
+const BookCover = ({ book }: { book: ReaderBook }) => {
+  const [src, setSrc] = useState(book.cover || book.coverFallback);
+
+  return (
+    <div className="relative aspect-[2/3] w-full min-w-0 max-w-full overflow-hidden rounded-md border bg-muted sm:w-44 sm:max-w-44 sm:shrink-0 lg:w-40 xl:w-44">
+      <Image
+        src={src}
+        alt={`${book.title} cover`}
+        fill
+        sizes="(min-width: 1280px) 176px, (min-width: 1024px) 160px, (min-width: 640px) 176px, 100vw"
+        className="object-contain"
+        onError={() => {
+          if (src !== book.coverFallback) {
+            setSrc(book.coverFallback);
+          }
+        }}
+      />
+    </div>
+  );
+};
 
 const BooksPage = () => {
   const { status } = useSession();
@@ -198,7 +227,7 @@ const BooksPage = () => {
       stickyHeader={true}
       policy={{ require: { feature: "page:books", session: true } }}
     >
-      <div className="space-y-6">
+      <div className="min-w-0 max-w-full overflow-x-clip space-y-6">
         {error && (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
@@ -292,38 +321,42 @@ const BooksPage = () => {
         )}
 
         {!loading && !showProfileForm && data && data.books.length > 0 && (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid min-w-0 max-w-full grid-cols-1 gap-4 lg:grid-cols-2">
             {data.books.map((book) => (
               <article
                 key={book.id}
-                className="rounded-lg border bg-card p-5 shadow-sm"
+                className="min-w-0 max-w-full overflow-hidden rounded-lg border bg-card p-4 shadow-sm sm:p-5"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 space-y-1">
-                    <h2 className="text-lg font-semibold">{book.title}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {book.author}
-                    </p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-muted px-3 py-1 text-xs font-medium uppercase">
-                    {book.lang} / {book.level}
-                  </span>
-                </div>
-                <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  {book.description}
-                </p>
-                {book.tags.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {book.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground"
-                      >
-                        {tag}
+                <div className="flex min-w-0 max-w-full flex-col gap-4 sm:flex-row sm:gap-5">
+                  <BookCover book={book} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                      <div className="min-w-0 space-y-1">
+                        <h2 className="break-words text-lg font-semibold">
+                          {book.title}
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                          {book.author}
+                        </p>
+                      </div>
+                      <span className="w-fit shrink-0 rounded-full bg-muted px-3 py-1 text-xs font-medium uppercase">
+                        {book.lang} / {book.level}
                       </span>
-                    ))}
+                    </div>
+                    {book.tags.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {book.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </article>
             ))}
           </div>
