@@ -21,9 +21,20 @@ export type ReaderBookReadingAction = {
   progressBps: number | null;
 };
 
+export type ReaderBookInfoPage = {
+  bookId: string;
+  pageId: string;
+  position: number;
+  kind: string;
+  prefix: string | null;
+  title: string;
+  href: string;
+};
+
 export type ReaderBookInfo = ReaderBook & {
   description: string;
   readingAction: ReaderBookReadingAction;
+  pages: ReaderBookInfoPage[];
 };
 
 export type ReaderBookPageNeighbor = {

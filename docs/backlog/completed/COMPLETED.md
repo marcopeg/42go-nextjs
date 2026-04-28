@@ -22,6 +22,7 @@
 - [ZE11: Book Page Read UI](./ZE11-book-page-read-ui/ZE11.task.md) | [plan](./ZE11-book-page-read-ui/ZE11.plan.md) | [notes](./ZE11-book-page-read-ui/ZE11.notes.md)
 - [BW36: Collect Profile Update Event](./BW36-collect-profile-update-event/BW36.task.md) | [plan](./BW36-collect-profile-update-event/BW36.plan.md) | [notes](./BW36-collect-profile-update-event/BW36.notes.md)
 - [BD89: Document LingoCafe Books Data Model for Export App](./BD89-document-lingocafe-books-data-model-for-export-app/BD89.task.md) | [plan](./BD89-document-lingocafe-books-data-model-for-export-app/BD89.plan.md) | [notes](./BD89-document-lingocafe-books-data-model-for-export-app/BD89.notes.md)
+- [NN45: Implement Books Shelf Design](./NN45-implement-books-shelf-design/NN45.task.md) | [plan](./NN45-implement-books-shelf-design/NN45.plan.md) | [notes](./NN45-implement-books-shelf-design/NN45.notes.md)
 - [AAA: Initialize backlog [aaa]](./AAA-initialize-backlog-aaa/AAA.task.md)
 - [AAC: Support different public layout based on App-config [aac]](./AAC-support-different-public-layout-based-on-app-config-aac/AAC.task.md)
 - [AAD: General Dark Mode Support [aad]](./AAD-general-dark-mode-support-aad/AAD.task.md)
@@ -111,4 +112,4 @@
 - [AQA: Fix QuickList reorder API [aqa]](./AQA-fix-quicklist-reorder-api-aqa/AQA.task.md)
 - [AQB: Delete checked items [aqb]](./AQB-delete-checked-items-aqb/AQB.task.md)
 - [AQE: Upgrade project to latest major versions [aqe]](./AQE-upgrade-project-to-latest-major-versions-aqe/AQE.task.md)
-- [NN45: Implement Books Shelf Design](./NN45-implement-books-shelf-design/NN45.task.md) | [plan](./NN45-implement-books-shelf-design/NN45.plan.md) | [notes](./NN45-implement-books-shelf-design/NN45.notes.md)
+- [DJ89: Implement Book Details Page Design](./DJ89-implement-book-details-page-design/DJ89.task.md) | [plan](./DJ89-implement-book-details-page-design/DJ89.plan.md) | [notes](./DJ89-implement-book-details-page-design/DJ89.notes.md)

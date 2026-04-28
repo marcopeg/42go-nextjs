@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { BookInfoContent } from "@/app/(app)/(lingocafe)/books/_components/BookInfoContent";
 import type {
   ReaderBookInfo,
+  ReaderBookInfoPage,
   ReaderBookReadingAction,
 } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 
@@ -40,6 +41,22 @@ const isReadingAction = (
   (typeof action.pageId === "string" || action.pageId === null) &&
   (typeof action.progressBps === "number" || action.progressBps === null);
 
+const isBookInfoPage = (page: unknown): page is ReaderBookInfoPage => {
+  if (!page || typeof page !== "object") return false;
+
+  const value = page as Partial<ReaderBookInfoPage>;
+
+  return (
+    typeof value.bookId === "string" &&
+    typeof value.pageId === "string" &&
+    typeof value.position === "number" &&
+    typeof value.kind === "string" &&
+    (typeof value.prefix === "string" || value.prefix === null) &&
+    typeof value.title === "string" &&
+    typeof value.href === "string"
+  );
+};
+
 const normalizeBookInfo = (payload: Partial<BookInfoResponse>) => {
   const book = payload.book;
   if (!book) return null;
@@ -55,6 +72,7 @@ const normalizeBookInfo = (payload: Partial<BookInfoResponse>) => {
     tags: Array.isArray(book.tags) ? book.tags : [],
     description: book.description || "",
     readingAction,
+    pages: Array.isArray(book.pages) ? book.pages.filter(isBookInfoPage) : [],
   };
 };
 
@@ -67,8 +85,11 @@ const MobileBookInfo = ({
   loading: boolean;
   error: string | null;
 }) => (
-  <div className="md:hidden fixed inset-0 z-[500] bg-background">
-    <div className="absolute inset-0 flex flex-col" style={{ height: "100dvh" }}>
+  <div className="fixed inset-0 z-[500] overflow-x-hidden bg-background md:hidden">
+    <div
+      className="absolute inset-0 flex max-w-full flex-col overflow-x-hidden"
+      style={{ height: "100dvh" }}
+    >
       <div className="flex items-center gap-3 border-b bg-background px-4 pb-3 pt-4">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/books" aria-label="Back to books">
@@ -76,18 +97,11 @@ const MobileBookInfo = ({
           </Link>
         </Button>
         <div className="min-w-0">
-          <div className="truncate text-base font-semibold">
-            {book?.title || "Book details"}
-          </div>
-          {book?.author && (
-            <div className="truncate text-sm text-muted-foreground">
-              {book.author}
-            </div>
-          )}
+          <div className="truncate text-base font-semibold">Book details</div>
         </div>
       </div>
 
-      <div className="min-w-0 flex-1 overflow-y-auto px-4 py-5">
+      <div className="min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-5">
         {loading && (
           <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground shadow-sm">
             Loading book...
@@ -162,13 +176,9 @@ const BookInfoPage = () => {
     return () => controller.abort();
   }, [bookId, status]);
 
-  const title = book?.title || "Book details";
-  const subtitle = book?.author;
-
   return (
     <AppLayout
-      title={title}
-      subtitle={subtitle}
+      title="All books"
       stickyHeader={true}
       hideMobileMenu
       backBtn={{ to: "/books" }}

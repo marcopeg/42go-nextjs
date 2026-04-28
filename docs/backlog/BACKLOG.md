@@ -15,7 +15,6 @@
 
 ## Drafts
 
-- [DJ89: Implement Book Details Page Design](./drafts/DJ89-implement-book-details-page-design/DJ89.task.md)
 - [VU18: Implement Books Page Read Design](./drafts/VU18-implement-books-page-read-design/VU18.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)

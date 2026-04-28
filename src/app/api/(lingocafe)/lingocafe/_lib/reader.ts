@@ -57,6 +57,22 @@ type BookPageRow = {
   position: number;
 };
 
+type BookInfoPageRow = BookPageRow & {
+  kind: string;
+  prefix: string | null;
+  title: string;
+};
+
+type BookInfoPageSummary = {
+  bookId: string;
+  pageId: string;
+  position: number;
+  kind: string;
+  prefix: string | null;
+  title: string;
+  href: string;
+};
+
 type BookPageDetailRow = BookPageRow & {
   kind: string;
   prefix: string | null;
@@ -355,6 +371,16 @@ const mapBookInfo = (book: BookInfoRow, readingAction: BookReadingAction) => ({
   readingAction,
 });
 
+const mapBookInfoPage = (page: BookInfoPageRow): BookInfoPageSummary => ({
+  bookId: page.book_id,
+  pageId: page.id,
+  position: page.position,
+  kind: page.kind,
+  prefix: page.prefix,
+  title: page.title,
+  href: buildReadPageHref(page.book_id, page.id),
+});
+
 export const loadReaderData = async (userId: string) => {
   const db = getDB();
   const languages = getReaderLanguages();
@@ -436,14 +462,22 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
         .orderBy("position", "asc")
         .first()) as BookPageRow | undefined);
 
-  return mapBookInfo(
-    book,
-    createReadingAction({
-      bookId: book.id,
-      progress,
-      firstPage,
-    })
-  );
+  const pages = (await db("lingocafe.books_pages")
+    .select("book_id", "id", "position", "kind", "prefix", "title")
+    .where({ book_id: bookId })
+    .orderBy("position", "asc")) as BookInfoPageRow[];
+
+  return {
+    ...mapBookInfo(
+      book,
+      createReadingAction({
+        bookId: book.id,
+        progress,
+        firstPage,
+      })
+    ),
+    pages: pages.map(mapBookInfoPage),
+  };
 };
 
 export const loadBookPage = async (bookId: string, pageId: string) => {
