@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ChevronLeft } from "lucide-react";
 
 import { AppLayout } from "@/42go/layouts/app";
-import { Button } from "@/components/ui/button";
-import { BookPageReader } from "@/app/(app)/(lingocafe)/books/_components/BookPageReader";
+import {
+  BookReaderDesktopSurface,
+  BookReaderMobileSurface,
+} from "@/app/(app)/(lingocafe)/books/_components/BookReaderSurfaces";
 import type {
   ReaderBookPage,
   ReaderBookPageNeighbor,
+  ReaderBookPageSummary,
 } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 
 type BookPageResponse = {
@@ -44,6 +45,21 @@ const isNeighbor = (value: unknown): value is ReaderBookPageNeighbor => {
   );
 };
 
+const isPageSummary = (value: unknown): value is ReaderBookPageSummary => {
+  if (!value || typeof value !== "object") return false;
+  const page = value as Partial<ReaderBookPageSummary>;
+
+  return (
+    typeof page.bookId === "string" &&
+    typeof page.pageId === "string" &&
+    typeof page.position === "number" &&
+    typeof page.kind === "string" &&
+    (typeof page.prefix === "string" || page.prefix === null) &&
+    typeof page.title === "string" &&
+    typeof page.href === "string"
+  );
+};
+
 const normalizeBookPage = (
   payload: Partial<BookPageResponse>
 ): ReaderBookPage | null => {
@@ -52,8 +68,12 @@ const normalizeBookPage = (
 
   if (
     typeof bookPage.book.id !== "string" ||
+    typeof bookPage.book.lang !== "string" ||
+    typeof bookPage.book.level !== "string" ||
     typeof bookPage.book.title !== "string" ||
     typeof bookPage.book.author !== "string" ||
+    (typeof bookPage.book.cover !== "string" && bookPage.book.cover !== null) ||
+    typeof bookPage.book.coverFallback !== "string" ||
     typeof bookPage.page.bookId !== "string" ||
     typeof bookPage.page.pageId !== "string" ||
     typeof bookPage.page.position !== "number" ||
@@ -65,8 +85,12 @@ const normalizeBookPage = (
   return {
     book: {
       id: bookPage.book.id,
+      lang: bookPage.book.lang,
+      level: bookPage.book.level,
       title: bookPage.book.title,
       author: bookPage.book.author,
+      cover: bookPage.book.cover,
+      coverFallback: bookPage.book.coverFallback,
     },
     page: {
       bookId: bookPage.page.bookId,
@@ -80,6 +104,9 @@ const normalizeBookPage = (
     },
     previous: isNeighbor(bookPage.previous) ? bookPage.previous : null,
     next: isNeighbor(bookPage.next) ? bookPage.next : null,
+    pages: Array.isArray(bookPage.pages)
+      ? bookPage.pages.filter(isPageSummary)
+      : [],
   };
 };
 
@@ -94,56 +121,6 @@ const scrollToProgressBps = (element: HTMLElement, progressBps: number) => {
   if (scrollable <= 0) return;
   element.scrollTop = (scrollable * progressBps) / 10000;
 };
-
-const MobileBookPage = ({
-  bookPage,
-  loading,
-  error,
-  scrollRef,
-  backHref,
-}: {
-  bookPage: ReaderBookPage | null;
-  loading: boolean;
-  error: string | null;
-  scrollRef: RefObject<HTMLDivElement | null>;
-  backHref: string;
-}) => (
-  <div className="fixed inset-0 z-[600] bg-background md:hidden">
-    <div className="absolute inset-0 flex flex-col" style={{ height: "100dvh" }}>
-      <div className="flex items-center gap-3 border-b bg-background px-4 pb-3 pt-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={backHref} aria-label="Back to book details">
-            <ChevronLeft className="h-5 w-5" />
-          </Link>
-        </Button>
-        <div className="min-w-0">
-          <div className="truncate text-base font-semibold">
-            {bookPage?.page.title || "Reading"}
-          </div>
-          {bookPage?.book.title && (
-            <div className="truncate text-sm text-muted-foreground">
-              {bookPage.book.title}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div ref={scrollRef} className="min-w-0 flex-1 overflow-y-auto px-4 py-5">
-        {loading && (
-          <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground shadow-sm">
-            Loading page...
-          </div>
-        )}
-        {error && (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-        {!loading && !error && bookPage && <BookPageReader bookPage={bookPage} />}
-      </div>
-    </div>
-  </div>
-);
 
 const BookReadPage = () => {
   const params = useParams<{
@@ -316,19 +293,16 @@ const BookReadPage = () => {
     };
   }, [apiHref, bookPage]);
 
-  const title = bookPage?.page.title || "Reading";
-  const subtitle = bookPage?.book.title;
-
   return (
     <AppLayout
-      title={title}
-      subtitle={subtitle}
-      stickyHeader={true}
+      title="Reading"
+      stickyHeader={false}
       hideMobileMenu
       backBtn={{ to: backHref }}
+      disablePadding
       policy={{ require: { feature: "page:books", session: true } }}
     >
-      <MobileBookPage
+      <BookReaderMobileSurface
         bookPage={bookPage}
         loading={loading}
         error={error}
@@ -336,22 +310,13 @@ const BookReadPage = () => {
         backHref={backHref}
       />
 
-      <div
-        ref={desktopScrollRef}
-        className="hidden max-h-[calc(100dvh-7rem)] min-w-0 overflow-y-auto md:block"
-      >
-        {loading && (
-          <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground shadow-sm">
-            Loading page...
-          </div>
-        )}
-        {error && (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-        {!loading && !error && bookPage && <BookPageReader bookPage={bookPage} />}
-      </div>
+      <BookReaderDesktopSurface
+        bookPage={bookPage}
+        loading={loading}
+        error={error}
+        scrollRef={desktopScrollRef}
+        backHref={backHref}
+      />
     </AppLayout>
   );
 };

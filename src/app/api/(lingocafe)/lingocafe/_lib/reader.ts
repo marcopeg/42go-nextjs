@@ -81,7 +81,10 @@ type BookPageDetailRow = BookPageRow & {
   content: string | null;
 };
 
-type BookPageBookRow = Pick<BookInfoRow, "id" | "title" | "author">;
+type BookPageBookRow = Pick<
+  BookInfoRow,
+  "id" | "lang" | "level" | "title" | "author" | "cover"
+>;
 
 type BookProgressRow = {
   book_id: string;
@@ -110,8 +113,12 @@ type BookPageNeighbor = {
 export type BookPageDetail = {
   book: {
     id: string;
+    lang: string;
+    level: string;
     title: string;
     author: string;
+    cover: string | null;
+    coverFallback: string;
   };
   page: {
     bookId: string;
@@ -125,6 +132,7 @@ export type BookPageDetail = {
   };
   previous: BookPageNeighbor | null;
   next: BookPageNeighbor | null;
+  pages: BookInfoPageSummary[];
 };
 
 const coverBaseUrl = "/images/lingocafe";
@@ -199,7 +207,7 @@ const normalizePublicCoverUrl = (cover: string | null) => {
   return value.startsWith("/") ? value : `/${value}`;
 };
 
-const resolveBookCover = (book: BookRow) =>
+const resolveBookCover = (book: Pick<BookRow, "id" | "cover">) =>
   normalizePublicCoverUrl(book.cover) || `${coverBaseUrl}/${book.id}.jpg`;
 
 const buildReadPageHref = (
@@ -246,16 +254,22 @@ const mapBookPageDetail = ({
   page,
   previous,
   next,
+  pages,
 }: {
   book: BookPageBookRow;
   page: BookPageDetailRow;
   previous?: BookPageDetailRow;
   next?: BookPageDetailRow;
+  pages: BookInfoPageRow[];
 }): BookPageDetail => ({
   book: {
     id: book.id,
+    lang: book.lang,
+    level: book.level,
     title: book.title,
     author: book.author,
+    cover: resolveBookCover(book),
+    coverFallback: coverFallbackUrl,
   },
   page: {
     bookId: page.book_id,
@@ -269,6 +283,7 @@ const mapBookPageDetail = ({
   },
   previous: mapBookPageNeighbor(previous, book.id),
   next: mapBookPageNeighbor(next, book.id),
+  pages: pages.map(mapBookInfoPage),
 });
 
 const createReadingAction = ({
@@ -483,7 +498,7 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
 export const loadBookPage = async (bookId: string, pageId: string) => {
   const db = getDB();
   const book = (await db("lingocafe.books")
-    .select("id", "title", "author")
+    .select("id", "lang", "level", "title", "author", "cover")
     .where({ id: bookId })
     .first()) as BookPageBookRow | undefined;
 
@@ -510,7 +525,12 @@ export const loadBookPage = async (bookId: string, pageId: string) => {
     .orderBy("position", "asc")
     .first()) as BookPageDetailRow | undefined;
 
-  return mapBookPageDetail({ book, page, previous, next });
+  const pages = (await db("lingocafe.books_pages")
+    .select("book_id", "id", "position", "kind", "prefix", "title")
+    .where({ book_id: bookId })
+    .orderBy("position", "asc")) as BookInfoPageRow[];
+
+  return mapBookPageDetail({ book, page, previous, next, pages });
 };
 
 export const saveBookProgress = async ({

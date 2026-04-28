@@ -15,7 +15,6 @@
 
 ## Drafts
 
-- [VU18: Implement Books Page Read Design](./drafts/VU18-implement-books-page-read-design/VU18.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)
 - [ABN: Migrate to Prisma ORM](./drafts/ABN-migrate-to-prisma-orm/ABN.task.md)

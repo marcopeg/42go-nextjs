@@ -31,6 +31,8 @@ export type ReaderBookInfoPage = {
   href: string;
 };
 
+export type ReaderBookPageSummary = ReaderBookInfoPage;
+
 export type ReaderBookInfo = ReaderBook & {
   description: string;
   readingAction: ReaderBookReadingAction;
@@ -49,8 +51,12 @@ export type ReaderBookPageNeighbor = {
 export type ReaderBookPage = {
   book: {
     id: string;
+    lang: string;
+    level: string;
     title: string;
     author: string;
+    cover: string | null;
+    coverFallback: string;
   };
   page: {
     bookId: string;
@@ -64,4 +70,5 @@ export type ReaderBookPage = {
   };
   previous: ReaderBookPageNeighbor | null;
   next: ReaderBookPageNeighbor | null;
+  pages: ReaderBookPageSummary[];
 };
