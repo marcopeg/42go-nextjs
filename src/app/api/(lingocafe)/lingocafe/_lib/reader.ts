@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import type { Knex } from "knex";
 import { z } from "zod";
 
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
@@ -22,6 +23,16 @@ type ProfileRow = {
   target_level: string | null;
   data: unknown;
 };
+
+type ProfilePayload = {
+  ownLang: string;
+  targetLang: string;
+  targetLevel: string;
+};
+
+type ProfileUpdateDiff = Partial<
+  Record<keyof ProfilePayload, { before: string | null; after: string }>
+>;
 
 type BookRow = {
   id: string;
@@ -507,6 +518,7 @@ export const trackReaderEvent = async ({
   pageId = null,
   data = {},
   meta = {},
+  db = getDB(),
 }: {
   userId: string;
   name: string;
@@ -514,9 +526,8 @@ export const trackReaderEvent = async ({
   pageId?: string | null;
   data?: Record<string, unknown>;
   meta?: Record<string, unknown>;
+  db?: Knex | Knex.Transaction;
 }) => {
-  const db = getDB();
-
   await db.raw("SELECT lingocafe.events_prepare_partitions()");
   await db("lingocafe.events").insert({
     user_id: userId,
@@ -526,6 +537,40 @@ export const trackReaderEvent = async ({
     data,
     meta,
   });
+};
+
+const buildProfileUpdateDiff = (
+  currentProfile: ProfileRow | undefined,
+  nextProfile: ProfilePayload
+): ProfileUpdateDiff => {
+  const fields = [
+    {
+      key: "ownLang",
+      before: currentProfile?.own_lang ?? null,
+      after: nextProfile.ownLang,
+    },
+    {
+      key: "targetLang",
+      before: currentProfile?.target_lang ?? null,
+      after: nextProfile.targetLang,
+    },
+    {
+      key: "targetLevel",
+      before: currentProfile?.target_level ?? null,
+      after: nextProfile.targetLevel,
+    },
+  ] as const;
+
+  return fields.reduce<ProfileUpdateDiff>((diff, field) => {
+    if (field.before !== field.after) {
+      diff[field.key] = {
+        before: field.before,
+        after: field.after,
+      };
+    }
+
+    return diff;
+  }, {});
 };
 
 const languageCodeSchema = (options: LanguageOption[]) =>
@@ -551,28 +596,42 @@ export const parseProfilePayload = async (req: Request) => {
 
 export const saveProfile = async (
   userId: string,
-  profile: {
-    ownLang: string;
-    targetLang: string;
-    targetLevel: string;
-  }
+  profile: ProfilePayload
 ) => {
   const db = getDB();
 
-  await db("lingocafe.profiles")
-    .insert({
-      user_id: userId,
-      own_lang: profile.ownLang,
-      target_lang: profile.targetLang,
-      target_level: profile.targetLevel,
-      data: {},
-    })
-    .onConflict("user_id")
-    .merge({
-      own_lang: profile.ownLang,
-      target_lang: profile.targetLang,
-      target_level: profile.targetLevel,
+  await db.transaction(async (trx) => {
+    const currentProfile = (await trx("lingocafe.profiles")
+      .where({ user_id: userId })
+      .first()) as ProfileRow | undefined;
+    const diff = buildProfileUpdateDiff(currentProfile, profile);
+
+    if (Object.keys(diff).length === 0) {
+      return;
+    }
+
+    await trx("lingocafe.profiles")
+      .insert({
+        user_id: userId,
+        own_lang: profile.ownLang,
+        target_lang: profile.targetLang,
+        target_level: profile.targetLevel,
+        data: {},
+      })
+      .onConflict("user_id")
+      .merge({
+        own_lang: profile.ownLang,
+        target_lang: profile.targetLang,
+        target_level: profile.targetLevel,
+      });
+
+    await trackReaderEvent({
+      userId,
+      name: "profile-update",
+      data: { diff },
+      db: trx,
     });
+  });
 
   return loadReaderData(userId);
 };
