@@ -2,7 +2,6 @@
 
 ## WIP
 
-
 ## Blocked
 
 - [UT41: ESLint 9 → 10](./blocked/UT41-eslint-9-10/UT41.task.md) | [plan](./blocked/UT41-eslint-9-10/UT41.plan.md) | [notes](./blocked/UT41-eslint-9-10/UT41.notes.md)
@@ -15,9 +14,9 @@
 
 ## Drafts
 
+- [NN45: Implement Books Shelf Design](./drafts/NN45-implement-books-shelf-design/NN45.task.md)
 - [DJ89: Implement Book Details Page Design](./drafts/DJ89-implement-book-details-page-design/DJ89.task.md)
 - [VU18: Implement Books Page Read Design](./drafts/VU18-implement-books-page-read-design/VU18.task.md)
-- [NN45: Implement Books Shelf Design](./drafts/NN45-implement-books-shelf-design/NN45.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)
 - [ABN: Migrate to Prisma ORM](./drafts/ABN-migrate-to-prisma-orm/ABN.task.md)
