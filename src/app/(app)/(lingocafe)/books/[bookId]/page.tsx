@@ -20,6 +20,7 @@ type BookInfoResponse = {
 };
 
 const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
+const collapsedDescriptionMinWords = 30;
 
 const createUnavailableReadingAction = (bookId: string): ReaderBookReadingAction => ({
   kind: "unavailable",
@@ -80,10 +81,12 @@ const MobileBookInfo = ({
   book,
   loading,
   error,
+  collapsedDescriptionMinWords,
 }: {
   book: ReaderBookInfo | null;
   loading: boolean;
   error: string | null;
+  collapsedDescriptionMinWords: number;
 }) => (
   <div className="fixed inset-0 z-[500] overflow-x-hidden bg-background md:hidden">
     <div
@@ -112,7 +115,12 @@ const MobileBookInfo = ({
             {error}
           </div>
         )}
-        {!loading && !error && book && <BookInfoContent book={book} />}
+        {!loading && !error && book && (
+          <BookInfoContent
+            book={book}
+            collapsedDescriptionMinWords={collapsedDescriptionMinWords}
+          />
+        )}
       </div>
     </div>
   </div>
@@ -184,7 +192,12 @@ const BookInfoPage = () => {
       backBtn={{ to: "/books" }}
       policy={{ require: { feature: "page:books", session: true } }}
     >
-      <MobileBookInfo book={book} loading={loading} error={error} />
+      <MobileBookInfo
+        book={book}
+        loading={loading}
+        error={error}
+        collapsedDescriptionMinWords={collapsedDescriptionMinWords}
+      />
 
       <div className="hidden min-w-0 max-w-full md:block">
         {loading && (
@@ -197,7 +210,12 @@ const BookInfoPage = () => {
             {error}
           </div>
         )}
-        {!loading && !error && book && <BookInfoContent book={book} />}
+        {!loading && !error && book && (
+          <BookInfoContent
+            book={book}
+            collapsedDescriptionMinWords={collapsedDescriptionMinWords}
+          />
+        )}
       </div>
     </AppLayout>
   );
