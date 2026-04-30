@@ -24,6 +24,7 @@
 - [BD89: Document LingoCafe Books Data Model for Export App](./BD89-document-lingocafe-books-data-model-for-export-app/BD89.task.md) | [plan](./BD89-document-lingocafe-books-data-model-for-export-app/BD89.plan.md) | [notes](./BD89-document-lingocafe-books-data-model-for-export-app/BD89.notes.md)
 - [NN45: Implement Books Shelf Design](./NN45-implement-books-shelf-design/NN45.task.md) | [plan](./NN45-implement-books-shelf-design/NN45.plan.md) | [notes](./NN45-implement-books-shelf-design/NN45.notes.md)
 - [DJ89: Implement Book Details Page Design](./DJ89-implement-book-details-page-design/DJ89.task.md) | [plan](./DJ89-implement-book-details-page-design/DJ89.plan.md) | [notes](./DJ89-implement-book-details-page-design/DJ89.notes.md)
+- [VU18: Implement Books Page Read Design](./VU18-implement-books-page-read-design/VU18.task.md) | [plan](./VU18-implement-books-page-read-design/VU18.plan.md) | [notes](./VU18-implement-books-page-read-design/VU18.notes.md)
 - [AAA: Initialize backlog [aaa]](./AAA-initialize-backlog-aaa/AAA.task.md)
 - [AAC: Support different public layout based on App-config [aac]](./AAC-support-different-public-layout-based-on-app-config-aac/AAC.task.md)
 - [AAD: General Dark Mode Support [aad]](./AAD-general-dark-mode-support-aad/AAD.task.md)
@@ -113,4 +114,4 @@
 - [AQA: Fix QuickList reorder API [aqa]](./AQA-fix-quicklist-reorder-api-aqa/AQA.task.md)
 - [AQB: Delete checked items [aqb]](./AQB-delete-checked-items-aqb/AQB.task.md)
 - [AQE: Upgrade project to latest major versions [aqe]](./AQE-upgrade-project-to-latest-major-versions-aqe/AQE.task.md)
-- [VU18: Implement Books Page Read Design](./VU18-implement-books-page-read-design/VU18.task.md) | [plan](./VU18-implement-books-page-read-design/VU18.plan.md) | [notes](./VU18-implement-books-page-read-design/VU18.notes.md)
+- [BJ58: Improve Books Data Model With Info JSONB](./BJ58-improve-books-data-model-info-jsonb/BJ58.task.md) | [plan](./BJ58-improve-books-data-model-info-jsonb/BJ58.plan.md) | [notes](./BJ58-improve-books-data-model-info-jsonb/BJ58.notes.md)

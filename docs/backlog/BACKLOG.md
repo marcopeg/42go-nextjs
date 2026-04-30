@@ -2,7 +2,6 @@
 
 ## WIP
 
-- [BJ58: Improve Books Data Model With Info JSONB](./wip/BJ58-improve-books-data-model-info-jsonb/BJ58.task.md) | [plan](./wip/BJ58-improve-books-data-model-info-jsonb/BJ58.plan.md) | [notes](./wip/BJ58-improve-books-data-model-info-jsonb/BJ58.notes.md)
 
 ## Blocked
 
