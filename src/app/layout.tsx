@@ -1,45 +1,84 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+import { getAppInfo } from "@/42go/config/app-config";
+import { InjectAppID } from "@/42go/config/InjectAppID";
+import { Providers } from "@/components/Providers";
+import { Toaster } from "@/components/ui/sonner";
+import { resolvePWAColor, type TColorInput } from "@/42go/pwa/colors";
+import "./tokens.css";
+import "./tailwind.css";
+import { HeadTags } from "@/42go/pwa/HeadTags";
 
-import { ThemeProvider } from '@/components/theme-provider';
-import { AccentColorProvider } from '@/components/accent-color-provider';
-import { TransitionProvider } from '@/components/transition-provider';
-import { RouteChangeProvider } from '@/components/route-change-provider';
-import { RouteChangeLoader } from '@/components/route-change-loader';
-import { AuthProvider } from '@/lib/auth/auth-provider';
-import { LayoutProvider } from '@/components/layout-provider';
-import { Toaster } from '@/components/ui/toaster';
-import appConfig from '@/lib/config';
-import { auth } from '@/lib/auth/auth';
+// Expose Inter via CSS variable to integrate with Tailwind's font-sans token
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
-const inter = Inter({ subsets: ['latin'] });
+export const generateMetadata = async (): Promise<Metadata> => {
+  const { config } = await getAppInfo();
+  const base = (config?.public?.meta || {}) as Metadata;
+  const pwa = config?.public?.pwa;
 
-export const metadata: Metadata = {
-  title: appConfig.title,
-  description: appConfig.subtitle || 'Create Apps with Cursor and Next.js',
+  if (!pwa) return base;
+
+  // Derive supported fields from public.pwa (excluding themeColor - moved to viewport)
+  const derived: Metadata = {
+    applicationName: pwa.name || base.applicationName,
+    // Next metadata appleWebApp
+    appleWebApp: {
+      capable: true,
+      title: pwa.name,
+      statusBarStyle:
+        (pwa.statusBarStyle as "default" | "black" | "black-translucent") ||
+        "default",
+    },
+  };
+
+  return { ...base, ...derived };
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
+export const generateViewport = async (): Promise<Viewport> => {
+  const { config } = await getAppInfo();
+  const pwa = config?.public?.pwa;
+
+  if (!pwa) return {};
+
+  // themeColor goes in viewport as of Next.js 15
+  const themeColorInput = pwa.themeColor as TColorInput | undefined;
+
+  return {
+    themeColor: resolvePWAColor(themeColorInput) || "#000000",
+  };
+};
+
+const RootLayout = async ({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) => {
+  const { id: appID, config } = await getAppInfo();
+  const themeDefault = config?.theme?.default;
+
+  // Conditionally render the app's body based on a recognised configuration
+  // TODO: redirect to a default app?
+  const body = appID ? (
+    <Providers defaultTheme={themeDefault}>{children}</Providers>
+  ) : (
+    <Providers defaultTheme={themeDefault}>not found</Providers>
+  );
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AccentColorProvider>
-            <TransitionProvider>
-              <RouteChangeProvider>
-                <RouteChangeLoader />
-                <AuthProvider session={session}>
-                  <LayoutProvider>{children}</LayoutProvider>
-                </AuthProvider>
-              </RouteChangeProvider>
-              <Toaster />
-            </TransitionProvider>
-          </AccentColorProvider>
-        </ThemeProvider>
+    <html suppressHydrationWarning lang="en" className={inter.variable}>
+      <head>
+        <InjectAppID id={appID} />
+        {/* Global PWA/iOS tags derived from config.public.pwa */}
+        <HeadTags />
+      </head>
+      {/* Use Tailwind font token so themes and utilities stay consistent */}
+      <body className="font-sans">
+        {body}
+        <Toaster richColors />
       </body>
     </html>
   );
-}
+};
+
+export default RootLayout;

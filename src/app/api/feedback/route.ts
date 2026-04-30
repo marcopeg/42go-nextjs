@@ -1,78 +1,90 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { feedback } from '@/lib/db/schema';
-import { v4 as uuidv4 } from 'uuid';
+import { NextResponse } from "next/server";
+import { getDB } from "@/42go/db";
+import { v4 as uuidv4 } from "uuid";
+import { protectRoute } from "@/42go/policy/protectRoute";
+import sanitizeHtml from "sanitize-html";
+import { getAppID } from "@/42go/config/app-config";
 
-// Check if reCAPTCHA is enabled
-const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
-const isCaptchaEnabled = !!RECAPTCHA_SECRET_KEY && RECAPTCHA_SECRET_KEY.length > 0;
-
-// Function to verify reCAPTCHA token
-async function verifyCaptcha(token: string): Promise<boolean> {
-  // If captcha is disabled or token is the special 'captcha-disabled' value, return true
-  if (!isCaptchaEnabled || token === 'captcha-disabled') {
-    return true;
-  }
-
+const feedback = async (request: Request) => {
   try {
-    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `secret=${RECAPTCHA_SECRET_KEY}&response=${token}`,
-    });
+    const {
+      email: rawEmail,
+      message: rawMessage,
+      newsletter,
+    } = await request.json();
 
-    const data = await response.json();
-    return data.success;
-  } catch (error) {
-    console.error('Error verifying captcha:', error);
-    return false;
-  }
-}
+    // Normalize inputs
+    const email = (rawEmail ?? "").toString().trim();
+    let message = (rawMessage ?? "").toString();
 
-export async function POST(request: NextRequest) {
-  try {
-    const { email, message, captchaToken } = await request.json();
+    // Enforce size limits
+    if (message.length > 10_000) message = message.slice(0, 10_000);
 
     // Validate input
     if (!email || !message) {
-      return NextResponse.json({ error: 'Email and message are required' }, { status: 400 });
-    }
-
-    // Only require captcha token if captcha is enabled
-    if (isCaptchaEnabled && !captchaToken) {
       return NextResponse.json(
-        { error: 'Captcha token is required when captcha is enabled' },
+        { error: "Email and message are required" },
+        { status: 400 }
+      );
+    }
+    // Email regex validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "Invalid email format" },
         { status: 400 }
       );
     }
 
-    // Verify captcha
-    const isValidCaptcha = await verifyCaptcha(captchaToken || 'captcha-disabled');
-    if (!isValidCaptcha) {
-      return NextResponse.json({ error: 'Invalid captcha. Please try again.' }, { status: 400 });
+    // Sanitize message to avoid dangerous HTML/script content
+    const sanitizedMessage = sanitizeHtml(message, {
+      allowedTags: [], // store plain text only
+      allowedAttributes: {},
+      disallowedTagsMode: "discard",
+    }).trim();
+    const normalizedOriginal = message.trim();
+    if (sanitizedMessage !== normalizedOriginal) {
+      return NextResponse.json(
+        {
+          error: "unacceptable",
+          message: "Message contains disallowed content",
+        },
+        { status: 406 }
+      );
     }
 
     // Get IP address and user agent
-    const ipAddress = request.headers.get('x-forwarded-for') || 'unknown';
-    const userAgent = request.headers.get('user-agent');
+    const ip_address = request.headers.get("x-forwarded-for") || "unknown";
+    const user_agent = request.headers.get("user-agent") || "unknown";
 
+    const db = getDB();
+    const app_id = await getAppID();
+    if (!app_id) {
+      return NextResponse.json(
+        { error: "Unable to determine app context" },
+        { status: 404 }
+      );
+    }
     // Insert feedback into database
-    await db.insert(feedback).values({
+    await db("feedbacks").insert({
       id: uuidv4(),
+      app_id,
       email,
-      message,
-      ipAddress,
-      userAgent,
+      message: sanitizedMessage,
+      newsletter_subscription: !!newsletter,
+      ip_address,
+      user_agent,
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error submitting feedback:', error);
+  } catch {
     return NextResponse.json(
-      { error: 'An error occurred while submitting your feedback' },
+      { error: "An error occurred while submitting your feedback" },
       { status: 500 }
     );
   }
-}
+};
+
+export const POST = protectRoute(feedback, {
+  require: { feature: "api:feedback" },
+});
