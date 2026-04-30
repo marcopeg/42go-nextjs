@@ -1,0 +1,19 @@
+{
+  "name": "Node+Postgres Dev",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "postCreateCommand": "sudo service postgresql start && npm install && make db.init",
+  "postStartCommand": "npm run dev",
+  "forwardPorts": [5432, 3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Web App",
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
+    }
+  },
+  "remoteEnv": {
+    "DATABASE_URL": "postgres://postgres:postgres@localhost:5432/postgres"
+  }
+}

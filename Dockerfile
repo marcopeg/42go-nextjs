@@ -1,52 +1,89 @@
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
+# ==========================================
+# STAGE 1: Dependencies Cache Layer
+# ==========================================
+FROM node:22-alpine AS deps
 WORKDIR /app
 
 # Install dependencies only when needed
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+# ==========================================
+# STAGE 2: Build Dependencies
+# ==========================================
+FROM node:22-alpine AS build-deps
+WORKDIR /app
+
+# Install all dependencies (including devDependencies)
+COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Stage 2: Builder
-FROM node:20-alpine AS builder
+# ==========================================
+# STAGE 3: Builder Stage
+# ==========================================
+FROM node:22-alpine AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+
+# Copy node_modules from build-deps stage
+COPY --from=build-deps /app/node_modules ./node_modules
+
+# Copy source code and configuration files
+# Copy source code and configuration files (respecting .dockerignore to exclude secrets)
 COPY . .
 
 # Set environment variables for production build
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
-ENV SKIP_ENV_VALIDATION true
-ENV NEXT_BUILD_OUTPUT standalone
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+ENV SKIP_ENV_VALIDATION=true
 
-# Build the application
+# Build the application with standalone output
 RUN npm run build
 
-# Stage 3: Runner
-FROM node:20-alpine AS runner
+# ==========================================
+# STAGE 4: Ultra-Slim Production Runner
+# ==========================================
+FROM node:22-alpine AS runner
+
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Set production environment
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+ENV NODE_OPTIONS="--max-old-space-size=512"
+
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV PORT 3000
+# Copy production dependencies
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Copy Next.js standalone output
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Copy necessary files from builder
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# Copy package.json for proper startup
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
-# Add the docs folder to the image
-COPY docs .
+# Remove any accidentally included env files from standalone output (defense in depth)
+RUN rm -f .env .env.* || true
 
-# Set correct permissions
-RUN chown -R nextjs:nodejs /app
-
+# Switch to non-root user
 USER nextjs
 
-EXPOSE 3000
-# EXPOSE 4000
-# ENV HOSTNAME "0.0.0.0"
+# Health check for Next.js application (disabled for debugging)
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+#     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-CMD ["node", "server.js"]
+# Expose port
+EXPOSE 3000
+
+# Start the Next.js application
+CMD echo "Starting Next.js server..." && \
+    echo "Environment: NODE_ENV=$NODE_ENV, PORT=$PORT, HOSTNAME=$HOSTNAME" && \
+    echo "Files in /app:" && ls -la && \
+    echo "Starting server.js..." && \
+    node server.js

@@ -1,23 +1,61 @@
-import type { NextConfig } from 'next';
+import type { NextConfig } from "next";
+
+const isDevelopment = process.env.NODE_ENV === "development";
+
+// React/Turbopack dev tooling needs eval and live HMR connections.
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: https:",
+  isDevelopment
+    ? "connect-src 'self' ws: wss: http: https:"
+    : "connect-src 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  devIndicators: false,
+  allowedDevOrigins: [
+    "42go.ngrok.app",
+    "lg42go.ngrok.app",
+    "nt42go.ngrok.app",
+    "ql42go.ngrok.app",
+  ],
 
-  // Disable React Strict Mode to prevent double rendering in development
-  // This will reduce the number of duplicate API calls (like /api/auth/session)
-  // reactStrictMode: false,
+  // Enable standalone output for optimized production builds
+  output: "standalone",
 
-  // Enable MDX support
-  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
+  // Official Next.js solution for external packages like Knex
+  // This prevents Next.js from trying to bundle all Knex dialects
+  // https://github.com/vercel/next.js/issues/52091#issuecomment-1623722996
+  serverExternalPackages: ["knex"],
 
-  // Enable standalone mode for production
-  output:
-    process.env.NEXT_BUILD_OUTPUT === 'standalone'
-      ? 'standalone'
-      : process.env.NEXT_BUILD_OUTPUT === 'export'
-        ? 'export'
-        : undefined,
+  // Security headers
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: contentSecurityPolicy,
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
