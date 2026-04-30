@@ -20,7 +20,7 @@ import { PricingPage } from "@/config/pricing-page";
 export default {
   name: "DEFAULT APP",
   match: {
-    url: ["^next.42go.dev+$", "^42go.vercel.app+$", "^localhost:\\d+$"],
+    url: ["^next.42go.dev+$", "^42go.ngrok.app+$", "^localhost:\\d+$"],
     header: {
       mode: "all",
       keys: [

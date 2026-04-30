@@ -5,7 +5,7 @@ export default {
   match: {
     url: [
       "^notes.42go.dev+$",
-      "^notes42go.ngrok.app+$",
+      "^nt42go.ngrok.app+$",
       "^notes\\.localhost:\\d+$",
     ],
   },

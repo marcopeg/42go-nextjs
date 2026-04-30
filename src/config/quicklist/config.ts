@@ -7,7 +7,7 @@ export default {
   match: {
     url: [
       "^quicklist.42go.dev+$",
-      "^42go.ngrok.app+$",
+      "^ql42go.ngrok.app+$",
       "^quicklist\\.localhost:\\d+$",
     ],
   },

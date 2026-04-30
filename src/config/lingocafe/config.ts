@@ -6,7 +6,7 @@ export default {
   match: {
     url: [
       "^read.lingocafe.app+$",
-      "^lg.ngrok.app+$",
+      "^lg42go.ngrok.app+$",
       "^lingocafe\\.localhost:\\d+$",
     ],
   },

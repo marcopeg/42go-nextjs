@@ -4,7 +4,7 @@ sessionSlug: "lingocafe-seed-data-cleanup"
 goal: "LingoCafe seed data cleanup"
 status: "active"
 startedAt: "2026-04-29T16:20:09+02:00"
-updatedAt: "2026-04-29T16:20:27+02:00"
+updatedAt: "2026-04-30T11:03:21+02:00"
 memoryFile: "./memory.md"
 ---
 # Vibe Session — LingoCafe seed data cleanup
@@ -33,3 +33,11 @@ Updated knex/seeds/20260427151000_init_lingocafe_data.js so it no longer creates
 ### 2026-04-29 16:20 — LingoCafe seed user association
 
 Promoted stable context into `docs/vibe-sessions/2604291620.lingocafe-seed-data-cleanup/memory.md`. Recorded the durable seed rule that LingoCafe profiles attach to the default john.doe@example.com user and that the initial LingoCafe seed remains profile-only.
+
+### 2026-04-30 11:03 — Ngrok dev origin context
+
+Promoted stable context into `docs/vibe-sessions/2604291620.lingocafe-seed-data-cleanup/memory.md`. Promoted the stable ngrok/default-app routing result and the Next dev allowedDevOrigins requirement for cross-site _next assets.
+
+### 2026-04-30 11:03 — Ngrok diagnosis and fix
+
+Verified 42go.ngrok.app resolves as the default app after the config move, so it no longer injects a default theme stylesheet. Reproduced Next dev returning 403 for cross-site _next asset requests through ngrok; allowedDevOrigins for 42go.ngrok.app makes the same asset request return JavaScript with 200.

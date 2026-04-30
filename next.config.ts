@@ -15,6 +15,13 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: [
+    "42go.ngrok.app",
+    "lg42go.ngrok.app",
+    "nt42go.ngrok.app",
+    "ql42go.ngrok.app",
+  ],
+
   // Enable standalone output for optimized production builds
   output: "standalone",
 
