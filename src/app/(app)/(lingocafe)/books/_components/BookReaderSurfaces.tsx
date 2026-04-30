@@ -289,14 +289,15 @@ export const BookReaderDesktopSurface = ({
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
         {(!bookPage || loading || error) && <ReaderState loading={loading} error={error} />}
-        {!loading && !error && bookPage && <BookPageReader bookPage={bookPage} />}
+        {!loading && !error && bookPage && (
+          <>
+            <BookPageReader bookPage={bookPage} />
+            <div className="mx-auto flex w-full max-w-[680px] items-center justify-center px-1 pb-24 pt-4">
+              <BookProgress bookPage={bookPage} />
+            </div>
+          </>
+        )}
       </div>
-
-      {bookPage && (
-        <footer className="flex h-24 shrink-0 items-center justify-center border-t px-8">
-          <BookProgress bookPage={bookPage} />
-        </footer>
-      )}
     </section>
   </div>
 );
@@ -326,14 +327,15 @@ export const BookReaderMobileSurface = ({
 
       <div ref={scrollRef} className="min-w-0 flex-1 overflow-y-auto px-5 py-6">
         {(!bookPage || loading || error) && <ReaderState loading={loading} error={error} />}
-        {!loading && !error && bookPage && <BookPageReader bookPage={bookPage} />}
+        {!loading && !error && bookPage && (
+          <>
+            <BookPageReader bookPage={bookPage} />
+            <div className="pb-10 pt-4">
+              <BookProgress bookPage={bookPage} compact />
+            </div>
+          </>
+        )}
       </div>
-
-      {bookPage && (
-        <footer className="shrink-0 border-t px-5 py-4">
-          <BookProgress bookPage={bookPage} compact />
-        </footer>
-      )}
     </div>
   </div>
 );
