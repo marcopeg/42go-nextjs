@@ -192,6 +192,9 @@ migrate.status:
 seed:
 	npx knex seed:run
 
+seed.file:
+	npx knex seed:run --specific=$(file)
+
 db.start:
 	@echo "Starting PostgreSQL database..."
 	@docker-compose up -d db
