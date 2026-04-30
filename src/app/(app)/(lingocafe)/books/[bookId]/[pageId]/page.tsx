@@ -31,6 +31,11 @@ const parseProgressParam = (value: string | null) => {
   return Number.isFinite(parsed) ? clampProgressBps(parsed) : 0;
 };
 
+const normalizeInfo = (info: unknown): Record<string, unknown> => {
+  if (!info || typeof info !== "object" || Array.isArray(info)) return {};
+  return info as Record<string, unknown>;
+};
+
 const isNeighbor = (value: unknown): value is ReaderBookPageNeighbor => {
   if (!value || typeof value !== "object") return false;
   const neighbor = value as Partial<ReaderBookPageNeighbor>;
@@ -68,6 +73,7 @@ const normalizeBookPage = (
 
   if (
     typeof bookPage.book.id !== "string" ||
+    typeof bookPage.book.project !== "string" ||
     typeof bookPage.book.lang !== "string" ||
     typeof bookPage.book.level !== "string" ||
     typeof bookPage.book.title !== "string" ||
@@ -85,10 +91,12 @@ const normalizeBookPage = (
   return {
     book: {
       id: bookPage.book.id,
+      project: bookPage.book.project,
       lang: bookPage.book.lang,
       level: bookPage.book.level,
       title: bookPage.book.title,
       author: bookPage.book.author,
+      info: normalizeInfo(bookPage.book.info),
       cover: bookPage.book.cover,
       coverFallback: bookPage.book.coverFallback,
     },

@@ -39,13 +39,14 @@ The content repository can organize books however it wants internally, but the e
 ```ts
 type ExportBook = {
   id: string;
+  project: string;
   lang: string;
   level: string;
   title: string;
   description: string;
   author: string;
   tags: string[];
-  cover: string | null;
+  info: Record<string, unknown>;
   publishedAt: string | null;
   pages: ExportBookPage[];
 };
@@ -63,11 +64,13 @@ type ExportBookPage = {
 
 Typical source files may include:
 
-- A YAML file with book-level metadata: `id`, `lang`, `level`, `title`, `description`, `author`, `tags`, `cover`, and `publishedAt`.
+- A YAML file with book-level metadata: `id`, `project`, `lang`, `level`, `title`, `description`, `author`, `tags`, `info`, and `publishedAt`.
 - A YAML file with book structure: parts, sections, chapters, titles, summaries, and source markdown paths.
 - Markdown files with the actual readable content for each exported page.
 
 The export application is responsible for turning those source files into SQL rows.
+
+Cover assets are not persisted in `lingocafe.books`. The reader resolves covers through the deterministic public path `/images/lingocafe/<book-id>.jpg` and falls back to `/images/lingocafe/placeholder.jpg` when the book-specific asset is missing.
 
 ## Ownership Boundaries
 
@@ -90,13 +93,14 @@ The content export owns the canonical page set only for the books included in th
 | Column | Type | Required | Source mapping |
 | --- | --- | --- | --- |
 | `id` | `text` | yes | Stable book ID from the content repository. |
+| `project` | `text` | yes | Source project or export project that owns the book. |
 | `lang` | `text` | yes | Book language code, such as `en`, `sv`, `de`, `it`, or `es`. |
 | `level` | `text` | yes | Reading level, such as `a2`, `b1`, or `b2`. |
 | `title` | `text` | yes | Book display title from metadata. |
 | `description` | `text` | yes | Full book description from metadata. |
 | `author` | `text` | yes | Author or adaptation credit from metadata. |
 | `tags` | `text[]` | yes | Tag list from metadata. Use an empty array when there are no tags. |
-| `cover` | `text` | no | Optional public cover path. |
+| `info` | `jsonb` | yes | Flexible book metadata object. Use `{}` when there is no extra metadata. |
 | `published_at` | `timestamp` | no | Optional publication timestamp for the reader inventory. |
 | `created_at` | `timestamp` | yes | Set by SQL on insert. |
 | `updated_at` | `timestamp` | yes | Refresh on every export update. |
@@ -260,50 +264,54 @@ BEGIN;
 WITH exported_book AS (
   SELECT
     'nils-holgersson-sv-a2'::text AS id,
+    'nils-holgersson'::text AS project,
     'sv'::text AS lang,
     'a2'::text AS level,
     'Nils Holgerssons underbara resa'::text AS title,
     'A Swedish reader edition.'::text AS description,
     'LingoCafe Content'::text AS author,
     ARRAY['resa', 'sverige']::text[] AS tags,
-    'images/lingocafe/nils-holgersson-sv-a2.jpg'::text AS cover,
+    '{"words_count": 12400, "chapters_count": 18}'::jsonb AS info,
     '2026-01-12 09:00:00'::timestamp AS published_at
 )
 INSERT INTO lingocafe.books (
   id,
+  project,
   lang,
   level,
   title,
   description,
   author,
   tags,
-  cover,
+  info,
   published_at,
   created_at,
   updated_at
 )
 SELECT
   id,
+  project,
   lang,
   level,
   title,
   description,
   author,
   tags,
-  cover,
+  info,
   published_at,
   now(),
   now()
 FROM exported_book
 ON CONFLICT (id) DO UPDATE
 SET
+  project = EXCLUDED.project,
   lang = EXCLUDED.lang,
   level = EXCLUDED.level,
   title = EXCLUDED.title,
   description = EXCLUDED.description,
   author = EXCLUDED.author,
   tags = EXCLUDED.tags,
-  cover = EXCLUDED.cover,
+  info = EXCLUDED.info,
   published_at = EXCLUDED.published_at,
   updated_at = now();
 
@@ -417,73 +425,79 @@ WITH exported_books AS (
     VALUES
       (
         'book-a'::text,
+        'project-a'::text,
         'en'::text,
         'a2'::text,
         'Book A'::text,
         'Book A description.'::text,
         'LingoCafe Content'::text,
         ARRAY['demo']::text[],
-        NULL::text,
+        '{}'::jsonb,
         NULL::timestamp
       ),
       (
         'book-b'::text,
+        'project-b'::text,
         'sv'::text,
         'b1'::text,
         'Book B'::text,
         'Book B description.'::text,
         'LingoCafe Content'::text,
         ARRAY['demo']::text[],
-        NULL::text,
+        '{"words_count": 9800}'::jsonb,
         NULL::timestamp
       )
   ) AS book_data (
     id,
+    project,
     lang,
     level,
     title,
     description,
     author,
     tags,
-    cover,
+    info,
     published_at
   )
 )
 INSERT INTO lingocafe.books (
   id,
+  project,
   lang,
   level,
   title,
   description,
   author,
   tags,
-  cover,
+  info,
   published_at,
   created_at,
   updated_at
 )
 SELECT
   id,
+  project,
   lang,
   level,
   title,
   description,
   author,
   tags,
-  cover,
+  info,
   published_at,
   now(),
   now()
 FROM exported_books
 ON CONFLICT (id) DO UPDATE
 SET
+  project = EXCLUDED.project,
   lang = EXCLUDED.lang,
   level = EXCLUDED.level,
   title = EXCLUDED.title,
   description = EXCLUDED.description,
   author = EXCLUDED.author,
   tags = EXCLUDED.tags,
-  cover = EXCLUDED.cover,
+  info = EXCLUDED.info,
   published_at = EXCLUDED.published_at,
   updated_at = now();
 
@@ -597,13 +611,14 @@ Recommended mapping:
 | Source concept | Target table | Target column |
 | --- | --- | --- |
 | Book slug or canonical ID | `lingocafe.books` | `id` |
+| Source project | `lingocafe.books` | `project` |
 | Book language | `lingocafe.books` | `lang` |
 | Book CEFR level | `lingocafe.books` | `level` |
 | Book title | `lingocafe.books` | `title` |
 | Book description | `lingocafe.books` | `description` |
 | Book author/adaptation credit | `lingocafe.books` | `author` |
 | Book tags | `lingocafe.books` | `tags` |
-| Cover asset path | `lingocafe.books` | `cover` |
+| Generic book metadata | `lingocafe.books` | `info` |
 | Publication timestamp | `lingocafe.books` | `published_at` |
 | Chapter/section ID | `lingocafe.books_pages` | `id` |
 | Chapter/section order | `lingocafe.books_pages` | `position` |

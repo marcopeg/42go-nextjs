@@ -36,12 +36,13 @@ type ProfileUpdateDiff = Partial<
 
 type BookRow = {
   id: string;
+  project: string;
   lang: string;
   level: string;
   title: string;
   author: string;
   tags: string[] | string | null;
-  cover: string | null;
+  info: unknown;
   published_at: Date | string | null;
   created_at: Date | string;
   updated_at: Date | string;
@@ -83,7 +84,7 @@ type BookPageDetailRow = BookPageRow & {
 
 type BookPageBookRow = Pick<
   BookInfoRow,
-  "id" | "lang" | "level" | "title" | "author" | "cover"
+  "id" | "project" | "lang" | "level" | "title" | "author" | "info"
 >;
 
 type BookProgressRow = {
@@ -113,10 +114,12 @@ type BookPageNeighbor = {
 export type BookPageDetail = {
   book: {
     id: string;
+    project: string;
     lang: string;
     level: string;
     title: string;
     author: string;
+    info: Record<string, unknown>;
     cover: string | null;
     coverFallback: string;
   };
@@ -198,17 +201,13 @@ const normalizeTags = (tags: BookRow["tags"]): string[] => {
     .filter(Boolean);
 };
 
-const normalizePublicCoverUrl = (cover: string | null) => {
-  const value = cover?.trim();
-  if (!value) return null;
-  if (value.startsWith("http://") || value.startsWith("https://")) {
-    return null;
-  }
-  return value.startsWith("/") ? value : `/${value}`;
+const normalizeBookInfo = (info: unknown): Record<string, unknown> => {
+  if (!info || typeof info !== "object" || Array.isArray(info)) return {};
+  return info as Record<string, unknown>;
 };
 
-const resolveBookCover = (book: Pick<BookRow, "id" | "cover">) =>
-  normalizePublicCoverUrl(book.cover) || `${coverBaseUrl}/${book.id}.jpg`;
+const resolveBookCover = (book: Pick<BookRow, "id">) =>
+  `${coverBaseUrl}/${book.id}.jpg`;
 
 const buildReadPageHref = (
   bookId: string,
@@ -264,10 +263,12 @@ const mapBookPageDetail = ({
 }): BookPageDetail => ({
   book: {
     id: book.id,
+    project: book.project,
     lang: book.lang,
     level: book.level,
     title: book.title,
     author: book.author,
+    info: normalizeBookInfo(book.info),
     cover: resolveBookCover(book),
     coverFallback: coverFallbackUrl,
   },
@@ -368,11 +369,13 @@ const mapProfile = (profile: ProfileRow | undefined) => {
 
 const mapBook = (book: BookRow) => ({
   id: book.id,
+  project: book.project,
   lang: book.lang,
   level: book.level,
   title: book.title,
   author: book.author,
   tags: normalizeTags(book.tags),
+  info: normalizeBookInfo(book.info),
   cover: resolveBookCover(book),
   coverFallback: coverFallbackUrl,
   publishedAt: toISO(book.published_at),
@@ -415,12 +418,13 @@ export const loadReaderData = async (userId: string) => {
   const booksQuery = db("lingocafe.books")
     .select(
       "id",
+      "project",
       "lang",
       "level",
       "title",
       "author",
       "tags",
-      "cover",
+      "info",
       "published_at",
       "created_at",
       "updated_at"
@@ -448,13 +452,14 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
   const book = (await db("lingocafe.books")
     .select(
       "id",
+      "project",
       "lang",
       "level",
       "title",
       "author",
       "tags",
       "description",
-      "cover",
+      "info",
       "published_at",
       "created_at",
       "updated_at"
@@ -498,7 +503,7 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
 export const loadBookPage = async (bookId: string, pageId: string) => {
   const db = getDB();
   const book = (await db("lingocafe.books")
-    .select("id", "lang", "level", "title", "author", "cover")
+    .select("id", "project", "lang", "level", "title", "author", "info")
     .where({ id: bookId })
     .first()) as BookPageBookRow | undefined;
 

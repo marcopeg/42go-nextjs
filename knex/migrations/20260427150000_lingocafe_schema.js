@@ -22,13 +22,14 @@ exports.up = async function up(knex) {
 
   await knex.schema.withSchema("lingocafe").createTable("books", (table) => {
     table.text("id").primary().notNullable();
+    table.text("project").notNullable();
     table.text("lang").notNullable();
     table.text("level").notNullable();
     table.text("title").notNullable();
     table.text("description").notNullable();
     table.text("author").notNullable();
     table.specificType("tags", "text[]").notNullable().defaultTo("{}");
-    table.text("cover").nullable();
+    table.jsonb("info").notNullable().defaultTo(knex.raw(`'{}'::jsonb`));
     table.timestamp("published_at").nullable();
     table.timestamp("created_at").notNullable().defaultTo(knex.fn.now());
     table.timestamp("updated_at").notNullable().defaultTo(knex.fn.now());

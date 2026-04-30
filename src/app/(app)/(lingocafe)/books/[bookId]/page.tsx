@@ -22,6 +22,11 @@ type BookInfoResponse = {
 const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
 const collapsedDescriptionMinWords = 30;
 
+const normalizeInfo = (info: unknown): Record<string, unknown> => {
+  if (!info || typeof info !== "object" || Array.isArray(info)) return {};
+  return info as Record<string, unknown>;
+};
+
 const createUnavailableReadingAction = (bookId: string): ReaderBookReadingAction => ({
   kind: "unavailable",
   label: "No pages available",
@@ -68,6 +73,7 @@ const normalizeBookInfo = (payload: Partial<BookInfoResponse>) => {
 
   return {
     ...book,
+    info: normalizeInfo(book.info),
     cover: book.cover ?? null,
     coverFallback: book.coverFallback || coverFallbackUrl,
     tags: Array.isArray(book.tags) ? book.tags : [],

@@ -68,11 +68,17 @@ const fallbackLanguages = {
 };
 const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
 
+const normalizeBookInfo = (info: unknown): Record<string, unknown> => {
+  if (!info || typeof info !== "object" || Array.isArray(info)) return {};
+  return info as Record<string, unknown>;
+};
+
 const normalizeReaderData = (payload: Partial<ReaderData>): ReaderData => ({
   profile: payload.profile ?? null,
   books: Array.isArray(payload.books)
     ? payload.books.map((book) => ({
         ...book,
+        info: normalizeBookInfo(book.info),
         cover: book.cover ?? null,
         coverFallback: book.coverFallback || coverFallbackUrl,
       }))

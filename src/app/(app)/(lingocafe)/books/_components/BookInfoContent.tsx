@@ -70,7 +70,17 @@ const formatLanguage = (lang: string) =>
   `${languageNames[lang.toLowerCase()] || lang.toUpperCase()} (${lang.toUpperCase()})`;
 
 const formatCount = (count: number, singular: string, plural: string) =>
-  `${count} ${count === 1 ? singular : plural}`;
+  `${new Intl.NumberFormat().format(count)} ${count === 1 ? singular : plural}`;
+
+const getOptionalCount = (info: Record<string, unknown>, key: string) => {
+  const value = info[key];
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    return Math.round(value);
+  }
+  if (typeof value !== "string" || value.trim() === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed) : null;
+};
 
 const isChapterPage = (page: ReaderBookInfoPage) =>
   page.kind.toLowerCase() === "chapter";
@@ -414,7 +424,47 @@ export const BookInfoContent = ({
   book,
   collapsedDescriptionMinWords,
 }: BookInfoContentProps) => {
-  const chapterCount = getChapterCount(book.pages);
+  const wordsCount = getOptionalCount(book.info, "words_count");
+  const infoChaptersCount = getOptionalCount(book.info, "chapters_count");
+  const metricItems = [
+    {
+      key: "language",
+      icon: Globe2,
+      label: "Language",
+      value: formatLanguage(book.lang),
+    },
+    {
+      key: "level",
+      icon: GraduationCap,
+      label: "Level",
+      value: book.level.toUpperCase(),
+    },
+    wordsCount === null
+      ? null
+      : {
+          key: "words",
+          icon: FileText,
+          label: "Words",
+          value: new Intl.NumberFormat().format(wordsCount),
+        },
+    infoChaptersCount === null
+      ? null
+      : {
+          key: "chapters",
+          icon: BookOpen,
+          label: "Chapters",
+          value: new Intl.NumberFormat().format(infoChaptersCount),
+        },
+  ].filter(
+    (
+      item
+    ): item is {
+      key: string;
+      icon: LucideIcon;
+      label: string;
+      value: string;
+    } => item !== null
+  );
 
   return (
     <div className="min-w-0 max-w-full space-y-8 md:w-full md:max-w-5xl md:pl-10 md:space-y-10">
@@ -427,9 +477,14 @@ export const BookInfoContent = ({
           />
 
           <div className="mt-5 hidden gap-3 py-4 md:grid">
-            <MetaItem icon={Globe2} label="Language" value={formatLanguage(book.lang)} />
-            <MetaItem icon={GraduationCap} label="Level" value={book.level.toUpperCase()} />
-            <MetaItem icon={FileText} label="Chapters" value={String(chapterCount)} />
+            {metricItems.map((item) => (
+              <MetaItem
+                key={item.key}
+                icon={item.icon}
+                label={item.label}
+                value={item.value}
+              />
+            ))}
           </div>
         </aside>
 
@@ -443,22 +498,14 @@ export const BookInfoContent = ({
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 md:hidden">
-            <MobileMetaItem
-              icon={GraduationCap}
-              value={book.level.toUpperCase()}
-              className="justify-start"
-            />
-            <MobileMetaItem
-              icon={Globe2}
-              value={book.lang.toUpperCase()}
-              className="justify-center"
-            />
-            <MobileMetaItem
-              icon={FileText}
-              value={String(chapterCount)}
-              className="justify-end"
-            />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:hidden">
+            {metricItems.map((item) => (
+              <MobileMetaItem
+                key={item.key}
+                icon={item.icon}
+                value={item.value}
+              />
+            ))}
           </div>
 
           <BookTags tags={book.tags} />

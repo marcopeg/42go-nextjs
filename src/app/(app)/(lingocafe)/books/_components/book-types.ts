@@ -1,10 +1,12 @@
 export type ReaderBook = {
   id: string;
+  project: string;
   lang: string;
   level: string;
   title: string;
   author: string;
   tags: string[];
+  info: Record<string, unknown>;
   cover: string | null;
   coverFallback: string;
   publishedAt: string | null;
@@ -51,10 +53,12 @@ export type ReaderBookPageNeighbor = {
 export type ReaderBookPage = {
   book: {
     id: string;
+    project: string;
     lang: string;
     level: string;
     title: string;
     author: string;
+    info: Record<string, unknown>;
     cover: string | null;
     coverFallback: string;
   };
