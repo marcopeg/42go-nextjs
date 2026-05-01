@@ -15,6 +15,7 @@
 
 ## Drafts
 
+- [DP94: Reading Scroll Indicator on Book Page](./drafts/DP94-reading-scroll-indicator/DP94.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)
 - [ABN: Migrate to Prisma ORM](./drafts/ABN-migrate-to-prisma-orm/ABN.task.md)
