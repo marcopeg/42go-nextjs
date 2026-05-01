@@ -2,7 +2,6 @@ import Link from "next/link";
 // import { Heart, MoreHorizontal } from "lucide-react";
 
 import { BookCover } from "@/app/(app)/(lingocafe)/books/_components/BookCover";
-import { BookTags } from "@/app/(app)/(lingocafe)/books/_components/BookTags";
 import type { ReaderBook } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 
 type BookCardProps = {
@@ -28,45 +27,49 @@ type BookCardProps = {
 // );
 
 export const BookCard = ({ book }: BookCardProps) => {
-  const languageLevel = `${book.lang.toUpperCase()} / ${book.level.toUpperCase()}`;
+  const coverTags = book.tags.slice(0, 3);
 
   return (
-    <article className="group w-full min-w-0 max-w-sm overflow-hidden rounded-lg border bg-card shadow-sm transition-colors hover:bg-muted/20 focus-within:ring-2 focus-within:ring-ring/50 md:w-56 md:max-w-56 md:self-stretch">
+    <article className="group min-w-0 overflow-hidden rounded-lg shadow-sm transition-transform duration-200 hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-ring/60">
       <Link
         href={`/books/${encodeURIComponent(book.id)}`}
-        className="flex h-full min-w-0 max-w-full flex-col outline-none"
+        className="relative block min-w-0 outline-none"
         aria-label={`Open ${book.title} details`}
       >
-        <div className="relative">
-          <BookCover
-            book={book}
-            className="w-full rounded-b-none border-0"
-            sizes="(min-width: 768px) 224px, 92vw"
-          />
-          {/* <MorePlaceholder /> */}
+        <BookCover
+          book={book}
+          className="w-full rounded-lg border-0"
+          imageClassName="object-cover"
+          sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+        />
+
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-black/70 via-black/35 to-transparent"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/75 via-black/35 to-transparent"
+        />
+
+        <div className="pointer-events-none absolute inset-x-0 top-0 p-3 sm:p-4">
+          <h2 className="line-clamp-4 break-words font-serif text-[1.05rem] font-bold leading-tight tracking-normal text-amber-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] sm:text-xl md:text-2xl">
+            {book.title}
+          </h2>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col p-5">
-          <div className="flex min-h-36 min-w-0 items-start gap-3">
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <h2 className="line-clamp-4 break-words text-xl font-semibold leading-tight tracking-normal text-foreground">
-                {book.title}
-              </h2>
-              <p className="line-clamp-2 break-words text-base text-muted-foreground">
-                {book.author}
-              </p>
-            </div>
-            {/* <FavoritePlaceholder /> */}
+        {coverTags.length > 0 && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap gap-1.5 p-3 sm:gap-2 sm:p-4">
+            {coverTags.map((tag) => (
+              <span
+                key={tag}
+                className="max-w-full truncate rounded-md bg-black/45 px-2 py-1 text-[0.65rem] font-medium leading-none text-amber-50 shadow-sm backdrop-blur-sm sm:text-xs"
+              >
+                {tag}
+              </span>
+            ))}
           </div>
-
-          <div className="mt-auto space-y-4">
-            <span className="inline-flex w-fit rounded-full bg-muted px-3 py-1 text-sm font-semibold uppercase text-foreground">
-              {languageLevel}
-            </span>
-
-            <BookTags tags={book.tags} />
-          </div>
-        </div>
+        )}
       </Link>
     </article>
   );

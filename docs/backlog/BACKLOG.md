@@ -2,7 +2,6 @@
 
 ## WIP
 
-- [MA34: Point LingoCafe Book Covers to External Static Assets](./wip/MA34-point-lingocafe-book-covers-to-external-static-assets/MA34.task.md) | [plan](./wip/MA34-point-lingocafe-book-covers-to-external-static-assets/MA34.plan.md)
 
 ## Blocked
 
@@ -16,7 +15,7 @@
 
 ## Drafts
 
-- [WO85: Improve LingoCafe Book Card Image-First Design](./drafts/WO85-improve-lingocafe-book-card-image-first-design/WO85.task.md)
+- [XI31: Fix Reader Scroll Position Progress](./drafts/XI31-fix-reader-scroll-position-progress/XI31.task.md) | [plan](./drafts/XI31-fix-reader-scroll-position-progress/XI31.plan.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)
 - [ABN: Migrate to Prisma ORM](./drafts/ABN-migrate-to-prisma-orm/ABN.task.md)

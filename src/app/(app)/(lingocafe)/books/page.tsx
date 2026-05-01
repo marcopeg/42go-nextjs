@@ -293,7 +293,7 @@ const BooksPage = () => {
         )}
 
         {!loading && !showProfileForm && data && data.books.length > 0 && (
-          <div className="flex min-w-0 max-w-full flex-col gap-6 md:flex-row md:flex-wrap md:items-start">
+          <div className="grid min-w-0 max-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {data.books.map((book) => (
               <BookCard key={book.id} book={book} />
             ))}
