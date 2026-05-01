@@ -93,6 +93,12 @@ type BookProgressRow = {
   progress_bps: number;
 };
 
+type BookProgress = {
+  bookId: string;
+  pageId: string;
+  progressBps: number;
+};
+
 type BookReadingAction = {
   kind: "start" | "resume" | "unavailable";
   label: "Read now" | "Continue reading" | "No pages available";
@@ -408,6 +414,12 @@ const mapBookInfoPage = (page: BookInfoPageRow): BookInfoPageSummary => ({
   href: buildReadPageHref(page.book_id, page.id),
 });
 
+const mapBookProgress = (progress: BookProgressRow): BookProgress => ({
+  bookId: progress.book_id,
+  pageId: progress.page_id,
+  progressBps: progress.progress_bps,
+});
+
 export const loadReaderData = async (userId: string) => {
   const db = getDB();
   const languages = getReaderLanguages();
@@ -547,6 +559,16 @@ export const loadBookPage = async (bookId: string, pageId: string) => {
   return mapBookPageDetail({ book, page, previous, next, pages });
 };
 
+export const loadBookProgress = async (userId: string, bookId: string) => {
+  const db = getDB();
+  const progress = (await db("lingocafe.books_progress")
+    .select("book_id", "page_id", "progress_bps")
+    .where({ user_id: userId, book_id: bookId })
+    .first()) as BookProgressRow | undefined;
+
+  return progress ? mapBookProgress(progress) : null;
+};
+
 export const saveBookProgress = async ({
   userId,
   bookId,
@@ -577,6 +599,31 @@ export const saveBookProgress = async ({
     });
 
   return normalizedProgressBps;
+};
+
+export const saveBookOpenProgress = async ({
+  userId,
+  bookId,
+  pageId,
+}: {
+  userId: string;
+  bookId: string;
+  pageId: string;
+}) => {
+  const progress = await loadBookProgress(userId, bookId);
+
+  if (progress?.pageId === pageId) {
+    return progress;
+  }
+
+  const progressBps = await saveBookProgress({
+    userId,
+    bookId,
+    pageId,
+    progressBps: 0,
+  });
+
+  return { bookId, pageId, progressBps };
 };
 
 export const trackReaderEvent = async ({

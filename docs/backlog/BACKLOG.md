@@ -15,7 +15,6 @@
 
 ## Drafts
 
-- [XI31: Fix Reader Scroll Position Progress](./drafts/XI31-fix-reader-scroll-position-progress/XI31.task.md) | [plan](./drafts/XI31-fix-reader-scroll-position-progress/XI31.plan.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)
 - [ABN: Migrate to Prisma ORM](./drafts/ABN-migrate-to-prisma-orm/ABN.task.md)

@@ -75,4 +75,9 @@ export type ReaderBookPage = {
   previous: ReaderBookPageNeighbor | null;
   next: ReaderBookPageNeighbor | null;
   pages: ReaderBookPageSummary[];
+  progress: {
+    bookId: string;
+    pageId: string;
+    progressBps: number;
+  } | null;
 };

@@ -2,6 +2,9 @@
 .DS_Store
 .github
 .vscode
+.claude
+.cursor
+.agents
 *.log
 
 # Cache folders
@@ -12,6 +15,7 @@ node_modules
 build
 dist
 out
+docs
 
 # Ignore environment files
 .env

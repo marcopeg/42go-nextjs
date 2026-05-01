@@ -5,6 +5,7 @@ import {
   getSessionUserId,
   json,
   loadBookPage,
+  saveBookOpenProgress,
   saveBookProgress,
   trackReaderEvent,
 } from "../../../../_lib/reader";
@@ -42,16 +43,17 @@ const getBookPage = async (
   const bookPage = await loadBookPage(bookId, pageId);
   if (!bookPage) return notFound();
 
+  const progress = await saveBookOpenProgress({ userId, bookId, pageId });
+
   await trackReaderEvent({
     userId,
     name: "page-open",
     bookId,
     pageId,
-    data: { progress_bps: 0 },
+    data: { progress_bps: progress.progressBps },
   });
-  await saveBookProgress({ userId, bookId, pageId, progressBps: 0 });
 
-  return json({ bookPage });
+  return json({ bookPage: { ...bookPage, progress } });
 };
 
 const trackPageScroll = async (

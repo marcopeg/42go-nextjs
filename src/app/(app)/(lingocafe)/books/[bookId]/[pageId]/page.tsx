@@ -26,9 +26,9 @@ const parseParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] || "" : value || "";
 
 const parseProgressParam = (value: string | null) => {
-  if (!value) return 0;
+  if (value === null) return null;
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? clampProgressBps(parsed) : 0;
+  return Number.isFinite(parsed) ? clampProgressBps(parsed) : null;
 };
 
 const normalizeInfo = (info: unknown): Record<string, unknown> => {
@@ -63,6 +63,27 @@ const isPageSummary = (value: unknown): value is ReaderBookPageSummary => {
     typeof page.title === "string" &&
     typeof page.href === "string"
   );
+};
+
+const normalizeProgress = (
+  value: unknown
+): ReaderBookPage["progress"] => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const progress = value as Partial<NonNullable<ReaderBookPage["progress"]>>;
+
+  if (
+    typeof progress.bookId !== "string" ||
+    typeof progress.pageId !== "string" ||
+    typeof progress.progressBps !== "number"
+  ) {
+    return null;
+  }
+
+  return {
+    bookId: progress.bookId,
+    pageId: progress.pageId,
+    progressBps: clampProgressBps(progress.progressBps),
+  };
 };
 
 const normalizeBookPage = (
@@ -115,6 +136,7 @@ const normalizeBookPage = (
     pages: Array.isArray(bookPage.pages)
       ? bookPage.pages.filter(isPageSummary)
       : [],
+    progress: normalizeProgress(bookPage.progress),
   };
 };
 
@@ -126,8 +148,15 @@ const getScrollProgressBps = (element: HTMLElement) => {
 
 const scrollToProgressBps = (element: HTMLElement, progressBps: number) => {
   const scrollable = element.scrollHeight - element.clientHeight;
-  if (scrollable <= 0) return;
+  if (scrollable <= 0) {
+    if (progressBps === 0) {
+      element.scrollTop = 0;
+      return true;
+    }
+    return false;
+  }
   element.scrollTop = (scrollable * progressBps) / 10000;
+  return true;
 };
 
 const BookReadPage = () => {
@@ -139,7 +168,7 @@ const BookReadPage = () => {
   const { status } = useSession();
   const bookId = parseParam(params?.bookId);
   const pageId = parseParam(params?.pageId);
-  const progressBps = useMemo(
+  const urlProgressBps = useMemo(
     () => parseProgressParam(searchParams.get("progress_bps")),
     [searchParams]
   );
@@ -208,20 +237,46 @@ const BookReadPage = () => {
 
   useEffect(() => {
     if (!bookPage) return;
-    const restoreKey = `${bookPage.page.bookId}:${bookPage.page.pageId}:${progressBps}`;
+    const restoreProgressBps =
+      urlProgressBps ??
+      (bookPage.progress?.pageId === bookPage.page.pageId
+        ? bookPage.progress.progressBps
+        : 0);
+    const restoreKey = `${bookPage.page.bookId}:${bookPage.page.pageId}:${restoreProgressBps}`;
     if (restoredKeyRef.current === restoreKey) return;
 
-    requestAnimationFrame(() => {
+    let frame = 0;
+    let attempts = 0;
+
+    const restore = () => {
       const target =
         window.matchMedia("(min-width: 768px)").matches
           ? desktopScrollRef.current
           : mobileScrollRef.current;
 
-      if (!target) return;
-      scrollToProgressBps(target, progressBps);
-      restoredKeyRef.current = restoreKey;
-    });
-  }, [bookPage, progressBps]);
+      if (!target) {
+        if (attempts >= 8) return;
+        attempts += 1;
+        frame = requestAnimationFrame(restore);
+        return;
+      }
+      const restored = scrollToProgressBps(target, restoreProgressBps);
+
+      if (restored || attempts >= 8) {
+        restoredKeyRef.current = restoreKey;
+        return;
+      }
+
+      attempts += 1;
+      frame = requestAnimationFrame(restore);
+    };
+
+    frame = requestAnimationFrame(restore);
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [bookPage, urlProgressBps]);
 
   useEffect(() => {
     if (!bookPage || !apiHref) return;
