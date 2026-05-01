@@ -2,6 +2,7 @@
 
 ## WIP
 
+- [MA34: Point LingoCafe Book Covers to External Static Assets](./wip/MA34-point-lingocafe-book-covers-to-external-static-assets/MA34.task.md) | [plan](./wip/MA34-point-lingocafe-book-covers-to-external-static-assets/MA34.plan.md)
 
 ## Blocked
 

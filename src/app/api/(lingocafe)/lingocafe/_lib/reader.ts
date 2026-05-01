@@ -138,8 +138,8 @@ export type BookPageDetail = {
   pages: BookInfoPageSummary[];
 };
 
-const coverBaseUrl = "/images/lingocafe";
-const coverFallbackUrl = `${coverBaseUrl}/placeholder.jpg`;
+const defaultAssetsBasePath = "https://assets.lingocafe.app";
+const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
 
 const ownLanguages: LanguageOption[] = [
   { code: "en", label: "English" },
@@ -206,8 +206,17 @@ const normalizeBookInfo = (info: unknown): Record<string, unknown> => {
   return info as Record<string, unknown>;
 };
 
-const resolveBookCover = (book: Pick<BookRow, "id">) =>
-  `${coverBaseUrl}/${book.id}.jpg`;
+const getLingoCafeAssetsBasePath = () => {
+  const basePath =
+    process.env.LC_ASSETS_BASE_PATH?.trim() || defaultAssetsBasePath;
+  return basePath.replace(/\/+$/, "");
+};
+
+const resolveBookCover = (book: Pick<BookRow, "project">) => {
+  const project = book.project.trim().replace(/^\/+|\/+$/g, "");
+  if (!project) return null;
+  return `${getLingoCafeAssetsBasePath()}/${project}/reader`;
+};
 
 const buildReadPageHref = (
   bookId: string,

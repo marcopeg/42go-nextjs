@@ -26,6 +26,7 @@ export const BookCover = ({
         src={src}
         alt={`${book.title} cover`}
         fill
+        unoptimized
         sizes={sizes}
         className="object-contain"
         onError={() => {

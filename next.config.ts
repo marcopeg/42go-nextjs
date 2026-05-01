@@ -1,6 +1,21 @@
 import type { NextConfig } from "next";
 
 const isDevelopment = process.env.NODE_ENV === "development";
+const defaultLingoCafeAssetsBasePath = "https://assets.lingocafe.app";
+
+const getLingoCafeAssetsRemotePattern = () => {
+  const basePath =
+    process.env.LC_ASSETS_BASE_PATH?.trim() || defaultLingoCafeAssetsBasePath;
+
+  try {
+    const url = new URL(basePath);
+    const pathname = url.pathname.replace(/\/+$/, "");
+
+    return new URL(`${url.origin}${pathname || ""}/**`);
+  } catch {
+    return new URL("https://assets.lingocafe.app/**");
+  }
+};
 
 // React/Turbopack dev tooling needs eval and live HMR connections.
 const contentSecurityPolicy = [
@@ -29,6 +44,10 @@ const nextConfig: NextConfig = {
   // This prevents Next.js from trying to bundle all Knex dialects
   // https://github.com/vercel/next.js/issues/52091#issuecomment-1623722996
   serverExternalPackages: ["knex"],
+
+  images: {
+    remotePatterns: [getLingoCafeAssetsRemotePattern()],
+  },
 
   // Security headers
   async headers() {
