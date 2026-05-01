@@ -2,8 +2,6 @@
 
 ## WIP
 
-- [UF73: Books List: Show Author as Stylish Second Line](./wip/UF73-books-list-show-author-second-line-pretty/UF73.task.md) | [plan](./wip/UF73-books-list-show-author-second-line-pretty/UF73.plan.md) | [notes](./wip/UF73-books-list-show-author-second-line-pretty/UF73.notes.md)
-
 
 ## Blocked
 
@@ -53,7 +51,6 @@
 - [AQC: Copy email from project's shared list [aqc]](./drafts/AQC-copy-email-from-project-s-shared-list-aqc/AQC.task.md)
 - [AQD: Animate check item as slide-away to right [aqd]](./drafts/AQD-animate-check-item-as-slide-away-to-right-aqd/AQD.task.md)
 - [HX68: Dynamic Pages Layout [hx68]](./drafts/HX68-dynamic-pages-layout-hx68/HX68.task.md)
-
 
 ## Historical Logs
 

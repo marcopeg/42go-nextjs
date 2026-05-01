@@ -28,6 +28,7 @@
 - [BJ58: Improve Books Data Model With Info JSONB](./BJ58-improve-books-data-model-info-jsonb/BJ58.task.md) | [plan](./BJ58-improve-books-data-model-info-jsonb/BJ58.plan.md) | [notes](./BJ58-improve-books-data-model-info-jsonb/BJ58.notes.md)
 - [MA34: Point LingoCafe Book Covers to External Static Assets](./MA34-point-lingocafe-book-covers-to-external-static-assets/MA34.task.md) | [plan](./MA34-point-lingocafe-book-covers-to-external-static-assets/MA34.plan.md) | [notes](./MA34-point-lingocafe-book-covers-to-external-static-assets/MA34.notes.md)
 - [WO85: Improve LingoCafe Book Card Image-First Design](./WO85-improve-lingocafe-book-card-image-first-design/WO85.task.md) | [plan](./WO85-improve-lingocafe-book-card-image-first-design/WO85.plan.md) | [notes](./WO85-improve-lingocafe-book-card-image-first-design/WO85.notes.md)
+- [XI31: Fix Reader Scroll Position Progress](./XI31-fix-reader-scroll-position-progress/XI31.task.md) | [plan](./XI31-fix-reader-scroll-position-progress/XI31.plan.md) | [notes](./XI31-fix-reader-scroll-position-progress/XI31.notes.md)
 - [AAA: Initialize backlog [aaa]](./AAA-initialize-backlog-aaa/AAA.task.md)
 - [AAC: Support different public layout based on App-config [aac]](./AAC-support-different-public-layout-based-on-app-config-aac/AAC.task.md)
 - [AAD: General Dark Mode Support [aad]](./AAD-general-dark-mode-support-aad/AAD.task.md)
@@ -117,4 +118,4 @@
 - [AQA: Fix QuickList reorder API [aqa]](./AQA-fix-quicklist-reorder-api-aqa/AQA.task.md)
 - [AQB: Delete checked items [aqb]](./AQB-delete-checked-items-aqb/AQB.task.md)
 - [AQE: Upgrade project to latest major versions [aqe]](./AQE-upgrade-project-to-latest-major-versions-aqe/AQE.task.md)
-- [XI31: Fix Reader Scroll Position Progress](./XI31-fix-reader-scroll-position-progress/XI31.task.md) | [plan](./XI31-fix-reader-scroll-position-progress/XI31.plan.md) | [notes](./XI31-fix-reader-scroll-position-progress/XI31.notes.md)
+- [UF73: Books List: Show Author as Stylish Second Line](./UF73-books-list-show-author-second-line-pretty/UF73.task.md) | [plan](./UF73-books-list-show-author-second-line-pretty/UF73.plan.md) | [notes](./UF73-books-list-show-author-second-line-pretty/UF73.notes.md)
