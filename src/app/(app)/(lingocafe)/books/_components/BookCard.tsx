@@ -28,6 +28,7 @@ type BookCardProps = {
 
 export const BookCard = ({ book }: BookCardProps) => {
   const coverTags = book.tags.slice(0, 3);
+  const author = book.author.trim();
 
   return (
     <article className="group min-w-0 overflow-hidden rounded-lg shadow-sm transition-transform duration-200 hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-ring/60">
@@ -53,9 +54,14 @@ export const BookCard = ({ book }: BookCardProps) => {
         />
 
         <div className="pointer-events-none absolute inset-x-0 top-0 p-3 sm:p-4">
-          <h2 className="line-clamp-4 break-words font-serif text-[1.05rem] font-bold leading-tight tracking-normal text-amber-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] sm:text-xl md:text-2xl">
+          <h2 className="line-clamp-3 break-words font-serif text-[1.05rem] font-bold leading-tight tracking-normal text-amber-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] sm:text-xl md:text-2xl">
             {book.title}
           </h2>
+          {author ? (
+            <p className="mt-1 line-clamp-1 truncate text-xs font-medium text-amber-100/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] sm:text-sm">
+              by {author}
+            </p>
+          ) : null}
         </div>
 
         {coverTags.length > 0 && (
