@@ -120,3 +120,4 @@
 - [AQE: Upgrade project to latest major versions [aqe]](./AQE-upgrade-project-to-latest-major-versions-aqe/AQE.task.md)
 - [UF73: Books List: Show Author as Stylish Second Line](./UF73-books-list-show-author-second-line-pretty/UF73.task.md) | [plan](./UF73-books-list-show-author-second-line-pretty/UF73.plan.md) | [notes](./UF73-books-list-show-author-second-line-pretty/UF73.notes.md)
 - [AEO: Books list reading indicator and direct reader open](./AEO-books-list-reading-indicator-and-direct-reader-open/AEO.task.md) | [plan](./AEO-books-list-reading-indicator-and-direct-reader-open/AEO.plan.md) | [notes](./AEO-books-list-reading-indicator-and-direct-reader-open/AEO.notes.md)
+- [DP94: Reading Scroll Indicator on Book Page](./DP94-reading-scroll-indicator/DP94.task.md) | [notes](./DP94-reading-scroll-indicator/DP94.notes.md)

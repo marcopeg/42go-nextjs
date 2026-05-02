@@ -180,6 +180,7 @@ const BookReadPage = () => {
   const [bookPage, setBookPage] = useState<ReaderBookPage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [readingProgressBps, setReadingProgressBps] = useState(0);
 
   const apiHref =
     bookId && pageId
@@ -261,6 +262,7 @@ const BookReadPage = () => {
         return;
       }
       const restored = scrollToProgressBps(target, restoreProgressBps);
+      setReadingProgressBps(restoreProgressBps);
 
       if (restored || attempts >= 8) {
         restoredKeyRef.current = restoreKey;
@@ -314,7 +316,9 @@ const BookReadPage = () => {
     };
 
     const scheduleProgress = (element: HTMLElement) => {
-      latestProgressRef.current = getScrollProgressBps(element);
+      const currentProgressBps = getScrollProgressBps(element);
+      latestProgressRef.current = currentProgressBps;
+      setReadingProgressBps(currentProgressBps);
 
       if (scrollTimerRef.current) {
         clearTimeout(scrollTimerRef.current);
@@ -371,6 +375,7 @@ const BookReadPage = () => {
         error={error}
         scrollRef={mobileScrollRef}
         backHref={backHref}
+        readingProgressBps={readingProgressBps}
       />
 
       <BookReaderDesktopSurface
@@ -379,6 +384,7 @@ const BookReadPage = () => {
         error={error}
         scrollRef={desktopScrollRef}
         backHref={backHref}
+        readingProgressBps={readingProgressBps}
       />
     </AppLayout>
   );

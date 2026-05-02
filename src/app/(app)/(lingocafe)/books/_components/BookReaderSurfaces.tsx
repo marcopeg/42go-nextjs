@@ -31,6 +31,7 @@ type ReaderSurfaceProps = {
   error: string | null;
   scrollRef: RefObject<HTMLDivElement | null>;
   backHref: string;
+  readingProgressBps: number;
 };
 
 type PageProgressProps = {
@@ -267,13 +268,19 @@ export const BookReaderDesktopSurface = ({
   error,
   scrollRef,
   backHref,
+  readingProgressBps,
 }: ReaderSurfaceProps) => (
   <div className="fixed inset-0 z-[650] hidden bg-background text-foreground md:flex">
     {bookPage && <ReaderSidePanel bookPage={bookPage} backHref={backHref} />}
     {!bookPage && <div className="hidden w-[320px] shrink-0 border-r md:block" />}
 
     <section className="flex min-w-0 flex-1 flex-col">
-      <header className="flex h-[68px] shrink-0 items-center justify-between border-b px-8">
+      <header className="relative flex h-[68px] shrink-0 items-center justify-between border-b px-8">
+        <span
+          aria-hidden="true"
+          className="absolute bottom-[-1px] left-0 h-[2px] bg-blue-500"
+          style={{ width: `${(readingProgressBps / 10000) * 100}%` }}
+        />
         <div className="min-w-0">
           <div className="truncate text-sm font-medium">
             {bookPage?.book.title || "Reading"}
@@ -308,10 +315,16 @@ export const BookReaderMobileSurface = ({
   error,
   scrollRef,
   backHref,
+  readingProgressBps,
 }: ReaderSurfaceProps) => (
   <div className="fixed inset-0 z-[600] bg-background md:hidden">
     <div className="absolute inset-0 flex min-w-0 flex-col" style={{ height: "100dvh" }}>
-      <header className="flex h-16 shrink-0 items-center justify-between border-b px-3">
+      <header className="relative flex h-16 shrink-0 items-center justify-between border-b px-3">
+        <span
+          aria-hidden="true"
+          className="absolute bottom-[-1px] left-0 h-[2px] bg-blue-500"
+          style={{ width: `${(readingProgressBps / 10000) * 100}%` }}
+        />
         <Button variant="ghost" size="icon" asChild>
           <Link href={backHref} aria-label="Back to book details">
             <ChevronLeft className="h-5 w-5" />
