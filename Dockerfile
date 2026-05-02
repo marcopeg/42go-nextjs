@@ -35,6 +35,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
+ENV NEXT_BUILD_CPUS=1
 
 # Build the application with standalone output
 RUN npm run build
@@ -82,8 +83,4 @@ USER nextjs
 EXPOSE 3000
 
 # Start the Next.js application
-CMD echo "Starting Next.js server..." && \
-    echo "Environment: NODE_ENV=$NODE_ENV, PORT=$PORT, HOSTNAME=$HOSTNAME" && \
-    echo "Files in /app:" && ls -la && \
-    echo "Starting server.js..." && \
-    node server.js
+CMD ["node", "server.js"]

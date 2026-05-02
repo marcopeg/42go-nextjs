@@ -3,6 +3,11 @@ import type { NextConfig } from 'next';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const defaultLingoCafeAssetsBasePath = 'https://assets.lingocafe.app';
 
+const getBuildCpus = () => {
+  const value = Number(process.env.NEXT_BUILD_CPUS);
+  return Number.isInteger(value) && value > 0 ? value : undefined;
+};
+
 const getLingoCafeAssetsRemotePattern = () => {
   const basePath = process.env.LC_ASSETS_BASE_PATH?.trim() || defaultLingoCafeAssetsBasePath;
 
@@ -28,6 +33,10 @@ const contentSecurityPolicy = [
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['42go.ngrok.app', 'lc42go.ngrok.app', 'nt42go.ngrok.app', 'ql42go.ngrok.app'],
+
+  experimental: {
+    cpus: getBuildCpus(),
+  },
 
   // Enable standalone output for optimized production builds
   output: 'standalone',

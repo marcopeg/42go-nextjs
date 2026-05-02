@@ -2,7 +2,6 @@
 
 ## WIP
 
-- [LT47: Configure LingoCafe Icons and PWA Assets](./wip/LT47-configure-lingocafe-icons-and-pwa-assets/LT47.task.md) | [plan](./wip/LT47-configure-lingocafe-icons-and-pwa-assets/LT47.plan.md) | [notes](./wip/LT47-configure-lingocafe-icons-and-pwa-assets/LT47.notes.md)
 
 ## Blocked
 
@@ -16,6 +15,7 @@
 
 ## Drafts
 
+- [FH48: Configurable App Profile Page](./drafts/FH48-configurable-app-profile-page/FH48.task.md)
 - [KO29: Automate next.config allowedDevOrigins](./drafts/KO29-automate-next-config-allowed-dev-origins/KO29.task.md)
 - [RO05: Design App Icon Configuration System](./drafts/RO05-design-app-icon-configuration-system/RO05.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
@@ -26,6 +26,7 @@
 - [ADO: If config.auth Is Not Defined Return 404 on Login](./drafts/ADO-if-config-auth-is-not-defined-return-404-on-login/ADO.task.md)
 - [ADP: Config.public.docs Should Be Enough to Enable Documents](./drafts/ADP-config-public-docs-should-be-enough-to-enable-documents/ADP.task.md)
 - [ADS: RBAC SQL Functions](./drafts/ADS-rbac-sql-functions/ADS.task.md)
+- [FE78: HeroBlock: Icon Support](./drafts/FE78-heroblock-icon-support/FE78.task.md)
 - [AK87: HeroBlock: Optional Fields (Title, Subtitle, or Actions Only)](./drafts/AK87-heroblock-optional-fields-title-subtitle-or-actions-only/AK87.task.md)
 - [AR08: Refactor 42go/auth/providers to Expose Single Provider Modules](./drafts/AR08-refactor-42go-auth-providers-to-expose-single-provider-modules/AR08.task.md)
 - [GQ36: Add YouTube ContentBlock](./drafts/GQ36-add-youtube-contentblock/GQ36.task.md)
