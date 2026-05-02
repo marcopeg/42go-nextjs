@@ -6,7 +6,14 @@ import argparse
 import json
 from pathlib import Path
 
-from backlog_lib import normalize_task_id, rebuild_indexes, resolve_task, transition_task, update_frontmatter
+from backlog_lib import (
+    normalize_task_id,
+    rebuild_active_index,
+    rebuild_indexes,
+    resolve_task,
+    transition_task,
+    update_frontmatter,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -20,6 +27,7 @@ def parse_args() -> argparse.Namespace:
 
     sync_parser = subparsers.add_parser("sync-indexes")
     sync_parser.add_argument("--quiet", action="store_true")
+    sync_parser.add_argument("--include-history", action="store_true")
 
     update_parser = subparsers.add_parser("update-frontmatter")
     update_parser.add_argument("--path", required=True)
@@ -73,9 +81,14 @@ def main() -> int:
         return 0
 
     if args.command == "sync-indexes":
-        rebuild_indexes(backlog_root)
+        if args.include_history:
+            rebuild_indexes(backlog_root)
+            message = f"Synchronized backlog and history indexes under {backlog_root}"
+        else:
+            rebuild_active_index(backlog_root)
+            message = f"Synchronized active backlog index under {backlog_root}"
         if not args.quiet:
-            print(f"Synchronized backlog indexes under {backlog_root}")
+            print(message)
         return 0
 
     if args.command == "update-frontmatter":

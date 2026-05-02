@@ -15,7 +15,7 @@ from pathlib import Path
 TASK_ID_RE = re.compile(r"\b([a-z]{2})(\d{1,2})\b", re.IGNORECASE)
 LEGACY_TASK_ID_RE = re.compile(r"^[A-Za-z]{2,4}\d{0,4}$")
 PLAIN_YAML_RE = re.compile(r"^[A-Za-z0-9_.:+/@-]+$")
-MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+TASK_LINK_TARGET_RE = re.compile(r"\(([^)\n]+\.task\.md)\)")
 INLINE_TASK_ID_RE = re.compile(r"^\*\*TaskID\*\*:\s*(.+?)\s*$", re.IGNORECASE)
 INLINE_STATUS_RE = re.compile(r"^\*\*Status\*\*:\s*(.+?)\s*$", re.IGNORECASE)
 
@@ -322,10 +322,10 @@ def parse_index_order(path: Path) -> list[Path]:
     if not path.exists():
         return []
     order: list[Path] = []
-    for match in MARKDOWN_LINK_RE.finditer(path.read_text()):
-        target = match.group(2)
-        if target.endswith(".task.md"):
-            order.append((path.parent / target).resolve())
+    for line in path.read_text().splitlines():
+        match = TASK_LINK_TARGET_RE.search(line)
+        if match:
+            order.append((path.parent / match.group(1)).resolve())
     return order
 
 
@@ -345,12 +345,10 @@ def parse_active_section_order(path: Path) -> dict[str, list[Path]]:
             continue
         if current is None:
             continue
-        match = MARKDOWN_LINK_RE.search(line)
+        match = TASK_LINK_TARGET_RE.search(line)
         if not match:
             continue
-        target = match.group(2)
-        if target.endswith(".task.md"):
-            orders[current].append((path.parent / target).resolve())
+        orders[current].append((path.parent / match.group(1)).resolve())
     return orders
 
 
@@ -399,12 +397,16 @@ def render_history_entry(record: TaskRecord, log_path: Path) -> str:
     return " | ".join(parts)
 
 
-def rebuild_indexes(backlog_root: Path) -> None:
-    ensure_task_indexes(backlog_root)
-    tasks = discover_tasks(backlog_root)
+def collect_tasks_by_state(backlog_root: Path) -> dict[str, list[TaskRecord]]:
     by_state: dict[str, list[TaskRecord]] = {state: [] for state in STATE_DIRS}
-    for record in tasks:
+    for record in discover_tasks(backlog_root):
         by_state[record.state].append(record)
+    return by_state
+
+
+def rebuild_active_index(backlog_root: Path) -> None:
+    ensure_task_indexes(backlog_root)
+    by_state = collect_tasks_by_state(backlog_root)
 
     backlog_path = active_backlog_path(backlog_root)
     active_orders = parse_active_section_order(backlog_path)
@@ -425,6 +427,43 @@ def rebuild_indexes(backlog_root: Path) -> None:
         ]
     )
     backlog_path.write_text("\n".join(lines))
+
+
+def append_history_entry(backlog_root: Path, state: str, record: TaskRecord) -> None:
+    if state == "completed":
+        log_path = completed_log_path(backlog_root)
+        heading = "Completed"
+    elif state == "archived":
+        log_path = archived_log_path(backlog_root)
+        heading = "Archived"
+    else:
+        raise ValueError(f"State does not have a history log: {state}")
+
+    ensure_task_indexes(backlog_root)
+    existing_paths = set(parse_index_order(log_path))
+    if record.task_file.resolve() in existing_paths:
+        return
+
+    if log_path.exists():
+        text = log_path.read_text()
+        if text and not text.endswith("\n"):
+            text += "\n"
+    else:
+        text = f"# {heading}\n\n"
+
+    if text.strip() == "":
+        text = f"# {heading}\n\n"
+    elif not text.endswith("\n\n") and text.rstrip().endswith(f"# {heading}"):
+        text = text.rstrip() + "\n\n"
+
+    log_path.write_text(text + render_history_entry(record, log_path) + "\n")
+
+
+def rebuild_indexes(backlog_root: Path) -> None:
+    ensure_task_indexes(backlog_root)
+    by_state = collect_tasks_by_state(backlog_root)
+
+    rebuild_active_index(backlog_root)
 
     completed_path = completed_log_path(backlog_root)
     completed_lines = ["# Completed", ""]
@@ -483,8 +522,11 @@ def transition_task(
     else:
         task_file = record.task_file
     write_markdown(task_file, meta, body, "task")
-    rebuild_indexes(backlog_root)
-    return resolve_task(backlog_root, record.task_id)
+    rebuild_active_index(backlog_root)
+    transitioned_record = resolve_task(backlog_root, record.task_id)
+    if to_state in {"completed", "archived"}:
+        append_history_entry(backlog_root, to_state, transitioned_record)
+    return transitioned_record
 
 
 def update_frontmatter(

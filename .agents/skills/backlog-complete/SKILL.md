@@ -42,6 +42,13 @@ Approval model (mandatory):
 - if no task ID is provided and exactly one task is listed under `## WIP`, complete it directly
 - if no task ID is provided and multiple tasks are listed under `## WIP`, ask which one to complete instead of guessing
 
+Completed log write model (mandatory):
+- `docs/backlog/completed/COMPLETED.md` is append-only execution history
+- do not rebuild, sort, normalize, or hand-edit existing completed entries during completion
+- the completion helper is the only tool that may add the newly completed entry to `COMPLETED.md`
+- the helper must preserve the existing file order and text except for appending exactly one rendered entry for the newly completed task at the bottom
+- if the helper does anything other than append the new completed entry, stop and report the helper bug instead of repairing the log manually with AI edits
+
 Completion review (mandatory):
 - before moving a task to completed, review the current chat session plus the task file, plan file, and existing notes file when present
 - identify any durable information from the session that is not yet captured in `{task}.notes.md`
@@ -66,7 +73,7 @@ For each task to complete:
 1. resolve the task folder in `docs/backlog/wip/`
 2. review the current chat session, task file, plan file, and notes file as required by the completion review rules
 3. update or create the sibling `.notes.md` file when durable information needs to be preserved
-4. use `python3 scripts/complete_task.py <taskid>` for the folder move, status update, timestamp update, and index/log updates
+4. use `python3 scripts/complete_task.py <taskid>` for the folder move, status update, timestamp update, active backlog index update, and append-only completed log entry
 5. verify that the task file, `.plan.md`, and `.notes.md` files stayed together inside `docs/backlog/completed/`
 
 Completed log convention (mandatory):
@@ -77,6 +84,7 @@ Completed log convention (mandatory):
 - `docs/backlog/completed/COMPLETED.md` is an append-only execution history index, not a sorted catalog
 - each completion must add exactly one new list entry per completed task at the bottom of `COMPLETED.md`
 - keep the newest completed task as the final list item so reading the file from bottom to top reconstructs execution history
+- existing entries in `COMPLETED.md` must remain in their original order and text
 
 State consistency rules:
 - remove the task entry from `## WIP` in `docs/backlog/BACKLOG.md` before adding it to `docs/backlog/completed/COMPLETED.md`
@@ -90,7 +98,7 @@ Completed ordering rule (mandatory):
 - preserve the existing order of all prior completed entries exactly as found before completion
 - never sort completed entries by TaskID, title, folder name, or any other derived value
 - after running `python3 scripts/complete_task.py <taskid>`, verify the new task entry is at the end of `COMPLETED.md`
-- if an index rebuild or helper output places the new completed entry anywhere else, immediately repair `COMPLETED.md` by moving only the newly completed entry or entries to the bottom while preserving every other existing completed entry in its prior order
+- if an index rebuild or helper output places the new completed entry anywhere else or moves any existing completed entry, stop and report the helper bug instead of editing `COMPLETED.md` manually
 - when completing multiple tasks in one request, append them in the same order requested by the operator; if the operator did not provide an explicit order, append them in the order they appeared under `## WIP`
 
 After completing the task:
