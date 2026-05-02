@@ -58,8 +58,8 @@ ngrok.nt:
 ngrok.ql:
 	ngrok http --url=ql42go.ngrok.app 3000
 
-ngrok.lg:
-	ngrok http --url=lg42go.ngrok.app 3000
+ngrok.lc:
+	ngrok http --url=lc42go.ngrok.app 3000
 
 ###
 ### JS Prod Tasks

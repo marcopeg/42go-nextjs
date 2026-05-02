@@ -2,6 +2,7 @@
 
 ## WIP
 
+- [LT47: Configure LingoCafe Icons and PWA Assets](./wip/LT47-configure-lingocafe-icons-and-pwa-assets/LT47.task.md) | [plan](./wip/LT47-configure-lingocafe-icons-and-pwa-assets/LT47.plan.md) | [notes](./wip/LT47-configure-lingocafe-icons-and-pwa-assets/LT47.notes.md)
 
 ## Blocked
 
@@ -15,6 +16,8 @@
 
 ## Drafts
 
+- [KO29: Automate next.config allowedDevOrigins](./drafts/KO29-automate-next-config-allowed-dev-origins/KO29.task.md)
+- [RO05: Design App Icon Configuration System](./drafts/RO05-design-app-icon-configuration-system/RO05.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)
 - [ABN: Migrate to Prisma ORM](./drafts/ABN-migrate-to-prisma-orm/ABN.task.md)
