@@ -12,6 +12,7 @@ export type ReaderBook = {
   publishedAt: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  readingAction: ReaderBookReadingAction;
 };
 
 export type ReaderBookReadingAction = {

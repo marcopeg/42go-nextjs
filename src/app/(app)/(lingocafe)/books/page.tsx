@@ -67,6 +67,14 @@ const fallbackLanguages = {
   ] satisfies LevelOption[],
 };
 const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
+const fallbackReadingAction: ReaderBook["readingAction"] = {
+  kind: "unavailable",
+  label: "No pages available",
+  href: null,
+  bookId: "",
+  pageId: null,
+  progressBps: null,
+};
 
 const normalizeBookInfo = (info: unknown): Record<string, unknown> => {
   if (!info || typeof info !== "object" || Array.isArray(info)) return {};
@@ -81,6 +89,10 @@ const normalizeReaderData = (payload: Partial<ReaderData>): ReaderData => ({
         info: normalizeBookInfo(book.info),
         cover: book.cover ?? null,
         coverFallback: book.coverFallback || coverFallbackUrl,
+        readingAction: book.readingAction ?? {
+          ...fallbackReadingAction,
+          bookId: book.id,
+        },
       }))
     : [],
   languages: {

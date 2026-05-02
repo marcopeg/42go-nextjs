@@ -29,13 +29,18 @@ type BookCardProps = {
 export const BookCard = ({ book }: BookCardProps) => {
   const coverTags = book.tags.slice(0, 3);
   const author = book.author.trim();
+  const isReading = book.readingAction.kind === "resume" && !!book.readingAction.href;
+  const href = isReading ? book.readingAction.href : `/books/${encodeURIComponent(book.id)}`;
+  const ariaLabel = isReading
+    ? `Continue reading ${book.title}`
+    : `Open ${book.title} details`;
 
   return (
     <article className="group min-w-0 overflow-hidden rounded-lg shadow-sm transition-transform duration-200 hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-ring/60">
       <Link
-        href={`/books/${encodeURIComponent(book.id)}`}
+        href={href}
         className="relative block min-w-0 outline-none"
-        aria-label={`Open ${book.title} details`}
+        aria-label={ariaLabel}
       >
         <BookCover
           book={book}
@@ -52,6 +57,11 @@ export const BookCard = ({ book }: BookCardProps) => {
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/75 via-black/35 to-transparent"
         />
+        {isReading ? (
+          <div className="pointer-events-none absolute right-0 top-0 z-10 bg-green-600 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-white shadow-md sm:text-xs">
+            Reading
+          </div>
+        ) : null}
 
         <div className="pointer-events-none absolute inset-x-0 top-0 p-3 sm:p-4">
           <h2 className="line-clamp-3 break-words font-serif text-[1.05rem] font-bold leading-tight tracking-normal text-amber-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] sm:text-xl md:text-2xl">

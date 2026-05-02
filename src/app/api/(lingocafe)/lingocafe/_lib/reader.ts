@@ -460,10 +460,43 @@ export const loadReaderData = async (userId: string) => {
   }
 
   const books = (await booksQuery) as BookRow[];
+  const bookIds = books.map((book) => book.id);
+  const progressRows =
+    bookIds.length > 0
+      ? ((await db("lingocafe.books_progress")
+          .select("book_id", "page_id", "progress_bps")
+          .where({ user_id: userId })
+          .whereIn("book_id", bookIds)) as BookProgressRow[])
+      : [];
+  const firstPageRows =
+    bookIds.length > 0
+      ? ((await db("lingocafe.books_pages")
+          .select("book_id", "id", "position")
+          .whereIn("book_id", bookIds)
+          .orderBy([
+            { column: "book_id", order: "asc" },
+            { column: "position", order: "asc" },
+          ])) as BookPageRow[])
+      : [];
+  const firstPageByBookId = new Map<string, BookPageRow>();
+  for (const row of firstPageRows) {
+    const existing = firstPageByBookId.get(row.book_id);
+    if (!existing || row.position < existing.position) {
+      firstPageByBookId.set(row.book_id, row);
+    }
+  }
+  const progressByBookId = new Map(progressRows.map((row) => [row.book_id, row]));
 
   return {
     profile: mapProfile(profile),
-    books: books.map(mapBook),
+    books: books.map((book) => ({
+      ...mapBook(book),
+      readingAction: createReadingAction({
+        bookId: book.id,
+        progress: progressByBookId.get(book.id),
+        firstPage: firstPageByBookId.get(book.id),
+      }),
+    })),
     languages,
   };
 };
