@@ -29,8 +29,12 @@ type BookCardProps = {
 export const BookCard = ({ book }: BookCardProps) => {
   const coverTags = book.tags.slice(0, 3);
   const author = book.author.trim();
-  const isReading = book.readingAction.kind === "resume" && !!book.readingAction.href;
-  const href = isReading ? book.readingAction.href : `/books/${encodeURIComponent(book.id)}`;
+  const readingHref = book.readingAction.href;
+  const isReading =
+    book.readingAction.kind === "resume" && typeof readingHref === "string";
+  const href = isReading
+    ? readingHref
+    : `/books/${encodeURIComponent(book.id)}`;
   const ariaLabel = isReading
     ? `Continue reading ${book.title}`
     : `Open ${book.title} details`;

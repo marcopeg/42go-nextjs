@@ -30,6 +30,19 @@ export default {
     footer: {
       disabled: true,
     },
+    pwa: {
+      name: "LingoCafe",
+      shortName: "LingoCafe",
+      description: "A focused language-learning app with simple sign-in.",
+      themeColor: "light",
+      backgroundColor: "light",
+      startUrl: "/books",
+      scope: "/",
+      display: "standalone",
+      icons: {
+        appleTouch180: "/images/icons/default-180.png",
+      },
+    },
   },
   auth: {
     providers: [
