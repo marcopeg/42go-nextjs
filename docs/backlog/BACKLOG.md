@@ -2,7 +2,6 @@
 
 ## WIP
 
-
 ## Blocked
 
 - [UT41: ESLint 9 → 10](./blocked/UT41-eslint-9-10/UT41.task.md) | [plan](./blocked/UT41-eslint-9-10/UT41.plan.md) | [notes](./blocked/UT41-eslint-9-10/UT41.notes.md)
@@ -15,6 +14,8 @@
 
 ## Drafts
 
+- [ZZ62: Investigate and Optimize Docker Build Performance](./drafts/ZZ62-investigate-and-optimize-docker-build-performance/ZZ62.task.md)
+- [FN30: Remove Google Fonts Build Network Dependency](./drafts/FN30-remove-google-fonts-build-network-dependency/FN30.task.md)
 - [FH48: Configurable App Profile Page](./drafts/FH48-configurable-app-profile-page/FH48.task.md)
 - [KO29: Automate next.config allowedDevOrigins](./drafts/KO29-automate-next-config-allowed-dev-origins/KO29.task.md)
 - [RO05: Design App Icon Configuration System](./drafts/RO05-design-app-icon-configuration-system/RO05.task.md)
