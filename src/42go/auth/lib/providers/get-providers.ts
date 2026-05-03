@@ -34,11 +34,11 @@ export const getProviders = async () => {
                 const user = await db("auth.users")
                   .where("app_id", appID)
                   .andWhere(function () {
-                    this.where("name", "ilike", credentials.username).orWhere(
-                      "email",
+                    this.where(
+                      "username",
                       "ilike",
                       credentials.username
-                    );
+                    ).orWhere("email", "ilike", credentials.username);
                   })
                   .first();
 

@@ -16,24 +16,32 @@ exports.seed = async function seed(knex) {
         .from("events")
         .whereIn("user_id", staleLingocafeUserIds)
         .del();
+      await trx
+        .withSchema("lingocafe")
+        .from("books_progress")
+        .whereIn("user_id", staleLingocafeUserIds)
+        .del();
+      await trx
+        .withSchema("lingocafe")
+        .from("profiles")
+        .whereIn("user_id", staleLingocafeUserIds)
+        .del();
     }
 
-    await trx("auth.users").where({ app_id: "lingocafe" }).del();
-
-    const john = await trx("auth.users")
+    const jane = await trx("auth.users")
       .select("id")
-      .where({ app_id: "default", email: "john.doe@example.com" })
+      .where({ app_id: "lingocafe", email: "jane.doe@example.com" })
       .first();
 
-    if (!john) {
-      throw new Error('Missing default app user "john.doe@example.com"');
+    if (!jane) {
+      throw new Error('Missing LingoCafe app user "jane.doe@example.com"');
     }
 
     await trx
       .withSchema("lingocafe")
       .into("profiles")
       .insert({
-        user_id: john.id,
+        user_id: jane.id,
         own_lang: "en",
         target_lang: "sv",
         target_level: "a2",

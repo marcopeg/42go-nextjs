@@ -11,6 +11,7 @@ exports.up = function (knex) {
     knex.schema.withSchema("auth").createTable("users", (table) => {
       table.text("app_id").notNullable();
       table.text("id").primary().notNullable();
+      table.text("username");
       table.text("name");
       table.text("email").notNullable();
       table.timestamp("email_verified");
@@ -19,7 +20,7 @@ exports.up = function (knex) {
       table.timestamp("created_at").notNullable().defaultTo(knex.fn.now());
       table.timestamp("updated_at").notNullable().defaultTo(knex.fn.now());
 
-      table.unique(["app_id", "name"]);
+      table.unique(["app_id", "username"]);
       table.unique(["app_id", "email"]);
     }),
 
