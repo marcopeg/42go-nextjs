@@ -8,18 +8,18 @@
 
 ## Ready Tasks
 
-- [ADC: Add Tenants Table](./ready/ADC-add-tenants-table/ADC.task.md)
-- [ADB: Reject Invite [adb]](./ready/ADB-reject-invite-adb/ADB.task.md)
-- [AEM: Fix Docker build [aem]](./ready/AEM-fix-docker-build-aem/AEM.task.md)
-
 ## Drafts
 
+- [HO30: Codex Web Local E2E Sandbox](./drafts/HO30-codex-web-local-e2e-sandbox/HO30.task.md)
 - [ZZ62: Investigate and Optimize Docker Build Performance](./drafts/ZZ62-investigate-and-optimize-docker-build-performance/ZZ62.task.md)
 - [FN30: Remove Google Fonts Build Network Dependency](./drafts/FN30-remove-google-fonts-build-network-dependency/FN30.task.md)
 - [FH48: Configurable App Profile Page](./drafts/FH48-configurable-app-profile-page/FH48.task.md)
 - [KO29: Automate next.config allowedDevOrigins](./drafts/KO29-automate-next-config-allowed-dev-origins/KO29.task.md)
 - [RO05: Design App Icon Configuration System](./drafts/RO05-design-app-icon-configuration-system/RO05.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
+- [ADC: Add Tenants Table](./ready/ADC-add-tenants-table/ADC.task.md)
+- [ADB: Reject Invite [adb]](./ready/ADB-reject-invite-adb/ADB.task.md)
+- [AEM: Fix Docker build [aem]](./ready/AEM-fix-docker-build-aem/AEM.task.md)
 - [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.md)
 - [ABN: Migrate to Prisma ORM](./drafts/ABN-migrate-to-prisma-orm/ABN.task.md)
 - [ACW: Document Getting Started with README Information](./drafts/ACW-document-getting-started-with-readme-information/ACW.task.md)
