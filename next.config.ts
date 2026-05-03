@@ -31,12 +31,12 @@ const contentSecurityPolicy = [
   "frame-ancestors 'none'",
 ].join('; ');
 
+const buildCpus = getBuildCpus();
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['42go.ngrok.app', 'lc42go.ngrok.app', 'nt42go.ngrok.app', 'ql42go.ngrok.app'],
 
-  experimental: {
-    cpus: getBuildCpus(),
-  },
+  ...(buildCpus ? { experimental: { cpus: buildCpus } } : {}),
 
   // Enable standalone output for optimized production builds
   output: 'standalone',

@@ -37,8 +37,9 @@ ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
 ENV NEXT_BUILD_CPUS=1
 
-# Build the application with standalone output
-RUN npm run build
+# Build the application with standalone output, then remove any env files
+# before the runner stage copies standalone into a final image layer.
+RUN npm run build && rm -f .next/standalone/.env .next/standalone/.env.*
 
 # ==========================================
 # STAGE 4: Ultra-Slim Production Runner
@@ -69,7 +70,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 # Copy package.json for proper startup
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
-# Remove any accidentally included env files from standalone output (defense in depth)
+# Remove any accidentally included env files from the runtime workdir (defense in depth)
 RUN rm -f .env .env.* || true
 
 # Switch to non-root user

@@ -5,7 +5,7 @@ import Markdown from "@/42go/components/Markdown";
 
 // Chuck Norris style: roundhouse cache using React's cache()
 const readMarkdownFile = cache(async (filePath: string): Promise<string> => {
-  return await fs.promises.readFile(filePath, "utf8");
+  return await fs.promises.readFile(/* turbopackIgnore: true */ filePath, "utf8");
 });
 
 export type TMarkdownBlock =
@@ -26,7 +26,7 @@ export async function MarkdownBlock({ data }: { data: TMarkdownBlock }) {
     // If path is absolute, use as is. If relative, resolve from project root.
     const filePath = path.isAbsolute(data.path)
       ? data.path
-      : path.join(process.cwd(), data.path);
+      : path.join(/* turbopackIgnore: true */ process.cwd(), data.path);
 
     try {
       content = await readMarkdownFile(filePath);

@@ -25,7 +25,10 @@ export const read = async (
 
   let content: string | number | null = null;
   try {
-    content = await fs.promises.readFile(filePath, "utf8");
+    content = await fs.promises.readFile(
+      /* turbopackIgnore: true */ filePath,
+      "utf8"
+    );
   } catch {
     content = 404;
   }
@@ -53,14 +56,17 @@ export const scanDir = async (
   // Chuck Norris makes paths absolute
   const absDirPath = dirPath.startsWith("/")
     ? dirPath
-    : `${process.cwd()}/${dirPath}`;
+    : `${/* turbopackIgnore: true */ process.cwd()}/${dirPath}`;
 
   const results: string[] = [];
 
   async function scan(currentPath: string) {
-    const entries = await fs.promises.readdir(currentPath, {
-      withFileTypes: true,
-    });
+    const entries = await fs.promises.readdir(
+      /* turbopackIgnore: true */ currentPath,
+      {
+        withFileTypes: true,
+      }
+    );
     for (const entry of entries) {
       const entryPath = `${currentPath}/${entry.name}`;
       if (entry.isDirectory()) {

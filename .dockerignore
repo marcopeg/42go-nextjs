@@ -1,28 +1,36 @@
-# Generic files
-.DS_Store
+# Version control and agent/editor state
+.git
+.gitignore
 .github
-.vscode
+.agents
 .claude
 .cursor
-.agents
-*.log
-
-# Cache folders
-node_modules
-.next
-
-# Ignore build output
-build
-dist
-out
-docs
-
-# Ignore environment files
-.env
-.env*
-
-
 .vscode
 .vscode-test
 .vscode-test-*
 
+# Local dependencies and framework caches
+node_modules
+.next
+.cache
+.turbo
+.vercel
+
+# Build, test, and coverage output
+build
+dist
+out
+coverage
+playwright-report
+test-results
+
+# Repository docs/backlog are not needed by the application image
+docs
+
+# Secrets and local machine files
+.env
+.env*
+.npmrc
+.DS_Store
+*.log
+*.pem

@@ -32,7 +32,7 @@ export const read = async (
   let rawContent: string | number | null = null;
   const absPath = path.isAbsolute(inputPath)
     ? inputPath
-    : path.join(process.cwd(), inputPath);
+    : path.join(/* turbopackIgnore: true */ process.cwd(), inputPath);
 
   // Try to read the file directly
   if (/\.(mdx?|MDX?)$/.test(absPath)) {
@@ -44,7 +44,9 @@ export const read = async (
   else {
     const fallbacks = [
       `${absPath}.md`,
-      ...FALLBACKS.map((fallback) => path.join(absPath, fallback)),
+      ...FALLBACKS.map((fallback) =>
+        path.join(/* turbopackIgnore: true */ absPath, fallback)
+      ),
     ];
 
     try {

@@ -11,6 +11,10 @@ import {
 
 export type { TAppConfig, TAppID } from "@/AppConfig";
 
+const isBuildContext = () =>
+  process.env.NEXT_PHASE === "phase-production-build" ||
+  process.env.NEXT_PRIVATE_BUILD_WORKER === "1";
+
 /**
  * Main app ID resolution function that works for both server components and API routes.
  * Uses Next.js headers() which works in both contexts in Next.js 15+
@@ -22,10 +26,11 @@ export const getAppID = async (): Promise<TAppID> => {
   try {
     headers = await getHeaders();
   } catch {
-    // In Docker or build context, next/headers might not be available
-    console.warn(
-      "Cannot access next/headers, falling back to environment matching only"
-    );
+    if (!isBuildContext()) {
+      console.warn(
+        "Cannot access next/headers, falling back to environment matching only"
+      );
+    }
 
     // Try environment matching only
     const envMatch = matchByEnvironment(apps);
