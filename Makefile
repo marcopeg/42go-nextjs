@@ -4,6 +4,9 @@
 
 # Dynamic version from package.json
 VERSION := $(shell node -p "require('./package.json').version")
+IMAGE ?= marcopeg/42go-next
+PUBLISH_PLATFORM ?= linux/amd64
+UNIVERSAL_PLATFORMS ?= linux/amd64,linux/arm64
 
 boot: app.install start migrate seed app.start
 
@@ -80,12 +83,12 @@ prod.js.ngrok:
 
 prod.build:
 	@echo "🏗️  Building production Docker image..."
-	docker build --progress=plain --no-cache -f Dockerfile -t 42go-next:latest .
+	docker build --progress=plain --load --no-cache -f Dockerfile -t 42go-next:latest .
 	@echo "✅ Production build complete"
 
 prod.build.light:
 	@echo "🏗️  Building production Docker image..."
-	docker build --progress=plain -f Dockerfile -t 42go-next:latest .
+	docker build --progress=plain --load -f Dockerfile -t 42go-next:latest .
 	@echo "✅ Production build complete"
 
 prod.start:
@@ -143,7 +146,7 @@ prod.app.stop:
 prod.app.rebuild: prod.app.stop prod.build.light prod.start prod.logs
 prod.app.restart: prod.app.stop prod.start prod.logs
 
-prod: prod.build prod.start prod.init
+prod: prod.build.light prod.start prod.init
 	@echo "🎉 Production environment is ready!"
 	@echo "🌐 Access the application at: http://localhost:4000"
 	@echo "📋 View logs with: make prod.logs"
@@ -154,11 +157,31 @@ prod: prod.build prod.start prod.init
 ### Publish to DockerHUB
 ###
 publish:
-	@echo "Building version: $(VERSION)"
-	@docker buildx build --platform linux/amd64,linux/arm64 \
+	@echo "Building $(IMAGE):$(VERSION) for $(PUBLISH_PLATFORM)"
+	@docker buildx build --platform $(PUBLISH_PLATFORM) \
 		--build-arg NODE_ENV=production \
-		-t marcopeg/42go-next:latest \
-		-t marcopeg/42go-next:$(VERSION) \
+		-t $(IMAGE):latest \
+		-t $(IMAGE):$(VERSION) \
+		--push \
+		.
+
+publish.nocache:
+	@echo "Building $(IMAGE):$(VERSION) for $(PUBLISH_PLATFORM) without cache"
+	@docker buildx build --platform $(PUBLISH_PLATFORM) \
+		--no-cache \
+		--build-arg NODE_ENV=production \
+		-t $(IMAGE):latest \
+		-t $(IMAGE):$(VERSION) \
+		--push \
+		.
+
+publish.universal:
+	@echo "Building $(IMAGE):$(VERSION) for $(UNIVERSAL_PLATFORMS) without cache"
+	@docker buildx build --platform $(UNIVERSAL_PLATFORMS) \
+		--no-cache \
+		--build-arg NODE_ENV=production \
+		-t $(IMAGE):latest \
+		-t $(IMAGE):$(VERSION) \
 		--push \
 		.
 

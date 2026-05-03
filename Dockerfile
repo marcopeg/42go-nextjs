@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 # ==========================================
 # STAGE 1: Dependencies Cache Layer
 # ==========================================
@@ -6,7 +8,7 @@ WORKDIR /app
 
 # Install dependencies only when needed
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN --mount=type=cache,id=npm-prod,target=/root/.npm,sharing=locked npm ci --omit=dev
 
 # ==========================================
 # STAGE 2: Build Dependencies
@@ -16,7 +18,7 @@ WORKDIR /app
 
 # Install all dependencies (including devDependencies)
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN --mount=type=cache,id=npm-build,target=/root/.npm,sharing=locked npm ci
 
 # ==========================================
 # STAGE 3: Builder Stage

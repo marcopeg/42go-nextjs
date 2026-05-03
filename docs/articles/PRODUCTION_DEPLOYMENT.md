@@ -42,10 +42,35 @@ make seed          # Seed initial data
 
 ```bash
 make prod.build     # Build production Docker image
+make prod.build.light # Build production Docker image using cache
 make prod.start     # Start production environment
 make prod.stop      # Stop production containers
 make prod.down      # Remove containers and volumes
 make prod.clean     # Clean all production artifacts
+```
+
+### Publish Targets
+
+```bash
+make publish            # Cached VPS-targeted image publish
+make publish.nocache    # No-cache VPS-targeted image publish
+make publish.universal  # No-cache multi-architecture publish
+```
+
+The default publish path targets the expected VPS architecture, `linux/amd64`, and reuses Docker cache where possible. Override the target when needed:
+
+```bash
+make publish PUBLISH_PLATFORM=linux/arm64
+```
+
+`make publish.nocache` uses the same VPS target but disables Docker layer cache. Use it when release confidence matters more than speed, after major Dockerfile changes, or when cache correctness is suspicious.
+
+`make publish.universal` builds and pushes `linux/amd64,linux/arm64`. Use it for public or cross-platform distribution. It is slower, especially from Apple Silicon when building amd64 through emulation.
+
+All publish targets push both `latest` and `$(VERSION)`. `VERSION` defaults to the version in `package.json`; override it explicitly when needed:
+
+```bash
+make publish VERSION=0.0.21
 ```
 
 ### Monitoring & Debugging
@@ -120,6 +145,7 @@ deploy:
 ### Build Performance
 
 - **Layer Caching**: Dependencies cached separately from source code
+- **NPM Download Cache**: BuildKit cache mounts speed repeated `npm ci` downloads while keeping installs lockfile-driven
 - **Parallel Builds**: Multi-stage builds run in parallel where possible
 - **Minimal Rebuilds**: Only changed layers rebuild
 
@@ -215,9 +241,12 @@ docker compose -f docker-compose.prod.yml exec app ps aux
 
 ### Build Times
 
-- **Cold Build**: ~2-3 minutes (all layers)
-- **Warm Build**: ~30-60 seconds (cached dependencies)
-- **Code Changes Only**: ~20-30 seconds (source layer only)
+- **No-cache local build loaded into Docker**: ~123 seconds on an Apple M2/Colima arm64 builder
+- **No-output no-cache baseline**: ~76 seconds before adding local image load
+- **Code/context change with cached dependencies**: ~24-34 seconds, depending on image load/export cost
+- **No-change cached local build**: ~8 seconds
+
+The measured slowest no-cache stages were dependency installation (`npm ci --omit=dev` around 28 seconds and full `npm ci` around 31 seconds), copying `node_modules` between stages, the Next.js production build, and image export/import when `--load` is used.
 
 ### Image Sizes
 
@@ -270,7 +299,8 @@ docker system df
 
 ### CI/CD Integration
 
-- Integrate `make prod.build` into CI/CD pipelines
+- Add a future GitHub Actions workflow where a Git tag builds and pushes the production image to Docker Hub, GHCR, or another selected registry
+- Use registry-backed BuildKit cache in CI so dependency layers can survive between workflow runs
 - Add automated testing before production deployment
 - Set up blue-green deployment strategies
 
