@@ -55,6 +55,8 @@ make prod.clean     # Clean all production artifacts
 make publish            # Cached VPS-targeted image publish
 make publish.nocache    # No-cache VPS-targeted image publish
 make publish.universal  # No-cache multi-architecture publish
+make deploy             # Cached VPS-targeted publish, then CapRover deploy
+make deploy.nocache     # No-cache VPS-targeted publish, then CapRover deploy
 ```
 
 The default publish path targets the expected VPS architecture, `linux/amd64`, and reuses Docker cache where possible. Override the target when needed:
@@ -72,6 +74,40 @@ All publish targets push both `latest` and `$(VERSION)`. `VERSION` defaults to t
 ```bash
 make publish VERSION=0.0.21
 ```
+
+### CapRover Deploy Targets
+
+`make deploy` runs the cached VPS-targeted Docker Hub publish path, then asks CapRover to deploy the immutable `$(IMAGE):$(VERSION)` tag. `make deploy.nocache` does the same thing after the no-cache publish path.
+
+Required local deployment variables:
+
+```bash
+CAPROVER_URL="https://captain.example.com"
+CAPROVER_APP="a42go-multi"
+CAPROVER_APP_TOKEN="your-caprover-app-token"
+```
+
+These values can live in local `.env`; `.env` is ignored by git. `CAPROVER_APP` defaults to `a42go-multi`, and `CAPROVER_IMAGE` defaults to `$(IMAGE):$(VERSION)`.
+
+Deploy the package.json version:
+
+```bash
+make deploy
+```
+
+Deploy an explicit version:
+
+```bash
+make deploy VERSION=0.0.21
+```
+
+Run the no-cache deploy path when release confidence matters more than build speed:
+
+```bash
+make deploy.nocache VERSION=0.0.21
+```
+
+The deploy target uses CapRover's image deployment flow (`caprover deploy --imageName`). The image must be public or otherwise accessible to CapRover. If the Docker Hub repository is private, configure registry pull access in CapRover before running the deploy command.
 
 ### Monitoring & Debugging
 
@@ -193,6 +229,17 @@ Run a quick security check to ensure no `.env` files are present in the running 
 make prod.clean
 make prod.build
 ```
+
+**CapRover Deploy Failures**:
+
+```bash
+# Verify deploy variables without pushing or deploying
+make -n deploy VERSION=0.0.21 CAPROVER_URL=https://captain.example.com CAPROVER_APP_TOKEN=fake
+```
+
+Check that `CAPROVER_URL` points to the Captain URL, `CAPROVER_APP_TOKEN` is an app token for the target app, and `CAPROVER_APP` matches the CapRover app name. The default app name is `a42go-multi`.
+
+If Docker Hub is private, confirm CapRover can pull `$(IMAGE):$(VERSION)`. The deploy command cannot fix registry access after the image has already been pushed.
 
 **Application Not Starting**:
 

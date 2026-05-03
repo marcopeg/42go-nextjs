@@ -4,9 +4,19 @@
 
 # Dynamic version from package.json
 VERSION := $(shell node -p "require('./package.json').version")
+-include .env
 IMAGE ?= marcopeg/42go-next
 PUBLISH_PLATFORM ?= linux/amd64
 UNIVERSAL_PLATFORMS ?= linux/amd64,linux/arm64
+CAPROVER ?= npx --yes caprover
+CAPROVER_URL := $(subst ",,$(CAPROVER_URL))
+CAPROVER_APP ?= a42go-multi
+CAPROVER_APP := $(subst ",,$(CAPROVER_APP))
+CAPROVER_APP_TOKEN := $(subst ",,$(CAPROVER_APP_TOKEN))
+CAPROVER_IMAGE ?= $(IMAGE):$(VERSION)
+
+export CAPROVER_URL
+export CAPROVER_APP_TOKEN
 
 boot: app.install start migrate seed app.start
 
@@ -184,6 +194,26 @@ publish.universal:
 		-t $(IMAGE):$(VERSION) \
 		--push \
 		.
+
+deploy: publish deploy.caprover
+
+deploy.nocache: publish.nocache deploy.caprover
+
+deploy.caprover:
+	@if [ -z "$$CAPROVER_URL" ]; then \
+		echo "CAPROVER_URL is required. Add it to .env or pass CAPROVER_URL=https://captain.example.com"; \
+		exit 1; \
+	fi
+	@if [ -z "$$CAPROVER_APP_TOKEN" ]; then \
+		echo "CAPROVER_APP_TOKEN is required. Add it to .env or pass it in the environment"; \
+		exit 1; \
+	fi
+	@echo "Deploying $(CAPROVER_IMAGE) to CapRover app $(CAPROVER_APP)"
+	@$(CAPROVER) deploy \
+		--caproverUrl "$$CAPROVER_URL" \
+		--caproverApp "$(CAPROVER_APP)" \
+		--imageName "$(CAPROVER_IMAGE)" \
+		--appToken "$$CAPROVER_APP_TOKEN"
 
 
 

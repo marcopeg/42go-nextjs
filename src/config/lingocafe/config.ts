@@ -1,5 +1,6 @@
 import { TAppConfigItem } from '../../AppConfig';
 import { HomePage } from './home-page';
+import { User, BookOpen } from 'lucide-react';
 
 export default {
   name: 'LingoCafe',
@@ -65,6 +66,35 @@ export default {
   app: {
     default: {
       page: '/books',
+    },
+    menu: {
+      top: {
+        items: [
+          {
+            title: 'Books',
+            href: '/books',
+            icon: BookOpen,
+          },
+        ],
+      },
+      mobile: {
+        disableMore: true,
+        items: [
+          {
+            title: 'Books',
+            href: '/books',
+            icon: BookOpen,
+          },
+          {
+            title: 'Account',
+            href: '/profile',
+            icon: User,
+          },
+        ],
+      },
+      collapsible: {
+        position: 'bottom',
+      },
     },
   },
 } as const satisfies TAppConfigItem;

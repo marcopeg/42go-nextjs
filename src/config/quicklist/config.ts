@@ -1,29 +1,25 @@
-import { TAppConfigItem } from "../../AppConfig";
+import { TAppConfigItem } from '../../AppConfig';
 
-import { User, ListTodo } from "lucide-react";
+import { User, ListTodo } from 'lucide-react';
 
 export default {
-  name: "",
+  name: '',
   match: {
-    url: [
-      "^quicklist.42go.dev+$",
-      "^ql42go.ngrok.app+$",
-      "^quicklist\\.localhost:\\d+$",
-    ],
+    url: ['^quicklist.42go.dev+$', '^ql42go.ngrok.app+$'],
   },
-  features: ["api:waitlist", "api:quicklists", "page:quicklists"],
+  features: ['api:waitlist', 'api:quicklists', 'page:quicklists'],
   auth: {
     providers: [
       {
-        type: "credentials" as const,
+        type: 'credentials' as const,
         config: {},
       },
       {
-        type: "google" as const,
+        type: 'google' as const,
         config: {
           clientId: process.env.GOOGLE_CLIENT_ID!,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-          prompt: "select_account",
+          prompt: 'select_account',
         },
       },
     ],
@@ -39,36 +35,36 @@ export default {
       HomePage: {
         items: [
           {
-            type: "hero",
-            title: "Quick**List**",
-            subtitle: "todos, **made simple** ❤️",
+            type: 'hero',
+            title: 'Quick**List**',
+            subtitle: 'todos, **made simple** ❤️',
             actions: [
               {
-                href: "/login",
-                label: "Go!",
-                style: "primary",
+                href: '/login',
+                label: 'Go!',
+                style: 'primary',
               },
             ],
           },
           {
-            type: "pricing",
-            title: "Features",
-            subtitle: "For personal & Family use.",
+            type: 'pricing',
+            title: 'Features',
+            subtitle: 'For personal & Family use.',
             tiers: [
               {
                 // name: "Features",
                 // description: "For personal & Family use.",
                 features: [
-                  { text: "Unlimited lists", status: "included" },
-                  { text: "Unlimited tasks", status: "included" },
-                  { text: "Share up to 5 people", status: "included" },
-                  { text: "Drag and drop ordering", status: "included" },
-                  { text: "Checked items to the bottom", status: "included" },
-                  { text: "Mobile Web App", status: "included" },
+                  { text: 'Unlimited lists', status: 'included' },
+                  { text: 'Unlimited tasks', status: 'included' },
+                  { text: 'Share up to 5 people', status: 'included' },
+                  { text: 'Drag and drop ordering', status: 'included' },
+                  { text: 'Checked items to the bottom', status: 'included' },
+                  { text: 'Mobile Web App', status: 'included' },
                 ],
-                cta: { label: "Go!", href: "/login" },
+                cta: { label: 'Go!', href: '/login' },
                 highlighted: true,
-                badge: "free",
+                badge: 'free',
               },
             ],
           },
@@ -76,28 +72,28 @@ export default {
       },
     },
     pwa: {
-      name: "QuickList",
-      shortName: "QuickList",
-      themeColor: "dark",
-      backgroundColor: "dark",
-      startUrl: "/quicklists",
-      scope: "/",
-      display: "standalone",
+      name: 'QuickList',
+      shortName: 'QuickList',
+      themeColor: 'dark',
+      backgroundColor: 'dark',
+      startUrl: '/quicklists',
+      scope: '/',
+      display: 'standalone',
       icons: {
-        appleTouch180: "/images/icons/quicklist-180.png",
+        appleTouch180: '/images/icons/quicklist-180.png',
       },
     },
   },
   app: {
     default: {
-      page: "/quicklists",
+      page: '/quicklists',
     },
     menu: {
       top: {
         items: [
           {
-            title: "Projects",
-            href: "/quicklists",
+            title: 'Projects',
+            href: '/quicklists',
             icon: ListTodo,
           },
         ],
@@ -106,19 +102,19 @@ export default {
         disableMore: true,
         items: [
           {
-            title: "Projects",
-            href: "/quicklists",
+            title: 'Projects',
+            href: '/quicklists',
             icon: ListTodo,
           },
           {
-            title: "Account",
-            href: "/profile",
+            title: 'Account',
+            href: '/profile',
             icon: User,
           },
         ],
       },
       collapsible: {
-        position: "bottom",
+        position: 'bottom',
       },
     },
   },

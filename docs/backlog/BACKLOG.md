@@ -15,7 +15,6 @@
 
 ## Drafts
 
-- [XG11: Trigger CapRover Deploy From Make Publish](./drafts/XG11-trigger-caprover-deploy-from-make-publish/XG11.task.md)
 - [FH48: Configurable App Profile Page](./drafts/FH48-configurable-app-profile-page/FH48.task.md)
 - [RO05: Design App Icon Configuration System](./drafts/RO05-design-app-icon-configuration-system/RO05.task.md)
 - [FN30: Remove Google Fonts Build Network Dependency](./drafts/FN30-remove-google-fonts-build-network-dependency/FN30.task.md)
