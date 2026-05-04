@@ -5,6 +5,7 @@ import { InjectAppID } from "@/42go/config/InjectAppID";
 import { Providers } from "@/components/Providers";
 import { Toaster } from "@/components/ui/sonner";
 import { resolvePWAColor, type TColorInput } from "@/42go/pwa/colors";
+import { resolveAppIcons } from "@/42go/icons";
 import "./tokens.css";
 import "./tailwind.css";
 import { HeadTags } from "@/42go/pwa/HeadTags";
@@ -13,15 +14,25 @@ import { HeadTags } from "@/42go/pwa/HeadTags";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const generateMetadata = async (): Promise<Metadata> => {
-  const { config } = await getAppInfo();
+  const { id: appID, config } = await getAppInfo();
   const base = (config?.public?.meta || {}) as Metadata;
   const pwa = config?.public?.pwa;
+  const icons = resolveAppIcons(appID, config);
+  const derivedIcons: Metadata["icons"] = {
+    icon: [
+      { url: icons.faviconIco },
+      { url: icons.favicon16, sizes: "16x16", type: "image/png" },
+      { url: icons.favicon32, sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: icons.appleTouch180, sizes: "180x180", type: "image/png" }],
+  };
 
-  if (!pwa) return base;
+  if (!pwa) return { ...base, icons: derivedIcons };
 
   // Derive supported fields from public.pwa (excluding themeColor - moved to viewport)
   const derived: Metadata = {
     applicationName: pwa.name || base.applicationName,
+    icons: derivedIcons,
     // Next metadata appleWebApp
     appleWebApp: {
       capable: true,

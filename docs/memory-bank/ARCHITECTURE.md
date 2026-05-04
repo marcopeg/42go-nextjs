@@ -19,7 +19,7 @@ This document defines the core architectural decisions, patterns, and constraint
 │   ├── articles/                    # Project articles
 │   └── backlog/                     # Task backlog and archive
 ├── knex/                            # Database migrations and seeds
-├── public/                          # Static assets & theme CSS
+├── public/                          # Static assets, app iconsets, and theme CSS
 ├── src/
 │   ├── AppConfig.ts                 # Multi-app configuration
 │   ├── middleware.ts                # Request interception & app resolution

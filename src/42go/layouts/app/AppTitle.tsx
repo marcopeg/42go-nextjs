@@ -2,9 +2,11 @@
 
 import React from "react";
 import Image from "next/image";
-import { useAppConfig } from "@/42go/config/use-app-config";
+import { useAppConfig, useAppID } from "@/42go/config/use-app-config";
+import { resolveAppTitleIcon } from "@/42go/icons";
 
 export function AppTitle({ collapsed = false }: { collapsed?: boolean }) {
+  const appID = useAppID();
   const config = useAppConfig();
 
   if (!config) return null;
@@ -13,7 +15,7 @@ export function AppTitle({ collapsed = false }: { collapsed?: boolean }) {
   const toolbarConfig = config.public?.toolbar;
   const title = toolbarConfig?.title || config.name;
   const subtitle = toolbarConfig?.subtitle || "";
-  const icon = toolbarConfig?.icon || config.logo;
+  const icon = resolveAppTitleIcon(appID, config);
 
   // Calculate display rules from config
   const showTitle = !!title && !collapsed;
@@ -26,9 +28,6 @@ export function AppTitle({ collapsed = false }: { collapsed?: boolean }) {
       ? (icon as React.ComponentType<{ className?: string }>)
       : null;
   const iconIsUrl = typeof icon === "string";
-
-  // Get first letter of title for fallback
-  const firstLetter = title?.charAt(0).toUpperCase() || "A";
 
   // Render icon element
   const renderIcon = () => {
@@ -45,7 +44,7 @@ export function AppTitle({ collapsed = false }: { collapsed?: boolean }) {
         <div className="h-6 w-6 relative">
           <Image
             src={icon as string}
-            alt={`${title} logo`}
+            alt={`${title} icon`}
             fill
             className="object-contain"
           />
@@ -53,12 +52,7 @@ export function AppTitle({ collapsed = false }: { collapsed?: boolean }) {
       );
     }
 
-    // Fallback to first letter of title
-    return (
-      <div className="h-6 w-6 rounded-md bg-accent text-accent-foreground flex items-center justify-center font-semibold text-sm">
-        {firstLetter}
-      </div>
-    );
+    return null;
   };
 
   // Render title and subtitle

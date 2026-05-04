@@ -46,9 +46,6 @@ export default {
       startUrl: "/",
       scope: "/",
       display: "standalone",
-      icons: {
-        appleTouch180: "/images/icons/quicklist-180.png",
-      },
     },
   },
 } as const satisfies TAppConfigItem;

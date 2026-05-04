@@ -1,19 +1,22 @@
 import React from "react";
 import Image from "next/image";
-import type { TAppConfig } from "@/42go/config/app-config";
+import { getAppID, type TAppConfig } from "@/42go/config/app-config";
+import { resolveAppTitleIcon } from "@/42go/icons";
 
 type AppTitleProps = {
   config: TAppConfig;
 };
 
-export function AppTitle({ config }: AppTitleProps) {
+export async function AppTitle({ config }: AppTitleProps) {
   if (!config) return null;
+
+  const appID = await getAppID();
 
   // Extract toolbar config with fallbacks
   const toolbarConfig = config.public?.toolbar;
   const title = toolbarConfig?.title || config.name;
   const subtitle = toolbarConfig?.subtitle || "";
-  const icon = toolbarConfig?.icon || config.logo;
+  const icon = resolveAppTitleIcon(appID, config);
 
   // Calculate display rules from config
   const showTitle = !!title;
@@ -26,9 +29,6 @@ export function AppTitle({ config }: AppTitleProps) {
       ? (icon as React.ComponentType<{ className?: string }>)
       : null;
   const iconIsUrl = typeof icon === "string";
-
-  // Get first letter of title for fallback
-  const firstLetter = title?.charAt(0).toUpperCase() || "A";
 
   // Render icon element
   const renderIcon = () => {
@@ -45,7 +45,7 @@ export function AppTitle({ config }: AppTitleProps) {
         <div className="h-6 w-6 relative">
           <Image
             src={icon as string}
-            alt={`${title} logo`}
+            alt={`${title} icon`}
             fill
             className="object-contain"
           />
@@ -53,12 +53,7 @@ export function AppTitle({ config }: AppTitleProps) {
       );
     }
 
-    // Fallback to first letter of title
-    return (
-      <div className="h-6 w-6 rounded-md bg-accent text-accent-foreground flex items-center justify-center font-semibold text-sm">
-        {firstLetter}
-      </div>
-    );
+    return null;
   };
 
   // Render title and subtitle

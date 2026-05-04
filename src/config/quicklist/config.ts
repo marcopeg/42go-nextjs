@@ -79,9 +79,6 @@ export default {
       startUrl: '/quicklists',
       scope: '/',
       display: 'standalone',
-      icons: {
-        appleTouch180: '/images/icons/quicklist-180.png',
-      },
     },
   },
   app: {

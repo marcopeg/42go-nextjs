@@ -9,9 +9,11 @@ Use `public.pwa` in an app config when an app should behave well after a user in
 The PWA config drives two runtime surfaces:
 
 - `src/app/manifest.ts` generates the web app manifest.
-- `src/42go/pwa/HeadTags.tsx` emits iOS home screen metadata and the Apple touch icon.
+- `src/42go/pwa/HeadTags.tsx` emits iOS home screen metadata.
 
 If `public.pwa` is missing, the app still renders normally in the browser, but it has no app-specific install metadata.
+
+Icon paths are not configured in `public.pwa`. Use the app icon convention in `public/app-icons/<app-id>/` instead.
 
 ## Basic Example
 
@@ -30,9 +32,6 @@ const app = {
       startUrl: "/books",
       scope: "/",
       display: "standalone",
-      icons: {
-        appleTouch180: "/images/icons/default-180.png",
-      },
     },
   },
   app: {
@@ -65,9 +64,7 @@ In this example, the installed app opens at `/books`. Without `startUrl`, the ma
 
 `startUrl` controls the route opened when the installed app launches. If omitted, the manifest uses `"/"`.
 
-`icons.appleTouch180` is the iOS home screen icon path. It should point to a 180x180 PNG in `public/`.
-
-`icons.manifest192`, `icons.manifest512`, and `icons.maskable512` are optional manifest icons for Android and desktop install surfaces.
+App icons are resolved from `public/app-icons/<app-id>/` with fallback to `public/app-icons/_default/`.
 
 ## Launch Behavior
 
@@ -80,9 +77,6 @@ pwa: {
   startUrl: "/books",
   scope: "/",
   display: "standalone",
-  icons: {
-    appleTouch180: "/images/icons/default-180.png",
-  },
 }
 ```
 
@@ -90,9 +84,11 @@ This keeps the installed app aligned with `app.default.page` and avoids sending 
 
 ## Icons
 
-Real app icons should be added as static assets under `public/` and referenced with absolute public paths.
+Real app icons should be added as static assets under `public/app-icons/<app-id>/`.
 
-During early development, a placeholder icon path can keep the configuration shape in place. Before shipping, replace it with app-specific 180x180, 192x192, and 512x512 PNG assets.
+During early development, missing app-specific icon files fall back to `public/app-icons/_default/`. Before shipping, replace the fallback with app-specific favicon, Apple touch, manifest, maskable, and UI icon assets.
+
+See [App Icons](../app-icons/README.md) for filenames and validation rules.
 
 ## Manual iOS Check
 

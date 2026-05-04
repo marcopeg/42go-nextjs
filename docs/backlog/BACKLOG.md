@@ -2,6 +2,7 @@
 
 ## WIP
 
+- [RO05: Design App Icon Configuration System](./wip/RO05-design-app-icon-configuration-system/RO05.task.md) | [plan](./wip/RO05-design-app-icon-configuration-system/RO05.plan.md) | [notes](./wip/RO05-design-app-icon-configuration-system/RO05.notes.md)
 
 ## Blocked
 
@@ -16,7 +17,7 @@
 ## Drafts
 
 - [FH48: Configurable App Profile Page](./drafts/FH48-configurable-app-profile-page/FH48.task.md)
-- [RO05: Design App Icon Configuration System](./drafts/RO05-design-app-icon-configuration-system/RO05.task.md)
+- [SA84: Rename Public Themes to App Themes](./drafts/SA84-rename-public-themes-to-app-themes/SA84.task.md)
 - [FN30: Remove Google Fonts Build Network Dependency](./drafts/FN30-remove-google-fonts-build-network-dependency/FN30.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [HO30: Codex Web Local E2E Sandbox](./drafts/HO30-codex-web-local-e2e-sandbox/HO30.task.md)

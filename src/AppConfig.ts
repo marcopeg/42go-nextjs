@@ -7,6 +7,7 @@ import type { TPublicLayoutToolbar } from "@/42go/layouts/public/types";
 import type { TPWAConfig } from "@/42go/pwa/types";
 import type { TAppLayoutNavItem } from "@/42go/layouts/app/types";
 import type { TAppConfigMatch } from "@/42go/lib/app-id/matchers";
+import type { TAppIconsConfig } from "@/42go/icons";
 
 // Import different apps
 import DefaultApp from "./config/default/config";
@@ -22,7 +23,7 @@ export type ThemeValue = "light" | "dark" | "system";
 
 export interface TAppConfigItem {
   name: string;
-  logo?: string | ComponentType<{ className?: string }>;
+  icons?: TAppIconsConfig;
   // meta moved to public.meta
   theme?: {
     default?: ThemeValue;

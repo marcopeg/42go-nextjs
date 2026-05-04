@@ -4,7 +4,6 @@ import { User, BookOpen } from 'lucide-react';
 
 export default {
   name: 'LingoCafe',
-  logo: '/lingocafe/logo.png',
   match: {
     url: ['^read.lingocafe.app+$', '^lc42go.ngrok.app+$'],
   },
@@ -37,11 +36,6 @@ export default {
       startUrl: '/books',
       scope: '/',
       display: 'standalone',
-      icons: {
-        appleTouch180: '/lingocafe/favicon/favicon-180x180.png',
-        manifest192: '/lingocafe/favicon/favicon-192x192.png',
-        manifest512: '/lingocafe/favicon/favicon-512x512.png',
-      },
     },
   },
   auth: {

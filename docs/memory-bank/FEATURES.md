@@ -36,6 +36,12 @@
 **Customization**: Each AppConfig can define custom `theme.PublicLayout` component
 **Components**: Toolbar with branding, Footer with links/utilities, responsive navigation
 
+### App Icon System
+
+**Capability**: Per-app favicon, Apple touch icon, manifest icon, maskable icon, and UI title icon resolution
+**Implementation**: `public/app-icons/<app-id>/` with fallback to `public/app-icons/_default/` through the shared `resolveAppIcons()` helper
+**Features**: Dynamic metadata icon links for request-resolved apps, manifest icon generation, default fallback iconset, build-time registry validation
+
 ### ContentBlock: declarative content definition
 
 **Capability**: Type-safe, configuration driven content rendering component for both Server Side and Client Side rendering

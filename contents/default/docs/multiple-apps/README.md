@@ -189,6 +189,26 @@ You can create a `@/public/themes/{app-id}.css` and override any token to custom
 }
 ```
 
+## App Icons
+
+App-specific icons live under `public/app-icons/<app-id>/` and fall back to `public/app-icons/_default/` asset by asset.
+
+Use this folder for favicons, Apple touch icons, manifest icons, maskable icons, and the main UI title icon:
+
+```text
+public/app-icons/todo/
+  favicon.ico
+  favicon-16x16.png
+  favicon-32x32.png
+  apple-touch-icon-180x180.png
+  manifest-192x192.png
+  manifest-512x512.png
+  maskable-512x512.png
+  ui.png
+```
+
+Most apps do not need icon paths in `AppConfig`. Use the optional `icons` block only for strict validation or explicit overrides.
+
 ### PublicLayout
 
 All the public pages should be implemented under `@/app/(public)`
