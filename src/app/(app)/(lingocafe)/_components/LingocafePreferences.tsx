@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { SimplePanel } from "@/42go/components/panel";
-import { useProfileBlockHandle } from "@/42go/profile";
+import { useProfileBlockHandle } from "@/42go/components/ProfileBlock";
 
 type LanguageOption = {
   code: string;

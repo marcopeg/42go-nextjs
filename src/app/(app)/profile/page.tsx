@@ -8,7 +8,7 @@ import { useAppConfig } from "@/42go/config/use-app-config";
 import {
   ProfilePageRenderer,
   type TProfilePageRendererHandle,
-} from "@/42go/profile";
+} from "@/42go/components/ProfileBlock";
 
 type SavePreferencesActionProps = {
   saving: boolean;

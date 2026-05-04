@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 
-import type { TProfileBlockHandle } from "@/42go/profile/types";
+import type { TProfileBlockHandle } from "@/42go/components/ProfileBlock/types";
 
 type ProfileBlockRuntimeValue = {
   blockId: string;

@@ -2,14 +2,14 @@
 
 import { createElement, type ComponentType } from "react";
 
-import { AccountInfo } from "@/42go/profile/blocks/AccountInfo";
-import { Logout } from "@/42go/profile/blocks/Logout";
-import { TestRBAC } from "@/42go/profile/blocks/TestRBAC";
-import { ProfileBlockRuntimeProvider } from "@/42go/profile/ProfileBlockRuntime";
+import { AccountInfo } from "@/42go/components/ProfileBlock/blocks/AccountInfo";
+import { Logout } from "@/42go/components/ProfileBlock/blocks/Logout";
+import { TestRBAC } from "@/42go/components/ProfileBlock/blocks/TestRBAC";
+import { ProfileBlockRuntimeProvider } from "@/42go/components/ProfileBlock/ProfileBlockRuntime";
 import type {
   TProfileBlockHandle,
   TProfileBlockItem,
-} from "@/42go/profile/types";
+} from "@/42go/components/ProfileBlock/types";
 
 type ProfileBlockProps = {
   blockId: string;

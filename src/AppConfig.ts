@@ -8,7 +8,7 @@ import type { TPWAConfig } from "@/42go/pwa/types";
 import type { TAppLayoutNavItem } from "@/42go/layouts/app/types";
 import type { TAppConfigMatch } from "@/42go/lib/app-id/matchers";
 import type { TAppIconsConfig } from "@/42go/icons";
-import type { TProfileConfig } from "@/42go/profile";
+import type { TProfileConfig } from "@/42go/components/ProfileBlock";
 
 // Import different apps
 import DefaultApp from "./config/default/config";

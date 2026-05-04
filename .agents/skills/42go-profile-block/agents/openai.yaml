@@ -1,0 +1,4 @@
+interface:
+  display_name: "42go Profile Block"
+  short_description: "Configure and create 42go profile blocks."
+  default_prompt: "Use the 42go-profile-block skill to configure platform profile blocks or create a custom app-specific profile block."

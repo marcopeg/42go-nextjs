@@ -8,13 +8,13 @@ import {
   useState,
 } from "react";
 
-import { ProfileBlock } from "@/42go/profile/ProfileBlock";
+import { ProfileBlock } from "@/42go/components/ProfileBlock/ProfileBlock";
 import type {
   TProfileBlockHandle,
   TProfileBlockItem,
   TProfilePageRendererHandle,
   TProfileSaveSummary,
-} from "@/42go/profile/types";
+} from "@/42go/components/ProfileBlock/types";
 
 const defaultProfileItems: TProfileBlockItem[] = [
   { type: "AccountInfo" },

@@ -39,7 +39,7 @@
 ### Configurable Profile Page
 
 **Capability**: Authenticated `/profile` page rendered from `AppConfig` through `app.profile.items`.
-**Implementation**: Dedicated `42go/profile` renderer with platform blocks and app-specific component blocks.
+**Implementation**: Dedicated `42go/components/ProfileBlock` renderer with platform blocks and app-specific component blocks.
 **Features**: Account info, RBAC diagnostics, inline logout, top-bar save orchestration, and app-owned custom profile sections such as LingoCafe preferences.
 
 ### App Icon System

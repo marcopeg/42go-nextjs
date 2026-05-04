@@ -2,7 +2,6 @@
 
 ## WIP
 
-- [FH48: Configurable App Profile Page](./wip/FH48-configurable-app-profile-page/FH48.task.md) | [plan](./wip/FH48-configurable-app-profile-page/FH48.plan.md) | [notes](./wip/FH48-configurable-app-profile-page/FH48.notes.md)
 
 ## Blocked
 
