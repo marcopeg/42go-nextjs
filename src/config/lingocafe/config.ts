@@ -1,6 +1,7 @@
 import { TAppConfigItem } from '../../AppConfig';
 import { HomePage } from './home-page';
 import { User, BookOpen } from 'lucide-react';
+import { LingocafePreferences } from '@/app/(app)/(lingocafe)/_components/LingocafePreferences';
 
 export default {
   name: 'LingoCafe',
@@ -60,6 +61,14 @@ export default {
   app: {
     default: {
       page: '/books',
+    },
+    profile: {
+      items: [
+        { type: 'component', component: LingocafePreferences },
+        { type: 'AccountInfo' },
+        // { type: 'TestRBAC' },
+        { type: 'Logout' },
+      ],
     },
     menu: {
       top: {

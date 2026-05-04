@@ -8,6 +8,7 @@ import type { TPWAConfig } from "@/42go/pwa/types";
 import type { TAppLayoutNavItem } from "@/42go/layouts/app/types";
 import type { TAppConfigMatch } from "@/42go/lib/app-id/matchers";
 import type { TAppIconsConfig } from "@/42go/icons";
+import type { TProfileConfig } from "@/42go/profile";
 
 // Import different apps
 import DefaultApp from "./config/default/config";
@@ -71,6 +72,7 @@ export interface TAppConfigItem {
       /** Default page to land on after login (root-relative path). */
       page?: string;
     };
+    profile?: TProfileConfig;
     menu?: {
       /**
        * Controls where the desktop sidebar collapse button appears.

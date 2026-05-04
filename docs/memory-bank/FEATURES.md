@@ -36,6 +36,12 @@
 **Customization**: Each AppConfig can define custom `theme.PublicLayout` component
 **Components**: Toolbar with branding, Footer with links/utilities, responsive navigation
 
+### Configurable Profile Page
+
+**Capability**: Authenticated `/profile` page rendered from `AppConfig` through `app.profile.items`.
+**Implementation**: Dedicated `42go/profile` renderer with platform blocks and app-specific component blocks.
+**Features**: Account info, RBAC diagnostics, inline logout, top-bar save orchestration, and app-owned custom profile sections such as LingoCafe preferences.
+
 ### App Icon System
 
 **Capability**: Per-app favicon, Apple touch icon, manifest icon, maskable icon, and UI title icon resolution
