@@ -188,7 +188,7 @@ const BookReadPage = () => {
           bookId
         )}/pages/${encodeURIComponent(pageId)}`
       : "";
-  const backHref = bookId ? `/books/${encodeURIComponent(bookId)}` : "/books";
+  const bookshelfHref = "/books";
 
   useEffect(() => {
     if (status !== "authenticated" || !apiHref) {
@@ -365,7 +365,7 @@ const BookReadPage = () => {
       title="Reading"
       stickyHeader={false}
       hideMobileMenu
-      backBtn={{ to: backHref }}
+      backBtn={{ to: bookshelfHref }}
       disablePadding
       policy={{ require: { feature: "page:books", session: true } }}
     >
@@ -374,7 +374,7 @@ const BookReadPage = () => {
         loading={loading}
         error={error}
         scrollRef={mobileScrollRef}
-        backHref={backHref}
+        backHref={bookshelfHref}
         readingProgressBps={readingProgressBps}
       />
 
@@ -383,7 +383,7 @@ const BookReadPage = () => {
         loading={loading}
         error={error}
         scrollRef={desktopScrollRef}
-        backHref={backHref}
+        backHref={bookshelfHref}
         readingProgressBps={readingProgressBps}
       />
     </AppLayout>

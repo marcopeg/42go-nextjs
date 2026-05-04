@@ -208,7 +208,7 @@ const ReaderSidePanel = ({
   <aside className="hidden h-full w-[320px] shrink-0 flex-col border-r bg-background md:flex">
     <div className="flex h-[68px] items-center border-b px-6">
       <Button variant="ghost" size="icon" asChild>
-        <Link href={backHref} aria-label="Back to book details">
+        <Link href={backHref} aria-label="Back to books">
           <ChevronLeft className="h-5 w-5" />
         </Link>
       </Button>
@@ -326,7 +326,7 @@ export const BookReaderMobileSurface = ({
           style={{ width: `${(readingProgressBps / 10000) * 100}%` }}
         />
         <Button variant="ghost" size="icon" asChild>
-          <Link href={backHref} aria-label="Back to book details">
+          <Link href={backHref} aria-label="Back to books">
             <ChevronLeft className="h-5 w-5" />
           </Link>
         </Button>
