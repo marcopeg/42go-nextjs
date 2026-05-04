@@ -30,6 +30,12 @@ const app = {
 };
 ```
 
+## App Themes
+
+App-specific CSS token overrides are resolved by convention from `public/app-themes/<app-id>/style.css`, with fallback to `public/app-themes/_default/style.css`.
+
+The root layout loads the default stylesheet first and then the app-specific stylesheet only when the generated app-theme registry knows that `style.css` exists for that app. This keeps missing theme files from producing stylesheet 404s and leaves room for sibling assets such as fonts.
+
 ## Default App
 
 You can optionally setup the `DEFAULT_APP` using the config key that you want to use if no match is returned from `matchAppID()` (see next section).

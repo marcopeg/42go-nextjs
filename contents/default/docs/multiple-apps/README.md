@@ -177,17 +177,19 @@ const app: AppConfigItem = {
 
 You probably want to give your App a specific branding and visual identity.
 
-You can create a `@/public/themes/{app-id}.css` and override any token to customize, say, your primary color:
+You can create a `@/public/app-themes/{app-id}/style.css` and override any token to customize, say, your primary color. The root layout always loads `public/app-themes/_default/style.css` first, then loads the app-specific stylesheet only when that file exists.
 
 ```css
 /* 
-@/public/themes/todo.css 
+@/public/app-themes/todo/style.css 
 (AppID: todo)
 */
 :root {
   --primary: oklch(69.512% 0.20285 41.616);
 }
 ```
+
+Use an app folder so future theme assets, such as fonts, can live beside `style.css`.
 
 ## App Icons
 
@@ -207,7 +209,7 @@ public/app-icons/todo/
   ui.png
 ```
 
-Most apps do not need icon paths in `AppConfig`. Use the optional `icons` block only for strict validation or explicit overrides.
+Most apps do not need icon paths in `AppConfig`. Use the optional `icons` block only for strict validation or explicit overrides. App icons and app themes both use one folder per AppID under `public/`.
 
 ### PublicLayout
 

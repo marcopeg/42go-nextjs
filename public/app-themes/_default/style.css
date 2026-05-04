@@ -1,0 +1,6 @@
+/*
+ * Default app theme override.
+ *
+ * Keep this file present so app-theme fallback linking is explicit. Base token
+ * values live in src/app/tokens.css; app-specific files override them.
+ */

@@ -4,7 +4,7 @@
  * @see https://tailwindcss.com/docs/customizing-colors
  *
  * APP CUSTOMIZATION:
- * Override these value in public/themes/{config}.css
+ * Override these values in public/app-themes/{app-id}/style.css
  */
 
 :root {

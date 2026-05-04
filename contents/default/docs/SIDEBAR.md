@@ -6,6 +6,7 @@
 
 - [Multi-App Configuration](./multiple-apps/README.md)
 - [App Icons](./app-icons/README.md)
+- [App Themes](./app-themes/README.md)
 - [PWA Configuration](./pwa/README.md)
 - [Composable Pages](./composable-pages/README.md)
 - [Documentation Project](./docs/README.md)

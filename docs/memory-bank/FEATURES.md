@@ -42,6 +42,12 @@
 **Implementation**: `public/app-icons/<app-id>/` with fallback to `public/app-icons/_default/` through the shared `resolveAppIcons()` helper
 **Features**: Dynamic metadata icon links for request-resolved apps, manifest icon generation, default fallback iconset, build-time registry validation
 
+### App Theme Stylesheets
+
+**Capability**: Per-app CSS token override stylesheets with default fallback and no missing stylesheet requests
+**Implementation**: `public/app-themes/<app-id>/style.css` with fallback to `public/app-themes/_default/style.css` through the shared `resolveAppThemeStylesheet()` helper
+**Features**: Default-first stylesheet cascade, app-specific override loading only when registered, app folders that can hold sibling assets such as fonts
+
 ### ContentBlock: declarative content definition
 
 **Capability**: Type-safe, configuration driven content rendering component for both Server Side and Client Side rendering

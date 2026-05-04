@@ -133,7 +133,7 @@ export function MyComponent() {
 
 ### Method 3: Custom Theme Variants
 
-Add your own theme variables:
+Add app-specific theme variables in `public/app-themes/<app-id>/style.css`. The default fallback lives at `public/app-themes/_default/style.css`, and each app folder can also hold sibling assets such as fonts.
 
 ```css
 :root {
