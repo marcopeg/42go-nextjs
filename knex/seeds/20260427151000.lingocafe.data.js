@@ -21,11 +21,6 @@ exports.seed = async function seed(knex) {
         .from("books_progress")
         .whereIn("user_id", staleLingocafeUserIds)
         .del();
-      await trx
-        .withSchema("lingocafe")
-        .from("profiles")
-        .whereIn("user_id", staleLingocafeUserIds)
-        .del();
     }
 
     const jane = await trx("auth.users")
@@ -37,22 +32,37 @@ exports.seed = async function seed(knex) {
       throw new Error('Missing LingoCafe app user "jane.doe@example.com"');
     }
 
-    await trx
-      .withSchema("lingocafe")
-      .into("profiles")
-      .insert({
-        user_id: jane.id,
-        own_lang: "en",
-        target_lang: "sv",
-        target_level: "a2",
-        data: {},
-      })
-      .onConflict("user_id")
-      .merge({
-        own_lang: "en",
-        target_lang: "sv",
-        target_level: "a2",
-        data: {},
-      });
+    const now = new Date();
+
+    await trx("auth.users").where({ id: jane.id }).update({
+      profile: {
+        ownLang: "en",
+        targetLang: "sv",
+        targetLevel: "a2",
+      },
+      consent: {
+        terms: [
+          {
+            value: true,
+            changedAt: now.toISOString(),
+            version: "terms-2026-05-04",
+            statement: "I accept the Terms and Conditions",
+            source: "seed",
+            method: "seed",
+          },
+        ],
+        privacy: [
+          {
+            value: true,
+            changedAt: now.toISOString(),
+            version: "privacy-2026-05-04",
+            statement: "I acknowledge the Privacy Policy",
+            source: "seed",
+            method: "seed",
+          },
+        ],
+      },
+      updated_at: now,
+    });
   });
 };

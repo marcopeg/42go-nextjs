@@ -61,10 +61,8 @@ export const useProfileBlockHandle = (handle: TProfileBlockHandle) => {
         handleRef.current.validate?.() ?? {
           ok: true,
         },
-      persist: () =>
-        handleRef.current.persist?.() ?? {
-          ok: true,
-        },
+      onSaveSuccess: () => handleRef.current.onSaveSuccess?.(),
+      onSaveError: (summary) => handleRef.current.onSaveError?.(summary),
     });
   }, [runtime]);
 };

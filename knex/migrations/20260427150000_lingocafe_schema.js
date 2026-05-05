@@ -6,20 +6,6 @@ exports.up = async function up(knex) {
   await knex.raw('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
   await knex.raw("CREATE SCHEMA IF NOT EXISTS lingocafe");
 
-  await knex.schema.withSchema("lingocafe").createTable("profiles", (table) => {
-    table
-      .text("user_id")
-      .primary()
-      .notNullable()
-      .references("id")
-      .inTable("auth.users")
-      .onDelete("CASCADE");
-    table.text("own_lang").notNullable();
-    table.text("target_lang").notNullable();
-    table.text("target_level").nullable();
-    table.jsonb("data").notNullable().defaultTo(knex.raw(`'{}'::jsonb`));
-  });
-
   await knex.schema.withSchema("lingocafe").createTable("books", (table) => {
     table.text("id").primary().notNullable();
     table.text("project").notNullable();

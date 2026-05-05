@@ -1,4 +1,10 @@
 import type { ComponentType } from "react";
+import type {
+  TProfileCoreConfig,
+  TProfileData,
+  TConsentData,
+  TProfileValidationError,
+} from "@/42go/profile";
 
 export type TProfileSaveValidationResult =
   | { ok: true; message?: string }
@@ -25,9 +31,8 @@ export type TProfileBlockHandle = {
   validate?: () =>
     | TProfileSaveValidationResult
     | Promise<TProfileSaveValidationResult>;
-  persist?: () =>
-    | TProfileSavePersistenceResult
-    | Promise<TProfileSavePersistenceResult>;
+  onSaveSuccess?: () => void | Promise<void>;
+  onSaveError?: (summary: TProfileSaveSummary) => void | Promise<void>;
 };
 
 export type TAccountInfoProfileBlock = {
@@ -45,22 +50,40 @@ export type TLogoutProfileBlock = {
   title?: string;
 };
 
+export type TConsentProfileBlock = {
+  type: "Consent";
+  title?: string;
+  description?: string;
+  source?: string;
+  method?: string;
+};
+
 export type TProfileComponentBlock<TProps = Record<string, never>> = {
   type: "component";
   component: ComponentType<TProps>;
   props?: TProps;
+  profileKeys?: readonly string[];
+  consentKeys?: readonly string[];
 };
 
 export type TProfilePlatformBlock =
   | TAccountInfoProfileBlock
   | TTestRBACProfileBlock
-  | TLogoutProfileBlock;
+  | TLogoutProfileBlock
+  | TConsentProfileBlock;
 
 export type TProfileBlockItem =
   | TProfilePlatformBlock
   | TProfileComponentBlock;
 
-export type TProfileConfig = {
+export type TProfileStoreSnapshot = {
+  profile: TProfileData;
+  consent: Record<string, boolean>;
+  rawConsent: TConsentData | null;
+  errors: TProfileValidationError[];
+};
+
+export type TProfileConfig = TProfileCoreConfig & {
   items?: readonly TProfileBlockItem[];
 };
 

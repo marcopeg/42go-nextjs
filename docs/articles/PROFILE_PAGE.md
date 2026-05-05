@@ -1,69 +1,100 @@
 # Profile Page
 
-The authenticated `/profile` route is driven by `AppConfig` through
-`app.profile.items`.
+The authenticated `/profile` route is driven by `AppConfig`.
 
-Profile blocks follow the same general pattern as public page blocks:
-
-- Platform blocks use typed `type` discriminants.
-- App-specific blocks use `type: "component"` with a direct React component
-  reference and optional props.
-- The route stays client-only and uses `AppLayout`.
+Profile data is stored in `auth.users.profile`. Consent evidence is stored in
+`auth.users.consent`. Both fields default to `null` so the application can tell
+when a user has never created profile or consent data.
 
 ## Configuration
+
+Profile pages are still block-composed. They are not field builders.
 
 ```ts
 app: {
   profile: {
+    schema: {
+      type: "object",
+      required: ["displayMode"],
+      properties: {
+        displayMode: { type: "string", enum: ["compact", "comfortable"] },
+      },
+    },
     items: [
       { type: "AccountInfo" },
+      { type: "Consent", source: "profile", method: "checkbox-submit" },
       { type: "component", component: MyAppProfileBlock },
-      { type: "TestRBAC" },
       { type: "Logout" },
+    ],
+  },
+  consent: {
+    items: [
+      {
+        name: "terms",
+        required: true,
+        version: "terms-2026-05-05",
+        purpose: "Accept terms",
+        legalBasis: "contract",
+        category: "legal",
+        statement: "I accept the Terms and Conditions",
+        label: "I accept the Terms and Conditions",
+      },
     ],
   },
 }
 ```
 
-If an app does not define `app.profile.items`, the profile page renders the
-default platform blocks: `AccountInfo`, `TestRBAC`, and `Logout`.
+If `app.profile.items` is missing, the profile page is empty. Apps must opt into
+their blocks explicitly.
 
-## Platform Blocks
+## Core Blocks
 
-`AccountInfo` shows session account basics such as name, email, and signup date
-when available.
+`AccountInfo` edits `auth.users.name` and `auth.users.image`, and displays email
+and signup date.
 
-`TestRBAC` exposes the RBAC/session diagnostic panel and session refresh action.
-It is intended as a development or diagnostic block, not polished end-user UX.
+`Consent` renders `app.consent.items` and writes GDPR-oriented evidence into
+`auth.users.consent`.
 
-`Logout` renders the logout action inline in the profile page. The top bar is
-reserved for `Save preferences`.
+`TestRBAC` is a diagnostic block for RBAC/session inspection.
+
+`Logout` renders the configured logout action.
 
 ## Custom Blocks
 
-Custom blocks should live with the app feature that owns them. For example, the
-first LingoCafe block lives under the authenticated LingoCafe app route area and
-is referenced from `src/config/lingocafe/config.ts`.
-
-Custom blocks can participate in the global save action by calling
-`useProfileBlockHandle()` and registering validation and persistence handlers.
+Custom blocks use the central profile store:
 
 ```tsx
-useProfileBlockHandle({
-  validate: () => ({ ok: true }),
-  persist: async () => ({ ok: true, message: "Saved." }),
-});
+"use client";
+
+import { useProfile } from "@/42go/profile/client";
+import { useProfileBlockHandle } from "@/42go/components/ProfileBlock";
+
+export const MyAppProfileBlock = () => {
+  const { profile, setProfileValue } = useProfile();
+
+  useProfileBlockHandle({
+    validate: () =>
+      profile.displayMode ? { ok: true } : { ok: false, message: "Pick a mode." },
+  });
+
+  return (
+    <select
+      value={String(profile.displayMode || "")}
+      onChange={(event) => setProfileValue("displayMode", event.target.value)}
+    />
+  );
+};
 ```
 
-## Save Orchestration
+Blocks should not fetch or persist profile data in the normal path. The page
+loads once from `/api/profile`, saves centrally, runs block validation first,
+runs AJV validation next, then writes profile and consent in one request.
 
-The profile page has one top-bar `Save preferences` action.
+## Validation
 
-When clicked, the renderer asks every registered block to validate. If any block
-returns a validation error, persistence is blocked and the page shows global
-validation feedback.
+`app.profile.schema` is an AJV JSON Schema for the full `auth.users.profile`
+object. AJV uses draft-07 and strict mode by default. Apps can set
+`app.profile.ajv.strict = false` if a practical schema needs it.
 
-If validation succeeds, every registered block runs its own persistence handler.
-The page waits for all persistence results. Global success appears only when all
-blocks succeed. If one or more blocks fail, the page shows their messages as
-global feedback while successful blocks can remain saved.
+Required fields in `app.profile.schema.required` and required consent items
+together determine `profile.isComplete`.

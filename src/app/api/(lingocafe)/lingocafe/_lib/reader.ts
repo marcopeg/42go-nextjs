@@ -1,57 +1,13 @@
 import { getServerSession } from "next-auth";
 import type { Knex } from "knex";
-import { z } from "zod";
 
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { getAppID } from "@/42go/config/app-config";
 import { getDB } from "@/42go/db";
-import {
-  buildConsentDataPatch,
-  consentSources,
-  getConsentBoolean,
-  isRecord,
-  stripLegacyConsentFields,
-  type LingoCafeConsentSource,
-  type LingoCafeConsentValues,
-} from "@/config/lingocafe/profile-consent";
-
-type LanguageOption = {
-  code: string;
-  label: string;
-};
-
-type LevelOption = {
-  code: string;
-  label: string;
-};
-
-type ProfileRow = {
-  user_id: string;
-  own_lang: string | null;
-  target_lang: string | null;
-  target_level: string | null;
-  data: unknown;
-};
-
-type ProfilePayload = {
-  ownLang?: string;
-  targetLang?: string;
-  targetLevel?: string;
-  consent?: LingoCafeConsentValues;
-  consentSource?: LingoCafeConsentSource;
-};
-
-type ProfileUpdateDiff = Record<
-  string,
-  { before: unknown; after: unknown }
->;
-
-export class ProfileUpdateValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "ProfileUpdateValidationError";
-  }
-}
+import { loadProfile } from "@/42go/profile/server";
+import type { TProfileLoadResult } from "@/42go/profile";
+import { getAppConfig } from "@/42go/config/app-config";
+import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
 
 type BookRow = {
   id: string;
@@ -166,41 +122,7 @@ export type BookPageDetail = {
 const defaultAssetsBasePath = "https://assets.lingocafe.app";
 const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
 
-const ownLanguages: LanguageOption[] = [
-  { code: "en", label: "English" },
-  { code: "it", label: "Italian" },
-  { code: "es", label: "Spanish" },
-  { code: "de", label: "German" },
-  { code: "sv", label: "Swedish" },
-  { code: "fr", label: "French" },
-  { code: "pt", label: "Portuguese" },
-  { code: "nl", label: "Dutch" },
-  { code: "da", label: "Danish" },
-  { code: "no", label: "Norwegian" },
-  { code: "fi", label: "Finnish" },
-  { code: "pl", label: "Polish" },
-  { code: "cs", label: "Czech" },
-  { code: "el", label: "Greek" },
-];
-
-const targetLanguages: LanguageOption[] = [
-  { code: "en", label: "English" },
-  { code: "it", label: "Italian" },
-  { code: "es", label: "Spanish" },
-  { code: "de", label: "German" },
-  { code: "sv", label: "Swedish" },
-];
-
-const readingLevels: LevelOption[] = [
-  { code: "a2", label: "A2" },
-  { code: "b1", label: "B1" },
-];
-
-export const getReaderLanguages = () => ({
-  own: [...ownLanguages],
-  target: [...targetLanguages],
-  levels: [...readingLevels],
-});
+export const getReaderLanguages = getLingoCafeReaderLanguages;
 
 export const json = (data: unknown, init?: ResponseInit) =>
   Response.json(data, {
@@ -385,25 +307,35 @@ export const getSessionUserId = async (): Promise<string | null> => {
   return null;
 };
 
-const isProfileComplete = (profile: ProfileRow | undefined) =>
-  !!profile?.own_lang &&
-  !!profile.target_lang &&
-  !!profile.target_level &&
-  getConsentBoolean(profile.data, "terms") &&
-  getConsentBoolean(profile.data, "privacy");
-
-const mapProfile = (profile: ProfileRow | undefined) => {
-  if (!profile) return null;
+const getProfileContext = async () => {
+  const appId = (await getAppID()) || "default";
+  const config = await getAppConfig(appId);
 
   return {
-    userId: profile.user_id,
-    ownLang: profile.own_lang,
-    targetLang: profile.target_lang,
-    targetLevel: profile.target_level,
-    isComplete: isProfileComplete(profile),
-    data: profile.data ?? {},
+    appId,
+    config: {
+      ...(config?.app?.profile || {}),
+      consent: config?.app?.consent,
+    },
   };
 };
+
+const getProfileStringValue = (
+  loaded: TProfileLoadResult,
+  key: "ownLang" | "targetLang" | "targetLevel"
+) => {
+  const value = loaded.profile?.[key];
+  return typeof value === "string" ? value : null;
+};
+
+const mapProfile = (userId: string, loaded: TProfileLoadResult) => ({
+  userId,
+  ownLang: getProfileStringValue(loaded, "ownLang"),
+  targetLang: getProfileStringValue(loaded, "targetLang"),
+  targetLevel: getProfileStringValue(loaded, "targetLevel"),
+  isComplete: loaded.isComplete,
+  data: loaded.consent ?? {},
+});
 
 const mapBook = (book: BookRow) => ({
   id: book.id,
@@ -446,14 +378,16 @@ const mapBookProgress = (progress: BookProgressRow): BookProgress => ({
 export const loadReaderData = async (userId: string) => {
   const db = getDB();
   const languages = getReaderLanguages();
-  const profile = (await db("lingocafe.profiles")
-    .where({ user_id: userId })
-    .first()) as ProfileRow | undefined;
-  const profileComplete = isProfileComplete(profile);
+  const profileContext = await getProfileContext();
+  const profile = await loadProfile({
+    userId,
+    appId: profileContext.appId,
+    config: profileContext.config,
+  });
 
-  if (!profileComplete) {
+  if (!profile.isComplete) {
     return {
-      profile: mapProfile(profile),
+      profile: mapProfile(userId, profile),
       books: [],
       languages,
     };
@@ -478,8 +412,9 @@ export const loadReaderData = async (userId: string) => {
       { column: "title", order: "asc" },
     ]);
 
-  if (profile?.target_lang) {
-    booksQuery.where({ lang: profile.target_lang });
+  const targetLang = getProfileStringValue(profile, "targetLang");
+  if (targetLang) {
+    booksQuery.where({ lang: targetLang });
   }
 
   const books = (await booksQuery) as BookRow[];
@@ -511,7 +446,7 @@ export const loadReaderData = async (userId: string) => {
   const progressByBookId = new Map(progressRows.map((row) => [row.book_id, row]));
 
   return {
-    profile: mapProfile(profile),
+    profile: mapProfile(userId, profile),
     books: books.map((book) => ({
       ...mapBook(book),
       readingAction: createReadingAction({
@@ -708,247 +643,4 @@ export const trackReaderEvent = async ({
     data,
     meta,
   });
-};
-
-const stableDiffValue = (value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map(stableDiffValue);
-  if (!isRecord(value)) return value ?? null;
-
-  return Object.keys(value)
-    .sort()
-    .reduce<Record<string, unknown>>((acc, key) => {
-      acc[key] = stableDiffValue(value[key]);
-      return acc;
-    }, {});
-};
-
-const hasProfileDataChanged = (before: unknown, after: unknown) =>
-  JSON.stringify(stableDiffValue(before)) !==
-  JSON.stringify(stableDiffValue(after));
-
-const buildProfileUpdateDiff = (
-  currentProfile: ProfileRow | undefined,
-  nextProfile: {
-    ownLang?: string;
-    targetLang?: string;
-    targetLevel?: string;
-    data?: Record<string, unknown>;
-  }
-): ProfileUpdateDiff => {
-  const diff: ProfileUpdateDiff = {};
-  const fields: {
-    key: string;
-    before: string | boolean | null;
-    after: string | boolean | null | undefined;
-  }[] = [
-    {
-      key: "ownLang",
-      before: currentProfile?.own_lang ?? null,
-      after: nextProfile.ownLang,
-    },
-    {
-      key: "targetLang",
-      before: currentProfile?.target_lang ?? null,
-      after: nextProfile.targetLang,
-    },
-    {
-      key: "targetLevel",
-      before: currentProfile?.target_level ?? null,
-      after: nextProfile.targetLevel,
-    },
-  ];
-
-  for (const field of fields) {
-    if (field.after !== undefined && field.before !== field.after) {
-      diff[field.key] = {
-        before: field.before,
-        after: field.after,
-      };
-    }
-  }
-
-  if (nextProfile.data) {
-    const currentData = isRecord(currentProfile?.data) ? currentProfile.data : {};
-
-    for (const [key, value] of Object.entries(nextProfile.data)) {
-      const currentValue = currentData[key];
-      if (hasProfileDataChanged(currentValue, value)) {
-        diff[`data.${key}`] = {
-          before: currentValue ?? null,
-          after: value,
-        };
-      }
-    }
-  }
-
-  return diff;
-};
-
-const languageCodeSchema = (options: LanguageOption[]) =>
-  z.string().refine((value) => options.some((option) => option.code === value), {
-    message: "Unsupported language code",
-  });
-
-const levelCodeSchema = (options: LevelOption[]) =>
-  z.string().refine((value) => options.some((option) => option.code === value), {
-    message: "Unsupported reading level",
-  });
-
-export const parseProfilePayload = async (req: Request) => {
-  const languages = getReaderLanguages();
-  const consentValueSchema = z.object({
-    terms: z.boolean().optional(),
-    privacy: z.boolean().optional(),
-    mkt: z.boolean().optional(),
-    alpha: z.boolean().optional(),
-  });
-  const schema = z
-    .object({
-      ownLang: languageCodeSchema(languages.own).optional(),
-      targetLang: languageCodeSchema(languages.target).optional(),
-      targetLevel: levelCodeSchema(languages.levels).optional(),
-      consent: consentValueSchema.optional(),
-      consentSource: z.enum(consentSources).optional(),
-    })
-    .superRefine((value, ctx) => {
-      const languageValues = [
-        value.ownLang,
-        value.targetLang,
-        value.targetLevel,
-      ];
-      const languageCount = languageValues.filter(Boolean).length;
-
-      if (languageCount > 0 && languageCount < languageValues.length) {
-        ctx.addIssue({
-          code: "custom",
-          message:
-            "Language, learning language, and reading level must be saved together.",
-          path: ["ownLang"],
-        });
-      }
-
-      if (value.consent && !value.consentSource) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Consent source is required.",
-          path: ["consentSource"],
-        });
-      }
-
-      if (value.consent?.terms === false) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Terms and Conditions must be accepted.",
-          path: ["consent", "terms"],
-        });
-      }
-
-      if (value.consent?.privacy === false) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Privacy Policy must be acknowledged.",
-          path: ["consent", "privacy"],
-        });
-      }
-    });
-
-  return schema.safeParse(await req.json().catch(() => null));
-};
-
-export const saveProfile = async (
-  userId: string,
-  profile: ProfilePayload
-) => {
-  const db = getDB();
-
-  await db.transaction(async (trx) => {
-    const currentProfile = (await trx("lingocafe.profiles")
-      .where({ user_id: userId })
-      .first()) as ProfileRow | undefined;
-    const willHaveRequiredLegal =
-      (profile.consent?.terms === true ||
-        getConsentBoolean(currentProfile?.data, "terms")) &&
-      (profile.consent?.privacy === true ||
-        getConsentBoolean(currentProfile?.data, "privacy"));
-
-    if (!currentProfile && !willHaveRequiredLegal) {
-      throw new ProfileUpdateValidationError(
-        "Accept the Terms and Conditions and acknowledge the Privacy Policy before creating a profile."
-      );
-    }
-
-    const hasLanguageUpdate =
-      !!profile.ownLang && !!profile.targetLang && !!profile.targetLevel;
-
-    if (hasLanguageUpdate && !willHaveRequiredLegal) {
-      throw new ProfileUpdateValidationError(
-        "Accept the Terms and Conditions and acknowledge the Privacy Policy before completing your profile."
-      );
-    }
-
-    const currentData = stripLegacyConsentFields(currentProfile?.data);
-    const consentData =
-      profile.consent && profile.consentSource
-        ? buildConsentDataPatch({
-            currentData,
-            values: profile.consent,
-            source: profile.consentSource,
-            nowISO: new Date().toISOString(),
-          })
-        : {};
-    const nextData = {
-      ...currentData,
-      ...consentData,
-    };
-    const nextProfile = {
-      ownLang: hasLanguageUpdate ? profile.ownLang : undefined,
-      targetLang: hasLanguageUpdate ? profile.targetLang : undefined,
-      targetLevel: hasLanguageUpdate ? profile.targetLevel : undefined,
-      data: Object.keys(consentData).length > 0 ? consentData : undefined,
-    };
-    const diff = buildProfileUpdateDiff(currentProfile, nextProfile);
-
-    if (Object.keys(diff).length === 0) {
-      return;
-    }
-
-    const insertValues = {
-      user_id: userId,
-      own_lang: hasLanguageUpdate
-        ? profile.ownLang
-        : currentProfile?.own_lang ?? null,
-      target_lang: hasLanguageUpdate
-        ? profile.targetLang
-        : currentProfile?.target_lang ?? null,
-      target_level: hasLanguageUpdate
-        ? profile.targetLevel
-        : currentProfile?.target_level ?? null,
-      data: nextData,
-    };
-    const mergeValues: Record<string, unknown> = {};
-
-    if (hasLanguageUpdate) {
-      mergeValues.own_lang = profile.ownLang;
-      mergeValues.target_lang = profile.targetLang;
-      mergeValues.target_level = profile.targetLevel;
-    }
-
-    if (Object.keys(consentData).length > 0) {
-      mergeValues.data = nextData;
-    }
-
-    await trx("lingocafe.profiles")
-      .insert(insertValues)
-      .onConflict("user_id")
-      .merge(mergeValues);
-
-    await trackReaderEvent({
-      userId,
-      name: "profile-update",
-      data: { diff },
-      db: trx,
-    });
-  });
-
-  return loadReaderData(userId);
 };

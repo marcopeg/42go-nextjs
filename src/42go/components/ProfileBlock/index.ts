@@ -5,6 +5,7 @@ export type {
   TProfileBlockItem,
   TProfileComponentBlock,
   TProfileConfig,
+  TProfileStoreSnapshot,
   TProfilePageRendererHandle,
   TProfileSavePersistenceResult,
   TProfileSaveSummary,

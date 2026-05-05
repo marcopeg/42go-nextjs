@@ -1,17 +1,15 @@
 import { TAppConfigItem } from '../../AppConfig';
 import { HomePage } from './home-page';
-import { PrivacyPage, TermsPage } from './legal-pages';
 import { User, BookOpen } from 'lucide-react';
-import { LingoCafeContent } from '@/app/(app)/(lingocafe)/_components/LingoCafeContent';
-import { LingoCafeTermsPrivacy } from '@/app/(app)/(lingocafe)/_components/LingoCafeTermsPrivacy';
 import { LingocafePreferences } from '@/app/(app)/(lingocafe)/_components/LingocafePreferences';
+import { lingoCafeProfileSchema } from '@/config/lingocafe/profile-options';
 
 export default {
   name: 'LingoCafe',
   match: {
     url: ['^read.lingocafe.app+$', '^lc42go.ngrok.app+$'],
   },
-  features: ['page:books', 'api:lingocafe'],
+  features: ['page:books', 'api:lingocafe', 'api:profile'],
   theme: {
     default: 'light',
   },
@@ -27,8 +25,6 @@ export default {
     },
     pages: {
       HomePage,
-      terms: TermsPage,
-      privacy: PrivacyPage,
     },
     footer: {
       disabled: true,
@@ -68,13 +64,73 @@ export default {
       page: '/books',
     },
     profile: {
+      schema: lingoCafeProfileSchema,
       items: [
-        { type: 'component', component: LingoCafeTermsPrivacy },
-        { type: 'component', component: LingocafePreferences },
-        { type: 'component', component: LingoCafeContent },
         { type: 'AccountInfo' },
+        {
+          type: 'component',
+          component: LingocafePreferences,
+          profileKeys: ['ownLang', 'targetLang', 'targetLevel'],
+        },
+        {
+          type: 'Consent',
+          title: 'Terms, Privacy, and Updates',
+          description: 'Choose required acknowledgements and optional updates.',
+          source: 'profile',
+          method: 'checkbox-submit',
+        },
         // { type: 'TestRBAC' },
         { type: 'Logout' },
+      ],
+    },
+    consent: {
+      items: [
+        {
+          name: 'terms',
+          required: true,
+          version: 'terms-2026-05-04',
+          purpose: 'Accept LingoCafe Terms and Conditions',
+          legalBasis: 'contract',
+          category: 'legal',
+          statement: 'I accept the Terms and Conditions',
+          label: 'I accept the Terms and Conditions',
+          collect: ['source', 'method', 'ip', 'ua'],
+        },
+        {
+          name: 'privacy',
+          required: true,
+          version: 'privacy-2026-05-04',
+          purpose: 'Acknowledge LingoCafe Privacy Policy',
+          legalBasis: 'legal-obligation',
+          category: 'privacy',
+          statement: 'I acknowledge the Privacy Policy',
+          label: 'I acknowledge the Privacy Policy',
+          collect: ['source', 'method', 'ip', 'ua'],
+        },
+        {
+          name: 'mkt',
+          required: false,
+          version: 'mkt-2026-05-04',
+          purpose: 'Receive LingoCafe content updates and offers',
+          legalBasis: 'consent',
+          category: 'marketing',
+          statement: 'I consent to receive content updates and offers about LingoCafe services',
+          label: 'I consent to receive content updates and offers about LingoCafe services',
+          collect: ['source', 'method', 'ip', 'ua'],
+        },
+        {
+          name: 'alpha',
+          required: false,
+          version: 'alpha-2026-05-04',
+          purpose: 'Join the LingoCafe Early Birds program',
+          legalBasis: 'consent',
+          category: 'program',
+          statement:
+            'I want to participate in the Early Birds program and receive all the features for free',
+          label:
+            'I want to participate in the Early Birds program and receive all the features for free',
+          collect: ['source', 'method', 'ip', 'ua'],
+        },
       ],
     },
     menu: {

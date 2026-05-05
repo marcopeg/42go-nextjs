@@ -28,7 +28,8 @@ The content-export application must understand but not directly own:
 
 - `lingocafe.books_progress`
 - `lingocafe.events`
-- `lingocafe.profiles`
+- `auth.users.profile`
+- `auth.users.consent`
 
 The target application migration is the source of truth for the live schema. This document describes the schema contract that the export application needs in order to generate SQL safely.
 
@@ -80,7 +81,8 @@ Cover assets are not persisted in `lingocafe.books`. The reader resolves covers 
 | `lingocafe.books_pages` | Owned by content export | Ordered readable pages for each book. |
 | `lingocafe.books_progress` | User state | Current reading position. Not owned by content export. |
 | `lingocafe.events` | Runtime telemetry | Historical reader events. Not owned by content export. |
-| `lingocafe.profiles` | User state | Reader language preferences. Not owned by content export. |
+| `auth.users.profile` | User state | Reader language preferences. Not owned by content export. |
+| `auth.users.consent` | User state | Consent evidence history. Not owned by content export. |
 
 The content export owns the canonical page set only for the books included in the current export payload.
 
@@ -206,11 +208,14 @@ The export application must not rewrite this table as part of content replacemen
 
 Events may contain `book_id` and `page_id` text values, but they are not foreign-keyed to the content tables. This is intentional. Historical events can survive content reflows and page deletion.
 
-## `lingocafe.profiles`
+## Reader Profile And Consent
 
-`lingocafe.profiles` stores reader preferences such as native language, target language, and target reading level.
+Reader preferences are stored in `auth.users.profile` using camelCase keys such
+as `ownLang`, `targetLang`, and `targetLevel`.
 
-The export application must not write this table.
+Consent evidence is stored separately in `auth.users.consent`.
+
+The export application must not write either field.
 
 ## Runtime Assumptions The Export Must Preserve
 
@@ -236,7 +241,7 @@ The payload is not authoritative for:
 
 - books missing from the export payload
 - pages belonging to books missing from the export payload
-- user profiles
+- user profiles or consent
 - reader progress except stale progress removed through page deletion cascade
 - event history
 
@@ -698,4 +703,4 @@ Before shipping `content-export.sql`, verify:
 - Book upserts refresh `updated_at`.
 - Stale progress cleanup relies on the page-progress `ON DELETE CASCADE`.
 - `lingocafe.events` is not rewritten.
-- `lingocafe.profiles` is not rewritten.
+- `auth.users.profile` and `auth.users.consent` are not rewritten.

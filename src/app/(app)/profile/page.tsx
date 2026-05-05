@@ -12,15 +12,17 @@ import {
 
 type SavePreferencesActionProps = {
   saving: boolean;
+  dirty: boolean;
   onSave: () => void;
 };
 
 const SavePreferencesAction = ({
   saving,
+  dirty,
   onSave,
 }: SavePreferencesActionProps) => (
   <Button onClick={onSave} disabled={saving}>
-    {saving ? "Saving..." : "Save preferences"}
+    {saving ? "Saving..." : dirty ? "Save changes" : "Save preferences"}
   </Button>
 );
 
@@ -28,6 +30,7 @@ export default function ProfilePage() {
   const config = useAppConfig();
   const rendererRef = useRef<TProfilePageRendererHandle>(null);
   const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   const handleSave = () => {
     void rendererRef.current?.save();
@@ -37,12 +40,14 @@ export default function ProfilePage() {
     <AppLayout
       title="Profile"
       stickyHeader={true}
+      policy={{ require: { session: true } }}
       actions={[
         {
           type: "component",
           component: SavePreferencesAction,
           props: {
             saving,
+            dirty,
             onSave: handleSave,
           },
         },
@@ -50,8 +55,10 @@ export default function ProfilePage() {
     >
       <ProfilePageRenderer
         ref={rendererRef}
-        items={config?.app?.profile?.items}
+        profile={config?.app?.profile}
+        consent={config?.app?.consent}
         onSavingChange={setSaving}
+        onDirtyChange={setDirty}
       />
     </AppLayout>
   );

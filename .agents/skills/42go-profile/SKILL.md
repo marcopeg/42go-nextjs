@@ -1,9 +1,9 @@
 ---
-name: 42go-profile-block
+name: 42go-profile
 description: Agentic documentation for configuring and extending the 42go authenticated ProfilePage block system. Use when Codex needs to configure `app.profile.items`, choose or document core profile blocks, move profile-page content into ProfileBlock blocks, or create a custom app-specific profile block that participates in validation and save orchestration.
 ---
 
-# 42go Profile Block
+# 42go Profile
 
 Use this skill when working on the authenticated `/profile` page block system.
 
@@ -11,6 +11,7 @@ The core implementation lives at:
 
 - `src/42go/components/ProfileBlock/`
 - `src/42go/components/ProfileBlock/blocks/`
+- `src/42go/profile/`
 
 App-specific custom blocks should live with the app feature that owns them. Do not put app-specific UI into the shared `42go` layer.
 
@@ -34,8 +35,16 @@ Configure profile blocks under `app.profile.items`.
 ```ts
 app: {
   profile: {
+    schema: {
+      type: "object",
+      required: ["timezone"],
+      properties: {
+        timezone: { type: "string" },
+      },
+    },
     items: [
       { type: "AccountInfo" },
+      { type: "Consent", source: "profile", method: "checkbox-submit" },
       { type: "component", component: MyAppProfileBlock },
       { type: "TestRBAC" },
       { type: "Logout" },
@@ -44,13 +53,15 @@ app: {
 }
 ```
 
-If `app.profile.items` is missing, `ProfilePageRenderer` renders default platform blocks.
+If `app.profile.items` is missing, `ProfilePageRenderer` renders an empty page.
+Apps must opt into profile blocks explicitly.
 
 ## Core Blocks
 
 Read these dedicated references before modifying or using a core block:
 
 - [AccountInfo](references/core-account-info.md)
+- `Consent` renders `app.consent.items`; use the `42go-consent` skill.
 - [TestRBAC](references/core-test-rbac.md)
 - [Logout](references/core-logout.md)
 
@@ -63,8 +74,11 @@ Custom blocks can join the global `Save preferences` action with:
 ```tsx
 useProfileBlockHandle({
   validate: () => ({ ok: true }),
-  persist: async () => ({ ok: true, message: "Saved." }),
 });
 ```
 
-Validation runs before persistence. If any block fails validation, the profile page blocks all persistence and shows global validation feedback.
+Use `useProfile()` from `@/42go/profile/client` to read and update the central
+profile/consent store. Blocks should not fetch or persist profile data in the
+normal path. Validation runs before AJV and before the central `/api/profile`
+save. If any block fails validation, the profile page blocks persistence and
+shows global validation feedback.

@@ -38,6 +38,7 @@ export default {
     "api:quicklists",
     "api:notes",
     "api:lingocafe",
+    "api:profile",
     "page:quicklists",
     "page:books",
   ],
@@ -146,6 +147,48 @@ export default {
     // default: {
     //   page: "/quicklists",
     // },
+    profile: {
+      items: [
+        { type: "AccountInfo" },
+        { type: "Consent", source: "profile", method: "checkbox-submit" },
+        { type: "TestRBAC" },
+        { type: "Logout" },
+      ],
+    },
+    consent: {
+      items: [
+        {
+          name: "terms",
+          required: true,
+          version: "default-terms-2026-05-05",
+          purpose: "Accept the default app terms",
+          legalBasis: "contract",
+          category: "legal",
+          statement: "I accept the Terms and Conditions",
+          label: "I accept the Terms and Conditions",
+        },
+        {
+          name: "privacy",
+          required: true,
+          version: "default-privacy-2026-05-05",
+          purpose: "Acknowledge the default app privacy policy",
+          legalBasis: "legal-obligation",
+          category: "privacy",
+          statement: "I acknowledge the Privacy Policy",
+          label: "I acknowledge the Privacy Policy",
+        },
+        {
+          name: "marketing",
+          required: false,
+          version: "default-marketing-2026-05-05",
+          purpose: "Receive product updates",
+          legalBasis: "consent",
+          category: "marketing",
+          statement: "I consent to receive product updates",
+          label: "I consent to receive product updates",
+        },
+      ],
+    },
     menu: {
       top: {
         items: [

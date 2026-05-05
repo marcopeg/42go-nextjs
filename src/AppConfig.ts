@@ -9,6 +9,7 @@ import type { TAppLayoutNavItem } from "@/42go/layouts/app/types";
 import type { TAppConfigMatch } from "@/42go/lib/app-id/matchers";
 import type { TAppIconsConfig } from "@/42go/icons";
 import type { TProfileConfig } from "@/42go/components/ProfileBlock";
+import type { TConsentConfig } from "@/42go/profile";
 
 // Import different apps
 import DefaultApp from "./config/default/config";
@@ -72,7 +73,19 @@ export interface TAppConfigItem {
       /** Default page to land on after login (root-relative path). */
       page?: string;
     };
+    /**
+     * Block-composed profile page configuration.
+     *
+     * `schema` is an AJV JSON Schema document for `auth.users.profile`.
+     * Use draft-07 schemas; strict AJV mode is enabled unless
+     * `ajv.strict` is set to false.
+     */
     profile?: TProfileConfig;
+    /**
+     * Consent item configuration for `auth.users.consent`.
+     * Consent blocks must still be explicitly listed in `profile.items`.
+     */
+    consent?: TConsentConfig;
     menu?: {
       /**
        * Controls where the desktop sidebar collapse button appears.

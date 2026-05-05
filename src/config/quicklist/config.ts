@@ -7,7 +7,7 @@ export default {
   match: {
     url: ['^quicklist.42go.dev+$', '^ql42go.ngrok.app+$'],
   },
-  features: ['api:waitlist', 'api:quicklists', 'page:quicklists'],
+  features: ['api:waitlist', 'api:quicklists', 'api:profile', 'page:quicklists'],
   auth: {
     providers: [
       {
@@ -84,6 +84,47 @@ export default {
   app: {
     default: {
       page: '/quicklists',
+    },
+    profile: {
+      items: [
+        { type: 'AccountInfo' },
+        { type: 'Consent', source: 'profile', method: 'checkbox-submit' },
+        { type: 'Logout' },
+      ],
+    },
+    consent: {
+      items: [
+        {
+          name: 'terms',
+          required: true,
+          version: 'quicklist-terms-2026-05-05',
+          purpose: 'Accept QuickList terms',
+          legalBasis: 'contract',
+          category: 'legal',
+          statement: 'I accept the Terms and Conditions',
+          label: 'I accept the Terms and Conditions',
+        },
+        {
+          name: 'privacy',
+          required: true,
+          version: 'quicklist-privacy-2026-05-05',
+          purpose: 'Acknowledge QuickList privacy policy',
+          legalBasis: 'legal-obligation',
+          category: 'privacy',
+          statement: 'I acknowledge the Privacy Policy',
+          label: 'I acknowledge the Privacy Policy',
+        },
+        {
+          name: 'marketing',
+          required: false,
+          version: 'quicklist-marketing-2026-05-05',
+          purpose: 'Receive QuickList product updates',
+          legalBasis: 'consent',
+          category: 'marketing',
+          statement: 'I consent to receive QuickList product updates',
+          label: 'I consent to receive QuickList product updates',
+        },
+      ],
     },
     menu: {
       top: {

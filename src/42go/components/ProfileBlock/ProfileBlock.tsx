@@ -3,6 +3,7 @@
 import { createElement, type ComponentType } from "react";
 
 import { AccountInfo } from "@/42go/components/ProfileBlock/blocks/AccountInfo";
+import { Consent } from "@/42go/components/ProfileBlock/blocks/Consent";
 import { Logout } from "@/42go/components/ProfileBlock/blocks/Logout";
 import { TestRBAC } from "@/42go/components/ProfileBlock/blocks/TestRBAC";
 import { ProfileBlockRuntimeProvider } from "@/42go/components/ProfileBlock/ProfileBlockRuntime";
@@ -39,7 +40,13 @@ export const ProfileBlock = ({
     }
 
     if (item.type === "Logout") {
-      return <Logout title={item.title} />;
+      return <Logout />;
+    }
+
+    if (item.type === "Consent") {
+      return (
+        <Consent title={item.title} description={item.description} />
+      );
     }
 
     return null;

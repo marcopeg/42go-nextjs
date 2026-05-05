@@ -1,18 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useSession } from "next-auth/react";
 
 import { AppLayout } from "@/42go/layouts/app";
 import { Button } from "@/components/ui/button";
 import { BookCard } from "@/app/(app)/(lingocafe)/books/_components/BookCard";
 import type { ReaderBook } from "@/app/(app)/(lingocafe)/books/_components/book-types";
-import {
-  getConsentBoolean,
-  LINGOCAFE_CONSENT_LABELS,
-  LINGOCAFE_LEGAL_LINKS,
-} from "@/config/lingocafe/profile-consent";
+import { useAppConfig } from "@/42go/config/use-app-config";
+import { ProfileConsent } from "@/42go/profile/ProfileConsent";
+import { getConsentCurrentValues } from "@/42go/profile/consent";
+import type { TConsentData } from "@/42go/profile";
+import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
 
 type LanguageOption = {
   code: string;
@@ -43,35 +42,8 @@ type ReaderData = {
   };
 };
 
-const fallbackLanguages = {
-  own: [
-    { code: "en", label: "English" },
-    { code: "it", label: "Italian" },
-    { code: "es", label: "Spanish" },
-    { code: "de", label: "German" },
-    { code: "sv", label: "Swedish" },
-    { code: "fr", label: "French" },
-    { code: "pt", label: "Portuguese" },
-    { code: "nl", label: "Dutch" },
-    { code: "da", label: "Danish" },
-    { code: "no", label: "Norwegian" },
-    { code: "fi", label: "Finnish" },
-    { code: "pl", label: "Polish" },
-    { code: "cs", label: "Czech" },
-    { code: "el", label: "Greek" },
-  ] satisfies LanguageOption[],
-  target: [
-    { code: "en", label: "English" },
-    { code: "it", label: "Italian" },
-    { code: "es", label: "Spanish" },
-    { code: "de", label: "German" },
-    { code: "sv", label: "Swedish" },
-  ] satisfies LanguageOption[],
-  levels: [
-    { code: "a2", label: "A2" },
-    { code: "b1", label: "B1" },
-  ] satisfies LevelOption[],
-};
+const fallbackLanguages = getLingoCafeReaderLanguages();
+const consentMethod = "checkbox-submit";
 const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
 const fallbackReadingAction: ReaderBook["readingAction"] = {
   kind: "unavailable",
@@ -118,15 +90,16 @@ const normalizeReaderData = (payload: Partial<ReaderData>): ReaderData => ({
 });
 
 const BooksPage = () => {
+  const config = useAppConfig();
   const { status } = useSession();
   const [data, setData] = useState<ReaderData | null>(null);
   const [ownLang, setOwnLang] = useState("");
   const [targetLang, setTargetLang] = useState("");
   const [targetLevel, setTargetLevel] = useState("");
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [acknowledgedPrivacy, setAcknowledgedPrivacy] = useState(false);
-  const [marketingConsent, setMarketingConsent] = useState(false);
-  const [earlyBirdsConsent, setEarlyBirdsConsent] = useState(false);
+  const [consentValues, setConsentValues] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -158,12 +131,12 @@ const BooksPage = () => {
         setOwnLang(payload.profile?.ownLang || "");
         setTargetLang(payload.profile?.targetLang || "");
         setTargetLevel(payload.profile?.targetLevel || "");
-        setAcceptedTerms(getConsentBoolean(payload.profile?.data, "terms"));
-        setAcknowledgedPrivacy(
-          getConsentBoolean(payload.profile?.data, "privacy")
+        setConsentValues(
+          getConsentCurrentValues(
+            payload.profile?.data as TConsentData | null | undefined,
+            config?.app?.consent
+          )
         );
-        setMarketingConsent(getConsentBoolean(payload.profile?.data, "mkt"));
-        setEarlyBirdsConsent(getConsentBoolean(payload.profile?.data, "alpha"));
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Could not load books.");
@@ -175,30 +148,29 @@ const BooksPage = () => {
     loadBooks();
 
     return () => controller.abort();
-  }, [status]);
+  }, [config?.app?.consent, status]);
 
   const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setSubmitted(true);
     setSaving(true);
     setError(null);
 
     try {
-      const res = await fetch("/api/lingocafe/profile", {
+      const res = await fetch("/api/profile", {
         method: "POST",
         credentials: "same-origin",
         cache: "no-store",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ownLang,
-          targetLang,
-          targetLevel,
-          consent: {
-            terms: acceptedTerms,
-            privacy: acknowledgedPrivacy,
-            mkt: marketingConsent,
-            alpha: earlyBirdsConsent,
+          profile: {
+            ownLang,
+            targetLang,
+            targetLevel,
           },
-          consentSource: "books-onboarding",
+          consent: consentValues,
+          source: "books-onboarding",
+          method: consentMethod,
         }),
       });
 
@@ -206,7 +178,16 @@ const BooksPage = () => {
         throw new Error("Could not save language preferences.");
       }
 
-      setData(normalizeReaderData(await res.json()));
+      const booksRes = await fetch("/api/lingocafe/books", {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+
+      if (!booksRes.ok) {
+        throw new Error("Could not reload books.");
+      }
+
+      setData(normalizeReaderData(await booksRes.json()));
     } catch (err) {
       setError(
         err instanceof Error
@@ -224,6 +205,10 @@ const BooksPage = () => {
     )?.label || data?.profile?.targetLang;
   const showProfileForm = !!data && !data.profile?.isComplete;
   const languages = data?.languages || fallbackLanguages;
+  const consentItems = config?.app?.consent?.items || [];
+  const missingRequiredConsent = consentItems.some(
+    (item) => item.required && consentValues[item.name] !== true
+  );
 
   return (
     <AppLayout
@@ -316,72 +301,19 @@ const BooksPage = () => {
               </select>
             </label>
 
-            <div className="space-y-4 border-t pt-4">
-              <label className="flex items-start gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  checked={acceptedTerms}
-                  onChange={(event) => setAcceptedTerms(event.target.checked)}
-                  className="mt-1 size-4 rounded border-input accent-primary"
-                  required
-                />
-                <span>
-                  {LINGOCAFE_CONSENT_LABELS.terms}{" "}
-                  <Link
-                    href={LINGOCAFE_LEGAL_LINKS.terms}
-                    className="font-medium underline underline-offset-4"
-                  >
-                    Read terms
-                  </Link>
-                </span>
-              </label>
-
-              <label className="flex items-start gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  checked={acknowledgedPrivacy}
-                  onChange={(event) =>
-                    setAcknowledgedPrivacy(event.target.checked)
-                  }
-                  className="mt-1 size-4 rounded border-input accent-primary"
-                  required
-                />
-                <span>
-                  {LINGOCAFE_CONSENT_LABELS.privacy}{" "}
-                  <Link
-                    href={LINGOCAFE_LEGAL_LINKS.privacy}
-                    className="font-medium underline underline-offset-4"
-                  >
-                    Read privacy policy
-                  </Link>
-                </span>
-              </label>
-            </div>
-
-            <div className="space-y-4 border-t pt-4">
-              <label className="flex items-start gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  checked={marketingConsent}
-                  onChange={(event) =>
-                    setMarketingConsent(event.target.checked)
-                  }
-                  className="mt-1 size-4 rounded border-input accent-primary"
-                />
-                <span>{LINGOCAFE_CONSENT_LABELS.mkt}</span>
-              </label>
-
-              <label className="flex items-start gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  checked={earlyBirdsConsent}
-                  onChange={(event) =>
-                    setEarlyBirdsConsent(event.target.checked)
-                  }
-                  className="mt-1 size-4 rounded border-input accent-primary"
-                />
-                <span>{LINGOCAFE_CONSENT_LABELS.alpha}</span>
-              </label>
+            <div className="border-t pt-4">
+              <ProfileConsent
+                items={consentItems}
+                values={consentValues}
+                onChange={(name, value) =>
+                  setConsentValues((current) => ({
+                    ...current,
+                    [name]: value,
+                  }))
+                }
+                disabled={saving}
+                submitted={submitted}
+              />
             </div>
 
             <Button
@@ -391,8 +323,7 @@ const BooksPage = () => {
                 !ownLang ||
                 !targetLang ||
                 !targetLevel ||
-                !acceptedTerms ||
-                !acknowledgedPrivacy
+                missingRequiredConsent
               }
             >
               {saving ? "Saving..." : "Save preferences"}

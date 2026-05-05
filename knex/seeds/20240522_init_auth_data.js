@@ -22,7 +22,6 @@ exports.seed = async function (knex) {
 
     try {
       await trx.withSchema("lingocafe").from("books_progress").del();
-      await trx.withSchema("lingocafe").from("profiles").del();
     } catch (e) {
       // If lingocafe schema/tables don't exist yet, ignore the error
       console.log("lingocafe cleanup skipped:", e.message || e);
