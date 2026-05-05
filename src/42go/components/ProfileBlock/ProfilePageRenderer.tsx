@@ -83,12 +83,13 @@ export const ProfilePageRenderer = forwardRef<
         return summary;
       }
 
-      const persistResults = await Promise.all(
-        handles.map(async ([blockId, handle]) => ({
+      const persistResults = [];
+      for (const [blockId, handle] of handles) {
+        persistResults.push({
           blockId,
           result: await (handle.persist?.() ?? { ok: true }),
-        }))
-      );
+        });
+      }
       const persistErrors = persistResults
         .filter(({ result }) => !result.ok)
         .flatMap(({ result }) => (result.ok ? [] : [result.message]));

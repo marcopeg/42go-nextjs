@@ -15,6 +15,7 @@
 
 ## Drafts
 
+- [ZO85: Core User Profile and Consent Storage](./drafts/ZO85-core-user-profile-and-consent-storage/ZO85.task.md) | [plan](./drafts/ZO85-core-user-profile-and-consent-storage/ZO85.plan.md)
 - [FN30: Remove Google Fonts Build Network Dependency](./drafts/FN30-remove-google-fonts-build-network-dependency/FN30.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [HO30: Codex Web Local E2E Sandbox](./drafts/HO30-codex-web-local-e2e-sandbox/HO30.task.md)

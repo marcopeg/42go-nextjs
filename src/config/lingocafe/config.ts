@@ -1,6 +1,9 @@
 import { TAppConfigItem } from '../../AppConfig';
 import { HomePage } from './home-page';
+import { PrivacyPage, TermsPage } from './legal-pages';
 import { User, BookOpen } from 'lucide-react';
+import { LingoCafeContent } from '@/app/(app)/(lingocafe)/_components/LingoCafeContent';
+import { LingoCafeTermsPrivacy } from '@/app/(app)/(lingocafe)/_components/LingoCafeTermsPrivacy';
 import { LingocafePreferences } from '@/app/(app)/(lingocafe)/_components/LingocafePreferences';
 
 export default {
@@ -24,6 +27,8 @@ export default {
     },
     pages: {
       HomePage,
+      terms: TermsPage,
+      privacy: PrivacyPage,
     },
     footer: {
       disabled: true,
@@ -64,7 +69,9 @@ export default {
     },
     profile: {
       items: [
+        { type: 'component', component: LingoCafeTermsPrivacy },
         { type: 'component', component: LingocafePreferences },
+        { type: 'component', component: LingoCafeContent },
         { type: 'AccountInfo' },
         // { type: 'TestRBAC' },
         { type: 'Logout' },

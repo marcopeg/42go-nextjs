@@ -5,6 +5,7 @@ import {
   json,
   loadReaderData,
   parseProfilePayload,
+  ProfileUpdateValidationError,
   saveProfile,
 } from "../_lib/reader";
 
@@ -46,6 +47,17 @@ const updateProfile = async (req: Request) => {
 
     return json(await saveProfile(userId, parsed.data));
   } catch (error) {
+    if (error instanceof ProfileUpdateValidationError) {
+      return json(
+        {
+          error: "validation",
+          message: error.message,
+          languages: getReaderLanguages(),
+        },
+        { status: 400 }
+      );
+    }
+
     console.error("LingoCafe profile update failed", error);
     return json(
       {

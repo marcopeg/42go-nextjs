@@ -1,12 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 
 import { AppLayout } from "@/42go/layouts/app";
 import { Button } from "@/components/ui/button";
 import { BookCard } from "@/app/(app)/(lingocafe)/books/_components/BookCard";
 import type { ReaderBook } from "@/app/(app)/(lingocafe)/books/_components/book-types";
+import {
+  getConsentBoolean,
+  LINGOCAFE_CONSENT_LABELS,
+  LINGOCAFE_LEGAL_LINKS,
+} from "@/config/lingocafe/profile-consent";
 
 type LanguageOption = {
   code: string;
@@ -117,6 +123,10 @@ const BooksPage = () => {
   const [ownLang, setOwnLang] = useState("");
   const [targetLang, setTargetLang] = useState("");
   const [targetLevel, setTargetLevel] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acknowledgedPrivacy, setAcknowledgedPrivacy] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [earlyBirdsConsent, setEarlyBirdsConsent] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -148,6 +158,12 @@ const BooksPage = () => {
         setOwnLang(payload.profile?.ownLang || "");
         setTargetLang(payload.profile?.targetLang || "");
         setTargetLevel(payload.profile?.targetLevel || "");
+        setAcceptedTerms(getConsentBoolean(payload.profile?.data, "terms"));
+        setAcknowledgedPrivacy(
+          getConsentBoolean(payload.profile?.data, "privacy")
+        );
+        setMarketingConsent(getConsentBoolean(payload.profile?.data, "mkt"));
+        setEarlyBirdsConsent(getConsentBoolean(payload.profile?.data, "alpha"));
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Could not load books.");
@@ -172,7 +188,18 @@ const BooksPage = () => {
         credentials: "same-origin",
         cache: "no-store",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownLang, targetLang, targetLevel }),
+        body: JSON.stringify({
+          ownLang,
+          targetLang,
+          targetLevel,
+          consent: {
+            terms: acceptedTerms,
+            privacy: acknowledgedPrivacy,
+            mkt: marketingConsent,
+            alpha: earlyBirdsConsent,
+          },
+          consentSource: "books-onboarding",
+        }),
       });
 
       if (!res.ok) {
@@ -289,9 +316,84 @@ const BooksPage = () => {
               </select>
             </label>
 
+            <div className="space-y-4 border-t pt-4">
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(event) => setAcceptedTerms(event.target.checked)}
+                  className="mt-1 size-4 rounded border-input accent-primary"
+                  required
+                />
+                <span>
+                  {LINGOCAFE_CONSENT_LABELS.terms}{" "}
+                  <Link
+                    href={LINGOCAFE_LEGAL_LINKS.terms}
+                    className="font-medium underline underline-offset-4"
+                  >
+                    Read terms
+                  </Link>
+                </span>
+              </label>
+
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={acknowledgedPrivacy}
+                  onChange={(event) =>
+                    setAcknowledgedPrivacy(event.target.checked)
+                  }
+                  className="mt-1 size-4 rounded border-input accent-primary"
+                  required
+                />
+                <span>
+                  {LINGOCAFE_CONSENT_LABELS.privacy}{" "}
+                  <Link
+                    href={LINGOCAFE_LEGAL_LINKS.privacy}
+                    className="font-medium underline underline-offset-4"
+                  >
+                    Read privacy policy
+                  </Link>
+                </span>
+              </label>
+            </div>
+
+            <div className="space-y-4 border-t pt-4">
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={marketingConsent}
+                  onChange={(event) =>
+                    setMarketingConsent(event.target.checked)
+                  }
+                  className="mt-1 size-4 rounded border-input accent-primary"
+                />
+                <span>{LINGOCAFE_CONSENT_LABELS.mkt}</span>
+              </label>
+
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={earlyBirdsConsent}
+                  onChange={(event) =>
+                    setEarlyBirdsConsent(event.target.checked)
+                  }
+                  className="mt-1 size-4 rounded border-input accent-primary"
+                />
+                <span>{LINGOCAFE_CONSENT_LABELS.alpha}</span>
+              </label>
+            </div>
+
             <Button
               type="submit"
-              disabled={saving || !ownLang || !targetLang || !targetLevel}
+              disabled={
+                saving ||
+                !ownLang ||
+                !targetLang ||
+                !targetLevel ||
+                !acceptedTerms ||
+                !acknowledgedPrivacy
+              }
             >
               {saving ? "Saving..." : "Save preferences"}
             </Button>

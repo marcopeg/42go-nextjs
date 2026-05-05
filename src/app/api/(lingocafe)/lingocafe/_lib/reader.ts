@@ -5,6 +5,15 @@ import { z } from "zod";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { getAppID } from "@/42go/config/app-config";
 import { getDB } from "@/42go/db";
+import {
+  buildConsentDataPatch,
+  consentSources,
+  getConsentBoolean,
+  isRecord,
+  stripLegacyConsentFields,
+  type LingoCafeConsentSource,
+  type LingoCafeConsentValues,
+} from "@/config/lingocafe/profile-consent";
 
 type LanguageOption = {
   code: string;
@@ -25,14 +34,24 @@ type ProfileRow = {
 };
 
 type ProfilePayload = {
-  ownLang: string;
-  targetLang: string;
-  targetLevel: string;
+  ownLang?: string;
+  targetLang?: string;
+  targetLevel?: string;
+  consent?: LingoCafeConsentValues;
+  consentSource?: LingoCafeConsentSource;
 };
 
-type ProfileUpdateDiff = Partial<
-  Record<keyof ProfilePayload, { before: string | null; after: string }>
+type ProfileUpdateDiff = Record<
+  string,
+  { before: unknown; after: unknown }
 >;
+
+export class ProfileUpdateValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ProfileUpdateValidationError";
+  }
+}
 
 type BookRow = {
   id: string;
@@ -367,7 +386,11 @@ export const getSessionUserId = async (): Promise<string | null> => {
 };
 
 const isProfileComplete = (profile: ProfileRow | undefined) =>
-  !!profile?.own_lang && !!profile.target_lang && !!profile.target_level;
+  !!profile?.own_lang &&
+  !!profile.target_lang &&
+  !!profile.target_level &&
+  getConsentBoolean(profile.data, "terms") &&
+  getConsentBoolean(profile.data, "privacy");
 
 const mapProfile = (profile: ProfileRow | undefined) => {
   if (!profile) return null;
@@ -687,11 +710,37 @@ export const trackReaderEvent = async ({
   });
 };
 
+const stableDiffValue = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(stableDiffValue);
+  if (!isRecord(value)) return value ?? null;
+
+  return Object.keys(value)
+    .sort()
+    .reduce<Record<string, unknown>>((acc, key) => {
+      acc[key] = stableDiffValue(value[key]);
+      return acc;
+    }, {});
+};
+
+const hasProfileDataChanged = (before: unknown, after: unknown) =>
+  JSON.stringify(stableDiffValue(before)) !==
+  JSON.stringify(stableDiffValue(after));
+
 const buildProfileUpdateDiff = (
   currentProfile: ProfileRow | undefined,
-  nextProfile: ProfilePayload
+  nextProfile: {
+    ownLang?: string;
+    targetLang?: string;
+    targetLevel?: string;
+    data?: Record<string, unknown>;
+  }
 ): ProfileUpdateDiff => {
-  const fields = [
+  const diff: ProfileUpdateDiff = {};
+  const fields: {
+    key: string;
+    before: string | boolean | null;
+    after: string | boolean | null | undefined;
+  }[] = [
     {
       key: "ownLang",
       before: currentProfile?.own_lang ?? null,
@@ -707,18 +756,32 @@ const buildProfileUpdateDiff = (
       before: currentProfile?.target_level ?? null,
       after: nextProfile.targetLevel,
     },
-  ] as const;
+  ];
 
-  return fields.reduce<ProfileUpdateDiff>((diff, field) => {
-    if (field.before !== field.after) {
+  for (const field of fields) {
+    if (field.after !== undefined && field.before !== field.after) {
       diff[field.key] = {
         before: field.before,
         after: field.after,
       };
     }
+  }
 
-    return diff;
-  }, {});
+  if (nextProfile.data) {
+    const currentData = isRecord(currentProfile?.data) ? currentProfile.data : {};
+
+    for (const [key, value] of Object.entries(nextProfile.data)) {
+      const currentValue = currentData[key];
+      if (hasProfileDataChanged(currentValue, value)) {
+        diff[`data.${key}`] = {
+          before: currentValue ?? null,
+          after: value,
+        };
+      }
+    }
+  }
+
+  return diff;
 };
 
 const languageCodeSchema = (options: LanguageOption[]) =>
@@ -733,11 +796,61 @@ const levelCodeSchema = (options: LevelOption[]) =>
 
 export const parseProfilePayload = async (req: Request) => {
   const languages = getReaderLanguages();
-  const schema = z.object({
-    ownLang: languageCodeSchema(languages.own),
-    targetLang: languageCodeSchema(languages.target),
-    targetLevel: levelCodeSchema(languages.levels),
+  const consentValueSchema = z.object({
+    terms: z.boolean().optional(),
+    privacy: z.boolean().optional(),
+    mkt: z.boolean().optional(),
+    alpha: z.boolean().optional(),
   });
+  const schema = z
+    .object({
+      ownLang: languageCodeSchema(languages.own).optional(),
+      targetLang: languageCodeSchema(languages.target).optional(),
+      targetLevel: levelCodeSchema(languages.levels).optional(),
+      consent: consentValueSchema.optional(),
+      consentSource: z.enum(consentSources).optional(),
+    })
+    .superRefine((value, ctx) => {
+      const languageValues = [
+        value.ownLang,
+        value.targetLang,
+        value.targetLevel,
+      ];
+      const languageCount = languageValues.filter(Boolean).length;
+
+      if (languageCount > 0 && languageCount < languageValues.length) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "Language, learning language, and reading level must be saved together.",
+          path: ["ownLang"],
+        });
+      }
+
+      if (value.consent && !value.consentSource) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Consent source is required.",
+          path: ["consentSource"],
+        });
+      }
+
+      if (value.consent?.terms === false) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Terms and Conditions must be accepted.",
+          path: ["consent", "terms"],
+        });
+      }
+
+      if (value.consent?.privacy === false) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Privacy Policy must be acknowledged.",
+          path: ["consent", "privacy"],
+        });
+      }
+    });
 
   return schema.safeParse(await req.json().catch(() => null));
 };
@@ -752,26 +865,82 @@ export const saveProfile = async (
     const currentProfile = (await trx("lingocafe.profiles")
       .where({ user_id: userId })
       .first()) as ProfileRow | undefined;
-    const diff = buildProfileUpdateDiff(currentProfile, profile);
+    const willHaveRequiredLegal =
+      (profile.consent?.terms === true ||
+        getConsentBoolean(currentProfile?.data, "terms")) &&
+      (profile.consent?.privacy === true ||
+        getConsentBoolean(currentProfile?.data, "privacy"));
+
+    if (!currentProfile && !willHaveRequiredLegal) {
+      throw new ProfileUpdateValidationError(
+        "Accept the Terms and Conditions and acknowledge the Privacy Policy before creating a profile."
+      );
+    }
+
+    const hasLanguageUpdate =
+      !!profile.ownLang && !!profile.targetLang && !!profile.targetLevel;
+
+    if (hasLanguageUpdate && !willHaveRequiredLegal) {
+      throw new ProfileUpdateValidationError(
+        "Accept the Terms and Conditions and acknowledge the Privacy Policy before completing your profile."
+      );
+    }
+
+    const currentData = stripLegacyConsentFields(currentProfile?.data);
+    const consentData =
+      profile.consent && profile.consentSource
+        ? buildConsentDataPatch({
+            currentData,
+            values: profile.consent,
+            source: profile.consentSource,
+            nowISO: new Date().toISOString(),
+          })
+        : {};
+    const nextData = {
+      ...currentData,
+      ...consentData,
+    };
+    const nextProfile = {
+      ownLang: hasLanguageUpdate ? profile.ownLang : undefined,
+      targetLang: hasLanguageUpdate ? profile.targetLang : undefined,
+      targetLevel: hasLanguageUpdate ? profile.targetLevel : undefined,
+      data: Object.keys(consentData).length > 0 ? consentData : undefined,
+    };
+    const diff = buildProfileUpdateDiff(currentProfile, nextProfile);
 
     if (Object.keys(diff).length === 0) {
       return;
     }
 
+    const insertValues = {
+      user_id: userId,
+      own_lang: hasLanguageUpdate
+        ? profile.ownLang
+        : currentProfile?.own_lang ?? null,
+      target_lang: hasLanguageUpdate
+        ? profile.targetLang
+        : currentProfile?.target_lang ?? null,
+      target_level: hasLanguageUpdate
+        ? profile.targetLevel
+        : currentProfile?.target_level ?? null,
+      data: nextData,
+    };
+    const mergeValues: Record<string, unknown> = {};
+
+    if (hasLanguageUpdate) {
+      mergeValues.own_lang = profile.ownLang;
+      mergeValues.target_lang = profile.targetLang;
+      mergeValues.target_level = profile.targetLevel;
+    }
+
+    if (Object.keys(consentData).length > 0) {
+      mergeValues.data = nextData;
+    }
+
     await trx("lingocafe.profiles")
-      .insert({
-        user_id: userId,
-        own_lang: profile.ownLang,
-        target_lang: profile.targetLang,
-        target_level: profile.targetLevel,
-        data: {},
-      })
+      .insert(insertValues)
       .onConflict("user_id")
-      .merge({
-        own_lang: profile.ownLang,
-        target_lang: profile.targetLang,
-        target_level: profile.targetLevel,
-      });
+      .merge(mergeValues);
 
     await trackReaderEvent({
       userId,
