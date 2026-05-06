@@ -33,11 +33,7 @@ app: {
         name: "terms",
         required: true,
         version: "terms-2026-05-05",
-        purpose: "Accept terms",
-        legalBasis: "contract",
-        category: "legal",
-        statement: "I accept the Terms and Conditions",
-        label: "I accept the Terms and Conditions",
+        label: "I accept the **Terms and Conditions**",
         collect: ["source", "method"],
       },
     ],
@@ -47,31 +43,20 @@ app: {
 
 ## Required Fields
 
-Each item needs `name`, `version`, `purpose`, `legalBasis`, `category`,
-`statement`, and `label`.
+Each item needs `name`, `version`, and `label`.
 
-Legal basis values:
-
-- `contract`
-- `consent`
-- `legal-obligation`
-
-Category values:
-
-- `legal`
-- `privacy`
-- `marketing`
-- `program`
-
-`statement` is the stable plain string saved in evidence. `label` is UI and may
-be a string or React component.
+`label` is converted to the stable plain statement saved in evidence when it is
+a string. String labels render basic markdown for `**bold**`, `__bold__`,
+`*italic*`, `_italic_`, `[links](https://example.com)`, and `\n` line breaks.
+Links always open in a new tab. A React component label still renders as custom
+UI; evidence falls back to the consent item `name`.
 
 ## Evidence
 
 Evidence is stored in `auth.users.consent.{name}[]`.
 
 The last array entry is current. Core appends only when the boolean value,
-configured version, or configured statement changes.
+configured version, or plain label statement changes.
 
 Always include `value`, `changedAt`, `version`, and `statement`. Add `source`,
 `method`, `ip`, and `ua` only through `collect`. There is no default collect

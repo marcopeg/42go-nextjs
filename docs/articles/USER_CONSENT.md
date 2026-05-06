@@ -9,17 +9,26 @@ Each item requires:
 
 - `name`
 - `version`
-- `purpose`
-- `legalBasis`
-- `category`
-- `statement`
 - `label`
 
-Supported legal bases are `contract`, `consent`, and `legal-obligation`.
-Supported categories are `legal`, `privacy`, `marketing`, and `program`.
+`label` is the consent statement. When it is a string, it is rendered in the UI
+and converted to plain text for the stable evidence statement. String labels
+support basic presentation markdown: `**bold**`, `__bold__`, `*italic*`,
+`_italic_`, and `\n` line breaks.
 
-`statement` is the stable plain-text evidence string. `label` is presentation
-and can be a string or a React component with links or dialogs.
+String labels may include markdown links. Links always open in a new tab:
+
+```ts
+{
+  name: "terms",
+  required: true,
+  version: "terms-2026-05-05",
+  label: "I accept the [**Terms**](/terms)",
+}
+```
+
+Rendered links affect only UI; evidence stores the plain label text as the
+statement.
 
 Evidence is stored as history arrays:
 
@@ -39,7 +48,7 @@ Evidence is stored as history arrays:
 ```
 
 The last array item is the current value. A new entry is appended when the value,
-configured version, or configured statement changes.
+configured version, or plain label statement changes.
 
 `collect` has no default. Add fields such as `source`, `method`, `ip`, and `ua`
 only when the app intentionally wants them. The app owner owns legal wording and

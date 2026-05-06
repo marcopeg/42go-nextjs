@@ -11,7 +11,7 @@ export default {
   },
   features: ['page:books', 'api:lingocafe', 'api:profile'],
   theme: {
-    default: 'light',
+    default: 'system',
   },
   public: {
     meta: {
@@ -66,7 +66,7 @@ export default {
     profile: {
       schema: lingoCafeProfileSchema,
       items: [
-        { type: 'AccountInfo' },
+        // { type: 'AccountInfo' },
         {
           type: 'component',
           component: LingocafePreferences,
@@ -74,8 +74,8 @@ export default {
         },
         {
           type: 'ThemePreference',
-          title: 'Theme Preferences',
-          description: 'Choose how LingoCafe should look on this device.',
+          title: 'Theme',
+          description: 'Choose how the app appearance should be determined.',
         },
         {
           type: 'Consent',
@@ -94,46 +94,32 @@ export default {
           name: 'terms',
           required: true,
           version: 'terms-2026-05-04',
-          purpose: 'Accept LingoCafe Terms and Conditions',
-          legalBasis: 'contract',
-          category: 'legal',
-          statement: 'I accept the Terms and Conditions',
-          label: 'I accept the Terms and Conditions',
+          label:
+            'I agree to the [Terms of Service](https://lingocafe.app/en/legal/terms-of-service/)',
           collect: ['source', 'method', 'ip', 'ua'],
         },
         {
           name: 'privacy',
           required: true,
           version: 'privacy-2026-05-04',
-          purpose: 'Acknowledge LingoCafe Privacy Policy',
-          legalBasis: 'legal-obligation',
-          category: 'privacy',
-          statement: 'I acknowledge the Privacy Policy',
-          label: 'I acknowledge the Privacy Policy',
+          label:
+            'I have read and understood the [Privacy Policy](https://lingocafe.app/en/legal/privacy-policy/)',
           collect: ['source', 'method', 'ip', 'ua'],
         },
         {
           name: 'mkt',
           required: false,
           version: 'mkt-2026-05-04',
-          purpose: 'Receive LingoCafe content updates and offers',
-          legalBasis: 'consent',
-          category: 'marketing',
-          statement: 'I consent to receive content updates and offers about LingoCafe services',
-          label: 'I consent to receive content updates and offers about LingoCafe services',
+          label:
+            'Keep me updated on new title releases and early access to new features.\n_You can unsubscribe at any time_',
           collect: ['source', 'method', 'ip', 'ua'],
         },
         {
           name: 'alpha',
           required: false,
           version: 'alpha-2026-05-04',
-          purpose: 'Join the LingoCafe Early Birds program',
-          legalBasis: 'consent',
-          category: 'program',
-          statement:
-            'I want to participate in the Early Birds program and receive all the features for free',
           label:
-            'I want to participate in the Early Birds program and receive all the features for free',
+            'Join the Early Birds Programme — free, unlimited access while the app is in development, in exchange for sharing feedback through surveys, in-app prompts, and occasional interviews. Continued access requires participation.\n[Programme Terms](https://lingocafe.app/en/legal/early-birds-program/)',
           collect: ['source', 'method', 'ip', 'ua'],
         },
       ],

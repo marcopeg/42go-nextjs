@@ -9,6 +9,7 @@ import type {
   TProfileValidationError,
   TProfileValidationResult,
 } from "@/42go/profile/types";
+import { getConsentStatement } from "@/42go/profile/statement";
 
 export const isPlainJsonObject = (value: unknown): value is JsonObject =>
   !!value && typeof value === "object" && !Array.isArray(value);
@@ -65,7 +66,7 @@ export const isConsentItemComplete = (
     !!latest &&
     latest.value === true &&
     latest.version === item.version &&
-    latest.statement === item.statement
+    latest.statement === getConsentStatement(item)
   );
 };
 

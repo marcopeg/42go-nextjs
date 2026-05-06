@@ -1,13 +1,11 @@
 export type {
   JsonObject,
   JsonValue,
-  TConsentCategory,
   TConsentCollectField,
   TConsentConfig,
   TConsentData,
   TConsentEvidenceEntry,
   TConsentItem,
-  TConsentLegalBasis,
   TProfileAjvConfig,
   TProfileContextConfig,
   TProfileCoreConfig,

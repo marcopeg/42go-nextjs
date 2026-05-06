@@ -2,7 +2,7 @@
 
 import { createElement } from "react";
 
-import type { TConsentConfig } from "@/42go/profile";
+import type { TConsentConfig, TConsentItem } from "@/42go/profile";
 
 type ProfileConsentProps = {
   items?: TConsentConfig["items"];
@@ -11,6 +11,60 @@ type ProfileConsentProps = {
   disabled?: boolean;
   submitted?: boolean;
 };
+
+const markdownTokenPattern =
+  /(\[[^\]\n]+\]\([^) \n]+\)|\*\*[^*\n]+\*\*|__[^_\n]+__|\*[^*\n]+\*|_[^_\n]+_|\n)/g;
+
+const renderMarkdownText = (value: string) =>
+  value.split(markdownTokenPattern).map((part, index) => {
+    if (!part) return null;
+
+    if (part === "\n") {
+      return <br key={index} />;
+    }
+
+    if (part.startsWith("[") && part.includes("](") && part.endsWith(")")) {
+      const match = part.match(/^\[([^\]\n]+)\]\(([^) \n]+)\)$/);
+
+      if (match) {
+        return (
+          <a
+            key={index}
+            href={match[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {renderMarkdownText(match[1])}
+          </a>
+        );
+      }
+    }
+
+    if (
+      (part.startsWith("**") && part.endsWith("**")) ||
+      (part.startsWith("__") && part.endsWith("__"))
+    ) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+
+    if (
+      (part.startsWith("*") && part.endsWith("*")) ||
+      (part.startsWith("_") && part.endsWith("_"))
+    ) {
+      return <em key={index}>{part.slice(1, -1)}</em>;
+    }
+
+    return part;
+  });
+
+const renderConsentLabel = (item: TConsentItem) =>
+  typeof item.label === "function"
+    ? createElement(item.label)
+    : typeof item.label === "string"
+      ? renderMarkdownText(item.label)
+      : item.label;
 
 export const ProfileConsent = ({
   items = [],
@@ -23,10 +77,7 @@ export const ProfileConsent = ({
     {items.map((item) => {
       const checked = values[item.name] === true;
       const invalid = submitted && item.required && !checked;
-      const label =
-        typeof item.label === "function"
-          ? createElement(item.label)
-          : item.label;
+      const label = renderConsentLabel(item);
 
       return (
         <label key={item.name} className="flex items-start gap-3 text-sm">

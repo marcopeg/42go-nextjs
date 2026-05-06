@@ -3,6 +3,7 @@ import type {
   TConsentData,
   TConsentEvidenceEntry,
 } from "@/42go/profile/types";
+import { getConsentStatement } from "@/42go/profile/statement";
 import { getLatestConsentEvidence } from "@/42go/profile/validation";
 
 type BuildConsentPatchInput = {
@@ -64,7 +65,7 @@ export const buildConsentPatch = ({
       !latest ||
       latest.value !== value ||
       latest.version !== item.version ||
-      latest.statement !== item.statement;
+      latest.statement !== getConsentStatement(item);
 
     if (!shouldAppend) continue;
 
@@ -72,7 +73,7 @@ export const buildConsentPatch = ({
       value,
       changedAt,
       version: item.version,
-      statement: item.statement,
+      statement: getConsentStatement(item),
     };
 
     for (const field of item.collect || []) {
@@ -96,7 +97,7 @@ export const getConsentCurrentValues = (
       const isCurrent =
         !!latest &&
         latest.version === item.version &&
-        latest.statement === item.statement;
+        latest.statement === getConsentStatement(item);
 
       return [item.name, isCurrent ? latest.value : false];
     })

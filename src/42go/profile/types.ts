@@ -29,21 +29,13 @@ export type TProfileCoreConfig = {
   ajv?: TProfileAjvConfig;
 };
 
-export type TConsentLegalBasis = "contract" | "consent" | "legal-obligation";
-
-export type TConsentCategory = "legal" | "privacy" | "marketing" | "program";
-
 export type TConsentCollectField = "source" | "method" | "ip" | "ua";
 
 export type TConsentItem = {
   name: string;
   required?: boolean;
   version: string;
-  purpose: string;
-  legalBasis: TConsentLegalBasis;
-  category: TConsentCategory;
-  statement: string;
-  label: ReactNode | ComponentType;
+  label: string | ComponentType | ReactNode;
   collect?: readonly TConsentCollectField[];
 };
 

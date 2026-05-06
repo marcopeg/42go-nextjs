@@ -1,14 +1,19 @@
 "use client";
 
+import type { ComponentProps } from "react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { useAppConfig } from "@/42go/config/use-app-config";
 
 type LogoutActionProps = {
   className?: string;
+  variant?: ComponentProps<typeof Button>["variant"];
 };
 
-export const LogoutAction = ({ className }: LogoutActionProps) => {
+export const LogoutAction = ({
+  className,
+  variant = "outline",
+}: LogoutActionProps) => {
   const config = useAppConfig();
   const redirectUrl = config?.auth?.logout?.url || "/";
   const onClick = () => {
@@ -31,7 +36,7 @@ export const LogoutAction = ({ className }: LogoutActionProps) => {
   };
 
   return (
-    <Button variant="outline" onClick={onClick} className={className}>
+    <Button variant={variant} onClick={onClick} className={className}>
       Logout
     </Button>
   );

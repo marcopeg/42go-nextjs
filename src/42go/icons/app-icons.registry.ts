@@ -18,6 +18,7 @@ export const APP_ICON_REGISTRY = {
     appleTouch180: true,
     manifest192: true,
     manifest512: true,
+    maskable512: true,
     ui: true,
   },
   "quicklist": {

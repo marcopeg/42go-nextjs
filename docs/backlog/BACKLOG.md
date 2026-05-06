@@ -2,7 +2,7 @@
 
 ## WIP
 
-- [FM72: Add Core Theme Profile Block and Enable It in LingoCafe](./wip/FM72-add-lingocafe-theme-profile-block/FM72.task.md) | [plan](./wip/FM72-add-lingocafe-theme-profile-block/FM72.plan.md) | [notes](./wip/FM72-add-lingocafe-theme-profile-block/FM72.notes.md)
+- [OU38: Add Mini Link Syntax for Consent Labels](./wip/OU38-add-mini-link-syntax-for-consent-labels/OU38.task.md) | [plan](./wip/OU38-add-mini-link-syntax-for-consent-labels/OU38.plan.md) | [notes](./wip/OU38-add-mini-link-syntax-for-consent-labels/OU38.notes.md)
 
 ## Blocked
 
@@ -16,7 +16,6 @@
 
 ## Drafts
 
-- [OU38: Add Mini Link Syntax for Consent Labels](./drafts/OU38-add-mini-link-syntax-for-consent-labels/OU38.task.md)
 - [FN30: Remove Google Fonts Build Network Dependency](./drafts/FN30-remove-google-fonts-build-network-dependency/FN30.task.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.md)
 - [HO30: Codex Web Local E2E Sandbox](./drafts/HO30-codex-web-local-e2e-sandbox/HO30.task.md)

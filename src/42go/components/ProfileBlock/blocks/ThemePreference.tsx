@@ -1,22 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import { MonitorCog, MoonStar, Sun } from "lucide-react";
 
 import type { ThemeValue } from "@/AppConfig";
 import { SimplePanel } from "@/42go/components/panel";
 import { useProfileBlockHandle } from "@/42go/components/ProfileBlock/ProfileBlockRuntime";
 import { useTheme } from "@/42go/config/ThemeProvider";
 import { useProfile } from "@/42go/profile/client";
+import { cn } from "@/lib/utils";
 
 type ThemePreferenceProps = {
   title?: string;
   description?: string;
 };
 
-const themeOptions: { value: ThemeValue; label: string }[] = [
-  { value: "system", label: "System" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
+const themeOptions: { value: ThemeValue; label: string; Icon: LucideIcon }[] = [
+  { value: "system", label: "Auto", Icon: MonitorCog },
+  { value: "light", label: "Light", Icon: Sun },
+  { value: "dark", label: "Dark", Icon: MoonStar },
 ];
 
 const normalizeTheme = (value: string | undefined): ThemeValue => {
@@ -25,8 +28,8 @@ const normalizeTheme = (value: string | undefined): ThemeValue => {
 };
 
 export const ThemePreference = ({
-  title = "Theme Preferences",
-  description = "Choose how the app should look on this device.",
+  title = "Theme",
+  description = "Choose how the app appearance should be determined.",
 }: ThemePreferenceProps) => {
   const { mounted, setTheme, theme } = useTheme();
   const { saving } = useProfile();
@@ -65,28 +68,40 @@ export const ThemePreference = ({
             Loading theme preference...
           </p>
         ) : (
-          <label className="block space-y-2 text-sm font-medium">
-            <span>Theme</span>
-            <select
-              value={selectedTheme}
-              onChange={(event) => {
-                const nextTheme = normalizeTheme(event.target.value);
+          <div
+            role="tablist"
+            aria-label="Theme"
+            className="grid grid-cols-3 gap-1 rounded-lg border border-border bg-muted/20 p-1"
+          >
+            {themeOptions.map(({ value, label, Icon }) => {
+              const active = selectedTheme === value;
 
-                setCommittedThemeOverride(null);
-                setDraftTheme(
-                  nextTheme === currentTheme ? null : nextTheme
-                );
-              }}
-              disabled={saving}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-            >
-              {themeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  disabled={saving}
+                  onClick={() => {
+                    setCommittedThemeOverride(null);
+                    setDraftTheme(value === currentTheme ? null : value);
+                  }}
+                  className={cn(
+                    "flex h-11 min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 text-sm font-medium transition-colors outline-none sm:h-12 sm:gap-2",
+                    "focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                    "disabled:cursor-not-allowed disabled:opacity-60",
+                    active
+                      ? "border-[var(--primary)] bg-primary/5 text-foreground"
+                      : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
+                  <span className="truncate">{label}</span>
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
     </SimplePanel>

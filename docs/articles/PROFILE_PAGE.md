@@ -33,11 +33,7 @@ app: {
         name: "terms",
         required: true,
         version: "terms-2026-05-05",
-        purpose: "Accept terms",
-        legalBasis: "contract",
-        category: "legal",
-        statement: "I accept the Terms and Conditions",
-        label: "I accept the Terms and Conditions",
+        label: "I accept the [**Terms**](/terms)",
       },
     ],
   },
@@ -54,6 +50,10 @@ and signup date.
 
 `Consent` renders `app.consent.items` and writes GDPR-oriented evidence into
 `auth.users.consent`.
+
+String labels support `**bold**`, `*italic*`, `[links](/terms)`, and `\n` line
+breaks. Links always open in a new tab. The plain label text is stored as the
+evidence statement.
 
 `TestRBAC` is a diagnostic block for RBAC/session inspection.
 
