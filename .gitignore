@@ -41,6 +41,17 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+venv/
+
 # lock files (keep package-lock.json for npm builds)
 yarn.lock
 pnpm-lock.yaml
+
+# HAL State
+/.hal

@@ -73,6 +73,11 @@ export default {
           profileKeys: ['ownLang', 'targetLang', 'targetLevel'],
         },
         {
+          type: 'ThemePreference',
+          title: 'Theme Preferences',
+          description: 'Choose how LingoCafe should look on this device.',
+        },
+        {
           type: 'Consent',
           title: 'Terms, Privacy, and Updates',
           description: 'Choose required acknowledgements and optional updates.',

@@ -28,6 +28,7 @@ export type TProfileSaveSummary =
     };
 
 export type TProfileBlockHandle = {
+  dirty?: boolean;
   validate?: () =>
     | TProfileSaveValidationResult
     | Promise<TProfileSaveValidationResult>;
@@ -58,6 +59,12 @@ export type TConsentProfileBlock = {
   method?: string;
 };
 
+export type TThemePreferenceProfileBlock = {
+  type: "ThemePreference";
+  title?: string;
+  description?: string;
+};
+
 export type TProfileComponentBlock<TProps = Record<string, never>> = {
   type: "component";
   component: ComponentType<TProps>;
@@ -70,7 +77,8 @@ export type TProfilePlatformBlock =
   | TAccountInfoProfileBlock
   | TTestRBACProfileBlock
   | TLogoutProfileBlock
-  | TConsentProfileBlock;
+  | TConsentProfileBlock
+  | TThemePreferenceProfileBlock;
 
 export type TProfileBlockItem =
   | TProfilePlatformBlock

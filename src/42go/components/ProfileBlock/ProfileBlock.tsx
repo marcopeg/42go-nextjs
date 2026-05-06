@@ -6,6 +6,7 @@ import { AccountInfo } from "@/42go/components/ProfileBlock/blocks/AccountInfo";
 import { Consent } from "@/42go/components/ProfileBlock/blocks/Consent";
 import { Logout } from "@/42go/components/ProfileBlock/blocks/Logout";
 import { TestRBAC } from "@/42go/components/ProfileBlock/blocks/TestRBAC";
+import { ThemePreference } from "@/42go/components/ProfileBlock/blocks/ThemePreference";
 import { ProfileBlockRuntimeProvider } from "@/42go/components/ProfileBlock/ProfileBlockRuntime";
 import type {
   TProfileBlockHandle,
@@ -16,12 +17,14 @@ type ProfileBlockProps = {
   blockId: string;
   item: TProfileBlockItem;
   registerBlock: (blockId: string, handle: TProfileBlockHandle) => () => void;
+  setBlockDirty: (blockId: string, dirty: boolean) => void;
 };
 
 export const ProfileBlock = ({
   blockId,
   item,
   registerBlock,
+  setBlockDirty,
 }: ProfileBlockProps) => {
   const renderBlock = () => {
     if (item.type === "component") {
@@ -49,6 +52,15 @@ export const ProfileBlock = ({
       );
     }
 
+    if (item.type === "ThemePreference") {
+      return (
+        <ThemePreference
+          title={item.title}
+          description={item.description}
+        />
+      );
+    }
+
     return null;
   };
 
@@ -56,6 +68,7 @@ export const ProfileBlock = ({
     <ProfileBlockRuntimeProvider
       blockId={blockId}
       registerBlock={registerBlock}
+      setBlockDirty={setBlockDirty}
     >
       {renderBlock()}
     </ProfileBlockRuntimeProvider>

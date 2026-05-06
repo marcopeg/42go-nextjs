@@ -4,6 +4,7 @@ import {
   forwardRef,
   useCallback,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -43,11 +44,19 @@ export const ProfilePageRenderer = forwardRef<
 >(({ profile, consent, onSavingChange, onDirtyChange }, ref) => {
   const handlesRef = useRef(new Map<string, TProfileBlockHandle>());
   const [feedback, setFeedback] = useState<ProfileFeedback | null>(null);
+  const [blockDirtyState, setBlockDirtyState] = useState<Record<string, boolean>>(
+    {}
+  );
+  const externalDirty = useMemo(
+    () => Object.values(blockDirtyState).some(Boolean),
+    [blockDirtyState]
+  );
   const controller = useProfileController({
     profile,
     consent,
     onSavingChange,
     onDirtyChange,
+    externalDirty,
   });
   const profileItems =
     profile?.items && profile.items.length > 0
@@ -60,10 +69,37 @@ export const ProfilePageRenderer = forwardRef<
 
       return () => {
         handlesRef.current.delete(blockId);
+        setBlockDirtyState((current) => {
+          if (!(blockId in current)) return current;
+
+          const next = { ...current };
+          delete next[blockId];
+          return next;
+        });
       };
     },
     []
   );
+
+  const setBlockDirty = useCallback((blockId: string, dirty: boolean) => {
+    setBlockDirtyState((current) => {
+      const previous = current[blockId] ?? false;
+      if (previous === dirty) return current;
+
+      if (!dirty) {
+        if (!(blockId in current)) return current;
+
+        const next = { ...current };
+        delete next[blockId];
+        return next;
+      }
+
+      return {
+        ...current,
+        [blockId]: true,
+      };
+    });
+  }, []);
 
   const save = useCallback(async (): Promise<TProfileSaveSummary> => {
     setFeedback(null);
@@ -193,6 +229,7 @@ export const ProfilePageRenderer = forwardRef<
               blockId={`${item.type}-${index}`}
               item={item}
               registerBlock={registerBlock}
+              setBlockDirty={setBlockDirty}
             />
           ))
         ) : (

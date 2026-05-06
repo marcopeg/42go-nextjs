@@ -14,6 +14,7 @@ import type { TProfileBlockHandle } from "@/42go/components/ProfileBlock/types";
 type ProfileBlockRuntimeValue = {
   blockId: string;
   registerBlock: (blockId: string, handle: TProfileBlockHandle) => () => void;
+  setBlockDirty: (blockId: string, dirty: boolean) => void;
 };
 
 const ProfileBlockRuntimeContext =
@@ -22,20 +23,23 @@ const ProfileBlockRuntimeContext =
 type ProfileBlockRuntimeProviderProps = {
   blockId: string;
   registerBlock: (blockId: string, handle: TProfileBlockHandle) => () => void;
+  setBlockDirty: (blockId: string, dirty: boolean) => void;
   children: ReactNode;
 };
 
 export const ProfileBlockRuntimeProvider = ({
   blockId,
   registerBlock,
+  setBlockDirty,
   children,
 }: ProfileBlockRuntimeProviderProps) => {
   const value = useMemo(
     () => ({
       blockId,
       registerBlock,
+      setBlockDirty,
     }),
-    [blockId, registerBlock]
+    [blockId, registerBlock, setBlockDirty]
   );
 
   return (
@@ -57,6 +61,7 @@ export const useProfileBlockHandle = (handle: TProfileBlockHandle) => {
     if (!runtime) return;
 
     return runtime.registerBlock(runtime.blockId, {
+      dirty: handleRef.current.dirty,
       validate: () =>
         handleRef.current.validate?.() ?? {
           ok: true,
@@ -65,4 +70,14 @@ export const useProfileBlockHandle = (handle: TProfileBlockHandle) => {
       onSaveError: (summary) => handleRef.current.onSaveError?.(summary),
     });
   }, [runtime]);
+
+  useEffect(() => {
+    if (!runtime) return;
+
+    runtime.setBlockDirty(runtime.blockId, handle.dirty ?? false);
+
+    return () => {
+      runtime.setBlockDirty(runtime.blockId, false);
+    };
+  }, [handle.dirty, runtime]);
 };

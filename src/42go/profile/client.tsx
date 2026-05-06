@@ -19,7 +19,6 @@ import type {
   TProfileValidationError,
 } from "@/42go/profile";
 import { getConsentCurrentValues } from "@/42go/profile/consent";
-import { validateProfile } from "@/42go/profile/validation";
 import type { TProfileConfig } from "@/42go/components/ProfileBlock";
 
 type ProfileAccountState = NonNullable<TProfileLoadResult["account"]>;
@@ -53,6 +52,7 @@ type ProfileClientConfig = {
   consent?: TConsentConfig | null;
   onSavingChange?: (saving: boolean) => void;
   onDirtyChange?: (dirty: boolean) => void;
+  externalDirty?: boolean;
 };
 
 const emptyAccount: ProfileAccountState = {
@@ -61,6 +61,11 @@ const emptyAccount: ProfileAccountState = {
   image: null,
   createdAt: null,
 };
+
+const isPlainJsonObject = (
+  value: unknown
+): value is Record<string, unknown> =>
+  !!value && typeof value === "object" && !Array.isArray(value);
 
 const stableStringify = (value: unknown): string => {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -85,10 +90,10 @@ const normalizeLoadedProfile = (
 });
 
 export const useProfileController = ({
-  profile: profileConfig,
   consent: consentConfig,
   onSavingChange,
   onDirtyChange,
+  externalDirty = false,
 }: ProfileClientConfig): TProfileClientController => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -104,13 +109,15 @@ export const useProfileController = ({
     account: stableStringify(emptyAccount),
   });
 
-  const isDirty = useMemo(
+  const persistedDirty = useMemo(
     () =>
       snapshot.profile !== stableStringify(profile) ||
       snapshot.consent !== stableStringify(consent) ||
       snapshot.account !== stableStringify(account || emptyAccount),
     [account, consent, profile, snapshot]
   );
+
+  const isDirty = persistedDirty || externalDirty;
 
   useEffect(() => {
     onDirtyChange?.(isDirty);
@@ -213,11 +220,15 @@ export const useProfileController = ({
   }, [isDirty]);
 
   const validate = useCallback(() => {
-    const result = validateProfile(profile, profileConfig);
-    setErrors(result.errors);
+    if (!isPlainJsonObject(profile)) {
+      setErrors([{ path: "/", message: "Profile must be a JSON object." }]);
+      return false;
+    }
 
-    return result.ok;
-  }, [profile, profileConfig]);
+    // Schema validation stays server-side so production CSP can forbid eval.
+    setErrors([]);
+    return true;
+  }, [profile]);
 
   const save = useCallback(
     async ({ source = "profile", method = "profile-save" }: ProfileSaveInput = {}) => {
