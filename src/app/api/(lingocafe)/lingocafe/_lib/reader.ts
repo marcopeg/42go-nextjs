@@ -334,7 +334,8 @@ const mapProfile = (userId: string, loaded: TProfileLoadResult) => ({
   targetLang: getProfileStringValue(loaded, "targetLang"),
   targetLevel: getProfileStringValue(loaded, "targetLevel"),
   isComplete: loaded.isComplete,
-  data: loaded.consent ?? {},
+  data: loaded.profile ?? {},
+  consent: loaded.consent,
 });
 
 const mapBook = (book: BookRow) => ({

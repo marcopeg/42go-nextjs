@@ -10,7 +10,7 @@ import type { ReaderBook } from "@/app/(app)/(lingocafe)/books/_components/book-
 import { useAppConfig } from "@/42go/config/use-app-config";
 import { ProfileConsent } from "@/42go/profile/ProfileConsent";
 import { getConsentCurrentValues } from "@/42go/profile/consent";
-import type { TConsentData } from "@/42go/profile";
+import type { TConsentData, TConsentConfig } from "@/42go/profile";
 import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
 
 type LanguageOption = {
@@ -30,6 +30,7 @@ type ReaderProfile = {
   targetLevel: string | null;
   isComplete: boolean;
   data: unknown;
+  consent: TConsentData | null;
 };
 
 type ReaderData = {
@@ -89,6 +90,14 @@ const normalizeReaderData = (payload: Partial<ReaderData>): ReaderData => ({
   },
 });
 
+const getResponseMessage = async (res: Response, fallback: string) => {
+  const payload = (await res.json().catch(() => null)) as {
+    message?: unknown;
+  } | null;
+
+  return typeof payload?.message === "string" ? payload.message : fallback;
+};
+
 const BooksPage = () => {
   const config = useAppConfig();
   const { status } = useSession();
@@ -103,6 +112,19 @@ const BooksPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const applyReaderData = (
+    payload: ReaderData,
+    consentConfig?: TConsentConfig | null
+  ) => {
+    setData(payload);
+    setOwnLang(payload.profile?.ownLang || "");
+    setTargetLang(payload.profile?.targetLang || "");
+    setTargetLevel(payload.profile?.targetLevel || "");
+    setConsentValues(
+      getConsentCurrentValues(payload.profile?.consent, consentConfig)
+    );
+  };
 
   useEffect(() => {
     if (status !== "authenticated") {
@@ -123,20 +145,11 @@ const BooksPage = () => {
         });
 
         if (!res.ok) {
-          throw new Error("Could not load books.");
+          throw new Error(await getResponseMessage(res, "Could not load books."));
         }
 
         const payload = normalizeReaderData(await res.json());
-        setData(payload);
-        setOwnLang(payload.profile?.ownLang || "");
-        setTargetLang(payload.profile?.targetLang || "");
-        setTargetLevel(payload.profile?.targetLevel || "");
-        setConsentValues(
-          getConsentCurrentValues(
-            payload.profile?.data as TConsentData | null | undefined,
-            config?.app?.consent
-          )
-        );
+        applyReaderData(payload, config?.app?.consent);
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Could not load books.");
@@ -175,7 +188,9 @@ const BooksPage = () => {
       });
 
       if (!res.ok) {
-        throw new Error("Could not save language preferences.");
+        throw new Error(
+          await getResponseMessage(res, "Could not save language preferences.")
+        );
       }
 
       const booksRes = await fetch("/api/lingocafe/books", {
@@ -184,10 +199,13 @@ const BooksPage = () => {
       });
 
       if (!booksRes.ok) {
-        throw new Error("Could not reload books.");
+        throw new Error(await getResponseMessage(booksRes, "Could not reload books."));
       }
 
-      setData(normalizeReaderData(await booksRes.json()));
+      applyReaderData(
+        normalizeReaderData(await booksRes.json()),
+        config?.app?.consent
+      );
     } catch (err) {
       setError(
         err instanceof Error

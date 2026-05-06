@@ -2,7 +2,6 @@
 
 ## WIP
 
-- [OU38: Add Mini Link Syntax for Consent Labels](./wip/OU38-add-mini-link-syntax-for-consent-labels/OU38.task.md) | [plan](./wip/OU38-add-mini-link-syntax-for-consent-labels/OU38.plan.md) | [notes](./wip/OU38-add-mini-link-syntax-for-consent-labels/OU38.notes.md)
 
 ## Blocked
 

@@ -3,7 +3,10 @@ import type {
   TConsentData,
   TConsentEvidenceEntry,
 } from "@/42go/profile/types";
-import { getConsentStatement } from "@/42go/profile/statement";
+import {
+  getConsentStatement,
+  isConsentStatementCurrent,
+} from "@/42go/profile/statement";
 import { getLatestConsentEvidence } from "@/42go/profile/validation";
 
 type BuildConsentPatchInput = {
@@ -97,7 +100,7 @@ export const getConsentCurrentValues = (
       const isCurrent =
         !!latest &&
         latest.version === item.version &&
-        latest.statement === getConsentStatement(item);
+        isConsentStatementCurrent(latest.statement, item);
 
       return [item.name, isCurrent ? latest.value : false];
     })
