@@ -2,7 +2,6 @@
 
 ## WIP
 
-- [ZO85: Core User Profile and Consent Storage](./wip/ZO85-core-user-profile-and-consent-storage/ZO85.task.md) | [plan](./wip/ZO85-core-user-profile-and-consent-storage/ZO85.plan.md) | [notes](./wip/ZO85-core-user-profile-and-consent-storage/ZO85.notes.md)
 
 ## Blocked
 
