@@ -1,14 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { MonitorCog, MoonStar, Sun } from "lucide-react";
 
 import type { ThemeValue } from "@/AppConfig";
 import { SimplePanel } from "@/42go/components/panel";
-import { useProfileBlockHandle } from "@/42go/components/ProfileBlock/ProfileBlockRuntime";
 import { useTheme } from "@/42go/config/ThemeProvider";
-import { useProfile } from "@/42go/profile/client";
 import { cn } from "@/lib/utils";
 
 type ThemePreferenceProps = {
@@ -32,33 +30,27 @@ export const ThemePreference = ({
   description = "Choose how the app appearance should be determined.",
 }: ThemePreferenceProps) => {
   const { mounted, setTheme, theme } = useTheme();
-  const { saving } = useProfile();
   const currentTheme = normalizeTheme(theme);
-  const [draftTheme, setDraftTheme] = useState<ThemeValue | null>(null);
-  const [committedThemeOverride, setCommittedThemeOverride] =
-    useState<ThemeValue | null>(null);
-  const pendingAppliedTheme =
-    committedThemeOverride && committedThemeOverride !== currentTheme
-      ? committedThemeOverride
-      : null;
-  const selectedTheme = draftTheme ?? pendingAppliedTheme ?? currentTheme;
-  const dirty = mounted && draftTheme !== null && draftTheme !== currentTheme;
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useProfileBlockHandle(
-    useMemo(
-      () => ({
-        dirty,
-        onSaveSuccess: () => {
-          if (!draftTheme) return;
+  const handleThemeChange = (nextTheme: ThemeValue) => {
+    if (!mounted || nextTheme === currentTheme) return;
 
-          setCommittedThemeOverride(draftTheme);
-          setTheme(draftTheme);
-          setDraftTheme(null);
-        },
-      }),
-      [dirty, draftTheme, setTheme]
-    )
-  );
+    const previousTheme = currentTheme;
+    setErrorMessage(null);
+
+    try {
+      setTheme(nextTheme);
+    } catch {
+      try {
+        setTheme(previousTheme);
+      } catch {
+        // Best effort rollback if persistence or application fails.
+      }
+
+      setErrorMessage("Could not update the theme. Reverted to the previous preference.");
+    }
+  };
 
   return (
     <SimplePanel title={title} description={description}>
@@ -71,10 +63,10 @@ export const ThemePreference = ({
           <div
             role="tablist"
             aria-label="Theme"
-            className="grid grid-cols-3 gap-1 rounded-lg border border-border bg-muted/20 p-1"
+            className="flex flex-nowrap items-stretch gap-1 overflow-x-auto rounded-lg border border-border bg-muted/20 p-1"
           >
             {themeOptions.map(({ value, label, Icon }) => {
-              const active = selectedTheme === value;
+              const active = currentTheme === value;
 
               return (
                 <button
@@ -82,15 +74,10 @@ export const ThemePreference = ({
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  disabled={saving}
-                  onClick={() => {
-                    setCommittedThemeOverride(null);
-                    setDraftTheme(value === currentTheme ? null : value);
-                  }}
+                  onClick={() => handleThemeChange(value)}
                   className={cn(
-                    "flex h-11 min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 text-sm font-medium transition-colors outline-none sm:h-12 sm:gap-2",
+                    "flex h-10 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md border px-1.5 text-xs font-medium transition-colors outline-none sm:h-12 sm:gap-2 sm:px-2 sm:text-sm",
                     "focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-                    "disabled:cursor-not-allowed disabled:opacity-60",
                     active
                       ? "border-[var(--primary)] bg-primary/5 text-foreground"
                       : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -102,6 +89,9 @@ export const ThemePreference = ({
               );
             })}
           </div>
+        )}
+        {errorMessage && (
+          <p className="text-sm text-destructive">{errorMessage}</p>
         )}
       </div>
     </SimplePanel>
