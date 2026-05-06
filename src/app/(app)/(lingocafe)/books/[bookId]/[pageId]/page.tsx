@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
+import { useTheme } from "@/42go/config/ThemeProvider";
 import { AppLayout } from "@/42go/layouts/app";
 import {
   BookReaderDesktopSurface,
@@ -14,6 +15,17 @@ import type {
   ReaderBookPageNeighbor,
   ReaderBookPageSummary,
 } from "@/app/(app)/(lingocafe)/books/_components/book-types";
+import {
+  READER_PREFERENCES_STORAGE_KEY,
+  getDefaultReaderPreferences,
+  readStoredReaderPreferencesStore,
+  sanitizeReaderPreferences,
+  sanitizeReaderFontSizeIndex,
+  type ReaderPreferencesStore,
+  type ReaderThemeMode,
+  type ReaderThemeProfileKey,
+  type ReaderPreferences,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 
 type BookPageResponse = {
   bookPage: ReaderBookPage;
@@ -159,6 +171,14 @@ const scrollToProgressBps = (element: HTMLElement, progressBps: number) => {
   return true;
 };
 
+const getInitialReaderPreferences = () => {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  return readStoredReaderPreferencesStore();
+};
+
 const BookReadPage = () => {
   const params = useParams<{
     bookId: string | string[];
@@ -166,6 +186,7 @@ const BookReadPage = () => {
   }>();
   const searchParams = useSearchParams();
   const { status } = useSession();
+  const { resolvedTheme, theme } = useTheme();
   const bookId = parseParam(params?.bookId);
   const pageId = parseParam(params?.pageId);
   const urlProgressBps = useMemo(
@@ -181,6 +202,23 @@ const BookReadPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [readingProgressBps, setReadingProgressBps] = useState(0);
+  const [readerPreferencesStore, setReaderPreferencesStore] =
+    useState<ReaderPreferencesStore>(getInitialReaderPreferences);
+  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
+  const readerThemeMode: ReaderThemeMode =
+    resolvedTheme === "dark" ? "dark" : "light";
+  const activeReaderThemeProfile: ReaderThemeProfileKey =
+    theme === "light" || theme === "dark" ? theme : "system";
+  const storedReaderPreferences =
+    readerPreferencesStore[activeReaderThemeProfile] ?? null;
+  const baseReaderPreferences =
+    storedReaderPreferences ?? getDefaultReaderPreferences(readerThemeMode);
+  const readerPreferences = {
+    ...baseReaderPreferences,
+    fontSizeIndex:
+      sanitizeReaderFontSizeIndex(readerPreferencesStore.sharedFontSizeIndex) ??
+      baseReaderPreferences.fontSizeIndex,
+  };
 
   const apiHref =
     bookId && pageId
@@ -189,6 +227,45 @@ const BookReadPage = () => {
         )}/pages/${encodeURIComponent(pageId)}`
       : "";
   const bookshelfHref = "/books";
+
+  useEffect(() => {
+    if (Object.keys(readerPreferencesStore).length === 0) {
+      localStorage.removeItem(READER_PREFERENCES_STORAGE_KEY);
+      return;
+    }
+
+    localStorage.setItem(
+      READER_PREFERENCES_STORAGE_KEY,
+      JSON.stringify(readerPreferencesStore)
+    );
+  }, [readerPreferencesStore]);
+
+  const updateReaderPreferences = (next: Partial<ReaderPreferences>) => {
+    setReaderPreferencesStore((current) => {
+      const nextStore: ReaderPreferencesStore = {
+        ...current,
+        [activeReaderThemeProfile]: sanitizeReaderPreferences({
+          ...readerPreferences,
+          ...current[activeReaderThemeProfile],
+          ...next,
+        }),
+      };
+
+      const sharedFontSizeIndex = sanitizeReaderFontSizeIndex(next.fontSizeIndex);
+      if (sharedFontSizeIndex !== null) {
+        nextStore.sharedFontSizeIndex = sharedFontSizeIndex;
+      }
+
+      return nextStore;
+    });
+  };
+  const resetReaderPreferences = () => {
+    setReaderPreferencesStore((current) => {
+      const next = { ...current };
+      delete next[activeReaderThemeProfile];
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (status !== "authenticated" || !apiHref) {
@@ -376,6 +453,11 @@ const BookReadPage = () => {
         scrollRef={mobileScrollRef}
         backHref={bookshelfHref}
         readingProgressBps={readingProgressBps}
+        preferences={readerPreferences}
+        isPreferencesOpen={isPreferencesOpen}
+        onPreferencesOpenChange={setIsPreferencesOpen}
+        onPreferencesChange={updateReaderPreferences}
+        onResetPreferences={resetReaderPreferences}
       />
 
       <BookReaderDesktopSurface
@@ -385,6 +467,11 @@ const BookReadPage = () => {
         scrollRef={desktopScrollRef}
         backHref={bookshelfHref}
         readingProgressBps={readingProgressBps}
+        preferences={readerPreferences}
+        isPreferencesOpen={isPreferencesOpen}
+        onPreferencesOpenChange={setIsPreferencesOpen}
+        onPreferencesChange={updateReaderPreferences}
+        onResetPreferences={resetReaderPreferences}
       />
     </AppLayout>
   );

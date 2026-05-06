@@ -1,56 +1,95 @@
 import ReactMarkdown, { type Components } from "react-markdown";
 
 import type { ReaderBookPage } from "@/app/(app)/(lingocafe)/books/_components/book-types";
+import {
+  getReaderFont,
+  getReaderFontSize,
+  type ReaderPreferences,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 
 type BookPageReaderProps = {
   bookPage: ReaderBookPage;
+  preferences: ReaderPreferences;
 };
 
-const markdownComponents: Components = {
-  h1: ({ children }) => (
-    <h1 className="mb-5 mt-8 font-serif text-3xl font-semibold tracking-normal">
-      {children}
-    </h1>
-  ),
-  h2: ({ children }) => (
-    <h2 className="mb-4 mt-7 font-serif text-2xl font-semibold tracking-normal">
-      {children}
-    </h2>
-  ),
-  h3: ({ children }) => (
-    <h3 className="mb-3 mt-6 text-xl font-semibold tracking-normal">
-      {children}
-    </h3>
-  ),
-  h4: ({ children }) => (
-    <h4 className="mb-3 mt-5 text-lg font-semibold tracking-normal">
-      {children}
-    </h4>
-  ),
-  h5: ({ children }) => (
-    <h5 className="mb-2 mt-4 text-base font-semibold tracking-normal">
-      {children}
-    </h5>
-  ),
-  h6: ({ children }) => (
-    <h6 className="mb-2 mt-4 text-sm font-semibold tracking-normal">
-      {children}
-    </h6>
-  ),
-  p: ({ children }) => (
-    <p className="my-7 break-words font-serif text-[1.35rem] leading-[1.85] md:text-[1.45rem]">
-      {children}
-    </p>
-  ),
-  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-  em: ({ children }) => <em className="italic">{children}</em>,
+const createMarkdownComponents = (
+  preferences: ReaderPreferences
+): Components => {
+  const font = getReaderFont(preferences);
+
+  return {
+    h1: ({ children }) => (
+      <h1
+        className="mb-5 mt-8 text-[2em] font-semibold tracking-normal"
+        style={{ fontFamily: font.family, lineHeight: 1.15 }}
+      >
+        {children}
+      </h1>
+    ),
+    h2: ({ children }) => (
+      <h2
+        className="mb-4 mt-7 text-[1.75em] font-semibold tracking-normal"
+        style={{ fontFamily: font.family, lineHeight: 1.2 }}
+      >
+        {children}
+      </h2>
+    ),
+    h3: ({ children }) => (
+      <h3
+        className="mb-3 mt-6 text-[1.35em] font-semibold tracking-normal"
+        style={{ fontFamily: font.family, lineHeight: 1.28 }}
+      >
+        {children}
+      </h3>
+    ),
+    h4: ({ children }) => (
+      <h4
+        className="mb-3 mt-5 text-[1.15em] font-semibold tracking-normal"
+        style={{ fontFamily: font.family, lineHeight: 1.32 }}
+      >
+        {children}
+      </h4>
+    ),
+    h5: ({ children }) => (
+      <h5
+        className="mb-2 mt-4 text-[1em] font-semibold tracking-normal"
+        style={{ fontFamily: font.family, lineHeight: 1.35 }}
+      >
+        {children}
+      </h5>
+    ),
+    h6: ({ children }) => (
+      <h6
+        className="mb-2 mt-4 text-[0.92em] font-semibold tracking-normal"
+        style={{ fontFamily: font.family, lineHeight: 1.35 }}
+      >
+        {children}
+      </h6>
+    ),
+    p: ({ children }) => (
+      <p
+        className="my-7 break-words text-[1em] leading-[1.85]"
+        style={{ fontFamily: font.family }}
+      >
+        {children}
+      </p>
+    ),
+    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+    em: ({ children }) => <em className="italic">{children}</em>,
+  };
 };
 
-const BookPageMarkdown = ({ source }: { source: string }) => (
+const BookPageMarkdown = ({
+  source,
+  preferences,
+}: {
+  source: string;
+  preferences: ReaderPreferences;
+}) => (
   <div className="min-w-0 max-w-none">
     <ReactMarkdown
       allowedElements={["h1", "h2", "h3", "h4", "h5", "h6", "p", "em", "strong"]}
-      components={markdownComponents}
+      components={createMarkdownComponents(preferences)}
       skipHtml
     >
       {source}
@@ -58,35 +97,67 @@ const BookPageMarkdown = ({ source }: { source: string }) => (
   </div>
 );
 
-const getChapterLabel = (bookPage: ReaderBookPage) => {
-  const total = bookPage.pages.length || 1;
-  const currentIndex = bookPage.pages.findIndex(
-    (page) => page.pageId === bookPage.page.pageId
+export const BookPageReader = ({
+  bookPage,
+  preferences,
+}: BookPageReaderProps) => {
+  const font = getReaderFont(preferences);
+  const fontSize = getReaderFontSize(preferences);
+  const titleSize = Math.round(fontSize * 1.7);
+  const summarySize = Math.max(14, Math.round(fontSize * 0.9));
+
+  return (
+    <article
+      className="mx-auto flex w-full max-w-[680px] flex-col px-1 pb-16 pt-10 md:px-0 md:pb-24 md:pt-24"
+      style={{ fontFamily: font.family, fontSize: `${fontSize}px` }}
+    >
+      <header className="mb-12 text-center">
+        {bookPage.page.prefix && (
+          <p
+            className="mx-auto max-w-xl break-words text-sm"
+            style={{ color: "var(--reader-fg-muted)" }}
+          >
+            {bookPage.page.prefix}
+          </p>
+        )}
+        <h1
+          className="mx-auto mt-4 max-w-2xl break-words font-semibold leading-[1.02] tracking-[-0.03em]"
+          style={{ fontFamily: font.family, fontSize: `${titleSize}px` }}
+        >
+          {bookPage.page.title}
+        </h1>
+        <div
+          className="mx-auto mt-8 flex w-52 items-center justify-center gap-3"
+          style={{ color: "var(--reader-fg-muted)" }}
+        >
+          <span
+            className="h-px flex-1"
+            style={{ backgroundColor: "var(--reader-border)" }}
+          />
+          <span className="text-lg leading-none">*</span>
+          <span
+            className="h-px flex-1"
+            style={{ backgroundColor: "var(--reader-border)" }}
+          />
+        </div>
+        {bookPage.page.summary && (
+          <p
+            className="mx-auto mt-8 max-w-xl break-words italic leading-7"
+            style={{
+              color: "var(--reader-fg-muted)",
+              fontFamily: font.family,
+              fontSize: `${summarySize}px`,
+            }}
+          >
+            {bookPage.page.summary}
+          </p>
+        )}
+      </header>
+
+      <BookPageMarkdown
+        source={bookPage.page.content}
+        preferences={preferences}
+      />
+    </article>
   );
-  const current = currentIndex >= 0 ? currentIndex + 1 : bookPage.page.position;
-  return `Kapitel ${Math.min(total, current)} av ${total}`;
 };
-
-export const BookPageReader = ({ bookPage }: BookPageReaderProps) => (
-  <article className="mx-auto flex w-full max-w-[680px] flex-col px-1 pb-16 pt-10 md:px-0 md:pb-24 md:pt-24">
-    <header className="mb-12 text-center">
-      <p className="text-sm text-muted-foreground">{getChapterLabel(bookPage)}</p>
-      <h1 className="mx-auto mt-6 max-w-xl break-words font-serif text-4xl font-semibold leading-tight tracking-normal md:text-5xl">
-        {bookPage.page.prefix ? `${bookPage.page.prefix}. ` : ""}
-        {bookPage.page.title}
-      </h1>
-      <div className="mx-auto mt-8 flex w-52 items-center justify-center gap-3 text-muted-foreground">
-        <span className="h-px flex-1 bg-border" />
-        <span className="text-lg leading-none">*</span>
-        <span className="h-px flex-1 bg-border" />
-      </div>
-      {bookPage.page.summary && (
-        <p className="mx-auto mt-8 max-w-xl break-words text-base leading-7 text-muted-foreground">
-          {bookPage.page.summary}
-        </p>
-      )}
-    </header>
-
-    <BookPageMarkdown source={bookPage.page.content} />
-  </article>
-);
