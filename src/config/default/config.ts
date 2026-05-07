@@ -9,6 +9,7 @@ import {
   Home,
   User,
   BookOpen,
+  Layers,
 } from "lucide-react";
 import QuicklistIcon from "@/config/quicklist/QuicklistIcon";
 import { TAppConfigItem } from "../../AppConfig";
@@ -41,6 +42,8 @@ export default {
     "api:profile",
     "page:quicklists",
     "page:books",
+    "page:demo-panel",
+    "page:demo-modal",
   ],
   theme: {
     default: "system",
@@ -222,6 +225,22 @@ export default {
             icon: BookOpen,
             policy: {
               require: { feature: "page:books" },
+            },
+          },
+          {
+            title: "Panel Demo",
+            href: "/demo-panel",
+            icon: Layers,
+            policy: {
+              require: { feature: "page:demo-panel" },
+            },
+          },
+          {
+            title: "Modal Demo",
+            href: "/demo-modal",
+            icon: Layers,
+            policy: {
+              require: { feature: "page:demo-modal" },
             },
           },
         ],

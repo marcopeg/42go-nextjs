@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { CaseSensitive, Minus, Plus, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CaseSensitive, Minus, Plus } from "lucide-react";
 
+import { Modal } from "@/42go/components/modal";
 import { useTheme } from "@/42go/config/ThemeProvider";
 import { cn } from "@/42go/utils/utils";
 import {
@@ -189,69 +190,51 @@ export const BookReaderPreferencesPanel = ({
       ),
     [preferences.backgroundKey, resolvedTheme]
   );
+  const [matchesSurface, setMatchesSurface] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onOpenChange(false);
-      }
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const updateMatchesSurface = () => {
+      setMatchesSurface(mobile ? mediaQuery.matches : !mediaQuery.matches);
     };
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onOpenChange, open]);
+    updateMatchesSurface();
+    mediaQuery.addEventListener("change", updateMatchesSurface);
+    return () => {
+      mediaQuery.removeEventListener("change", updateMatchesSurface);
+    };
+  }, [mobile]);
 
-  if (!open) return null;
+  if (!matchesSurface) return null;
 
   return (
-    <div
-      className={cn(
-        "fixed inset-0",
-        mobile ? "z-[680] md:hidden" : "z-[690] hidden md:block"
-      )}
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      presentation="panel"
+      anchor="right"
+      size="md"
+      title="Preferences"
+      subtitle="Reading"
+      ariaLabel="Reading preferences"
+      headerClassName="md:h-[68px] md:px-8"
+      bodyClassName="px-5 py-6"
+      footerClassName="px-5 py-4"
+      footer={
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={onResetPreferences}
+        >
+          Reset reading preferences
+        </Button>
+      }
     >
-      <button
-        type="button"
-        aria-label="Close reading preferences"
-        className="absolute inset-0 bg-black/30"
-        onClick={() => onOpenChange(false)}
-      />
+      <div className="mb-6">
+        <PreviewCard preferences={preferences} mobile={mobile} />
+      </div>
 
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Reading preferences"
-        className={cn(
-          "absolute right-0 top-0 flex h-full w-full flex-col border-l bg-background text-foreground shadow-2xl",
-          mobile ? "max-w-full" : "max-w-[420px]"
-        )}
-      >
-        <div className="border-b px-5 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                Reading
-              </p>
-              <h2 className="text-lg font-semibold">Preferences</h2>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              type="button"
-              aria-label="Close reading preferences"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-          <div className="mt-4">
-            <PreviewCard preferences={preferences} mobile={mobile} />
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6">
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -416,27 +399,12 @@ export const BookReaderPreferencesPanel = ({
             </div>
           </section>
 
-          <section className="mt-8 rounded-2xl border bg-muted/30 p-4 text-sm text-muted-foreground">
-            <p>
-              Stored on this device only. Local storage, not your profile. The
-              cloud can wait.
-            </p>
-          </section>
-
-          <div className="h-6" />
-        </div>
-
-        <div className="border-t px-5 py-4">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={onResetPreferences}
-          >
-            Reset reading preferences
-          </Button>
-        </div>
-      </div>
-    </div>
+      <section className="mt-8 rounded-2xl border bg-muted/30 p-4 text-sm text-muted-foreground">
+        <p>
+          Stored on this device only. Local storage, not your profile. The cloud
+          can wait.
+        </p>
+      </section>
+    </Modal>
   );
 };

@@ -1,196 +1,143 @@
 ---
 name: backlog-draft
-description: Creates a draft task in docs/backlog from a human operator's mind dump, using the standard task template and a generated AA11-style TaskID, with optional immediate refinement handoff.
+description: Drafts new docs/backlog tasks from rough operator input or commands like draft task, new task, capture this, draft and refine, or create and refine; agents prepare structured sections, run the scaffold script, and report the generated AA11 TaskID plus draft path.
 ---
 
 # Draft Task
 
-`backlog-draft` is low-friction capture for the human operator.
+Create draft backlog tasks through the scaffold script first. The agent owns interpretation. Python owns deterministic files.
 
-Use it to turn rough notes, dictation, or a partial idea into a stored draft task without overthinking the content.
+## Workflow
 
-Invocation model (mandatory):
+1. Treat an explicit request to draft or capture a task as approval to create the draft.
+2. Do not ask for confirmation when the operator intent is clear.
+3. Ask a follow-up only when the task title or target work item is ambiguous enough that a draft would likely capture the wrong thing.
+4. Read `docs/backlog/BACKLOG.md`.
+5. Inspect concretely relevant task files and `.notes.md` files when prior work can improve the draft.
+6. Prepare structured task content from the operator input and lookup results.
+7. Run `.agents/skills/backlog-draft/scripts/scaffold_draft.py`.
+8. Verify the returned draft path exists and the task appears once in `docs/backlog/BACKLOG.md`.
+9. Report the created TaskID and draft path.
+10. If the operator did not already request refinement, ask exactly: `Do you want to start refinement now?`
+11. If the operator requested draft-and-refine, continue into `backlog-refine` after the scaffold succeeds.
 
-- use this skill for direct commands such as `draft a new task: ...`, `new task: ...`, or equivalent conversational requests to capture future work
-- also use this skill when the request appears inside a longer conversation and the operator clearly wants the current idea captured as a backlog item
-- if the operator asks to `draft and refine`, `create and refine`, `new task and refine`, or equivalent, create the draft first and then immediately continue into `backlog-refine` in the same turn
+## Agent-Owned Work
 
-Storage model (mandatory):
+- Derive the clearest task title from the operator input.
+- Include `group` only when the operator provided it or it is explicit enough to infer safely.
+- Write clear operator-facing section content.
+- Preserve uncertainty, tradeoffs, and open-ended language.
+- Do not narrow the task beyond what the operator implied.
+- Do not hallucinate content to make the template look complete.
+- Populate `Related to` only with concretely relevant items, not loose keyword matches.
+- Do not create a plan file unless the operator explicitly supplied one and asked to store it.
+- Do not create a refined task file; refinement owns that.
+- Never modify `CHANGELOG.md`.
 
-- backlog root: `docs/backlog`
-- active backlog index: `docs/backlog/BACKLOG.md`
-- archived history log: `docs/backlog/archived/ARCHIVED.md`
-- completed history log: `docs/backlog/completed/COMPLETED.md`
-- draft task folders live in `docs/backlog/drafts/`
-- ready task folders live in `docs/backlog/ready/`
-- wip task folders live in `docs/backlog/wip/`
-- blocked task folders live in `docs/backlog/blocked/`
-- completed task folders live in `docs/backlog/completed/`
-- archived task folders live in `docs/backlog/archived/`
+## Script-Owned Work
 
-TaskID rules (mandatory):
+Use the scaffold script for deterministic creation:
 
-- every task has a case-insensitive TaskID in the form `AA11`
-- canonical stored form is uppercase, two letters plus two digits
-- when parsing user input, accept case-insensitive forms and normalize them to uppercase
-- also accept a one-digit numeric suffix such as `aa1`, and normalize it to `AA01`
-- generate new IDs from the locally unused pool by running:
-  - `python3 scripts/generate_task_id.py`
-
-Filename rules (mandatory):
-
-- task folder: `docs/backlog/drafts/<taskid>-<task-slug>/`
-- draft task file: `docs/backlog/drafts/<taskid>-<task-slug>/<taskid>.task.draft.md`
-- refined task file, created later by `backlog-refine`: `docs/backlog/drafts/<taskid>-<task-slug>/<taskid>.task.refined.md`
-- plan file: `docs/backlog/drafts/<taskid>-<task-slug>/<taskid>.plan.md`
-- notes file: `docs/backlog/drafts/<taskid>-<task-slug>/<taskid>.notes.md`
-
-Frontmatter rules (mandatory):
-
-- task files use YAML frontmatter
-- required task frontmatter fields:
-  - `taskId`
-  - `status`
-  - `createdAt`
-  - `updatedAt`
-- optional task frontmatter fields:
-  - `group`
-  - `reviewedAt`
-  - `plannedAt`
-  - `startedAt`
-  - `completedAt`
-  - `reviewAfter`
-- `createdAt` and `updatedAt` must be written in ISO 8601 format
-- all timestamps written by this skill must use the current wall-clock timestamp at write time
-- on draft creation, set:
-  - `status: draft`
-  - `createdAt` to the current timestamp
-  - `updatedAt` to the same timestamp
-- on draft creation, do not set `reviewedAt`, `plannedAt`, `startedAt`, or `completedAt` yet
-- include `group` only when the operator provided one or the grouping is explicit enough to be safely inferred
-- do not write `reviewAfter` on a draft
-
-BACKLOG link convention (mandatory):
-
-- use only relative links from `docs/backlog/BACKLOG.md`
-- new drafts use `./drafts/<taskid>-<task-slug>/<taskid>.task.draft.md`
-- refined drafts, ready tasks, wip tasks, and blocked tasks use `./<state>/<taskid>-<task-slug>/<taskid>.task.refined.md` when a refined task file exists
-- legacy tasks may still use `./<state>/<taskid>-<task-slug>/<taskid>.task.md` until migrated
-- `docs/backlog/BACKLOG.md` must also link to `./archived/ARCHIVED.md` and `./completed/COMPLETED.md`
-
-State consistency rules (mandatory):
-
-- the task must appear in exactly one BACKLOG section
-- `backlog-draft` must list the task only under `## Drafts`
-- never modify `CHANGELOG.md`
-
-Behavior rules (mandatory):
-
-- always create the draft task, even if the operator input is rough, incomplete, or dictated in a stream-of-consciousness style
-- do not block on missing detail
-- do not create a plan file in this skill unless the user explicitly supplied one and asked you to store it
-- do not create a refined task file in this skill; that belongs to `backlog-refine`
-- do not hallucinate content just to make the template look complete
-- if a section was not covered by the operator input, write exactly: `information is missing`
-- preserve uncertainty, tradeoffs, and open-ended language from the operator instead of prematurely deciding things
-
-Approval model (mandatory):
-
-- treat an explicit request to draft or capture a task as sufficient approval to create or update the draft backlog entry
-- do not ask for confirmation before writing the draft when the operator intent is clear
-- only stop to ask a follow-up question when the task title or storage target is genuinely ambiguous enough that creating the draft would likely capture the wrong work item
-
-Related-work lookup (mandatory):
-
-- read `docs/backlog/BACKLOG.md`
-- inspect relevant task files and `.notes.md` files when prior work might inform the draft
-- populate `Related to` only with concretely relevant items, not loose keyword matches
-
-Task template (mandatory):
-
-```markdown
----
-taskId: AA11
-status: draft
-createdAt: 2026-04-21T23:59:00+02:00
-updatedAt: 2026-04-21T23:59:00+02:00
----
-
-# <Task title>
-
-## Elevator's Pitch
-
-...
-
-## Business Gain
-
-...
-
-## Current State
-
-...
-
-## Desired State
-
-...
-
-## Definition of Success
-
-...
-
-## Additional Context
-
-...
-
-## Assumptions
-
-...
-
-## Constraints
-
-...
-
-## Acceptance Criteria
-
-...
-
-## Dos
-
-...
-
-## Don'ts
-
-...
-
-## Open Questions
-
-...
-
-## Related to
-
-...
+```bash
+python3 .agents/skills/backlog-draft/scripts/scaffold_draft.py --input /path/to/input.json
 ```
 
-Drafting rules:
+The script owns:
 
-- create every section, every time
-- write the task in clear operator-facing prose
-- do not reinterpret the task into a narrower implementation unless the operator already implied it
-- generate a kebab-case slug from the task title
-- create the task folder as `<taskid>-<task-slug>`
-- write the captured draft to `<taskid>.task.draft.md`
-- write the metadata into frontmatter instead of inline `**TaskID**` or `**Status**` lines
+- generating a free AA11-style TaskID
+- creating `docs/backlog/drafts/<taskid>-<task-slug>/`
+- writing `<taskid>.task.draft.md`
+- writing required draft frontmatter
+- writing every standard body section
+- filling omitted section content with `information is missing`
+- rebuilding `docs/backlog/BACKLOG.md`
+- verifying the draft is linked once in the active backlog
+- printing JSON with at least `taskId`, `taskFolder`, and `draftPath`
 
-After creating the draft:
+Keep `generate_task_id.py` as the narrow ID helper. Use `scaffold_draft.py` for full draft creation.
 
-1. add the task to `## Drafts` in `docs/backlog/BACKLOG.md`
-2. ensure the task appears nowhere else in the backlog
-3. report the created TaskID and draft path
-4. if the operator did not already request refinement, ask exactly: `Do you want to start refinement now?`
-5. if the operator already requested draft-and-refine, immediately hand off to `backlog-refine` and generate the first question round file instead of asking whether to refine
+## Scaffold Input
 
-Chaining rules:
+Pass JSON as an input file or stdin. Prefer an input file when section bodies are large.
 
-- `backlog-draft` may hand off directly to `backlog-refine` only after the draft file exists and the backlog index links to it
-- pass the new TaskID and draft folder path to `backlog-refine`
-- the handoff must not rewrite `<taskid>.task.draft.md`; refinement writes separate question files and eventually `<taskid>.task.refined.md`
+Required:
+
+- `title`
+
+Optional:
+
+- `group`
+- `sections`
+
+The `sections` object may use the standard section names directly:
+
+```json
+{
+  "title": "Improve Backlog Draft Skill Scaffolding",
+  "group": "agents",
+  "sections": {
+    "Elevator's Pitch": "Short pitch.",
+    "Business Gain": "Business value.",
+    "Current State": "Current behavior.",
+    "Desired State": "Target behavior.",
+    "Definition of Success": "Success definition.",
+    "Additional Context": "Extra context.",
+    "Assumptions": "- Assumption one",
+    "Constraints": "- Constraint one",
+    "Acceptance Criteria": "- [ ] Criterion one",
+    "Dos": "- Do this",
+    "Don'ts": "- Don't do that",
+    "Open Questions": "- Question one",
+    "Related to": "information is missing"
+  }
+}
+```
+
+The script also accepts common aliases such as `pitch`, `businessValue`, `currentState`, `desiredState`, `acceptanceCriteria`, `dos`, `donts`, and `related`.
+
+## Required Sections
+
+The scaffold always writes:
+
+- `Elevator's Pitch`
+- `Business Gain`
+- `Current State`
+- `Desired State`
+- `Definition of Success`
+- `Additional Context`
+- `Assumptions`
+- `Constraints`
+- `Acceptance Criteria`
+- `Dos`
+- `Don'ts`
+- `Open Questions`
+- `Related to`
+
+If the operator did not cover a section, send no content for that section or send an empty value. The script will write exactly `information is missing`.
+
+## Scaffold Output
+
+Parse the JSON output. Use it for verification and final reporting.
+
+Expected fields include:
+
+- `taskId`
+- `title`
+- `status`
+- `taskFolder`
+- `draftPath`
+- `absoluteDraftPath`
+- `backlogPath`
+- `backlogEntry`
+- `createdAt`
+- `updatedAt`
+
+## Chaining
+
+`backlog-draft` may hand off directly to `backlog-refine` only after:
+
+- the draft file exists
+- `docs/backlog/BACKLOG.md` links to it
+- the scaffold output has been checked
+
+Pass the new TaskID and task folder path to `backlog-refine`. Do not rewrite `<taskid>.task.draft.md` during refinement.
