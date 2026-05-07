@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import type { RefObject } from "react";
+import { useRef, type RefObject, type TouchEvent as ReactTouchEvent } from "react";
+import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
@@ -47,6 +48,18 @@ type ReaderNavButtonProps = {
   href: string | null;
   direction: "previous" | "next";
   className?: string;
+};
+
+const MOBILE_SWIPE_THRESHOLD = 72;
+const MOBILE_SWIPE_MAX_VERTICAL_DRIFT = 80;
+
+const hasActiveTextSelection = () => {
+  const selection = window.getSelection();
+  return (
+    !!selection &&
+    !selection.isCollapsed &&
+    selection.toString().trim().length > 0
+  );
 };
 
 const formatLevelLabel = (bookPage: ReaderBookPage) =>
@@ -352,10 +365,49 @@ export const BookReaderMobileSurface = ({
   onResetPreferences,
 }: ReaderSurfaceProps) => {
   const { resolvedTheme } = useTheme();
+  const router = useRouter();
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const readerThemeStyle = getReaderThemeStyle(
     preferences,
     resolvedTheme === "dark" ? "dark" : "light"
   );
+  const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
+    if (hasActiveTextSelection()) return;
+
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+    };
+  };
+  const handleTouchEnd = (event: ReactTouchEvent<HTMLDivElement>) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+
+    if (!start || !bookPage) return;
+    if (hasActiveTextSelection()) return;
+
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+
+    if (Math.abs(deltaX) < MOBILE_SWIPE_THRESHOLD) return;
+    if (Math.abs(deltaY) > MOBILE_SWIPE_MAX_VERTICAL_DRIFT) return;
+    if (Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
+
+    if (deltaX < 0 && bookPage.next?.href) {
+      router.push(bookPage.next.href);
+      return;
+    }
+
+    if (deltaX > 0 && bookPage.previous?.href) {
+      router.push(bookPage.previous.href);
+    }
+  };
 
   return (
     <div
@@ -390,7 +442,12 @@ export const BookReaderMobileSurface = ({
           />
         </header>
 
-        <div ref={scrollRef} className="min-w-0 flex-1 overflow-y-auto px-5 py-6">
+        <div
+          ref={scrollRef}
+          className="min-w-0 flex-1 overflow-y-auto px-5 py-6"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {(!bookPage || loading || error) && (
             <ReaderState loading={loading} error={error} />
           )}
