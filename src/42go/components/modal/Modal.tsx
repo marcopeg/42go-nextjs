@@ -1,5 +1,6 @@
 "use client";
 
+import { createContext, useContext } from "react";
 import { X } from "lucide-react";
 
 import {
@@ -14,6 +15,10 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/42go/utils/utils";
 import type { ModalAnchor, ModalProps, ModalSize } from "./types";
+
+const ModalStackContext = createContext(0);
+const MODAL_BASE_Z_INDEX = 700;
+const MODAL_STACK_STEP = 20;
 
 const modalSizeClasses: Record<ModalSize, string> = {
   sm: "md:max-w-sm",
@@ -74,6 +79,11 @@ export const Modal = ({
   footerClassName,
   ariaLabel,
 }: ModalProps) => {
+  const parentStackLevel = useContext(ModalStackContext);
+  const stackLevel = parentStackLevel + 1;
+  const overlayZIndex =
+    MODAL_BASE_Z_INDEX + (stackLevel - 1) * MODAL_STACK_STEP;
+  const contentZIndex = overlayZIndex + 10;
   const isPanel = presentation === "panel";
   const isStackPanel = anchor === "top" || anchor === "bottom";
   const titleIsVisible = hasVisibleTitle(title);
@@ -83,117 +93,132 @@ export const Modal = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPortal>
-        <DialogOverlay className={overlayClassName} />
-        <DialogPrimitive.Content
-          aria-label={!titleIsVisible ? inferredLabel : undefined}
-          onPointerDownOutside={(event) => {
-            if (!closeOnOverlayClick) event.preventDefault();
-          }}
-          className={cn(
-            "fixed z-[710] flex min-h-0 w-screen flex-col bg-background text-foreground shadow-2xl outline-none",
-            "inset-0 h-[100dvh]",
-            "data-[state=closed]:animate-out data-[state=open]:animate-in",
-            "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-            isPanel
-              ? cn(
-                  "md:w-auto",
-                  isStackPanel
-                    ? panelStackSizeClasses[size]
-                    : panelSideSizeClasses[size],
-                  panelAnchorClasses[anchor],
-                  "md:data-[state=closed]:fade-out-0 md:data-[state=open]:fade-in-0"
+        <DialogOverlay
+          data-modal-stack-level={stackLevel}
+          style={{ zIndex: overlayZIndex }}
+          className={cn("flex items-stretch justify-stretch", overlayClassName)}
+        >
+          <DialogPrimitive.Content
+            data-modal-stack-level={stackLevel}
+            aria-label={!titleIsVisible ? inferredLabel : undefined}
+            onPointerDownOutside={(event) => {
+              if (!closeOnOverlayClick) event.preventDefault();
+            }}
+            style={{ zIndex: contentZIndex }}
+            className={cn(
+              "relative z-[710] flex min-h-full w-full flex-col bg-background text-foreground shadow-2xl outline-none",
+              "data-[state=closed]:animate-out data-[state=open]:animate-in",
+              "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+              isPanel
+                ? cn(
+                    "md:fixed",
+                    "md:w-auto",
+                    isStackPanel
+                      ? panelStackSizeClasses[size]
+                      : panelSideSizeClasses[size],
+                    panelAnchorClasses[anchor],
+                    "md:data-[state=closed]:fade-out-0 md:data-[state=open]:fade-in-0"
                 )
               : cn(
-                  "md:left-1/2 md:top-1/2 md:h-auto md:max-h-[calc(100vh-4rem)] md:w-[calc(100vw-2rem)] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-lg md:border",
+                  "md:fixed md:left-1/2 md:top-1/2 md:h-auto md:max-h-[calc(100vh-4rem)] md:w-[calc(100vw-2rem)] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-lg md:border",
                   modalSizeClasses[size],
                   "md:data-[state=closed]:zoom-out-95 md:data-[state=open]:zoom-in-95 md:data-[state=closed]:slide-out-to-bottom-0 md:data-[state=open]:slide-in-from-bottom-0"
                 ),
-            className
-          )}
-        >
-          {!titleIsVisible && (
-            <DialogTitle className="sr-only">{inferredLabel}</DialogTitle>
-          )}
-
-          {(titleIsVisible || subtitle || actions || showClose) && (
-            <div
-              className={cn(
-                isPanel
-                  ? "flex h-16 shrink-0 items-center justify-between gap-4 border-b px-6 py-4"
-                  : "flex shrink-0 items-start justify-between gap-4 border-b px-5 py-4",
-                centerTitle && "items-center text-center",
-                headerClassName
+              className
+            )}
+          >
+            <ModalStackContext.Provider value={stackLevel}>
+              {!titleIsVisible && (
+                <DialogTitle className="sr-only">{inferredLabel}</DialogTitle>
               )}
-            >
-              <div
-                className={cn(
-                  "min-w-0 flex-1",
-                  isPanel && "flex flex-col gap-1",
-                  centerTitle && "pl-9"
-                )}
-              >
-                {titleIsVisible ? (
-                  <DialogTitle
-                    className={cn("leading-tight", centerTitle && "text-center")}
-                  >
-                    {title}
-                  </DialogTitle>
-                ) : null}
-                {subtitle ? (
-                  <DialogDescription
+
+              {(titleIsVisible || subtitle || actions || showClose) && (
+                <div
+                  className={cn(
+                    isPanel
+                      ? "flex h-16 shrink-0 items-center justify-between gap-4 border-b px-6 py-4"
+                      : "flex shrink-0 items-start justify-between gap-4 border-b px-5 py-4",
+                    centerTitle && "items-center text-center",
+                    headerClassName
+                  )}
+                >
+                  <div
                     className={cn(
-                      isPanel ? "leading-tight" : "mt-1",
-                      centerTitle && "text-center"
+                      "min-w-0 flex-1",
+                      isPanel && "flex flex-col gap-1",
+                      centerTitle && "pl-9"
                     )}
                   >
-                    {subtitle}
-                  </DialogDescription>
-                ) : null}
-              </div>
-              {(actions || showClose) && (
-                <div className="flex shrink-0 items-center gap-2">
-                  {actions}
-                  {showClose && (
-                    <DialogClose asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label={closeLabel}
+                    {titleIsVisible ? (
+                      <DialogTitle
+                        className={cn(
+                          "leading-tight",
+                          centerTitle && "text-center"
+                        )}
                       >
-                        <X className="h-5 w-5" />
-                      </Button>
-                    </DialogClose>
+                        {title}
+                      </DialogTitle>
+                    ) : null}
+                    {subtitle ? (
+                      <DialogDescription
+                        className={cn(
+                          isPanel ? "leading-tight" : "mt-1",
+                          centerTitle && "text-center"
+                        )}
+                      >
+                        {subtitle}
+                      </DialogDescription>
+                    ) : null}
+                  </div>
+                  {(actions || showClose) && (
+                    <div className="flex shrink-0 items-center gap-2">
+                      {actions}
+                      {showClose && (
+                        <DialogClose asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={closeLabel}
+                          >
+                            <X className="h-5 w-5" />
+                          </Button>
+                        </DialogClose>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
-            </div>
-          )}
 
-          <div
-            className={cn("min-h-0 flex-1 overflow-y-auto px-5 py-5", bodyClassName)}
-          >
-            {children}
-          </div>
-
-          {(footerHelp || footer) && (
-            <div
-              className={cn(
-                "flex shrink-0 flex-col gap-3 border-t px-5 py-4 sm:flex-row sm:items-center sm:justify-between",
-                footerClassName
-              )}
-            >
-              <div className="min-w-0 text-sm text-muted-foreground">
-                {footerHelp}
+              <div
+                className={cn(
+                  "min-h-0 flex-1 overflow-y-auto px-5 py-5",
+                  bodyClassName
+                )}
+              >
+                {children}
               </div>
-              {footer && (
-                <div className="flex shrink-0 items-center justify-end gap-2">
-                  {footer}
+
+              {(footerHelp || footer) && (
+                <div
+                  className={cn(
+                    "flex shrink-0 flex-col gap-3 border-t px-5 py-4 sm:flex-row sm:items-center sm:justify-between",
+                    footerClassName
+                  )}
+                >
+                  <div className="min-w-0 text-sm text-muted-foreground">
+                    {footerHelp}
+                  </div>
+                  {footer && (
+                    <div className="flex shrink-0 items-center justify-end gap-2">
+                      {footer}
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
-        </DialogPrimitive.Content>
+            </ModalStackContext.Provider>
+          </DialogPrimitive.Content>
+        </DialogOverlay>
       </DialogPortal>
     </Dialog>
   );

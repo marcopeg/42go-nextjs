@@ -25,7 +25,6 @@ type BookReaderPreferencesPanelProps = {
   preferences: ReaderPreferences;
   onPreferencesChange: (next: Partial<ReaderPreferences>) => void;
   onResetPreferences: () => void;
-  mobile?: boolean;
 };
 
 const PreferenceSwatch = ({
@@ -160,13 +159,14 @@ export const BookReaderPreferencesTrigger = ({
     size="icon"
     type="button"
     onClick={onClick}
-    aria-label="Open reading preferences"
+    aria-label="Inställningar"
     className={cn(
-      "text-current hover:bg-black/10 hover:text-current dark:hover:bg-white/10",
+      "h-9 w-9 px-0 text-current hover:bg-black/10 hover:text-current dark:hover:bg-white/10 md:h-10 md:w-auto md:px-3",
       className
     )}
   >
-    <CaseSensitive className="h-5 w-5" />
+    <CaseSensitive className="h-4 w-4" />
+    <span className="hidden text-sm font-medium md:inline">Inställningar</span>
   </Button>
 );
 
@@ -176,7 +176,6 @@ export const BookReaderPreferencesPanel = ({
   preferences,
   onPreferencesChange,
   onResetPreferences,
-  mobile = false,
 }: BookReaderPreferencesPanelProps) => {
   const { resolvedTheme } = useTheme();
   const font = getReaderFont(preferences);
@@ -190,22 +189,20 @@ export const BookReaderPreferencesPanel = ({
       ),
     [preferences.backgroundKey, resolvedTheme]
   );
-  const [matchesSurface, setMatchesSurface] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const updateMatchesSurface = () => {
-      setMatchesSurface(mobile ? mediaQuery.matches : !mediaQuery.matches);
+    const updateViewport = () => {
+      setIsMobile(mediaQuery.matches);
     };
 
-    updateMatchesSurface();
-    mediaQuery.addEventListener("change", updateMatchesSurface);
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
     return () => {
-      mediaQuery.removeEventListener("change", updateMatchesSurface);
+      mediaQuery.removeEventListener("change", updateViewport);
     };
-  }, [mobile]);
-
-  if (!matchesSurface) return null;
+  }, []);
 
   return (
     <Modal
@@ -232,7 +229,7 @@ export const BookReaderPreferencesPanel = ({
       }
     >
       <div className="mb-6">
-        <PreviewCard preferences={preferences} mobile={mobile} />
+        <PreviewCard preferences={preferences} mobile={isMobile} />
       </div>
 
           <section className="space-y-4">
@@ -301,7 +298,7 @@ export const BookReaderPreferencesPanel = ({
               </Button>
             </div>
 
-            {!mobile && (
+            {!isMobile && (
               <div className="grid grid-cols-10 gap-2">
                 {READER_FONT_SIZE_OPTIONS.map((size, index) => {
                   const active = index === preferences.fontSizeIndex;

@@ -3,22 +3,12 @@
 import Link from "next/link";
 import { useRef, type RefObject, type TouchEvent as ReactTouchEvent } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { BookOpenText, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { useTheme } from "@/42go/config/ThemeProvider";
-import { BookCover } from "@/app/(app)/(lingocafe)/books/_components/BookCover";
 import { BookPageReader } from "@/app/(app)/(lingocafe)/books/_components/BookPageReader";
-import {
-  BookReaderPreferencesPanel,
-  BookReaderPreferencesTrigger,
-} from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
-import type {
-  ReaderBookPage,
-  ReaderBookPageSummary,
-} from "@/app/(app)/(lingocafe)/books/_components/book-types";
+import { BookReaderPreferencesTrigger } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
+import type { ReaderBookPage } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 import {
   getReaderThemeStyle,
   type ReaderPreferences,
@@ -33,10 +23,8 @@ type ReaderSurfaceProps = {
   backHref: string;
   readingProgressBps: number;
   preferences: ReaderPreferences;
-  isPreferencesOpen: boolean;
-  onPreferencesOpenChange: (next: boolean) => void;
-  onPreferencesChange: (next: Partial<ReaderPreferences>) => void;
-  onResetPreferences: () => void;
+  onOpenTableOfContents: () => void;
+  onOpenPreferences: () => void;
 };
 
 type PageProgressProps = {
@@ -48,6 +36,12 @@ type ReaderNavButtonProps = {
   href: string | null;
   direction: "previous" | "next";
   className?: string;
+};
+
+type ReaderHeaderActionProps = {
+  onClick: () => void;
+  icon: typeof BookOpenText;
+  label: string;
 };
 
 const MOBILE_SWIPE_THRESHOLD = 72;
@@ -174,97 +168,21 @@ const BookProgress = ({ bookPage, compact = false }: PageProgressProps) => (
   </div>
 );
 
-const SidePageRow = ({
-  page,
-  currentPageId,
-}: {
-  page: ReaderBookPageSummary;
-  currentPageId: string;
-}) => {
-  const current = page.pageId === currentPageId;
-
-  return (
-    <Link
-      href={page.href}
-      className={`flex items-center gap-3 border-b px-5 py-4 text-sm transition hover:bg-muted/70 ${
-        current ? "bg-muted font-medium text-foreground" : "text-muted-foreground"
-      }`}
-    >
-      <span className="w-5 shrink-0 text-xs">{page.position}.</span>
-      <span className="min-w-0 flex-1 truncate">{page.title}</span>
-      {current && (
-        <span className="flex h-4 w-4 items-end gap-0.5 text-muted-foreground" aria-label="Current page">
-          <span className="h-1.5 w-0.5 rounded-full bg-current" />
-          <span className="h-3 w-0.5 rounded-full bg-current" />
-          <span className="h-2 w-0.5 rounded-full bg-current" />
-        </span>
-      )}
-    </Link>
-  );
-};
-
-const ReaderSidePanel = ({
-  bookPage,
-  backHref,
-}: {
-  bookPage: ReaderBookPage;
-  backHref: string;
-}) => (
-  <aside className="hidden h-full w-[320px] shrink-0 flex-col border-r bg-background md:flex">
-    <div className="flex h-[68px] items-center border-b px-6">
-      <Button variant="ghost" size="icon" asChild>
-        <Link href={backHref} aria-label="Back to books">
-          <ChevronLeft className="h-5 w-5" />
-        </Link>
-      </Button>
-    </div>
-
-    <div className="border-b px-6 py-5">
-      <div className="flex gap-4">
-        <BookCover
-          book={bookPage.book}
-          className="w-24 shrink-0 rounded-sm"
-          sizes="96px"
-        />
-        <div className="min-w-0 pt-5">
-          <h2 className="line-clamp-3 text-lg font-semibold leading-tight">
-            {bookPage.book.title}
-          </h2>
-          <p className="mt-2 truncate text-sm text-muted-foreground">
-            {bookPage.book.author}
-          </p>
-        </div>
-      </div>
-      <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
-        <div className="h-1 flex-1 rounded-full bg-border">
-          <div
-            className="h-1 rounded-full bg-neutral-950"
-            style={{ width: `${getBookProgressPercent(bookPage)}%` }}
-          />
-        </div>
-        <span>{Math.round(getBookProgressPercent(bookPage))}%</span>
-      </div>
-    </div>
-
-    <div className="grid grid-cols-2 border-b text-sm">
-      <button type="button" className="border-b-2 border-neutral-950 px-3 py-4 font-medium">
-        Innehåll
-      </button>
-      <button type="button" className="px-3 py-4 text-muted-foreground" disabled>
-        Bokmärken
-      </button>
-    </div>
-
-    <div className="min-h-0 flex-1 overflow-y-auto">
-      {bookPage.pages.map((page) => (
-        <SidePageRow
-          key={page.pageId}
-          page={page}
-          currentPageId={bookPage.page.pageId}
-        />
-      ))}
-    </div>
-  </aside>
+const ReaderHeaderAction = ({
+  onClick,
+  icon: Icon,
+  label,
+}: ReaderHeaderActionProps) => (
+  <Button
+    variant="ghost"
+    type="button"
+    onClick={onClick}
+    aria-label={label}
+    className="h-9 w-9 px-0 text-current hover:bg-black/10 hover:text-current dark:hover:bg-white/10 md:h-10 md:w-auto md:px-3"
+  >
+    <Icon className="h-4 w-4" />
+    <span className="hidden text-sm font-medium md:inline">{label}</span>
+  </Button>
 );
 
 export const BookReaderDesktopSurface = ({
@@ -275,10 +193,8 @@ export const BookReaderDesktopSurface = ({
   backHref,
   readingProgressBps,
   preferences,
-  isPreferencesOpen,
-  onPreferencesOpenChange,
-  onPreferencesChange,
-  onResetPreferences,
+  onOpenTableOfContents,
+  onOpenPreferences,
 }: ReaderSurfaceProps) => {
   const { resolvedTheme } = useTheme();
   const readerThemeStyle = getReaderThemeStyle(
@@ -287,10 +203,7 @@ export const BookReaderDesktopSurface = ({
   );
 
   return (
-    <div className="fixed inset-0 z-[650] hidden bg-background text-foreground md:flex">
-      {bookPage && <ReaderSidePanel bookPage={bookPage} backHref={backHref} />}
-      {!bookPage && <div className="hidden w-[320px] shrink-0 border-r md:block" />}
-
+    <div className="hidden min-h-0 flex-1 bg-background text-foreground md:flex">
       <section
         className="relative flex min-w-0 flex-1 flex-col"
         style={readerThemeStyle}
@@ -304,25 +217,37 @@ export const BookReaderDesktopSurface = ({
             className="absolute bottom-[-1px] left-0 h-[2px] bg-blue-500"
             style={{ width: `${(readingProgressBps / 10000) * 100}%` }}
           />
-          <div className="min-w-0">
-            <div className="truncate text-sm font-medium">
-              {bookPage?.book.title || "Reading"}
-              {bookPage && (
-                <span
-                  className="ml-3 rounded-full px-3 py-1 text-xs font-semibold"
-                  style={{
-                    backgroundColor: "var(--reader-fg-soft)",
-                    color: "var(--reader-fg-muted)",
-                  }}
-                >
-                  {formatLevelLabel(bookPage)}
-                </span>
-              )}
+          <div className="flex min-w-0 items-center gap-3">
+            <Button variant="ghost" size="icon" asChild>
+              <Link href={backHref} aria-label="Back to books">
+                <ChevronLeft className="h-5 w-5" />
+              </Link>
+            </Button>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-medium">
+                {bookPage?.book.title || "Reading"}
+                {bookPage && (
+                  <span
+                    className="ml-3 rounded-full px-3 py-1 text-xs font-semibold"
+                    style={{
+                      backgroundColor: "var(--reader-fg-soft)",
+                      color: "var(--reader-fg-muted)",
+                    }}
+                  >
+                    {formatLevelLabel(bookPage)}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-          <BookReaderPreferencesTrigger
-            onClick={() => onPreferencesOpenChange(true)}
-          />
+          <div className="flex items-center gap-1">
+            <BookReaderPreferencesTrigger onClick={onOpenPreferences} />
+            <ReaderHeaderAction
+              onClick={onOpenTableOfContents}
+              icon={BookOpenText}
+              label="Innehåll"
+            />
+          </div>
         </header>
 
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
@@ -339,13 +264,6 @@ export const BookReaderDesktopSurface = ({
           )}
         </div>
 
-        <BookReaderPreferencesPanel
-        open={isPreferencesOpen}
-        onOpenChange={onPreferencesOpenChange}
-        preferences={preferences}
-        onPreferencesChange={onPreferencesChange}
-        onResetPreferences={onResetPreferences}
-      />
       </section>
     </div>
   );
@@ -359,10 +277,8 @@ export const BookReaderMobileSurface = ({
   backHref,
   readingProgressBps,
   preferences,
-  isPreferencesOpen,
-  onPreferencesOpenChange,
-  onPreferencesChange,
-  onResetPreferences,
+  onOpenTableOfContents,
+  onOpenPreferences,
 }: ReaderSurfaceProps) => {
   const { resolvedTheme } = useTheme();
   const router = useRouter();
@@ -411,13 +327,10 @@ export const BookReaderMobileSurface = ({
 
   return (
     <div
-      className="fixed inset-0 z-[600] bg-background md:hidden"
+      className="flex min-h-0 flex-1 bg-background md:hidden"
       style={readerThemeStyle}
     >
-      <div
-        className="absolute inset-0 flex min-w-0 flex-col"
-        style={{ height: "100dvh" }}
-      >
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header
           className="relative flex h-16 shrink-0 items-center justify-between border-b px-3"
           style={{ borderColor: "var(--reader-border)" }}
@@ -437,9 +350,14 @@ export const BookReaderMobileSurface = ({
               {bookPage?.book.title || "Reading"}
             </div>
           </div>
-          <BookReaderPreferencesTrigger
-            onClick={() => onPreferencesOpenChange(true)}
-          />
+          <div className="flex items-center gap-1">
+            <BookReaderPreferencesTrigger onClick={onOpenPreferences} />
+            <ReaderHeaderAction
+              onClick={onOpenTableOfContents}
+              icon={BookOpenText}
+              label="Innehåll"
+            />
+          </div>
         </header>
 
         <div
@@ -461,14 +379,6 @@ export const BookReaderMobileSurface = ({
           )}
         </div>
 
-        <BookReaderPreferencesPanel
-        open={isPreferencesOpen}
-        onOpenChange={onPreferencesOpenChange}
-        preferences={preferences}
-        onPreferencesChange={onPreferencesChange}
-        onResetPreferences={onResetPreferences}
-        mobile
-      />
       </div>
     </div>
   );

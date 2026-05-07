@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
+import { Modal } from "@/42go/components/modal";
 import { useTheme } from "@/42go/config/ThemeProvider";
 import { AppLayout } from "@/42go/layouts/app";
 import {
   BookReaderDesktopSurface,
   BookReaderMobileSurface,
 } from "@/app/(app)/(lingocafe)/books/_components/BookReaderSurfaces";
+import { BookReaderPreferencesPanel } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
+import { BookReaderTableOfContents } from "@/app/(app)/(lingocafe)/books/_components/BookReaderTableOfContents";
 import type {
   ReaderBookPage,
   ReaderBookPageNeighbor,
@@ -184,6 +187,7 @@ const BookReadPage = () => {
     bookId: string | string[];
     pageId: string | string[];
   }>();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { status } = useSession();
   const { resolvedTheme, theme } = useTheme();
@@ -205,6 +209,7 @@ const BookReadPage = () => {
   const [readerPreferencesStore, setReaderPreferencesStore] =
     useState<ReaderPreferencesStore>(getInitialReaderPreferences);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
+  const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
   const readerThemeMode: ReaderThemeMode =
     resolvedTheme === "dark" ? "dark" : "light";
   const activeReaderThemeProfile: ReaderThemeProfileKey =
@@ -227,6 +232,22 @@ const BookReadPage = () => {
         )}/pages/${encodeURIComponent(pageId)}`
       : "";
   const bookshelfHref = "/books";
+  const bookInfoHref = bookId
+    ? `/books/${encodeURIComponent(bookId)}`
+    : bookshelfHref;
+  const handleReaderOpenChange = (next: boolean) => {
+    if (!next) {
+      router.push(bookshelfHref);
+    }
+  };
+
+  const openPreferences = () => {
+    setIsPreferencesOpen(true);
+  };
+
+  const openTableOfContents = () => {
+    setIsTableOfContentsOpen(true);
+  };
 
   useEffect(() => {
     if (Object.keys(readerPreferencesStore).length === 0) {
@@ -446,33 +467,57 @@ const BookReadPage = () => {
       disablePadding
       policy={{ require: { feature: "page:books", session: true } }}
     >
-      <BookReaderMobileSurface
-        bookPage={bookPage}
-        loading={loading}
-        error={error}
-        scrollRef={mobileScrollRef}
-        backHref={bookshelfHref}
-        readingProgressBps={readingProgressBps}
-        preferences={readerPreferences}
-        isPreferencesOpen={isPreferencesOpen}
-        onPreferencesOpenChange={setIsPreferencesOpen}
-        onPreferencesChange={updateReaderPreferences}
-        onResetPreferences={resetReaderPreferences}
-      />
+      <Modal
+        open
+        onOpenChange={handleReaderOpenChange}
+        ariaLabel="Reading"
+        presentation="panel"
+        anchor="right"
+        size="full"
+        showClose={false}
+        closeOnOverlayClick={false}
+        className="md:!w-screen md:!max-w-none md:!border-l-0"
+        bodyClassName="flex min-h-0 !overflow-hidden p-0"
+      >
+        <BookReaderMobileSurface
+          bookPage={bookPage}
+          loading={loading}
+          error={error}
+          scrollRef={mobileScrollRef}
+          backHref={bookshelfHref}
+          readingProgressBps={readingProgressBps}
+          preferences={readerPreferences}
+          onOpenTableOfContents={openTableOfContents}
+          onOpenPreferences={openPreferences}
+        />
 
-      <BookReaderDesktopSurface
-        bookPage={bookPage}
-        loading={loading}
-        error={error}
-        scrollRef={desktopScrollRef}
-        backHref={bookshelfHref}
-        readingProgressBps={readingProgressBps}
-        preferences={readerPreferences}
-        isPreferencesOpen={isPreferencesOpen}
-        onPreferencesOpenChange={setIsPreferencesOpen}
-        onPreferencesChange={updateReaderPreferences}
-        onResetPreferences={resetReaderPreferences}
-      />
+        <BookReaderDesktopSurface
+          bookPage={bookPage}
+          loading={loading}
+          error={error}
+          scrollRef={desktopScrollRef}
+          backHref={bookshelfHref}
+          readingProgressBps={readingProgressBps}
+          preferences={readerPreferences}
+          onOpenTableOfContents={openTableOfContents}
+          onOpenPreferences={openPreferences}
+        />
+
+        <BookReaderPreferencesPanel
+          open={isPreferencesOpen}
+          onOpenChange={setIsPreferencesOpen}
+          preferences={readerPreferences}
+          onPreferencesChange={updateReaderPreferences}
+          onResetPreferences={resetReaderPreferences}
+        />
+
+        <BookReaderTableOfContents
+          open={isTableOfContentsOpen}
+          onOpenChange={setIsTableOfContentsOpen}
+          bookPage={bookPage}
+          bookInfoHref={bookInfoHref}
+        />
+      </Modal>
     </AppLayout>
   );
 };

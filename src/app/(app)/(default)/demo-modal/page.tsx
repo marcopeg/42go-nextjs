@@ -16,10 +16,42 @@ export default function DemoModalPage() {
   const [centeredOpen, setCenteredOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [fullOpen, setFullOpen] = useState(false);
+  const [nestedOpen, setNestedOpen] = useState(false);
+  const [nestedChildOpen, setNestedChildOpen] = useState(false);
+  const [nestedGrandchildOpen, setNestedGrandchildOpen] = useState(false);
+  const [panelStackOpen, setPanelStackOpen] = useState(false);
+  const [panelStackChildOpen, setPanelStackChildOpen] = useState(false);
+  const [panelStackConfirmOpen, setPanelStackConfirmOpen] = useState(false);
   const [anchorExample, setAnchorExample] = useState<ModalAnchor>("right");
   const [anchorExampleOpen, setAnchorExampleOpen] = useState(false);
   const [sizeExample, setSizeExample] = useState<ModalSize>("md");
   const [sizeExampleOpen, setSizeExampleOpen] = useState(false);
+  const handleNestedOpenChange = (next: boolean) => {
+    setNestedOpen(next);
+    if (!next) {
+      setNestedChildOpen(false);
+      setNestedGrandchildOpen(false);
+    }
+  };
+  const handleNestedChildOpenChange = (next: boolean) => {
+    setNestedChildOpen(next);
+    if (!next) {
+      setNestedGrandchildOpen(false);
+    }
+  };
+  const handlePanelStackOpenChange = (next: boolean) => {
+    setPanelStackOpen(next);
+    if (!next) {
+      setPanelStackChildOpen(false);
+      setPanelStackConfirmOpen(false);
+    }
+  };
+  const handlePanelStackChildOpenChange = (next: boolean) => {
+    setPanelStackChildOpen(next);
+    if (!next) {
+      setPanelStackConfirmOpen(false);
+    }
+  };
 
   return (
     <AppLayout
@@ -124,6 +156,33 @@ export default function DemoModalPage() {
                 Open {size} modal
               </Button>
             ))}
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold">Nested stacks</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Parent and child surfaces stay controlled independently.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="justify-start"
+              onClick={() => setNestedOpen(true)}
+            >
+              Open modal in modal
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="justify-start"
+              onClick={() => setPanelStackOpen(true)}
+            >
+              Open stacked panels
+            </Button>
           </div>
         </section>
 
@@ -290,6 +349,180 @@ export default function DemoModalPage() {
               </div>
             ))}
           </div>
+        </Modal>
+
+        <Modal
+          open={nestedOpen}
+          onOpenChange={handleNestedOpenChange}
+          title="Parent modal"
+          subtitle="Level 1"
+          presentation="modal"
+          size="md"
+          footer={
+            <Button type="button" onClick={() => handleNestedOpenChange(false)}>
+              Close parent
+            </Button>
+          }
+          footerHelp="Closing the parent clears the child stack."
+        >
+          <div className="space-y-4">
+            <div className="rounded-md border bg-muted/30 p-4">
+              <p className="font-medium">Level 1 surface</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                This parent keeps its state while a child dialog opens above it.
+              </p>
+            </div>
+            <Button type="button" onClick={() => setNestedChildOpen(true)}>
+              Open child modal
+            </Button>
+          </div>
+
+          <Modal
+            open={nestedChildOpen}
+            onOpenChange={handleNestedChildOpenChange}
+            title="Child modal"
+            subtitle="Level 2"
+            presentation="modal"
+            size="sm"
+            footer={
+              <Button
+                type="button"
+                onClick={() => handleNestedChildOpenChange(false)}
+              >
+                Close child
+              </Button>
+            }
+          >
+            <div className="space-y-4">
+              <div className="rounded-md border bg-muted/30 p-4 text-sm leading-6 text-muted-foreground">
+                The child sits above the parent and owns focus until it closes.
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setNestedGrandchildOpen(true)}
+              >
+                Open third level
+              </Button>
+            </div>
+
+            <Modal
+              open={nestedGrandchildOpen}
+              onOpenChange={setNestedGrandchildOpen}
+              title="Third level"
+              subtitle="Level 3"
+              presentation="modal"
+              size="sm"
+              footer={
+                <Button
+                  type="button"
+                  onClick={() => setNestedGrandchildOpen(false)}
+                >
+                  Done
+                </Button>
+              }
+            >
+              <div className="rounded-md border bg-muted/30 p-4 text-sm leading-6 text-muted-foreground">
+                Three layers. Still controlled. Still breathing.
+              </div>
+            </Modal>
+          </Modal>
+        </Modal>
+
+        <Modal
+          open={panelStackOpen}
+          onOpenChange={handlePanelStackOpenChange}
+          title="Workspace panel"
+          subtitle="Level 1 panel"
+          presentation="panel"
+          anchor="right"
+          size="lg"
+          footer={
+            <Button
+              type="button"
+              onClick={() => handlePanelStackOpenChange(false)}
+            >
+              Close workspace
+            </Button>
+          }
+          footerHelp="Panels can stack without sharing feature state."
+        >
+          <div className="space-y-4">
+            <div className="rounded-md border bg-muted/30 p-4">
+              <p className="font-medium">Primary panel</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Open a narrower detail panel above this right-side panel.
+              </p>
+            </div>
+            <Button type="button" onClick={() => setPanelStackChildOpen(true)}>
+              Open detail panel
+            </Button>
+          </div>
+
+          <Modal
+            open={panelStackChildOpen}
+            onOpenChange={handlePanelStackChildOpenChange}
+            title="Detail panel"
+            subtitle="Level 2 panel"
+            presentation="panel"
+            anchor="right"
+            size="md"
+            footer={
+              <Button
+                type="button"
+                onClick={() => handlePanelStackChildOpenChange(false)}
+              >
+                Close detail
+              </Button>
+            }
+          >
+            <div className="space-y-4">
+              <div className="rounded-md border bg-muted/30 p-4">
+                <p className="font-medium">Secondary panel</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  A centered confirmation can still open above this panel.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPanelStackConfirmOpen(true)}
+              >
+                Open confirmation modal
+              </Button>
+            </div>
+
+            <Modal
+              open={panelStackConfirmOpen}
+              onOpenChange={setPanelStackConfirmOpen}
+              title="Confirm action"
+              subtitle="Level 3 modal"
+              presentation="modal"
+              size="sm"
+              footer={
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setPanelStackConfirmOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setPanelStackConfirmOpen(false)}
+                  >
+                    Confirm
+                  </Button>
+                </>
+              }
+            >
+              <p className="text-sm leading-6 text-muted-foreground">
+                This confirms that modal and panel presentations can share a
+                stack. No custom overlay shell required.
+              </p>
+            </Modal>
+          </Modal>
         </Modal>
       </div>
     </AppLayout>
