@@ -1,6 +1,6 @@
 ---
 name: backlog-refine
-description: Refines a task in docs/backlog through markdown question rounds, reducing ambiguity while preserving the original draft.
+description: File-based refinement for docs/backlog tasks. Uses markdown question round files that the operator answers inline in the files, then folds those answers into the refined task. Not for chat-based, mobile, light, dynamic, or inline clarify flows.
 ---
 
 # Refine Task

@@ -2,7 +2,6 @@
 
 ## WIP
 
-
 ## Blocked
 
 - [UT41: ESLint 9 → 10](./blocked/UT41-eslint-9-10/UT41.task.refined.md) | [plan](./blocked/UT41-eslint-9-10/UT41.plan.md) | [notes](./blocked/UT41-eslint-9-10/UT41.notes.md)
@@ -15,10 +14,10 @@
 
 ## Drafts
 
-- [VT44: Reduce Reader Page Transition Flicker With Delayed Loading State](./drafts/VT44-reduce-reader-page-transition-flicker-with-delayed-loading-state/VT44.task.draft.md)
-- [BL01: Books Top-Bar Language and Level Switcher via GM77 Panel](./drafts/BL01-books-top-bar-language-level-switcher-via-gm77-panel/BL01.task.draft.md)
-- [ZJ19: After GM77, Add Mobile Reader Table of Contents Popup](./drafts/ZJ19-after-gm77-add-mobile-reader-table-of-contents-popup/ZJ19.task.draft.md)
 - [TF15: Move Reader Customization to Core Overlay Surface](./drafts/TF15-move-reader-customization-to-core-overlay-surface/TF15.task.draft.md)
+- [ZJ19: After GM77, Add Mobile Reader Table of Contents Popup](./drafts/ZJ19-after-gm77-add-mobile-reader-table-of-contents-popup/ZJ19.task.draft.md)
+- [BL01: Books Top-Bar Language and Level Switcher via GM77 Panel](./drafts/BL01-books-top-bar-language-level-switcher-via-gm77-panel/BL01.task.draft.md)
+- [VT44: Reduce Reader Page Transition Flicker With Delayed Loading State](./drafts/VT44-reduce-reader-page-transition-flicker-with-delayed-loading-state/VT44.task.draft.md)
 - [FN30: Remove Google Fonts Build Network Dependency](./drafts/FN30-remove-google-fonts-build-network-dependency/FN30.task.draft.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.draft.md)
 - [HO30: Codex Web Local E2E Sandbox](./drafts/HO30-codex-web-local-e2e-sandbox/HO30.task.draft.md)
