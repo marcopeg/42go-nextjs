@@ -78,7 +78,8 @@ For each task to complete:
 
 Completed log convention (mandatory):
 - use only relative links from `docs/backlog/completed/COMPLETED.md`
-- completed entries must link as `./<taskid>-<task-slug>/<taskid>.task.md`
+- completed entries must link to the active task artifact, usually `./<taskid>-<task-slug>/<taskid>.task.refined.md`
+- legacy completed tasks may still link as `./<taskid>-<task-slug>/<taskid>.task.md`
 - include `| [plan](...)` when a plan file exists
 - include `| [notes](...)` when a notes file exists
 - `docs/backlog/completed/COMPLETED.md` is an append-only execution history index, not a sorted catalog

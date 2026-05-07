@@ -31,7 +31,7 @@ def parse_args() -> argparse.Namespace:
 
     update_parser = subparsers.add_parser("update-frontmatter")
     update_parser.add_argument("--path", required=True)
-    update_parser.add_argument("--kind", choices=["task", "plan", "notes"])
+    update_parser.add_argument("--kind", choices=["task", "plan", "notes", "question", "artifact"])
     update_parser.add_argument("--set", dest="set_values", action="append", default=[])
     update_parser.add_argument("--clear", dest="clear_keys", action="append", default=[])
     update_parser.add_argument("--refresh-updated-at", action="store_true")
@@ -71,6 +71,8 @@ def main() -> int:
                     "title": record.title,
                     "folder": str(record.folder),
                     "taskFile": str(record.task_file),
+                    "draftTaskFile": str(record.draft_task_file) if record.draft_task_file else None,
+                    "refinedTaskFile": str(record.refined_task_file) if record.refined_task_file else None,
                     "planFile": str(record.plan_file) if record.plan_file else None,
                     "notesFile": str(record.notes_file) if record.notes_file else None,
                     "normalizedTaskId": normalize_task_id(record.task_id),
@@ -116,6 +118,8 @@ def main() -> int:
                     "state": record.state,
                     "folder": str(record.folder),
                     "taskFile": str(record.task_file),
+                    "draftTaskFile": str(record.draft_task_file) if record.draft_task_file else None,
+                    "refinedTaskFile": str(record.refined_task_file) if record.refined_task_file else None,
                 },
                 indent=2,
             )

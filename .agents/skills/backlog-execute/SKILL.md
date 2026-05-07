@@ -75,7 +75,7 @@ updatedAt: 2026-04-21T23:59:00+02:00
 ---
 
 # Execution Notes — <Task title>
-**Task**: ./AA11.task.md
+**Task**: ./AA11.task.refined.md
 **Plan**: ./AA11.plan.md
 
 ## Decisions
@@ -111,7 +111,8 @@ Notes-update rules (mandatory):
 BACKLOG link convention (mandatory):
 - use only relative links from `docs/backlog/BACKLOG.md`
 - wip entries use:
-  - `./wip/AA11-task-slug/AA11.task.md`
+  - `./wip/AA11-task-slug/AA11.task.refined.md` when a refined file exists
+  - `./wip/AA11-task-slug/AA11.task.md` for legacy tasks that have not been migrated
   - `./wip/AA11-task-slug/AA11.plan.md`
   - `./wip/AA11-task-slug/AA11.notes.md`
 - `docs/backlog/BACKLOG.md` must keep links to `./archived/ARCHIVED.md` and `./completed/COMPLETED.md`

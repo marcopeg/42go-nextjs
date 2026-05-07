@@ -41,7 +41,8 @@ For each task to archive:
 
 Archived log convention (mandatory):
 - use only relative links from `docs/backlog/archived/ARCHIVED.md`
-- archived entries must link as `./<taskid>-<task-slug>/<taskid>.task.md`
+- archived entries must link to the active task artifact, usually `./<taskid>-<task-slug>/<taskid>.task.refined.md`
+- legacy archived tasks may still link as `./<taskid>-<task-slug>/<taskid>.task.md`
 - include `| [plan](...)` when a plan file exists
 - include `| [notes](...)` when a notes file exists
 

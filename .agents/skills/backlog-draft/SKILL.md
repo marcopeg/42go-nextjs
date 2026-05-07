@@ -1,6 +1,6 @@
 ---
 name: backlog-draft
-description: Creates a draft task in docs/backlog from a human operator's mind dump, using the standard task template and a generated AA11-style TaskID.
+description: Creates a draft task in docs/backlog from a human operator's mind dump, using the standard task template and a generated AA11-style TaskID, with optional immediate refinement handoff.
 ---
 
 # Draft Task
@@ -8,6 +8,12 @@ description: Creates a draft task in docs/backlog from a human operator's mind d
 `backlog-draft` is low-friction capture for the human operator.
 
 Use it to turn rough notes, dictation, or a partial idea into a stored draft task without overthinking the content.
+
+Invocation model (mandatory):
+
+- use this skill for direct commands such as `draft a new task: ...`, `new task: ...`, or equivalent conversational requests to capture future work
+- also use this skill when the request appears inside a longer conversation and the operator clearly wants the current idea captured as a backlog item
+- if the operator asks to `draft and refine`, `create and refine`, `new task and refine`, or equivalent, create the draft first and then immediately continue into `backlog-refine` in the same turn
 
 Storage model (mandatory):
 
@@ -34,7 +40,8 @@ TaskID rules (mandatory):
 Filename rules (mandatory):
 
 - task folder: `docs/backlog/drafts/<taskid>-<task-slug>/`
-- task file: `docs/backlog/drafts/<taskid>-<task-slug>/<taskid>.task.md`
+- draft task file: `docs/backlog/drafts/<taskid>-<task-slug>/<taskid>.task.draft.md`
+- refined task file, created later by `backlog-refine`: `docs/backlog/drafts/<taskid>-<task-slug>/<taskid>.task.refined.md`
 - plan file: `docs/backlog/drafts/<taskid>-<task-slug>/<taskid>.plan.md`
 - notes file: `docs/backlog/drafts/<taskid>-<task-slug>/<taskid>.notes.md`
 
@@ -66,10 +73,9 @@ Frontmatter rules (mandatory):
 BACKLOG link convention (mandatory):
 
 - use only relative links from `docs/backlog/BACKLOG.md`
-- drafts use `./drafts/<taskid>-<task-slug>/<taskid>.task.md`
-- ready tasks use `./ready/<taskid>-<task-slug>/<taskid>.task.md`
-- wip tasks use `./wip/<taskid>-<task-slug>/<taskid>.task.md`
-- blocked tasks use `./blocked/<taskid>-<task-slug>/<taskid>.task.md`
+- new drafts use `./drafts/<taskid>-<task-slug>/<taskid>.task.draft.md`
+- refined drafts, ready tasks, wip tasks, and blocked tasks use `./<state>/<taskid>-<task-slug>/<taskid>.task.refined.md` when a refined task file exists
+- legacy tasks may still use `./<state>/<taskid>-<task-slug>/<taskid>.task.md` until migrated
 - `docs/backlog/BACKLOG.md` must also link to `./archived/ARCHIVED.md` and `./completed/COMPLETED.md`
 
 State consistency rules (mandatory):
@@ -83,6 +89,7 @@ Behavior rules (mandatory):
 - always create the draft task, even if the operator input is rough, incomplete, or dictated in a stream-of-consciousness style
 - do not block on missing detail
 - do not create a plan file in this skill unless the user explicitly supplied one and asked you to store it
+- do not create a refined task file in this skill; that belongs to `backlog-refine`
 - do not hallucinate content just to make the template look complete
 - if a section was not covered by the operator input, write exactly: `information is missing`
 - preserve uncertainty, tradeoffs, and open-ended language from the operator instead of prematurely deciding things
@@ -171,10 +178,19 @@ Drafting rules:
 - do not reinterpret the task into a narrower implementation unless the operator already implied it
 - generate a kebab-case slug from the task title
 - create the task folder as `<taskid>-<task-slug>`
+- write the captured draft to `<taskid>.task.draft.md`
 - write the metadata into frontmatter instead of inline `**TaskID**` or `**Status**` lines
 
 After creating the draft:
 
 1. add the task to `## Drafts` in `docs/backlog/BACKLOG.md`
 2. ensure the task appears nowhere else in the backlog
-3. report the created TaskID and draft path, and optionally mention that refinement can start next if useful
+3. report the created TaskID and draft path
+4. if the operator did not already request refinement, ask exactly: `Do you want to start refinement now?`
+5. if the operator already requested draft-and-refine, immediately hand off to `backlog-refine` and generate the first question round file instead of asking whether to refine
+
+Chaining rules:
+
+- `backlog-draft` may hand off directly to `backlog-refine` only after the draft file exists and the backlog index links to it
+- pass the new TaskID and draft folder path to `backlog-refine`
+- the handoff must not rewrite `<taskid>.task.draft.md`; refinement writes separate question files and eventually `<taskid>.task.refined.md`

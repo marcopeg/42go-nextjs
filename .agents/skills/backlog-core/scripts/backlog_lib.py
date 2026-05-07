@@ -15,7 +15,7 @@ from pathlib import Path
 TASK_ID_RE = re.compile(r"\b([a-z]{2})(\d{1,2})\b", re.IGNORECASE)
 LEGACY_TASK_ID_RE = re.compile(r"^[A-Za-z]{2,4}\d{0,4}$")
 PLAIN_YAML_RE = re.compile(r"^[A-Za-z0-9_.:+/@-]+$")
-TASK_LINK_TARGET_RE = re.compile(r"\(([^)\n]+\.task\.md)\)")
+TASK_LINK_TARGET_RE = re.compile(r"\(([^)\n]+\.task(?:\.(?:draft|refined))?\.md)\)")
 INLINE_TASK_ID_RE = re.compile(r"^\*\*TaskID\*\*:\s*(.+?)\s*$", re.IGNORECASE)
 INLINE_STATUS_RE = re.compile(r"^\*\*Status\*\*:\s*(.+?)\s*$", re.IGNORECASE)
 
@@ -36,6 +36,7 @@ ACTIVE_SECTION_ORDER = [
     ("Ready Tasks", "ready"),
     ("Drafts", "draft"),
 ]
+ACTIVE_STATES = {"wip", "blocked", "ready", "draft"}
 
 TASK_FRONTMATTER_ORDER = [
     "taskId",
@@ -50,6 +51,7 @@ TASK_FRONTMATTER_ORDER = [
     "reviewAfter",
 ]
 ARTIFACT_FRONTMATTER_ORDER = ["taskId", "createdAt", "updatedAt"]
+QUESTION_FRONTMATTER_ORDER = ["taskId", "round", "createdAt", "updatedAt", "answeredAt"]
 
 STRUCTURAL_COMMIT_HINTS = (
     "move backlog",
@@ -67,6 +69,9 @@ class TaskRecord:
     state: str
     folder: Path
     task_file: Path
+    draft_task_file: Path | None
+    refined_task_file: Path | None
+    legacy_task_file: Path | None
     plan_file: Path | None
     notes_file: Path | None
     extra_files: list[Path]
@@ -101,10 +106,8 @@ def looks_like_task_id(raw: str) -> bool:
 
 
 def extract_filename_task_id(path: Path) -> str | None:
-    stem = path.name
-    if stem.endswith(".task.md"):
-        stem = stem[: -len(".task.md")]
-    elif stem.endswith(".md"):
+    stem = strip_task_artifact_suffix(path.name)
+    if stem == path.name and stem.endswith(".md"):
         stem = stem[: -len(".md")]
     first_chunk = re.split(r"[.\-_ ]", stem, 1)[0].strip()
     if first_chunk and LEGACY_TASK_ID_RE.fullmatch(first_chunk):
@@ -192,6 +195,8 @@ def read_markdown(path: Path) -> tuple[dict[str, str], str]:
 
 def write_markdown(path: Path, meta: dict[str, str], body: str, kind: str) -> None:
     order = TASK_FRONTMATTER_ORDER if kind == "task" else ARTIFACT_FRONTMATTER_ORDER
+    if kind == "question":
+        order = QUESTION_FRONTMATTER_ORDER
     body = body.lstrip("\n")
     path.write_text(dump_frontmatter(meta, order) + body)
 
@@ -204,9 +209,11 @@ def extract_title(body: str, fallback: str) -> str:
 
 
 def detect_task_kind(path: Path) -> str:
-    suffixes = path.suffixes
-    if suffixes[-2:] == [".task", ".md"]:
+    if is_task_artifact_file(path):
         return "task"
+    if ".question.v" in path.name and path.suffixes[-1:] == [".md"]:
+        return "question"
+    suffixes = path.suffixes
     if suffixes[-2:] == [".plan", ".md"]:
         return "plan"
     if suffixes[-2:] == [".notes", ".md"]:
@@ -218,6 +225,14 @@ def detect_task_kind(path: Path) -> str:
 
 def task_filename(task_id: str) -> str:
     return f"{task_id}.task.md"
+
+
+def draft_task_filename(task_id: str) -> str:
+    return f"{task_id}.task.draft.md"
+
+
+def refined_task_filename(task_id: str) -> str:
+    return f"{task_id}.task.refined.md"
 
 
 def plan_filename(task_id: str) -> str:
@@ -246,6 +261,42 @@ def state_dir(backlog_root: Path, state: str) -> Path:
     return backlog_root / STATE_DIRS[state]
 
 
+TASK_ARTIFACT_SUFFIXES = (".task.refined.md", ".task.draft.md", ".task.md")
+
+
+def strip_task_artifact_suffix(name: str) -> str:
+    for suffix in TASK_ARTIFACT_SUFFIXES:
+        if name.endswith(suffix):
+            return name[: -len(suffix)]
+    return name
+
+
+def is_task_artifact_file(path: Path) -> bool:
+    return any(path.name.endswith(suffix) for suffix in TASK_ARTIFACT_SUFFIXES)
+
+
+def task_artifact_rank(path: Path) -> int:
+    if path.name.endswith(".task.refined.md"):
+        return 0
+    if path.name.endswith(".task.draft.md"):
+        return 1
+    if path.name.endswith(".task.md"):
+        return 2
+    return 99
+
+
+def select_active_task_file(folder: Path) -> Path | None:
+    candidates = [path for path in folder.glob("*.task*.md") if is_task_artifact_file(path)]
+    if not candidates:
+        return None
+    return sorted(candidates, key=lambda path: (task_artifact_rank(path), path.name.lower()))[0]
+
+
+def task_artifact_by_suffix(folder: Path, suffix: str) -> Path | None:
+    matches = sorted(path for path in folder.glob(f"*{suffix}") if path.is_file())
+    return matches[0] if matches else None
+
+
 def task_label(record: TaskRecord) -> str:
     return f"{record.task_id}: {record.title}"
 
@@ -263,11 +314,16 @@ def discover_tasks(backlog_root: Path) -> list[TaskRecord]:
         directory = backlog_root / dirname
         if not directory.exists():
             continue
-        for task_file in sorted(directory.glob("*/*.task.md")):
-            folder = task_file.parent
+        for folder in sorted(path for path in directory.iterdir() if path.is_dir()):
+            task_file = select_active_task_file(folder)
+            if not task_file:
+                continue
             meta, body = read_markdown(task_file)
-            task_id = str(meta.get("taskId") or task_file.stem.replace(".task", ""))
+            task_id = str(meta.get("taskId") or strip_task_artifact_suffix(task_file.name))
             title = extract_title(body, folder.name)
+            draft_task_file = task_artifact_by_suffix(folder, ".task.draft.md")
+            refined_task_file = task_artifact_by_suffix(folder, ".task.refined.md")
+            legacy_task_file = task_artifact_by_suffix(folder, ".task.md")
             plan_path = folder / plan_filename(task_id)
             notes_path = folder / notes_filename(task_id)
             tasks.append(
@@ -275,6 +331,9 @@ def discover_tasks(backlog_root: Path) -> list[TaskRecord]:
                     state=state,
                     folder=folder,
                     task_file=task_file,
+                    draft_task_file=draft_task_file,
+                    refined_task_file=refined_task_file,
+                    legacy_task_file=legacy_task_file,
                     plan_file=plan_path if plan_path.exists() else None,
                     notes_file=notes_path if notes_path.exists() else None,
                     extra_files=sorted(
@@ -284,6 +343,9 @@ def discover_tasks(backlog_root: Path) -> list[TaskRecord]:
                             if extra
                             not in {
                                 task_file,
+                                draft_task_file,
+                                refined_task_file,
+                                legacy_task_file,
                                 plan_path,
                                 notes_path,
                             }
@@ -299,11 +361,12 @@ def discover_tasks(backlog_root: Path) -> list[TaskRecord]:
 
 def resolve_task(backlog_root: Path, task_ref: str, states: set[str] | None = None) -> TaskRecord:
     normalized = normalize_task_id(task_ref)
+    effective_states = states if states is not None else ACTIVE_STATES
     matches = []
     for record in discover_tasks(backlog_root):
         if normalize_task_id(record.task_id) != normalized:
             continue
-        if states and record.state not in states:
+        if effective_states and record.state not in effective_states:
             continue
         matches.append(record)
     if not matches:
@@ -354,14 +417,18 @@ def parse_active_section_order(path: Path) -> dict[str, list[Path]]:
 
 def order_records(records: list[TaskRecord], preferred: list[Path]) -> list[TaskRecord]:
     by_path = {record.task_file.resolve(): record for record in records}
+    by_folder = {record.folder.resolve(): record for record in records}
     ordered: list[TaskRecord] = []
     seen: set[Path] = set()
     for path in preferred:
-        record = by_path.get(path)
+        record = by_path.get(path) or by_folder.get(path.parent.resolve())
         if not record:
             continue
+        active_path = record.task_file.resolve()
+        if active_path in seen:
+            continue
         ordered.append(record)
-        seen.add(path)
+        seen.add(active_path)
     extras = [record for record in records if record.task_file.resolve() not in seen]
     extras.sort(key=lambda item: (item.task_id.lower(), item.title.lower()))
     ordered.extend(extras)
@@ -523,7 +590,7 @@ def transition_task(
         task_file = record.task_file
     write_markdown(task_file, meta, body, "task")
     rebuild_active_index(backlog_root)
-    transitioned_record = resolve_task(backlog_root, record.task_id)
+    transitioned_record = resolve_task(backlog_root, record.task_id, {to_state})
     if to_state in {"completed", "archived"}:
         append_history_entry(backlog_root, to_state, transitioned_record)
     return transitioned_record
@@ -630,10 +697,8 @@ def derive_task_id(path: Path, meta: dict[str, str], body: str) -> str:
 
 
 def derive_task_slug(path: Path, task_id: str, title: str) -> str:
-    stem = path.name
-    if stem.endswith(".task.md"):
-        stem = stem[: -len(".task.md")]
-    elif stem.endswith(".md"):
+    stem = strip_task_artifact_suffix(path.name)
+    if stem == path.name and stem.endswith(".md"):
         stem = stem[: -len(".md")]
     lowered = task_id.lower()
     for prefix in (task_id, lowered):

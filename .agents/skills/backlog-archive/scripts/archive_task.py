@@ -30,6 +30,8 @@ def main() -> int:
                 "state": record.state,
                 "folder": str(record.folder),
                 "taskFile": str(record.task_file),
+                "draftTaskFile": str(record.draft_task_file) if record.draft_task_file else None,
+                "refinedTaskFile": str(record.refined_task_file) if record.refined_task_file else None,
             },
             indent=2,
         )

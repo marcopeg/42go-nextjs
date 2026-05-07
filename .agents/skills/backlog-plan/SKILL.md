@@ -11,6 +11,9 @@ Storage model (mandatory):
 - backlog root: `docs/backlog`
 - resolve task folders from `docs/backlog/drafts/`, `docs/backlog/ready/`, `docs/backlog/wip/`, or `docs/backlog/blocked/`
 - plan file lives inside the task folder alongside the task file
+- planning source of truth is `<taskid>.task.refined.md`
+- `<taskid>.task.draft.md` is historical input and may be read for context, but planning must not rewrite it
+- legacy `<taskid>.task.md` files may be read only when no refined task file exists yet
 
 Frontmatter rules (mandatory):
 - task files use YAML frontmatter with:
@@ -36,7 +39,9 @@ TaskID resolution (mandatory):
   - `python3 scripts/resolve_task.py <taskid>`
 
 Planning workflow (mandatory):
-- read the task file
+- read `<taskid>.task.refined.md` first
+- read `<taskid>.task.draft.md`, question rounds, plan, notes, and other task-folder context when they can materially improve the plan
+- if no refined task file exists, apply the review gate before using a legacy `<taskid>.task.md` or draft file as the planning source
 - read `docs/backlog/BACKLOG.md`
 - treat `docs/backlog/BACKLOG.md` as the active-work index only; use `docs/backlog/archived/ARCHIVED.md` or `docs/backlog/completed/COMPLETED.md` only when historical context is concretely needed
 - inspect relevant code, config, prompts, prior tasks, and `.notes.md` execution logs
@@ -48,14 +53,14 @@ Planning workflow (mandatory):
 Review gate (mandatory):
 - before creating or revising a plan, check whether the task has already been reviewed/refined enough for planning
 - treat the task as reviewed when either:
-  - it follows the current refinement template and the critical planning sections are concrete enough for implementation sequencing:
+  - `<taskid>.task.refined.md` exists and follows the current refinement template with the critical planning sections concrete enough for implementation sequencing:
     - `Business Gain`
     - `Current State`
     - `Desired State`
     - `Definition of Success`
     - `Constraints`
     - `Acceptance Criteria`
-  - or it uses an older/alternate format but still provides equivalent clarity about the problem, target outcome, success criteria, constraints, and acceptance conditions
+  - or no refined task file exists yet, but the available legacy/draft material uses an older/alternate format and still provides equivalent clarity about the problem, target outcome, success criteria, constraints, and acceptance conditions
 - do not treat a task as reviewed when those areas are still placeholder-filled, materially vague, contradictory, or obviously missing
 - if the task does not appear reviewed yet, ask exactly: `This task does not appear to have been reviewed yet. Do you want to review it first, or should I proceed with the planning anyway?`
 - do not create or update the plan until the operator chooses one of those paths
@@ -131,9 +136,11 @@ Acceptance semantics (mandatory):
 
 BACKLOG rules (mandatory):
 - use only relative links from `docs/backlog/BACKLOG.md`
-- drafts use `./drafts/<taskid>-<task-slug>/<taskid>.task.md`
-- ready tasks use `./ready/<taskid>-<task-slug>/<taskid>.task.md`
-- wip tasks use `./wip/<taskid>-<task-slug>/<taskid>.task.md`
-- blocked tasks use `./blocked/<taskid>-<task-slug>/<taskid>.task.md`
+- drafts with only a draft file use `./drafts/<taskid>-<task-slug>/<taskid>.task.draft.md`
+- drafts with a refined file use `./drafts/<taskid>-<task-slug>/<taskid>.task.refined.md`
+- ready tasks use `./ready/<taskid>-<task-slug>/<taskid>.task.refined.md` when a refined file exists
+- wip tasks use `./wip/<taskid>-<task-slug>/<taskid>.task.refined.md` when a refined file exists
+- blocked tasks use `./blocked/<taskid>-<task-slug>/<taskid>.task.refined.md` when a refined file exists
+- legacy tasks may still use `./<state>/<taskid>-<task-slug>/<taskid>.task.md` until migrated
 - `docs/backlog/BACKLOG.md` must keep links to `./archived/ARCHIVED.md` and `./completed/COMPLETED.md`
 - the task must appear in exactly one section at a time
