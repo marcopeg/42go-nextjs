@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, type RefObject, type TouchEvent as ReactTouchEvent } from "react";
-import { useRouter } from "next/navigation";
+import {
+  useRef,
+  type MouseEvent as ReactMouseEvent,
+  type RefObject,
+  type TouchEvent as ReactTouchEvent,
+} from "react";
 import { BookOpenText, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { useTheme } from "@/42go/config/ThemeProvider";
@@ -25,6 +29,7 @@ type ReaderSurfaceProps = {
   preferences: ReaderPreferences;
   onOpenTableOfContents: () => void;
   onOpenPreferences: () => void;
+  onNavigatePage: (href: string) => void;
 };
 
 type PageProgressProps = {
@@ -35,6 +40,7 @@ type PageProgressProps = {
 type ReaderNavButtonProps = {
   href: string | null;
   direction: "previous" | "next";
+  onNavigatePage: (href: string) => void;
   className?: string;
 };
 
@@ -100,7 +106,16 @@ const ReaderState = ({
   </div>
 );
 
-const ReaderNavButton = ({ href, direction, className = "" }: ReaderNavButtonProps) => {
+const shouldLetBrowserHandleClick = (
+  event: ReactMouseEvent<HTMLAnchorElement>
+) => event.metaKey || event.altKey || event.ctrlKey || event.shiftKey || event.button !== 0;
+
+const ReaderNavButton = ({
+  href,
+  direction,
+  onNavigatePage,
+  className = "",
+}: ReaderNavButtonProps) => {
   const isPrevious = direction === "previous";
   const Icon = isPrevious ? ChevronLeft : ChevronRight;
   const label = isPrevious ? "Previous page" : "Next page";
@@ -128,6 +143,12 @@ const ReaderNavButton = ({ href, direction, className = "" }: ReaderNavButtonPro
     <Link
       href={href}
       aria-label={label}
+      onClick={(event) => {
+        if (shouldLetBrowserHandleClick(event)) return;
+
+        event.preventDefault();
+        onNavigatePage(href);
+      }}
       className={`${baseClass} hover:opacity-80 ${className}`}
       style={baseStyle}
     >
@@ -136,9 +157,17 @@ const ReaderNavButton = ({ href, direction, className = "" }: ReaderNavButtonPro
   );
 };
 
-const BookProgress = ({ bookPage, compact = false }: PageProgressProps) => (
+const BookProgress = ({
+  bookPage,
+  onNavigatePage,
+  compact = false,
+}: PageProgressProps & { onNavigatePage: (href: string) => void }) => (
   <div className={`flex min-w-0 items-center gap-4 ${compact ? "w-full" : "w-full max-w-sm"}`}>
-    <ReaderNavButton href={bookPage.previous?.href ?? null} direction="previous" />
+    <ReaderNavButton
+      href={bookPage.previous?.href ?? null}
+      direction="previous"
+      onNavigatePage={onNavigatePage}
+    />
     <div className="min-w-0 flex-1 space-y-2 text-center">
       <div className="text-xs" style={{ color: "var(--reader-fg-muted)" }}>
         {getCurrentPageLabel(bookPage)}
@@ -164,7 +193,11 @@ const BookProgress = ({ bookPage, compact = false }: PageProgressProps) => (
         />
       </div>
     </div>
-    <ReaderNavButton href={bookPage.next?.href ?? null} direction="next" />
+    <ReaderNavButton
+      href={bookPage.next?.href ?? null}
+      direction="next"
+      onNavigatePage={onNavigatePage}
+    />
   </div>
 );
 
@@ -178,10 +211,9 @@ const ReaderHeaderAction = ({
     type="button"
     onClick={onClick}
     aria-label={label}
-    className="h-9 w-9 px-0 text-current hover:bg-black/10 hover:text-current dark:hover:bg-white/10 md:h-10 md:w-auto md:px-3"
+    className="h-9 w-9 px-0 text-current hover:bg-black/10 hover:text-current dark:hover:bg-white/10 md:h-10 md:w-10"
   >
     <Icon className="h-4 w-4" />
-    <span className="hidden text-sm font-medium md:inline">{label}</span>
   </Button>
 );
 
@@ -195,6 +227,7 @@ export const BookReaderDesktopSurface = ({
   preferences,
   onOpenTableOfContents,
   onOpenPreferences,
+  onNavigatePage,
 }: ReaderSurfaceProps) => {
   const { resolvedTheme } = useTheme();
   const readerThemeStyle = getReaderThemeStyle(
@@ -258,7 +291,10 @@ export const BookReaderDesktopSurface = ({
             <>
               <BookPageReader bookPage={bookPage} preferences={preferences} />
               <div className="mx-auto flex w-full max-w-[680px] items-center justify-center px-1 pb-24 pt-4">
-                <BookProgress bookPage={bookPage} />
+                <BookProgress
+                  bookPage={bookPage}
+                  onNavigatePage={onNavigatePage}
+                />
               </div>
             </>
           )}
@@ -279,9 +315,9 @@ export const BookReaderMobileSurface = ({
   preferences,
   onOpenTableOfContents,
   onOpenPreferences,
+  onNavigatePage,
 }: ReaderSurfaceProps) => {
   const { resolvedTheme } = useTheme();
-  const router = useRouter();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const readerThemeStyle = getReaderThemeStyle(
     preferences,
@@ -316,12 +352,12 @@ export const BookReaderMobileSurface = ({
     if (Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
 
     if (deltaX < 0 && bookPage.next?.href) {
-      router.push(bookPage.next.href);
+      onNavigatePage(bookPage.next.href);
       return;
     }
 
     if (deltaX > 0 && bookPage.previous?.href) {
-      router.push(bookPage.previous.href);
+      onNavigatePage(bookPage.previous.href);
     }
   };
 
@@ -373,7 +409,11 @@ export const BookReaderMobileSurface = ({
             <>
               <BookPageReader bookPage={bookPage} preferences={preferences} />
               <div className="pb-10 pt-4">
-                <BookProgress bookPage={bookPage} compact />
+                <BookProgress
+                  bookPage={bookPage}
+                  onNavigatePage={onNavigatePage}
+                  compact
+                />
               </div>
             </>
           )}

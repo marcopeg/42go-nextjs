@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import { AppLayout } from "@/42go/layouts/app";
+import type { Policy } from "@/42go/policy/types";
 import { Button } from "@/components/ui/button";
 import { BookCard } from "@/app/(app)/(lingocafe)/books/_components/BookCard";
 import type { ReaderBook } from "@/app/(app)/(lingocafe)/books/_components/book-types";
+import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
 import { useAppConfig } from "@/42go/config/use-app-config";
 import { ProfileConsent } from "@/42go/profile/ProfileConsent";
 import { getConsentCurrentValues } from "@/42go/profile/consent";
@@ -53,6 +55,9 @@ const fallbackReadingAction: ReaderBook["readingAction"] = {
   bookId: "",
   pageId: null,
   progressBps: null,
+};
+const BOOKS_PAGE_POLICY: Policy = {
+  require: { feature: "page:books", session: true },
 };
 
 const normalizeBookInfo = (info: unknown): Record<string, unknown> => {
@@ -112,6 +117,10 @@ const BooksPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const showLoading = useLingocafeRouteLoading({
+    isLoading: loading,
+    canDelay: !!data,
+  });
 
   const applyReaderData = (
     payload: ReaderData,
@@ -239,22 +248,22 @@ const BooksPage = () => {
           : "Here are the books."
       }
       stickyHeader={true}
-      policy={{ require: { feature: "page:books", session: true } }}
+      policy={BOOKS_PAGE_POLICY}
     >
       <div className="min-w-0 max-w-full overflow-x-clip space-y-6">
-        {error && (
+        {error && !showLoading && (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
 
-        {loading && (
+        {showLoading && (
           <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground shadow-sm">
             Loading books...
           </div>
         )}
 
-        {!loading && showProfileForm && (
+        {!showLoading && showProfileForm && (
           <form
             onSubmit={saveProfile}
             className="max-w-xl space-y-5 rounded-lg border bg-card p-5 shadow-sm"
@@ -349,13 +358,13 @@ const BooksPage = () => {
           </form>
         )}
 
-        {!loading && !showProfileForm && data && data.books.length === 0 && (
+        {!showLoading && !showProfileForm && data && data.books.length === 0 && (
           <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground shadow-sm">
             No books are available for this language yet.
           </div>
         )}
 
-        {!loading && !showProfileForm && data && data.books.length > 0 && (
+        {!showLoading && !showProfileForm && data && data.books.length > 0 && (
           <div className="grid min-w-0 max-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {data.books.map((book) => (
               <BookCard key={book.id} book={book} />

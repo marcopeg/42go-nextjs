@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { BookOpenText } from "lucide-react";
 
 import { Modal } from "@/42go/components/modal";
@@ -13,6 +14,7 @@ type BookReaderTableOfContentsProps = {
   onOpenChange: (next: boolean) => void;
   bookPage: ReaderBookPage | null;
   bookInfoHref: string;
+  onNavigatePage: (href: string) => void;
 };
 
 const getCurrentPageIndex = (bookPage: ReaderBookPage) => {
@@ -33,17 +35,34 @@ const TableOfContentsRow = ({
   page,
   currentPageId,
   onSelect,
+  onNavigatePage,
 }: {
   page: ReaderBookPageSummary;
   currentPageId: string;
   onSelect: () => void;
+  onNavigatePage: (href: string) => void;
 }) => {
   const current = page.pageId === currentPageId;
+  const handleClick = (event: ReactMouseEvent<HTMLAnchorElement>) => {
+    if (
+      event.metaKey ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.button !== 0
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    onSelect();
+    if (!current) onNavigatePage(page.href);
+  };
 
   return (
     <Link
       href={page.href}
-      onClick={onSelect}
+      onClick={handleClick}
       className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition hover:bg-muted/60 ${
         current ? "border-foreground/20 bg-muted text-foreground" : "text-muted-foreground"
       }`}
@@ -69,6 +88,7 @@ export const BookReaderTableOfContents = ({
   onOpenChange,
   bookPage,
   bookInfoHref,
+  onNavigatePage,
 }: BookReaderTableOfContentsProps) => {
   const handleSelectPage = () => {
     onOpenChange(false);
@@ -138,6 +158,7 @@ export const BookReaderTableOfContents = ({
                 page={page}
                 currentPageId={bookPage.page.pageId}
                 onSelect={handleSelectPage}
+                onNavigatePage={onNavigatePage}
               />
             ))}
           </div>

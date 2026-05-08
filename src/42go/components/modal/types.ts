@@ -22,6 +22,7 @@ export interface ModalProps {
   showClose?: boolean;
   closeLabel?: string;
   closeOnOverlayClick?: boolean;
+  onOpenAutoFocus?: (event: Event) => void;
   className?: string;
   overlayClassName?: string;
   headerClassName?: string;

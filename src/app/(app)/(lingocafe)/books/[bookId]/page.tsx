@@ -7,8 +7,10 @@ import { useSession } from "next-auth/react";
 import { ChevronLeft } from "lucide-react";
 
 import { AppLayout } from "@/42go/layouts/app";
+import type { Policy } from "@/42go/policy/types";
 import { Button } from "@/components/ui/button";
 import { BookInfoContent } from "@/app/(app)/(lingocafe)/books/_components/BookInfoContent";
+import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
 import type {
   ReaderBookInfo,
   ReaderBookInfoPage,
@@ -21,6 +23,9 @@ type BookInfoResponse = {
 
 const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
 const collapsedDescriptionMinWords = 30;
+const BOOK_DETAILS_PAGE_POLICY: Policy = {
+  require: { feature: "page:books", session: true },
+};
 
 const normalizeInfo = (info: unknown): Record<string, unknown> => {
   if (!info || typeof info !== "object" || Array.isArray(info)) return {};
@@ -140,6 +145,11 @@ const BookInfoPage = () => {
   const [book, setBook] = useState<ReaderBookInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const showLoading = useLingocafeRouteLoading({
+    isLoading: loading,
+    canDelay: !!book,
+  });
+  const visibleError = showLoading ? null : error;
 
   useEffect(() => {
     if (status !== "authenticated" || !bookId) {
@@ -196,27 +206,27 @@ const BookInfoPage = () => {
       stickyHeader={true}
       hideMobileMenu
       backBtn={{ to: "/books" }}
-      policy={{ require: { feature: "page:books", session: true } }}
+      policy={BOOK_DETAILS_PAGE_POLICY}
     >
       <MobileBookInfo
         book={book}
-        loading={loading}
-        error={error}
+        loading={showLoading}
+        error={visibleError}
         collapsedDescriptionMinWords={collapsedDescriptionMinWords}
       />
 
       <div className="hidden min-w-0 max-w-full md:block">
-        {loading && (
+        {showLoading && (
           <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground shadow-sm">
             Loading book...
           </div>
         )}
-        {error && (
+        {visibleError && (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
+            {visibleError}
           </div>
         )}
-        {!loading && !error && book && (
+        {!showLoading && !visibleError && book && (
           <BookInfoContent
             book={book}
             collapsedDescriptionMinWords={collapsedDescriptionMinWords}

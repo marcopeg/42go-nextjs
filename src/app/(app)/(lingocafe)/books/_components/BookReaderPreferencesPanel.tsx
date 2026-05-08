@@ -161,12 +161,11 @@ export const BookReaderPreferencesTrigger = ({
     onClick={onClick}
     aria-label="Inställningar"
     className={cn(
-      "h-9 w-9 px-0 text-current hover:bg-black/10 hover:text-current dark:hover:bg-white/10 md:h-10 md:w-auto md:px-3",
+      "h-9 w-9 px-0 text-current hover:bg-black/10 hover:text-current dark:hover:bg-white/10 md:h-10 md:w-10",
       className
     )}
   >
     <CaseSensitive className="h-4 w-4" />
-    <span className="hidden text-sm font-medium md:inline">Inställningar</span>
   </Button>
 );
 

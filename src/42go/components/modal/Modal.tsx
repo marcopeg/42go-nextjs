@@ -72,6 +72,7 @@ export const Modal = ({
   showClose = true,
   closeLabel = "Close modal",
   closeOnOverlayClick = true,
+  onOpenAutoFocus,
   className,
   overlayClassName,
   headerClassName,
@@ -104,6 +105,7 @@ export const Modal = ({
             onPointerDownOutside={(event) => {
               if (!closeOnOverlayClick) event.preventDefault();
             }}
+            onOpenAutoFocus={onOpenAutoFocus}
             style={{ zIndex: contentZIndex }}
             className={cn(
               "relative z-[710] flex min-h-full w-full flex-col bg-background text-foreground shadow-2xl outline-none",

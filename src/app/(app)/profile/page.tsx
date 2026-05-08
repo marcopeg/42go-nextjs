@@ -5,10 +5,15 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AppLayout } from "@/42go/layouts/app";
 import { useAppConfig } from "@/42go/config/use-app-config";
+import type { Policy } from "@/42go/policy/types";
 import {
   ProfilePageRenderer,
   type TProfilePageRendererHandle,
 } from "@/42go/components/ProfileBlock";
+
+const PROFILE_PAGE_POLICY: Policy = {
+  require: { session: true },
+};
 
 type SavePreferencesActionProps = {
   saving: boolean;
@@ -40,7 +45,7 @@ export default function ProfilePage() {
     <AppLayout
       title="Profile"
       stickyHeader={true}
-      policy={{ require: { session: true } }}
+      policy={PROFILE_PAGE_POLICY}
       actions={[
         {
           type: "component",
