@@ -42,6 +42,7 @@ type ReaderRouteState = {
   pageId: string;
   progressBps: number | null;
 };
+const READER_SCROLL_PROGRESS_IDLE_SAVE_MS = 4000;
 const BOOK_READER_PAGE_POLICY: Policy = {
   require: { feature: "page:books", session: true },
 };
@@ -564,7 +565,7 @@ const BookReadPage = () => {
         void sendProgress(latestProgressRef.current);
         latestProgressRef.current = null;
         scrollTimerRef.current = null;
-      }, 10000);
+      }, READER_SCROLL_PROGRESS_IDLE_SAVE_MS);
     };
 
     const onDesktopScroll = () => {

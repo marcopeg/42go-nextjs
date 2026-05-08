@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export const LINGOCAFE_ROUTE_LOADING_DELAY_MS = 800;
+export const LINGOCAFE_ROUTE_LOADING_DELAY_MS = 400;
 export const LINGOCAFE_ROUTE_LOADING_MIN_VISIBLE_MS = 800;
 
 type UseLingocafeRouteLoadingOptions = {

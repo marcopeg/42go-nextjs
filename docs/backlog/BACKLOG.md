@@ -2,7 +2,6 @@
 
 ## WIP
 
-- [VT44: Reduce LingoCafe Route Transition Flicker With Delayed Loading State](./wip/VT44-reduce-reader-page-transition-flicker-with-delayed-loading-state/VT44.task.refined.md) | [plan](./wip/VT44-reduce-reader-page-transition-flicker-with-delayed-loading-state/VT44.plan.md) | [notes](./wip/VT44-reduce-reader-page-transition-flicker-with-delayed-loading-state/VT44.notes.md)
 
 ## Blocked
 
@@ -16,6 +15,7 @@
 
 ## Drafts
 
+- [QL90: Split Bookshelf Into Reading and Alphabetical Catalog Sections](./drafts/QL90-split-bookshelf-into-reading-and-alphabetical-catalog-sections/QL90.task.refined.md)
 - [BL01: Books Top-Bar Language and Level Switcher via GM77 Panel](./drafts/BL01-books-top-bar-language-level-switcher-via-gm77-panel/BL01.task.draft.md)
 - [FN30: Remove Google Fonts Build Network Dependency](./drafts/FN30-remove-google-fonts-build-network-dependency/FN30.task.draft.md)
 - [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.draft.md)
@@ -57,8 +57,7 @@
 - [AQC: Copy email from project's shared list [aqc]](./drafts/AQC-copy-email-from-project-s-shared-list-aqc/AQC.task.draft.md)
 - [AQD: Animate check item as slide-away to right [aqd]](./drafts/AQD-animate-check-item-as-slide-away-to-right-aqd/AQD.task.draft.md)
 - [HX68: Dynamic Pages Layout [hx68]](./drafts/HX68-dynamic-pages-layout-hx68/HX68.task.draft.md)
-- [QL90: Split Bookshelf Into Reading and Alphabetical Catalog Sections](./drafts/QL90-split-bookshelf-into-reading-and-alphabetical-catalog-sections/QL90.task.refined.md)
-- [SU96: Reduce Reader Scroll Progress Save Delay From 10 Seconds](./drafts/SU96-reduce-reader-scroll-progress-save-delay-from-10-seconds/SU96.task.draft.md)
+- [WO76: Replace Books Filter Text With Round Language Flag](./drafts/WO76-replace-books-filter-text-with-round-language-flag/WO76.task.refined.md)
 
 ## Historical Logs
 
