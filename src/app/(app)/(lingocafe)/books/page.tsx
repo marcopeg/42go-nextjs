@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import { AppLayout } from "@/42go/layouts/app";
+import type { TComponentBlock } from "@/42go/components/ContentBlock/blocks/ComponentBlock";
 import type { Policy } from "@/42go/policy/types";
 import { Button } from "@/components/ui/button";
 import { BookCard } from "@/app/(app)/(lingocafe)/books/_components/BookCard";
+import { BooksHeaderLanguageFlag } from "@/app/(app)/(lingocafe)/books/_components/BooksHeaderLanguageFlag";
 import type { ReaderBook } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
 import { useAppConfig } from "@/42go/config/use-app-config";
@@ -231,6 +233,19 @@ const BooksPage = () => {
       (option) => option.code === data.profile?.targetLang
     )?.label || data?.profile?.targetLang;
   const showProfileForm = !!data && !data.profile?.isComplete;
+  const headerActions: TComponentBlock[] =
+    !showProfileForm && data?.profile?.targetLang
+      ? [
+          {
+            type: "component",
+            component: BooksHeaderLanguageFlag,
+            props: {
+              code: data.profile.targetLang,
+              label: targetLabel,
+            },
+          },
+        ]
+      : [];
   const languages = data?.languages || fallbackLanguages;
   const consentItems = config?.app?.consent?.items || [];
   const missingRequiredConsent = consentItems.some(
@@ -244,9 +259,10 @@ const BooksPage = () => {
         showProfileForm
           ? "Welcome, complete your profile."
           : targetLabel
-          ? `Catalog filtered for ${targetLabel}.`
-          : "Here are the books."
+            ? undefined
+            : "Here are the books."
       }
+      actions={headerActions}
       stickyHeader={true}
       policy={BOOKS_PAGE_POLICY}
     >

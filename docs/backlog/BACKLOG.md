@@ -57,7 +57,6 @@
 - [AQC: Copy email from project's shared list [aqc]](./drafts/AQC-copy-email-from-project-s-shared-list-aqc/AQC.task.draft.md)
 - [AQD: Animate check item as slide-away to right [aqd]](./drafts/AQD-animate-check-item-as-slide-away-to-right-aqd/AQD.task.draft.md)
 - [HX68: Dynamic Pages Layout [hx68]](./drafts/HX68-dynamic-pages-layout-hx68/HX68.task.draft.md)
-- [WO76: Replace Books Filter Text With Round Language Flag](./drafts/WO76-replace-books-filter-text-with-round-language-flag/WO76.task.refined.md)
 
 ## Historical Logs
 
