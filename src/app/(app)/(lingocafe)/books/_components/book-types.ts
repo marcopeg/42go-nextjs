@@ -76,6 +76,11 @@ export type ReaderBookPage = {
   previous: ReaderBookPageNeighbor | null;
   next: ReaderBookPageNeighbor | null;
   pages: ReaderBookPageSummary[];
+  translation: {
+    enabled: boolean;
+    from: string;
+    to: string | null;
+  };
   progress: {
     bookId: string;
     pageId: string;

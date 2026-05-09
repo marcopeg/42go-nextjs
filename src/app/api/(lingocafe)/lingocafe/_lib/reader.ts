@@ -117,6 +117,11 @@ export type BookPageDetail = {
   previous: BookPageNeighbor | null;
   next: BookPageNeighbor | null;
   pages: BookInfoPageSummary[];
+  translation: {
+    enabled: boolean;
+    from: string;
+    to: string | null;
+  };
 };
 
 const defaultAssetsBasePath = "https://assets.lingocafe.app";
@@ -241,6 +246,11 @@ const mapBookPageDetail = ({
   previous: mapBookPageNeighbor(previous, book.id),
   next: mapBookPageNeighbor(next, book.id),
   pages: pages.map(mapBookInfoPage),
+  translation: {
+    enabled: false,
+    from: book.lang,
+    to: null,
+  },
 });
 
 const createReadingAction = ({
@@ -327,6 +337,18 @@ const getProfileStringValue = (
   const value = loaded.profile?.[key];
   return typeof value === "string" ? value : null;
 };
+
+export const loadReaderProfile = async (userId: string) => {
+  const profileContext = await getProfileContext();
+
+  return loadProfile({
+    userId,
+    appId: profileContext.appId,
+    config: profileContext.config,
+  });
+};
+
+export const getReaderProfileStringValue = getProfileStringValue;
 
 const mapProfile = (userId: string, loaded: TProfileLoadResult) => ({
   userId,

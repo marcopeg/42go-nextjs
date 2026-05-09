@@ -219,6 +219,17 @@ const normalizeBookPage = (
     pages: Array.isArray(bookPage.pages)
       ? bookPage.pages.filter(isPageSummary)
       : [],
+    translation: {
+      enabled: bookPage.translation?.enabled === true,
+      from:
+        typeof bookPage.translation?.from === "string"
+          ? bookPage.translation.from
+          : bookPage.book.lang,
+      to:
+        typeof bookPage.translation?.to === "string"
+          ? bookPage.translation.to
+          : null,
+    },
     progress: normalizeProgress(bookPage.progress),
   };
 };

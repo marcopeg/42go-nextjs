@@ -19,6 +19,7 @@ exports.up = function (knex) {
       table.text("password");
       table.jsonb("profile").nullable().defaultTo(null);
       table.jsonb("consent").nullable().defaultTo(null);
+      table.jsonb("feature_flags").nullable().defaultTo(null);
       table.timestamp("created_at").notNullable().defaultTo(knex.fn.now());
       table.timestamp("updated_at").notNullable().defaultTo(knex.fn.now());
 

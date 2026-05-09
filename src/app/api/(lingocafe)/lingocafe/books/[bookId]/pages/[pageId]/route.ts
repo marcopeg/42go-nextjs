@@ -3,12 +3,15 @@ import { z } from "zod";
 import { protectRoute } from "@/42go/policy";
 import {
   getSessionUserId,
+  getReaderProfileStringValue,
+  loadReaderProfile,
   json,
   loadBookPage,
   saveBookOpenProgress,
   saveBookProgress,
   trackReaderEvent,
 } from "../../../../_lib/reader";
+import { hasUserFeatureFlag } from "../../../../_lib/translation";
 
 const notFound = () =>
   json(
@@ -43,6 +46,14 @@ const getBookPage = async (
   const bookPage = await loadBookPage(bookId, pageId);
   if (!bookPage) return notFound();
 
+  const profile = await loadReaderProfile(userId);
+  const targetLang = getReaderProfileStringValue(profile, "ownLang");
+  const canTranslate =
+    !!targetLang &&
+    (await hasUserFeatureFlag({
+      userId,
+      flag: "translate",
+    }));
   const progress = await saveBookOpenProgress({ userId, bookId, pageId });
 
   await trackReaderEvent({
@@ -53,7 +64,17 @@ const getBookPage = async (
     data: { progress_bps: progress.progressBps },
   });
 
-  return json({ bookPage: { ...bookPage, progress } });
+  return json({
+    bookPage: {
+      ...bookPage,
+      progress,
+      translation: {
+        enabled: canTranslate,
+        from: bookPage.book.lang,
+        to: targetLang,
+      },
+    },
+  });
 };
 
 const trackPageScroll = async (

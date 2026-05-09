@@ -40,6 +40,9 @@ exports.seed = async function seed(knex) {
         targetLang: "sv",
         targetLevel: "a2",
       },
+      feature_flags: {
+        translate: true,
+      },
       consent: {
         terms: [
           {

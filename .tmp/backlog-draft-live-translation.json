@@ -1,0 +1,73 @@
+{
+  "title": "Add Live Reader Translation With Multi-Layer Cache",
+  "group": "lingocafe",
+  "sections": {
+    "Elevator's Pitch": "Add live sentence translation to the LingoCafe reader. When the user taps or clicks a sentence in a book page, the sentence should highlight and a contextual popover should show the translation into the user\u2019s own language. The first translation may hit Google Translate through an API-key-based request, but repeated translations should progressively collapse into database, server-memory, and client-local caches so the same sentence can later resolve instantly even across devices.",
+    "Business Gain": "This turns the reader into an actual learning tool instead of just a content viewer. Users can inspect meaning in context without leaving the page, breaking reading flow, or copying text into another app. Chuck Norris does not open a second app to translate one sentence. The book gives him the answer where he stands.",
+    "Current State": "The current LingoCafe reader already renders book-page markdown through `src/app/(app)/(lingocafe)/books/_components/BookPageReader.tsx` and reader surfaces through `src/app/(app)/(lingocafe)/books/_components/BookReaderSurfaces.tsx`. The reader code already contains browser text-selection awareness (`hasActiveTextSelection()`), but there is no sentence-level interaction, no translation endpoint, no translation cache, no `translate` profile flag, and no feature gate for this capability. Profile data already stores language preferences such as `ownLang`, `targetLang`, and `targetLevel`, and profile changes already flow through the shared `/api/profile` path and LingoCafe profile hooks.",
+    "Desired State": "Inside the LingoCafe reader, clicking or tapping a sentence should identify the full sentence from stop to stop, highlight that sentence, and open a translation popover anchored near it. The popover should choose above or below placement based on available viewport space and content height so that the original sentence and the translation remain visible together. A second click anywhere should close the popover. Translation should use Google\u2019s translation API with an API key provided by environment configuration. The feature must be available only when the current user profile has `translate: true`, and both frontend and backend must enforce that rule. Translation lookup should first check a Lingocafe-schema database cache keyed by a hash of `text + from language + to language`, then an in-memory server cache with LRU-like eviction by last-used timestamp and env-configured size cap, and finally a client local-storage cache capped at 1 MB. After a sentence has been translated once, later requests for the same sentence should resolve from cache when possible, including on another device after the DB cache has been populated.",
+    "Definition of Success": "A LingoCafe user with `profile.translate = true` can tap or click a sentence in the reader, see the full sentence highlighted, get a well-placed translation popover in their own language, close it with a second click, and benefit from cache hits that make repeated translations substantially faster. Unauthorized users never get the feature even if they try to call the API directly. Cache behavior is explicit across client, server, and database layers rather than hidden behind accidental browser state.",
+    "Additional Context": "The profile schema currently defines `ownLang`, `targetLang`, and `targetLevel` in `src/config/lingocafe/profile-options.ts`; this task would extend that contract with a `translate` capability flag or equivalent validated field. The reader surface currently uses custom rendering and route-local state in the `(lingocafe)/books` tree, which makes this the natural place for the sentence interaction layer. The task also introduces a new Lingocafe persistence concern because sentence translations should survive across sessions and devices. The operator explicitly wants the remote translation token to be an API key, not OAuth user tokens or service-account session flow. The client cache and server cache should mirror each other conceptually: key by translation hash, track last-used time, and evict oldest entries when the configured size limit would be exceeded.",
+    "Assumptions": [
+      "The source language for a translation request is the book language / current reader content language, while the target language is the user\u2019s `ownLang` profile value unless planning proves another mapping is required.",
+      "The sentence boundary logic should be deterministic enough to treat `stop to stop` as punctuation-delimited sentence extraction rather than arbitrary text selection length.",
+      "The translation popover can be implemented with existing UI primitives such as Radix popover or an equivalent anchored overlay, as long as placement keeps both source and translated text visible.",
+      "The backend will own the Google API call so the API key does not need to be embedded in the client bundle.",
+      "The database cache is the cross-device durability layer, while server-memory and local-storage caches are performance layers on top of it."
+    ],
+    "Constraints": [
+      "Keep the feature limited to LingoCafe reader pages, not the entire app or all markdown surfaces.",
+      "Enforce authorization in both frontend and backend using `profile.translate = true`.",
+      "Use a feature flag / policy gate in addition to the profile data check where appropriate for rollout control.",
+      "Use Google translation via API key configuration from environment variables.",
+      "Do not send every repeated request upstream; always check caches first in the order the implementation defines.",
+      "Persist translation cache rows in the `lingocafe` schema and key them by a stable hash of source text, source language, and target language.",
+      "Cap the server in-memory cache by maximum size in MB from env, defaulting to 20 MB, and evict older entries to make room for new ones.",
+      "Cap the client local-storage cache to 1 MB with comparable eviction-by-last-used behavior.",
+      "Keep the second-click-to-close interaction simple and reliable across desktop and mobile.",
+      "Do not weaken existing authenticated app-page conventions or profile validation rules."
+    ],
+    "Acceptance Criteria": [
+      "[ ] A LingoCafe reader user can click or tap a sentence and the full sentence becomes highlighted.",
+      "[ ] The reader identifies sentences from stop to stop instead of translating only the exact character subset of an arbitrary text selection.",
+      "[ ] A translation popover appears near the highlighted sentence and shows the translated text in the user\u2019s own language.",
+      "[ ] The popover chooses above or below placement based on available space so both the source sentence and the popover remain visible together.",
+      "[ ] A second click or tap outside the active sentence/popover closes the popover and clears the active highlight.",
+      "[ ] The feature is visible and usable in the frontend only when the current user profile contains `translate: true`.",
+      "[ ] The translation backend rejects requests when the current user is not allowed to translate, even if the client attempts to call it directly.",
+      "[ ] Translation requests use Google translation through backend API-key-based configuration.",
+      "[ ] Before calling Google, the backend checks a persistent translation cache in the `lingocafe` schema keyed by hash(`text`, `fromLang`, `toLang`).",
+      "[ ] When the database cache misses, the system can store the fresh translation back into the persistent cache for future cross-device reuse.",
+      "[ ] The backend maintains an in-memory translation cache with hash keys, last-used timestamps, env-configured max size in MB, and eviction of older entries when the limit is reached.",
+      "[ ] The default server-memory cache limit is 20 MB when no env override is provided.",
+      "[ ] The client maintains a local-storage translation cache with the same hash key basis, last-used tracking, and eviction behavior capped to 1 MB.",
+      "[ ] Once a sentence has been translated and persisted, re-translating the same sentence on another device can resolve without another upstream Google call when the persistent cache is available.",
+      "[ ] The implementation includes enough observability or diagnostics to distinguish cache hits from upstream translation misses during development or verification.",
+      "[ ] The task does not expose the Google API key to the browser bundle."
+    ],
+    "Dos": [
+      "Do reuse existing LingoCafe reader surfaces and profile infrastructure where practical.",
+      "Do model the translation cache key explicitly from normalized text, source language, and target language.",
+      "Do make the popover feel native to reading flow on both desktop and mobile.",
+      "Do keep cache eviction deterministic and inspectable.",
+      "Do validate the new profile flag through the established profile schema path if that is where the field lives.",
+      "Do preserve room in planning for migrations, API surface, and smoke-test coverage."
+    ],
+    "Don'ts": [
+      "Don't put the Google API key in client-side code.",
+      "Don't translate arbitrary freeform selections if the requirement is sentence-level translation.",
+      "Don't bypass backend authorization checks just because the UI is hidden.",
+      "Don't implement only one cache layer and call the job done.",
+      "Don't make the popover obscure the translated sentence or the original sentence when placement can avoid it.",
+      "Don't broaden this task into notes, vocabulary saving, or other reader annotations unless planning explicitly adds them later."
+    ],
+    "Open Questions": [
+      "Which exact Google Translation API variant should be used with API-key auth in this codebase: Basic v2 HTTP API or another Google endpoint that still supports API keys cleanly?",
+      "Where should `translate: true` live exactly in the persisted profile contract: inside `auth.users.profile`, as a derived capability from some other record, or as an app-specific validated extension?",
+      "Should the sentence-extraction logic operate directly on rendered DOM text nodes, on markdown source, or on a pre-tokenized reader model?",
+      "What exact normalization rules should feed the translation hash so punctuation, whitespace, and Unicode normalization do not create accidental cache misses?",
+      "Should the translation popover also show metadata such as source language, cache-hit state, or loading indicator, or should it stay minimal with translated text only?"
+    ],
+    "Related to": "- [ZO85: Core User Profile and Consent Storage](../../completed/ZO85-core-user-profile-and-consent-storage/ZO85.task.md)\n- [OG12: LingoCafe Data Model and Knex Migrations](../../completed/OG12-lingocafe-data-model-and-knex-migrations/OG12.task.md)\n- [VU18: Implement Books Page Read Design](../../completed/VU18-implement-books-page-read-design/VU18.task.md)\n- [BL01: Books Top-Bar Language and Level Switcher via GM77 Panel](../BL01-books-top-bar-language-level-switcher-via-gm77-panel/BL01.task.draft.md)"
+  }
+}

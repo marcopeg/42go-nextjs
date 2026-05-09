@@ -81,6 +81,20 @@ exports.up = async function up(knex) {
     ON lingocafe.books_progress (user_id, updated_at DESC)
   `);
 
+  await knex.schema.withSchema("lingocafe").createTable("translation_cache", (table) => {
+    table.text("hash").primary().notNullable();
+    table.text("from").notNullable();
+    table.text("to").notNullable();
+    table.text("text").notNullable();
+    table.text("translation").notNullable();
+    table.timestamp("created_at").notNullable().defaultTo(knex.fn.now());
+    table.timestamp("updated_at").notNullable().defaultTo(knex.fn.now());
+    table.timestamp("last_used_at").notNullable().defaultTo(knex.fn.now());
+
+    table.index(["from", "to"], "idx_lingocafe_translation_cache_langs");
+    table.index(["last_used_at"], "idx_lingocafe_translation_cache_last_used");
+  });
+
   await knex.raw(`
     CREATE TABLE lingocafe.events (
       created_at timestamptz NOT NULL DEFAULT now(),
