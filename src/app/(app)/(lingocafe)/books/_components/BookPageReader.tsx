@@ -6,8 +6,6 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
@@ -76,6 +74,14 @@ type TranslationApiResponse = {
 };
 
 const popoverMaxWidth = 360;
+const tapMovementThresholdPx = 10;
+
+type TapCandidate = {
+  pointerId: number;
+  clientX: number;
+  clientY: number;
+  cancelled: boolean;
+};
 
 const hasActiveTextSelection = () => {
   const selection = window.getSelection();
@@ -243,14 +249,21 @@ const renderSentenceText = (
 
     if (!context.enabled) return segment;
 
-    const handleSelect = (
-      event:
-        | ReactMouseEvent<HTMLSpanElement>
-        | ReactPointerEvent<HTMLSpanElement>
-        | ReactKeyboardEvent<HTMLSpanElement>
-    ) => {
+    let tapCandidate: TapCandidate | null = null;
+    const isTapMovement = (event: ReactPointerEvent<HTMLSpanElement>) => {
+      if (!tapCandidate || tapCandidate.pointerId !== event.pointerId) {
+        return false;
+      }
+
+      return (
+        Math.abs(event.clientX - tapCandidate.clientX) <=
+          tapMovementThresholdPx &&
+        Math.abs(event.clientY - tapCandidate.clientY) <= tapMovementThresholdPx
+      );
+    };
+    const handleSelect = (target: HTMLSpanElement) => {
       if (hasActiveTextSelection()) return;
-      const anchor = context.getSentenceAnchor(event.currentTarget);
+      const anchor = context.getSentenceAnchor(target);
       if (!anchor) return;
       context.onSentenceSelect({
         id,
@@ -267,12 +280,46 @@ const renderSentenceText = (
         data-reader-sentence-id={id}
         onPointerDown={(event) => {
           if (event.button !== 0) return;
-          handleSelect(event);
+          if (event.pointerType === "mouse") {
+            handleSelect(event.currentTarget);
+            return;
+          }
+
+          tapCandidate = {
+            pointerId: event.pointerId,
+            clientX: event.clientX,
+            clientY: event.clientY,
+            cancelled: false,
+          };
+        }}
+        onPointerMove={(event) => {
+          if (!tapCandidate || tapCandidate.pointerId !== event.pointerId) {
+            return;
+          }
+
+          if (!isTapMovement(event)) {
+            tapCandidate.cancelled = true;
+          }
+        }}
+        onPointerCancel={(event) => {
+          if (tapCandidate?.pointerId === event.pointerId) {
+            tapCandidate = null;
+          }
+        }}
+        onPointerUp={(event) => {
+          if (event.pointerType === "mouse") return;
+          if (!tapCandidate || tapCandidate.pointerId !== event.pointerId) {
+            return;
+          }
+
+          const shouldSelect = !tapCandidate.cancelled && isTapMovement(event);
+          tapCandidate = null;
+          if (shouldSelect) handleSelect(event.currentTarget);
         }}
         onKeyDown={(event) => {
           if (event.key !== "Enter" && event.key !== " ") return;
           event.preventDefault();
-          handleSelect(event);
+          handleSelect(event.currentTarget);
         }}
         className="cursor-pointer rounded-[3px] px-0.5 transition-colors hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 dark:hover:bg-white/10"
         style={{
