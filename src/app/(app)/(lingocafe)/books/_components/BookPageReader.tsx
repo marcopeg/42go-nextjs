@@ -34,6 +34,8 @@ type SentenceAnchor = {
   bottom: number;
   width: number;
   containerWidth: number;
+  containerViewportLeft: number;
+  viewportWidth: number;
   showBelow: boolean;
 };
 
@@ -74,6 +76,7 @@ type TranslationApiResponse = {
 };
 
 const popoverMaxWidth = 360;
+const mobilePopoverBreakpointPx = 768;
 const tapMovementThresholdPx = 10;
 
 type TapCandidate = {
@@ -117,11 +120,29 @@ const getSentenceAnchorInContainer = (
     bottom: rect.bottom - containerRect.top,
     width: rect.width,
     containerWidth: containerRect.width,
+    containerViewportLeft: containerRect.left,
+    viewportWidth: window.innerWidth,
     showBelow: spaceBelow >= 160 || spaceBelow >= spaceAbove,
   };
 };
 
 const getPopoverStyle = (anchor: SentenceAnchor): CSSProperties => {
+  if (anchor.viewportWidth < mobilePopoverBreakpointPx) {
+    return {
+      position: "absolute",
+      left: -anchor.containerViewportLeft,
+      top: anchor.showBelow ? anchor.bottom + 8 : anchor.top - 8,
+      width: anchor.viewportWidth,
+      transform: anchor.showBelow ? undefined : "translateY(-100%)",
+      zIndex: 60,
+      borderLeftWidth: 0,
+      borderRightWidth: 0,
+      borderRadius: 0,
+      paddingLeft: 20,
+      paddingRight: 20,
+    };
+  }
+
   const width = Math.min(
     popoverMaxWidth,
     Math.max(240, anchor.containerWidth - 32)

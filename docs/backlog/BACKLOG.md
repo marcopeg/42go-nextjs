@@ -2,7 +2,6 @@
 
 ## WIP
 
-- [JM97: Add Live Reader Translation With Multi-Layer Cache](./wip/JM97-add-live-reader-translation-with-multi-layer-cache/JM97.task.refined.md) | [plan](./wip/JM97-add-live-reader-translation-with-multi-layer-cache/JM97.plan.md) | [notes](./wip/JM97-add-live-reader-translation-with-multi-layer-cache/JM97.notes.md)
 
 ## Blocked
 
