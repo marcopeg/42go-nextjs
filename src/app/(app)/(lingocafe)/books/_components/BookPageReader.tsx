@@ -612,23 +612,89 @@ export const BookPageReader = ({
   useEffect(() => {
     if (!activeSentenceId) return;
 
-    const closeOnOutsidePointer = (event: PointerEvent) => {
+    let outsideTapCandidate: TapCandidate | null = null;
+    const isOutsideTapMovement = (event: PointerEvent) => {
+      if (
+        !outsideTapCandidate ||
+        outsideTapCandidate.pointerId !== event.pointerId
+      ) {
+        return false;
+      }
+
+      return (
+        Math.abs(event.clientX - outsideTapCandidate.clientX) <=
+          tapMovementThresholdPx &&
+        Math.abs(event.clientY - outsideTapCandidate.clientY) <=
+          tapMovementThresholdPx
+      );
+    };
+    const isSentenceTarget = (target: EventTarget | null) =>
+      target instanceof Element &&
+      !!target.closest("[data-reader-sentence-id]");
+    const closeOnOutsidePointerDown = (event: PointerEvent) => {
       const target = event.target;
-      if (!(target instanceof Element)) return;
-      const sentence = target.closest("[data-reader-sentence-id]");
-      if (sentence) return;
+      if (isSentenceTarget(target)) {
+        outsideTapCandidate = null;
+        return;
+      }
+
+      if (event.pointerType === "touch") {
+        outsideTapCandidate = {
+          pointerId: event.pointerId,
+          clientX: event.clientX,
+          clientY: event.clientY,
+          cancelled: false,
+        };
+        return;
+      }
 
       setTranslationState(null);
+    };
+    const cancelOutsidePointer = (event: PointerEvent) => {
+      if (outsideTapCandidate?.pointerId === event.pointerId) {
+        outsideTapCandidate = null;
+      }
+    };
+    const closeOnOutsidePointerMove = (event: PointerEvent) => {
+      if (
+        !outsideTapCandidate ||
+        outsideTapCandidate.pointerId !== event.pointerId
+      ) {
+        return;
+      }
+
+      if (!isOutsideTapMovement(event)) {
+        outsideTapCandidate.cancelled = true;
+      }
+    };
+    const closeOnOutsidePointerUp = (event: PointerEvent) => {
+      if (
+        !outsideTapCandidate ||
+        outsideTapCandidate.pointerId !== event.pointerId
+      ) {
+        return;
+      }
+
+      const shouldClose =
+        !outsideTapCandidate.cancelled && isOutsideTapMovement(event);
+      outsideTapCandidate = null;
+      if (shouldClose) setTranslationState(null);
     };
     const closeOnEscape = (event: globalThis.KeyboardEvent) => {
       if (event.key === "Escape") setTranslationState(null);
     };
 
-    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("pointerdown", closeOnOutsidePointerDown);
+    document.addEventListener("pointermove", closeOnOutsidePointerMove);
+    document.addEventListener("pointerup", closeOnOutsidePointerUp);
+    document.addEventListener("pointercancel", cancelOutsidePointer);
     document.addEventListener("keydown", closeOnEscape);
 
     return () => {
-      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("pointerdown", closeOnOutsidePointerDown);
+      document.removeEventListener("pointermove", closeOnOutsidePointerMove);
+      document.removeEventListener("pointerup", closeOnOutsidePointerUp);
+      document.removeEventListener("pointercancel", cancelOutsidePointer);
       document.removeEventListener("keydown", closeOnEscape);
     };
   }, [activeSentenceId]);
