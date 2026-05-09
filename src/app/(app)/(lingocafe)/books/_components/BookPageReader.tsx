@@ -3,10 +3,12 @@
 import {
   Children,
   useEffect,
+  useRef,
   useState,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -28,10 +30,19 @@ type BookPageReaderProps = {
   preferences: ReaderPreferences;
 };
 
+type SentenceAnchor = {
+  left: number;
+  top: number;
+  bottom: number;
+  width: number;
+  containerWidth: number;
+  showBelow: boolean;
+};
+
 type SentenceSelection = {
   id: string;
   text: string;
-  rect: DOMRect;
+  anchor: SentenceAnchor;
 };
 
 type TranslationStatus = "idle" | "loading" | "success" | "error";
@@ -48,6 +59,7 @@ type SentenceRenderContext = {
   enabled: boolean;
   activeSentenceId: string | null;
   index: number;
+  getSentenceAnchor: (element: HTMLElement) => SentenceAnchor | null;
   onSentenceSelect: (selection: SentenceSelection) => void;
 };
 
@@ -84,25 +96,54 @@ const splitSentenceSegments = (text: string) => {
   return matches && matches.length > 0 ? matches : [text];
 };
 
-const getPopoverStyle = (rect: DOMRect): CSSProperties => {
-  const viewportWidth = window.innerWidth;
+const getSentenceAnchorInContainer = (
+  element: HTMLElement,
+  container: HTMLElement
+): SentenceAnchor => {
+  const rect = element.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
   const spaceAbove = rect.top;
   const spaceBelow = window.innerHeight - rect.bottom;
-  const width = Math.min(popoverMaxWidth, Math.max(240, viewportWidth - 32));
-  const left = Math.min(
-    viewportWidth - 16 - width / 2,
-    Math.max(16 + width / 2, rect.left + rect.width / 2)
-  );
-  const showBelow = spaceBelow >= 160 || spaceBelow >= spaceAbove;
 
   return {
-    position: "fixed",
+    left: rect.left - containerRect.left,
+    top: rect.top - containerRect.top,
+    bottom: rect.bottom - containerRect.top,
+    width: rect.width,
+    containerWidth: containerRect.width,
+    showBelow: spaceBelow >= 160 || spaceBelow >= spaceAbove,
+  };
+};
+
+const getPopoverStyle = (anchor: SentenceAnchor): CSSProperties => {
+  const width = Math.min(
+    popoverMaxWidth,
+    Math.max(240, anchor.containerWidth - 32)
+  );
+  const left = Math.min(
+    anchor.containerWidth - 16 - width / 2,
+    Math.max(16 + width / 2, anchor.left + anchor.width / 2)
+  );
+
+  return {
+    position: "absolute",
     left,
-    top: showBelow ? rect.bottom + 8 : rect.top - 8,
+    top: anchor.showBelow ? anchor.bottom + 8 : anchor.top - 8,
     width,
-    transform: showBelow ? "translateX(-50%)" : "translate(-50%, -100%)",
+    transform: anchor.showBelow ? "translateX(-50%)" : "translate(-50%, -100%)",
     zIndex: 60,
   };
+};
+
+const getReaderSentenceElement = (id: string) => {
+  const escapedId =
+    typeof CSS !== "undefined" && CSS.escape
+      ? CSS.escape(id)
+      : id.replace(/["\\]/g, "\\$&");
+
+  return document.querySelector<HTMLElement>(
+    `[data-reader-sentence-id="${escapedId}"]`
+  );
 };
 
 const normalizeApiTranslation = (
@@ -138,6 +179,16 @@ const normalizeApiTranslation = (
   };
 };
 
+const getTranslationSourceLabel = (
+  source: ReaderTranslationCacheEntry["source"]
+) =>
+  ({
+    client: "CL",
+    memory: "MEM",
+    database: "DB",
+    google: "API",
+  })[source];
+
 const ReaderTranslationPopover = ({
   state,
 }: {
@@ -145,9 +196,9 @@ const ReaderTranslationPopover = ({
 }) => (
   <div
     data-reader-translation-popover
-    className="rounded-md border px-4 py-3 text-sm shadow-lg backdrop-blur"
+    className="relative rounded-md border px-4 py-3 pb-4 text-sm shadow-lg backdrop-blur"
     style={{
-      ...getPopoverStyle(state.rect),
+      ...getPopoverStyle(state.anchor),
       borderColor: "var(--reader-border)",
       backgroundColor: "var(--reader-bg)",
       color: "var(--reader-fg)",
@@ -162,15 +213,16 @@ const ReaderTranslationPopover = ({
       </span>
     )}
     {state.status === "success" && (
-      <div className="space-y-2">
+      <div>
         <p className="leading-6">{state.translation}</p>
         {state.source && (
-          <p
-            className="text-[11px] uppercase tracking-normal"
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-1.5 right-2 text-[6px] uppercase leading-none tracking-normal"
             style={{ color: "var(--reader-fg-muted)" }}
           >
-            {state.source}
-          </p>
+            {getTranslationSourceLabel(state.source)}
+          </span>
         )}
       </div>
     )}
@@ -194,13 +246,16 @@ const renderSentenceText = (
     const handleSelect = (
       event:
         | ReactMouseEvent<HTMLSpanElement>
+        | ReactPointerEvent<HTMLSpanElement>
         | ReactKeyboardEvent<HTMLSpanElement>
     ) => {
       if (hasActiveTextSelection()) return;
+      const anchor = context.getSentenceAnchor(event.currentTarget);
+      if (!anchor) return;
       context.onSentenceSelect({
         id,
         text: sentence,
-        rect: event.currentTarget.getBoundingClientRect(),
+        anchor,
       });
     };
 
@@ -210,16 +265,18 @@ const renderSentenceText = (
         role="button"
         tabIndex={0}
         data-reader-sentence-id={id}
-        onClick={handleSelect}
+        onPointerDown={(event) => {
+          if (event.button !== 0) return;
+          handleSelect(event);
+        }}
         onKeyDown={(event) => {
           if (event.key !== "Enter" && event.key !== " ") return;
           event.preventDefault();
           handleSelect(event);
         }}
-        className="rounded-[3px] px-0.5 transition-colors hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 dark:hover:bg-white/10"
+        className="cursor-pointer rounded-[3px] px-0.5 transition-colors hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 dark:hover:bg-white/10"
         style={{
           backgroundColor: active ? "var(--reader-fg-soft)" : undefined,
-          boxShadow: active ? "0 0 0 1px var(--reader-border)" : undefined,
         }}
       >
         {segment}
@@ -337,6 +394,7 @@ export const BookPageReader = ({
   const fontSize = getReaderFontSize(preferences);
   const titleSize = Math.round(fontSize * 1.7);
   const summarySize = Math.max(14, Math.round(fontSize * 0.9));
+  const articleRef = useRef<HTMLElement | null>(null);
   const translationEnabled =
     bookPage.translation.enabled && !!bookPage.translation.to;
   const [translationState, setTranslationState] =
@@ -347,6 +405,10 @@ export const BookPageReader = ({
     enabled: translationEnabled,
     activeSentenceId,
     index: 0,
+    getSentenceAnchor: (element) =>
+      articleRef.current
+        ? getSentenceAnchorInContainer(element, articleRef.current)
+        : null,
     onSentenceSelect: (selection) => {
       setTranslationState((current) =>
         current?.id === selection.id
@@ -463,18 +525,40 @@ export const BookPageReader = ({
   ]);
 
   useEffect(() => {
-    if (!translationState) return;
+    if (!activeSentenceId) return;
+
+    let frame = 0;
+    const syncPopoverAnchor = () => {
+      frame = 0;
+      const sentence = getReaderSentenceElement(activeSentenceId);
+      const container = articleRef.current;
+      if (!sentence || !container) return;
+      const anchor = getSentenceAnchorInContainer(sentence, container);
+      setTranslationState((current) =>
+        current?.id === activeSentenceId ? { ...current, anchor } : current
+      );
+    };
+    const scheduleSync = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(syncPopoverAnchor);
+    };
+
+    window.addEventListener("resize", scheduleSync);
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", scheduleSync);
+    };
+  }, [activeSentenceId]);
+
+  useEffect(() => {
+    if (!activeSentenceId) return;
 
     const closeOnOutsidePointer = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      if (target.closest("[data-reader-translation-popover]")) return;
       const sentence = target.closest("[data-reader-sentence-id]");
-      if (
-        sentence?.getAttribute("data-reader-sentence-id") === translationState.id
-      ) {
-        return;
-      }
+      if (sentence) return;
 
       setTranslationState(null);
     };
@@ -489,11 +573,12 @@ export const BookPageReader = ({
       document.removeEventListener("pointerdown", closeOnOutsidePointer);
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, [translationState]);
+  }, [activeSentenceId]);
 
   return (
     <article
-      className="mx-auto flex w-full max-w-[680px] flex-col px-1 pb-16 pt-10 md:px-0 md:pb-24 md:pt-24"
+      ref={articleRef}
+      className="relative mx-auto flex w-full max-w-[680px] flex-col px-1 pb-16 pt-10 md:px-0 md:pb-24 md:pt-24"
       style={{ fontFamily: font.family, fontSize: `${fontSize}px` }}
     >
       <header className="mb-12 text-center">
@@ -509,7 +594,7 @@ export const BookPageReader = ({
           className="mx-auto mt-4 max-w-2xl break-words font-semibold leading-[1.02] tracking-[-0.03em]"
           style={{ fontFamily: font.family, fontSize: `${titleSize}px` }}
         >
-          {bookPage.page.title}
+          {renderSentenceText(bookPage.page.title, sentenceContext)}
         </h1>
         <div
           className="mx-auto mt-8 flex w-52 items-center justify-center gap-3"
@@ -534,7 +619,7 @@ export const BookPageReader = ({
               fontSize: `${summarySize}px`,
             }}
           >
-            {bookPage.page.summary}
+            {renderSentenceText(bookPage.page.summary, sentenceContext)}
           </p>
         )}
       </header>
@@ -544,9 +629,7 @@ export const BookPageReader = ({
         preferences={preferences}
         context={sentenceContext}
       />
-      {translationState && (
-        <ReaderTranslationPopover state={translationState} />
-      )}
+      {translationState && <ReaderTranslationPopover state={translationState} />}
     </article>
   );
 };
