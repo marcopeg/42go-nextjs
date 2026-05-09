@@ -202,12 +202,14 @@ const ReaderTranslationPopover = ({
 }) => (
   <div
     data-reader-translation-popover
-    className="relative rounded-md border px-4 py-3 pb-4 text-sm shadow-lg backdrop-blur"
+    className="relative rounded-md border px-4 py-3 pb-4 backdrop-blur"
     style={{
       ...getPopoverStyle(state.anchor),
-      borderColor: "var(--reader-border)",
-      backgroundColor: "var(--reader-bg)",
+      borderColor: "var(--reader-popover-border)",
+      backgroundColor: "var(--reader-popover-bg)",
       color: "var(--reader-fg)",
+      fontSize: "1em",
+      lineHeight: 1.45,
     }}
   >
     {state.status === "loading" && (
@@ -220,12 +222,18 @@ const ReaderTranslationPopover = ({
     )}
     {state.status === "success" && (
       <div>
-        <p className="leading-6">{state.translation}</p>
+        <p>{state.translation}</p>
         {state.source && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-1.5 right-2 text-[6px] uppercase leading-none tracking-normal"
-            style={{ color: "var(--reader-fg-muted)" }}
+            className="pointer-events-none absolute bottom-1.5 right-2 uppercase tracking-normal"
+            style={{
+              color: "var(--reader-fg-muted)",
+              fontSize: "6px",
+              lineHeight: "6px",
+              textSizeAdjust: "none",
+              WebkitTextSizeAdjust: "none",
+            }}
           >
             {getTranslationSourceLabel(state.source)}
           </span>
@@ -325,6 +333,8 @@ const renderSentenceText = (
         style={{
           backgroundColor: active ? "var(--reader-highlight-bg)" : undefined,
           color: active ? "var(--reader-highlight-fg)" : undefined,
+          position: active ? "relative" : undefined,
+          zIndex: active ? 50 : undefined,
         }}
       >
         {segment}

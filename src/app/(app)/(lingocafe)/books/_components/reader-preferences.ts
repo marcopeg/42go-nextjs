@@ -434,6 +434,13 @@ export const getReaderThemeStyle = (
       24
     ),
     ["--reader-highlight-fg" as string]: foreground.value,
+    ["--reader-popover-bg" as string]: withColorMix(
+      background.value,
+      94,
+      foreground.value,
+      6
+    ),
+    ["--reader-popover-border" as string]: withAlpha(foreground.value, 0.32),
     ["--reader-border" as string]: withAlpha(foreground.value, 0.18),
   };
 };
