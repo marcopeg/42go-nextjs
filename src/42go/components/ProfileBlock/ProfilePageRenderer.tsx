@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 
+import { AppVersion } from "@/42go/components/AppVersion";
 import { ProfileBlock } from "@/42go/components/ProfileBlock/ProfileBlock";
 import type {
   TProfileBlockHandle,
@@ -241,6 +242,8 @@ export const ProfilePageRenderer = forwardRef<
         {controller.isDirty && (
           <p className="text-sm text-muted-foreground">Unsaved changes.</p>
         )}
+
+        <AppVersion />
       </div>
     </ProfileProvider>
   );
