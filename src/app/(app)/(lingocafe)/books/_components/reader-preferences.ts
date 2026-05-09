@@ -190,6 +190,14 @@ const withAlpha = (value: string, alpha: number) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+const withColorMix = (
+  base: string,
+  basePercent: number,
+  accent: string,
+  accentPercent: number
+) =>
+  `color-mix(in oklab, ${base} ${basePercent}%, ${accent} ${accentPercent}%)`;
+
 const getContrastColorFallback = (
   key: string,
   theme: ReaderThemeMode,
@@ -413,6 +421,19 @@ export const getReaderThemeStyle = (
     ["--reader-fg" as string]: foreground.value,
     ["--reader-fg-muted" as string]: withAlpha(foreground.value, 0.7),
     ["--reader-fg-soft" as string]: withAlpha(foreground.value, 0.08),
+    ["--reader-hover-bg" as string]: withColorMix(
+      background.value,
+      88,
+      foreground.value,
+      12
+    ),
+    ["--reader-highlight-bg" as string]: withColorMix(
+      background.value,
+      76,
+      foreground.value,
+      24
+    ),
+    ["--reader-highlight-fg" as string]: foreground.value,
     ["--reader-border" as string]: withAlpha(foreground.value, 0.18),
   };
 };

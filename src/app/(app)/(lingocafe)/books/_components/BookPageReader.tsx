@@ -321,9 +321,10 @@ const renderSentenceText = (
           event.preventDefault();
           handleSelect(event.currentTarget);
         }}
-        className="cursor-pointer rounded-[3px] px-0.5 transition-colors hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 dark:hover:bg-white/10"
+        className="cursor-pointer rounded-[3px] px-0.5 transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
         style={{
-          backgroundColor: active ? "var(--reader-fg-soft)" : undefined,
+          backgroundColor: active ? "var(--reader-highlight-bg)" : undefined,
+          color: active ? "var(--reader-highlight-fg)" : undefined,
         }}
       >
         {segment}
