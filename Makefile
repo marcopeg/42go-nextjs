@@ -21,7 +21,7 @@ BACKLOG_ROOT := $(CURDIR)/docs/backlog
 export CAPROVER_URL
 export CAPROVER_APP_TOKEN
 
-boot: app.install start migrate seed app.start
+boot: start app.install migrate seed app.start
 
 reboot: clear boot
 
