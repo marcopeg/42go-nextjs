@@ -239,6 +239,12 @@ migrate.rebuild:
 migrate.redo:
 	npx knex migrate:down && npx knex migrate:up
 
+backup:
+	node .agents/skills/42go-backup/scripts/backup.mjs backup --mode "$(mode)"
+
+restore:
+	node .agents/skills/42go-backup/scripts/backup.mjs restore --from "$(from)"
+
 migrate.status:
 	npx knex migrate:status 
 

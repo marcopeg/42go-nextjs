@@ -2,9 +2,8 @@
 taskId: AAT
 status: draft
 createdAt: 2026-04-23T15:27:45+02:00
-updatedAt: 2026-05-07T13:38:17+02:00
+updatedAt: 2026-05-09T17:28:35.574Z
 ---
-
 # Support i18n
 
 

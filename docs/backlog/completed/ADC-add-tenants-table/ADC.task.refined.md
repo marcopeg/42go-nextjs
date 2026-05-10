@@ -1,12 +1,11 @@
 ---
 taskId: ADC
-status: ready
+status: draft
 createdAt: 2026-04-23T15:27:45+02:00
-updatedAt: 2026-05-07T13:38:17+02:00
+updatedAt: 2026-05-09T17:24:03.722Z
 ---
 
 # Add Tenants Table
-
 
 ## Elevator's Pitch
 

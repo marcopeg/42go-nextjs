@@ -55,3 +55,7 @@ pnpm-lock.yaml
 
 # HAL State
 /.hal
+
+# Database dumps
+/knex/dumps/*
+!/knex/dumps/.gitkeep
