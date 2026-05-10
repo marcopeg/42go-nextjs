@@ -66,6 +66,7 @@ type BookProgressRow = {
   book_id: string;
   page_id: string;
   progress_bps: number;
+  updated_at: Date | string;
 };
 
 type BookProgress = {
@@ -81,6 +82,7 @@ type BookReadingAction = {
   bookId: string;
   pageId: string | null;
   progressBps: number | null;
+  updatedAt: string | null;
 };
 
 type BookPageNeighbor = {
@@ -270,6 +272,7 @@ const createReadingAction = ({
       bookId,
       pageId: progress.page_id,
       progressBps: progress.progress_bps,
+      updatedAt: toISO(progress.updated_at),
     };
   }
 
@@ -281,6 +284,7 @@ const createReadingAction = ({
       bookId,
       pageId: firstPage.id,
       progressBps: null,
+      updatedAt: null,
     };
   }
 
@@ -291,6 +295,7 @@ const createReadingAction = ({
     bookId,
     pageId: null,
     progressBps: null,
+    updatedAt: null,
   };
 };
 
@@ -446,6 +451,7 @@ export const loadReaderData = async (userId: string) => {
     bookIds.length > 0
       ? ((await db("lingocafe.books_progress")
           .select("book_id", "page_id", "progress_bps")
+          .select("updated_at")
           .where({ user_id: userId })
           .whereIn("book_id", bookIds)) as BookProgressRow[])
       : [];
@@ -505,7 +511,7 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
   if (!book) return null;
 
   const progress = (await db("lingocafe.books_progress")
-    .select("book_id", "page_id", "progress_bps")
+    .select("book_id", "page_id", "progress_bps", "updated_at")
     .where({ user_id: userId, book_id: bookId })
     .first()) as BookProgressRow | undefined;
 
@@ -576,7 +582,7 @@ export const loadBookPage = async (bookId: string, pageId: string) => {
 export const loadBookProgress = async (userId: string, bookId: string) => {
   const db = getDB();
   const progress = (await db("lingocafe.books_progress")
-    .select("book_id", "page_id", "progress_bps")
+    .select("book_id", "page_id", "progress_bps", "updated_at")
     .where({ user_id: userId, book_id: bookId })
     .first()) as BookProgressRow | undefined;
 

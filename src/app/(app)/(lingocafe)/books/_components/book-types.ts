@@ -22,6 +22,7 @@ export type ReaderBookReadingAction = {
   bookId: string;
   pageId: string | null;
   progressBps: number | null;
+  updatedAt: string | null;
 };
 
 export type ReaderBookInfoPage = {

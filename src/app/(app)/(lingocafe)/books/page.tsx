@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import { AppLayout } from "@/42go/layouts/app";
@@ -57,6 +57,7 @@ const fallbackReadingAction: ReaderBook["readingAction"] = {
   bookId: "",
   pageId: null,
   progressBps: null,
+  updatedAt: null,
 };
 const BOOKS_PAGE_POLICY: Policy = {
   require: { feature: "page:books", session: true },
@@ -75,8 +76,9 @@ const normalizeReaderData = (payload: Partial<ReaderData>): ReaderData => ({
         info: normalizeBookInfo(book.info),
         cover: book.cover ?? null,
         coverFallback: book.coverFallback || coverFallbackUrl,
-        readingAction: book.readingAction ?? {
+        readingAction: {
           ...fallbackReadingAction,
+          ...(book.readingAction ?? {}),
           bookId: book.id,
         },
       }))
@@ -104,6 +106,56 @@ const getResponseMessage = async (res: Response, fallback: string) => {
 
   return typeof payload?.message === "string" ? payload.message : fallback;
 };
+
+const collator = new Intl.Collator(undefined, {
+  sensitivity: "base",
+  numeric: true,
+});
+
+const compareBooksByTitle = (left: ReaderBook, right: ReaderBook) =>
+  collator.compare(left.title, right.title);
+
+const getReadingActionTime = (book: ReaderBook) => {
+  const updatedAt = book.readingAction.updatedAt;
+  if (!updatedAt) return 0;
+
+  const time = new Date(updatedAt).getTime();
+  return Number.isNaN(time) ? 0 : time;
+};
+
+const compareBooksByRecentReading = (left: ReaderBook, right: ReaderBook) => {
+  const timeDelta = getReadingActionTime(right) - getReadingActionTime(left);
+  return timeDelta || compareBooksByTitle(left, right);
+};
+
+const isCurrentlyReadingBook = (book: ReaderBook) =>
+  book.readingAction.kind === "resume" &&
+  typeof book.readingAction.href === "string";
+
+const BooksGrid = ({ books }: { books: ReaderBook[] }) => (
+  <div className="grid min-w-0 max-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    {books.map((book) => (
+      <BookCard key={book.id} book={book} />
+    ))}
+  </div>
+);
+
+const BooksSection = ({
+  title,
+  books,
+}: {
+  title?: string;
+  books: ReaderBook[];
+}) => (
+  <section className="min-w-0 space-y-3">
+    {title ? (
+      <h2 className="text-base font-semibold tracking-normal text-foreground sm:text-lg">
+        {title}
+      </h2>
+    ) : null}
+    <BooksGrid books={books} />
+  </section>
+);
 
 const BooksPage = () => {
   const config = useAppConfig();
@@ -251,6 +303,21 @@ const BooksPage = () => {
   const missingRequiredConsent = consentItems.some(
     (item) => item.required && consentValues[item.name] !== true
   );
+  const bookshelf = useMemo(() => {
+    const books = data?.books ?? [];
+    const currentlyReading = books
+      .filter(isCurrentlyReadingBook)
+      .sort(compareBooksByRecentReading);
+    const catalog = books
+      .filter((book) => !isCurrentlyReadingBook(book))
+      .sort(compareBooksByTitle);
+
+    return {
+      currentlyReading,
+      catalog,
+      hasCurrentlyReading: currentlyReading.length > 0,
+    };
+  }, [data?.books]);
 
   return (
     <AppLayout
@@ -381,10 +448,20 @@ const BooksPage = () => {
         )}
 
         {!showLoading && !showProfileForm && data && data.books.length > 0 && (
-          <div className="grid min-w-0 max-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {data.books.map((book) => (
-              <BookCard key={book.id} book={book} />
-            ))}
+          <div className="min-w-0 space-y-8">
+            {bookshelf.hasCurrentlyReading ? (
+              <BooksSection
+                title="Currently Reading"
+                books={bookshelf.currentlyReading}
+              />
+            ) : null}
+
+            {!bookshelf.hasCurrentlyReading || bookshelf.catalog.length > 0 ? (
+              <BooksSection
+                title={bookshelf.hasCurrentlyReading ? "Catalog" : undefined}
+                books={bookshelf.catalog}
+              />
+            ) : null}
           </div>
         )}
       </div>

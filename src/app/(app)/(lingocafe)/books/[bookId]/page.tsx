@@ -39,6 +39,7 @@ const createUnavailableReadingAction = (bookId: string): ReaderBookReadingAction
   bookId,
   pageId: null,
   progressBps: null,
+  updatedAt: null,
 });
 
 const isReadingAction = (
@@ -50,7 +51,10 @@ const isReadingAction = (
   (typeof action.href === "string" || action.href === null) &&
   typeof action.bookId === "string" &&
   (typeof action.pageId === "string" || action.pageId === null) &&
-  (typeof action.progressBps === "number" || action.progressBps === null);
+  (typeof action.progressBps === "number" || action.progressBps === null) &&
+  (typeof action.updatedAt === "string" ||
+    action.updatedAt === null ||
+    action.updatedAt === undefined);
 
 const isBookInfoPage = (page: unknown): page is ReaderBookInfoPage => {
   if (!page || typeof page !== "object") return false;
@@ -73,7 +77,11 @@ const normalizeBookInfo = (payload: Partial<BookInfoResponse>) => {
   if (!book) return null;
 
   const readingAction = isReadingAction(book.readingAction)
-    ? book.readingAction
+    ? {
+        ...createUnavailableReadingAction(book.id),
+        ...book.readingAction,
+        bookId: book.id,
+      }
     : createUnavailableReadingAction(book.id);
 
   return {
