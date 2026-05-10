@@ -2,6 +2,26 @@ import { v4 as uuidv4 } from "uuid";
 import { getDB } from "@/42go/db";
 import { getUserGrants, getUserRoles } from "@/42go/policy/access";
 import { getAppID } from "@/42go/config/app-config";
+import { apps } from "@/AppConfig";
+
+const FALLBACK_APP_ID = "default";
+
+const isKnownAppId = (value: unknown): value is keyof typeof apps =>
+  typeof value === "string" && value in apps;
+
+const resolveRbacAppId = async (
+  fallback = FALLBACK_APP_ID,
+  requestedAppId?: unknown
+) => {
+  if (isKnownAppId(requestedAppId)) return requestedAppId;
+
+  const appId = await getAppID();
+  if (appId) return appId;
+
+  if (isKnownAppId(fallback)) return fallback;
+
+  return FALLBACK_APP_ID;
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const signIn = async ({ user, account }: any) => {
@@ -72,6 +92,7 @@ export const signIn = async ({ user, account }: any) => {
           });
 
         user.id = existingUser.id;
+        if (appID) user.appId = appID;
       } else {
         // const newUserId = `${account.provider}_${account.providerAccountId}`;
         const newUserId = uuidv4();
@@ -105,6 +126,7 @@ export const signIn = async ({ user, account }: any) => {
         });
 
         user.id = newUserId;
+        if (appID) user.appId = appID;
       }
 
       return true;
@@ -126,8 +148,7 @@ export const jwt = async ({ token, user, trigger, session }: any) => {
 
     // Embed RBAC data into JWT for client-side session cache
     try {
-      // TODO: get appId from request context when available
-      const appId = "default";
+      const appId = await resolveRbacAppId(FALLBACK_APP_ID, user.appId);
       const [grants, roles] = await Promise.all([
         getUserGrants(user.id, appId),
         getUserRoles(user.id, appId),
@@ -139,14 +160,17 @@ export const jwt = async ({ token, user, trigger, session }: any) => {
       console.error("JWT callback: failed to load user RBAC data", error);
       token.grants = [];
       token.roles = [];
-      token.appId = "default";
+      token.appId = FALLBACK_APP_ID;
     }
   }
 
   // Allow client to force a RBAC refresh via update({ rbacRefresh: true })
   if (trigger === "update" && session?.rbacRefresh && token?.id) {
     try {
-      const appId = token.appId || "default";
+      const appId = await resolveRbacAppId(
+        token.appId || FALLBACK_APP_ID,
+        session.appId
+      );
       const [grants, roles] = await Promise.all([
         getUserGrants(token.id, appId),
         getUserRoles(token.id, appId),
@@ -171,7 +195,7 @@ export const session = async ({ session, token }: any) => {
     // Expose RBAC data to client session
     session.user.grants = token.grants || [];
     session.user.roles = token.roles || [];
-    session.user.appId = token.appId || "default";
+    session.user.appId = token.appId || FALLBACK_APP_ID;
   }
   return session;
 };

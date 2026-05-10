@@ -1,6 +1,6 @@
 import { TAppConfigItem } from '../../AppConfig';
 import { HomePage } from './home-page';
-import { User, BookOpen } from 'lucide-react';
+import { User, Users, BookOpen } from 'lucide-react';
 import { LingocafePreferences } from '@/app/(app)/(lingocafe)/_components/LingocafePreferences';
 import { lingoCafeProfileSchema } from '@/config/lingocafe/profile-options';
 
@@ -66,6 +66,7 @@ export default {
     profile: {
       schema: lingoCafeProfileSchema,
       items: [
+        { type: 'TestRBAC' },
         // { type: 'AccountInfo' },
         {
           type: 'component',
@@ -84,7 +85,6 @@ export default {
           source: 'profile',
           method: 'checkbox-submit',
         },
-        // { type: 'TestRBAC' },
         { type: 'Logout' },
       ],
     },
@@ -131,6 +131,18 @@ export default {
             title: 'Books',
             href: '/books',
             icon: BookOpen,
+          },
+        ],
+      },
+      bottom: {
+        items: [
+          {
+            title: 'Users',
+            href: '/users',
+            icon: Users,
+            policy: {
+              require: { role: 'backoffice' },
+            },
           },
         ],
       },

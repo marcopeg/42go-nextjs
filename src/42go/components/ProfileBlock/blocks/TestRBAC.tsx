@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 
+import { useAppID } from "@/42go/config/use-app-config";
 import { SimplePanel } from "@/42go/components/panel";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +12,7 @@ type TestRBACProps = {
 
 export const TestRBAC = ({ title = "RBAC Session" }: TestRBACProps) => {
   const { data: rawSession, status, update } = useSession();
+  const currentAppId = useAppID();
   const user = rawSession?.user as unknown as {
     id?: string;
     grants?: string[];
@@ -24,7 +26,7 @@ export const TestRBAC = ({ title = "RBAC Session" }: TestRBACProps) => {
 
   const handleRefresh = async () => {
     try {
-      await update({ rbacRefresh: true });
+      await update({ rbacRefresh: true, appId: currentAppId });
     } catch {
       // Best-effort diagnostic refresh.
     }
