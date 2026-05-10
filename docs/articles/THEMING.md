@@ -291,7 +291,7 @@ Configure different default themes per app using the App Config system:
 
 ```typescript
 // src/AppConfig.ts
-export const availableApps = {
+export const apps = {
   marketing: {
     name: "Marketing Site",
     theme: {
@@ -313,7 +313,7 @@ export const availableApps = {
     },
     // ... other config
   },
-} satisfies Record<string, AppConfigItem>;
+} satisfies Record<string, TAppConfigItem>;
 ```
 
 **Theme Precedence**: The theme system follows this priority order:
@@ -483,7 +483,7 @@ This is controlled by the `theme.PublicLayout` property in the App Config.
     import { MyCustomLayout } from "@/components/MyCustomLayout";
     // ... other imports
 
-    export interface AppConfigItem {
+    export interface TAppConfigItem {
       // ...
       theme?: {
         default?: ThemeValue;
@@ -492,7 +492,7 @@ This is controlled by the `theme.PublicLayout` property in the App Config.
       // ...
     }
 
-    export const availableApps = {
+    export const apps = {
       appWithCustomLayout: {
         name: "Special App",
         theme: {
@@ -504,7 +504,7 @@ This is controlled by the `theme.PublicLayout` property in the App Config.
         name: "Standard App",
         // No PublicLayout, will use the default one
       },
-    } satisfies Record<string, AppConfigItem>;
+    } satisfies Record<string, TAppConfigItem>;
     ```
 
 **How it Works:**

@@ -7,13 +7,13 @@ This project uses **Knex.js** as a SQL query builder and migration manager with 
 All database configuration is handled through a single environment variable:
 
 ```
-PGSTRING
+DATABASE_URL
 ```
 
 To connect your application to PostgreSQL, simply set this variable in your `.env` file:
 
 ```bash
-PGSTRING="postgres://user:password@host:port/database"
+DATABASE_URL="postgres://user:password@host:port/database"
 ```
 
 The system will automatically parse the connection string and configure the PostgreSQL client.
@@ -75,11 +75,11 @@ npx knex migrate:latest
 
 ## Using the Database in API Routes
 
-A singleton database connection is exposed via `getDB()`. Import it from `src/lib/db` to run queries in any route or server component:
+A singleton database connection is exposed via `getDB()`. Import it from `@/42go/db` to run queries in any route or server component:
 
 ```typescript
 // src/app/api/todos/route.ts
-import { protectRoute } from "@/42go/auth/protectRoute";
+import { protectRoute } from "@/42go/policy";
 import { getDB } from "@/42go/db";
 
 const getTodos = async () => {
@@ -88,8 +88,8 @@ const getTodos = async () => {
   return Response.json({ todos });
 };
 
-// Policy: require auth, inferred feature => api:todos
-export const GET = protectRoute(getTodos, { require: { auth: true } });
+// Policy: require session, inferred feature => api:todos
+export const GET = protectRoute(getTodos, { require: { session: true } });
 ```
 
 The `getDB()` function returns a fully configured Knex instance with PostgreSQL, complete with connection pooling and any JSON overrides. No manual connect/disconnect needed.
@@ -98,7 +98,7 @@ The `getDB()` function returns a fully configured Knex instance with PostgreSQL,
 
 ```bash
 # Required
-PGSTRING="postgres://user:password@host:port/database"
+DATABASE_URL="postgres://user:password@host:port/database"
 
 # Optional
 PGPOOL="2,10,30000"  # min,max,idleTimeoutMillis

@@ -5,7 +5,7 @@
 ### Dynamic Multi-App Configuration
 
 **Capability**: Request-based app resolution enabling multiple SaaS applications from single codebase
-**Implementation**: `src/AppConfig.ts` with middleware-driven app matching
+**Implementation**: `src/AppConfig.ts` with request proxy-driven app matching via `src/proxy.ts`
 **Benefits**: Dynamic configuration per request, no performance overhead, server-side validation
 **Architecture details**: [provide link]
 **Usage guide**: [provide link]
@@ -103,10 +103,12 @@ The authentication is handled by the library NextAuth.
 ### Unified Feature & Access Policy System
 
 **Capability**: Single `features: string[]` per app controlling page & API availability plus policy evaluation (auth + RBAC + grants).
-**Implementation**: `AppConfig.features` with explicit entries like `page:docs`, `page:dashboard`, `api:todos`, `api:feedback` etc. Guards: `protectPage(policy)` & `protectRoute(policy)` on server; `ProtectComponent` / `useEvaluatePolicy` on client.
+**Implementation**: `AppConfig.features` with explicit entries like `page:docs`, `page:dashboard`, `api:todos`, `api:feedback` etc. Guards: `protectPage(Component, policy)` & `protectRoute(handler, policy)` on server; `ProtectComponent` / `useEvaluatePolicy` on client.
 **Inference**: If a policy omits `feature`, guard derives it from URL: `/docs/intro` → `page:docs`, `/api/todos` → `api:todos`.
 **Evaluation Pipeline**: (1) Feature present? else 404. (2) Auth required? else 401. (3) Role / grants check → 403 on failure. All via unified evaluator.
-**Authoring Policies**: Provide `require: { feature?: string; auth?: boolean; roles?: string[]; grants?: string[] }` – minimal, declarative.
+**RBAC Source Model**: Server checks query app-scoped role/grant rows from the database; client checks use the
+NextAuth session snapshot stamped with the authenticated app ID.
+**Authoring Policies**: Provide `require: { feature?: string; session?: boolean; role?: string; grants?: string[]; anyGrant?: string[] }` - minimal, declarative.
 **Benefits**: One mental model, zero wrapper magic, transparent errors, easier testing.
 **Usage guide**: See FEATURE FLAGS article at `../articles/FEATURE_FLAGS.md`.
 

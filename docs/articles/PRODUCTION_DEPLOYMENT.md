@@ -134,7 +134,6 @@ environment:
   - NODE_ENV=production
   - AUTH_TRUST_HOST=true
   - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
-  - PGSTRING=postgresql://postgres:postgres@db:5432/postgres
   - NEXTAUTH_URL=http://localhost:4000
   - NEXTAUTH_SECRET=your-production-secret-here
   - PORT=3000

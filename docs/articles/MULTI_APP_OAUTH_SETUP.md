@@ -18,77 +18,87 @@ Complete guide for setting up OAuth providers across multiple app configurations
 
 ### Request Flow
 
-1. **App Resolution**: Middleware identifies current app via `X-42Go-AppID` header
-2. **Provider Configuration**: `getAppConfig()` returns app-specific provider list
-3. **Backend Provider Building**: `getProviders()` constructs NextAuth providers array
-4. **Frontend Filtering**: Login page renders only configured provider buttons
+1. **App Resolution**: `src/proxy.ts` resolves the current app and forwards `X-42Go-AppID`
+2. **Provider Configuration**: `getAppInfo()` / `getAppConfig()` returns the app-specific provider list
+3. **Backend Provider Building**: `getProviders()` constructs the NextAuth providers array
+4. **Credentials Request Binding**: credentials `authorize(credentials, req)` resolves the app ID from the actual NextAuth callback request headers before querying `auth.users`
+5. **JWT Session Stamping**: the JWT callback stores app-scoped `roles`, `grants`, and `appId` in the session snapshot
+6. **Frontend Filtering**: Login page renders only configured provider buttons
 
 ### Core Components
 
 - **AppConfig**: Defines providers per app (`src/AppConfig.ts`)
-- **Provider Builder**: Dynamic NextAuth provider construction (`src/lib/auth/providers/get-providers.ts`)
+- **Provider Builder**: Dynamic NextAuth provider construction (`src/42go/auth/lib/providers/get-providers.ts`)
+- **Auth Callbacks**: App-scoped OAuth linking and JWT RBAC stamping (`src/42go/auth/lib/callbacks.ts`)
 - **Login UI**: App-aware provider filtering (`src/app/(public)/login/page.tsx`)
 
 ## Configuration Guide
 
 ### 1. AppConfig Provider Definition
 
-Edit `src/AppConfig.ts` to define authentication providers per app:
+Define authentication providers in each app config, then register the app in `src/AppConfig.ts`:
 
 ```typescript
-export const APP_CONFIGS: AppConfigItem[] = [
-  {
-    id: "default",
-    auth: {
-      providers: [
-        { type: "credentials", config: {} },
-        {
-          type: "github",
-          config: {
-            clientId: process.env.GITHUB_CLIENT_ID!,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-          },
+// src/config/default/config.ts
+import type { TAppConfigItem } from "@/AppConfig";
+
+export default {
+  name: "Default",
+  auth: {
+    providers: [
+      { type: "credentials", config: {} },
+      {
+        type: "github",
+        config: {
+          clientId: process.env.GITHUB_CLIENT_ID!,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET!,
         },
-        {
-          type: "google",
-          config: {
-            clientId: process.env.GOOGLE_CLIENT_ID!,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-          },
+      },
+      {
+        type: "google",
+        config: {
+          clientId: process.env.GOOGLE_CLIENT_ID!,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         },
-      ],
-    },
+      },
+    ],
   },
-  {
-    id: "app1",
-    auth: {
-      providers: [
-        { type: "credentials", config: {} },
-        {
-          type: "github",
-          config: {
-            clientId: process.env.APP1_GITHUB_CLIENT_ID!,
-            clientSecret: process.env.APP1_GITHUB_CLIENT_SECRET!,
-          },
+  features: ["page:docs", "api:profile"],
+} satisfies TAppConfigItem;
+```
+
+```typescript
+// src/config/app1/config.ts
+import type { TAppConfigItem } from "@/AppConfig";
+
+export default {
+  name: "App 1",
+  auth: {
+    providers: [
+      { type: "credentials", config: {} },
+      {
+        type: "github",
+        config: {
+          clientId: process.env.APP1_GITHUB_CLIENT_ID!,
+          clientSecret: process.env.APP1_GITHUB_CLIENT_SECRET!,
         },
-      ],
-    },
+      },
+    ],
   },
-  {
-    id: "app2",
-    auth: {
-      providers: [
-        {
-          type: "google",
-          config: {
-            clientId: process.env.APP2_GOOGLE_CLIENT_ID!,
-            clientSecret: process.env.APP2_GOOGLE_CLIENT_SECRET!,
-          },
-        },
-      ],
-    },
-  },
-];
+  features: ["page:dashboard", "api:profile"],
+} satisfies TAppConfigItem;
+```
+
+```typescript
+// src/AppConfig.ts
+import type { TAppConfigItem } from "@/AppConfig";
+import DefaultApp from "./config/default/config";
+import App1App from "./config/app1/config";
+
+export const apps = {
+  default: DefaultApp,
+  app1: App1App,
+} as const satisfies Record<string, TAppConfigItem>;
 ```
 
 ### 2. Environment Variables
@@ -177,9 +187,31 @@ Create separate OAuth applications for each app configuration:
 
 - [ ] Each app shows only configured providers in login UI
 - [ ] OAuth redirects work correctly for each domain
-- [ ] User authentication persists across app switches
+- [ ] Credentials login creates a session with `session.user.appId` matching the current app
+- [ ] Client session roles/grants match `auth.roles_users` and `auth.roles_grants` for that same `app_id`
+- [ ] User authentication does not leak roles or grants across app switches
 - [ ] Environment variables load correctly for each app
 - [ ] Build succeeds without TypeScript errors
+
+### App-Scoped RBAC Session Check
+
+Use the auth session endpoint or the profile `TestRBAC` block to confirm the JWT snapshot is scoped correctly.
+For LingoCafe, a valid John backoffice session should show:
+
+```json
+{
+  "user": {
+    "id": "6ef549b6-4c58-4c80-8dce-a89b249dda58",
+    "appId": "lingocafe",
+    "roles": ["backoffice"],
+    "grants": ["users:list"]
+  }
+}
+```
+
+If `/api/test/app-id` resolves the correct app but `/api/auth/session` still shows the old app ID after auth code
+changes, restart the app process before re-testing. Long-running dev processes can keep stale NextAuth route
+modules loaded.
 
 ## Production Deployment
 
@@ -202,8 +234,8 @@ Create separate OAuth applications for each app configuration:
 ### Adding New Providers
 
 1. **Install Provider Package**: `npm install next-auth-provider-{name}`
-2. **Add Provider Type**: Update `AuthProviderType` in `src/lib/auth/providers/types.ts`
-3. **Implement Provider Builder**: Add case in `src/lib/auth/providers/get-providers.ts`
+2. **Add Provider Type**: Update `AuthProviderType` in `src/42go/auth/lib/providers/types.ts`
+3. **Implement Provider Builder**: Add case in `src/42go/auth/lib/providers/get-providers.ts`
 4. **Create Login Component**: Add button component in `src/components/auth/login-strategies/`
 5. **Update Login Page**: Add provider mapping in `src/app/(public)/login/page.tsx`
 

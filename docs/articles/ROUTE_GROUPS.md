@@ -152,7 +152,7 @@ export default async function PrivateRouteLayout({
 
 ### 3. Handle Edge Cases
 
-- Use middleware for auth redirects
+- Use route/layout guards or the request proxy for auth redirects, depending on whether the decision is route-local or request-wide
 - Use client-side logic for conditional content within pages
 - Keep URLs predictable and clean
 

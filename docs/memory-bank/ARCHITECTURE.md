@@ -22,7 +22,7 @@ This document defines the core architectural decisions, patterns, and constraint
 ├── public/                          # Static assets, app iconsets, and theme CSS
 ├── src/
 │   ├── AppConfig.ts                 # Multi-app configuration
-│   ├── middleware.ts                # Request interception & app resolution
+│   ├── proxy.ts                     # Request interception & app resolution
 │   ├── 42go/                        # Boilerplate folder with reusable files & components
 │   │   ├── components/              # Boilerplate components & visual utilities
 │   │   │   ├── Markdown/            # Main markdown rendering tool (all rendering logic)
@@ -114,7 +114,7 @@ This structure is intended to be recursive: A very complex component can be simp
 
 **Design**: PostgreSQL-first, single database, schema-based isolation
 **Configuration**: `DATABASE_URL` (required), `PGPOOL` (optional pool tuning)
-**Access**: Singleton `getDB()` from `src/lib/db`, Knex migrations in `./knex/`
+**Access**: Singleton `getDB()` from `src/42go/db`, Knex migrations in `./knex/`
 **Usage details**: See [docs/DATABASE.md](../docs/DATABASE.md)
 
 ### Bulk Update Optimization Pattern
@@ -155,9 +155,15 @@ features: ["page:docs", "page:dashboard", "api:todos", "api:feedback"];
 
 **Security Semantics**: Missing feature → 404; missing session → 401; role/grant failure → 403 (via unified policy evaluator).
 
+**RBAC Sources**: Server policy checks are DB-authoritative and query app-scoped assignments in
+`auth.roles_users` and `auth.roles_grants` using the current request app ID. Client policy checks are visual only
+and read the cached NextAuth JWT session snapshot (`session.user.appId`, `roles`, `grants`). Credentials auth must
+resolve the app ID from the actual NextAuth callback request before querying `auth.users`, and JWT RBAC stamping
+must use that app ID so roles do not leak across apps.
+
 **Legacy Removal**: Deprecated `featureFlags.pages|apis`, `appRoute`, `appPage`, `pageWithConfig` removed. See ADR [adr-refactor-rbac-policies].
 
-**Usage**: Guard pages with `protectPage(policy)` and API routes with `protectRoute(policy)`; both consume unified policies. Full guide: [docs/FEATURE_FLAGS.md](../articles/FEATURE_FLAGS.md)
+**Usage**: Guard pages with `protectPage(Component, policy)` and API routes with `protectRoute(handler, policy)`; both consume unified policies. Full guide: [docs/FEATURE_FLAGS.md](../articles/FEATURE_FLAGS.md)
 
 ## Layouts
 

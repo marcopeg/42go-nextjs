@@ -3,7 +3,7 @@
 `42Go Next` uses a **multi-app configuration** approach that lets you implement completely different SaaS from the same codebase by:
 
 - use `Request` properties to match a specific config (like the url)
-- apply **featureFlags** to enable different client routes and api endpoints
+- apply `features` to enable different client routes and api endpoints
 
 > All the configuration happens in `@/AppConfig.ts`
 
@@ -11,9 +11,9 @@
 
 ## Available Apps
 
-Define all your available apps' configuration in `availableApps`.
+Define all available app configuration entries in `apps`.
 
-Each config item is completely independent and should match the `AppConfigItem` interface that is declared at the top of the file. Extend this interface as you need.
+Each config item is completely independent and should match the `TAppConfigItem` interface declared in `src/AppConfig.ts`. Extend this interface as needed.
 
 ## App Icons
 
@@ -38,7 +38,7 @@ The root layout loads the default stylesheet first and then the app-specific sty
 
 ## Default App
 
-You can optionally setup the `DEFAULT_APP` using the config key that you want to use if no match is returned from `matchAppID()` (see next section).
+You can optionally setup the `DEFAULT_APP` using the config key that you want to use if no app match is resolved.
 
 ## Strict Mode
 
@@ -46,8 +46,22 @@ Setting `DEFAULT_APP` to `null` enables the **strict mode** where the app will r
 
 ## Match the Current App
 
-Implement your matching logic in `matchAppID(Request): Promise<TAppID>`.
+Implement your matching rules with each app's optional `match` config. The request proxy (`src/proxy.ts`) resolves the app and forwards it through the `X-42Go-AppID` header. Runtime helpers such as `getAppID()` and `getAppInfo()` then reuse that resolved app ID.
 
-It's async and it should return one of the `availableApps` name (the object's key) or `null` in case no match is identified.
+The built-in matchers support environment, request headers, and host URL patterns. A resolved app ID is one of the `apps` object keys or `null` when no match is identified and no default app is configured.
 
-Here you have total freedom: use any `Request`'s property to run your match logic. The default implementation shows a possible match through the current url, or via a custom header.
+Example:
+
+```ts
+export default {
+  name: "LingoCafe",
+  match: {
+    url: ["^lc42go\\.ngrok\\.app$", "^localhost:\\d+$"],
+    header: {
+      mode: "any",
+      keys: [{ key: "x-app", value: "lingocafe" }],
+    },
+  },
+  features: ["page:books", "api:lingocafe", "api:profile"],
+} satisfies TAppConfigItem;
+```

@@ -60,8 +60,18 @@ Missing feature -> `feature` error (typically surfaced as 404 for pages / 404 or
 
 ## Session / Roles / Grants
 
-The evaluator loads role + grant data from the session by default. When any policy has `strict: true`
-the server performs one DB read (batched) via the internal access layer. Client strict refreshes the session.
+Role and grant data is app-scoped.
+
+Server evaluation is authoritative. `evaluatePolicy` resolves the current request app ID, then checks
+`auth.roles_users` and `auth.roles_grants` through the internal access layer. The relevant lookup key is
+`{ user_id, app_id }`, so a role assigned for `default` does not grant access inside `lingocafe`, and the
+reverse is also true.
+
+Client evaluation is visual only. `useEvaluatePolicy` and `<ProtectComponent>` read the cached NextAuth
+session snapshot: `session.user.roles`, `session.user.grants`, and `session.user.appId`. That snapshot is
+filled by the JWT callback at sign-in and can be refreshed with a session update. It is good for hiding or
+showing UI, but it is not the security boundary.
+
 `grants` = ALL strategy. `anyGrant` = first match wins. `role` is a single required role.
 
 ## Error Mapping (Global)
@@ -88,12 +98,14 @@ Internalized:
 
 Guarantees preserved:
 
-- Single evaluation pass; at most one strict DB read / session refresh
+- Single evaluation pass; server role/grant checks use the DB authority for the resolved app ID
 
 ## When To Use Strict
 
-Use strict for write operations or critical visibility changes (e.g. just granted admin rights).
-Avoid sprinkling strict everywhere; it costs either a DB read (server) or session refresh (client).
+`strict` and `strictMode` are currently experimental placeholders. They emit development warnings and do not
+change runtime behavior. Do not use them as a freshness mechanism. For critical authorization, rely on server
+policy checks; for client menu/profile visibility after a role change, refresh the NextAuth session or sign in
+again.
 
 ## Historical Artifact
 

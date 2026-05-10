@@ -55,7 +55,13 @@ String labels support `**bold**`, `*italic*`, `[links](/terms)`, and `\n` line
 breaks. Links always open in a new tab. The plain label text is stored as the
 evidence statement.
 
-`TestRBAC` is a diagnostic block for RBAC/session inspection.
+`TestRBAC` is a diagnostic block for RBAC/session inspection. It shows the cached NextAuth session values for
+`user.id`, `user.appId`, `user.roles`, and `user.grants`. Its refresh action sends the current page app ID into
+the NextAuth session update so a stale client snapshot can reload roles and grants for the resolved app.
+
+If `TestRBAC` shows the wrong app after auth code changes, restart the app process before re-testing. NextAuth
+route modules can stay stale in a long-running dev process, and a stale route can keep minting old JWT content
+even when normal app config resolution is correct.
 
 `Logout` renders the configured logout action.
 

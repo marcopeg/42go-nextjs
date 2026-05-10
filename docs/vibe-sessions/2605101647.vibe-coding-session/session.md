@@ -4,7 +4,7 @@ sessionSlug: "vibe-coding-session"
 goal: "Vibe coding session"
 status: "active"
 startedAt: "2026-05-10T16:47:15+02:00"
-updatedAt: "2026-05-10T17:06:33+02:00"
+updatedAt: "2026-05-10T17:15:34+02:00"
 memoryFile: "./memory.md"
 ---
 # Vibe Session — Vibe coding session
@@ -108,3 +108,7 @@ Raw curl reproduced the bug on port 3000: Host lc42go.ngrok.app resolved to ling
 ### 2026-05-10 17:06 — Auth app ID root cause recorded
 
 Promoted stable context into `docs/vibe-sessions/2605101647.vibe-coding-session/memory.md`. Recorded the request-bound credentials auth hardening and the diagnostic result that port 3000 was serving a stale auth route module while a fresh process produced the correct LingoCafe RBAC session.
+
+### 2026-05-10 17:15 — Documentation audit promoted
+
+Promoted stable context into `docs/articles/RBAC.md`. Promoted the auth app-id root cause and current app/RBAC mechanics into permanent docs: RBAC, Policy, Profile, Multi-App OAuth, AppConfig, Database, Route Groups, Theming, GitHub OAuth, Production Deployment, memory bank, and AGENTS.md.

@@ -10,6 +10,21 @@ Defines how page/API access is evaluated through unified policies.
 - Client evaluation (`useEvaluatePolicy`) is optimistic/visual: trusts session snapshot only.
 - Server evaluation (`evaluatePolicy`) is authoritative: uses DB for roles/grants via access layer.
 
+## RBAC Data Sources
+
+Role and grant assignments live in the database and are scoped by `app_id`.
+
+- Roles: `auth.roles_users` keyed by `{ app_id, user_id, role_id }`.
+- Role grants: `auth.roles_grants` keyed by `{ app_id, role_id, grant_id }`.
+- Server policy checks resolve the current request app ID and query those tables directly.
+- Client policy checks read `session.user.roles`, `session.user.grants`, and `session.user.appId` from the
+  NextAuth JWT session snapshot.
+
+The JWT session snapshot must be created for the same app that authenticated the user. Credentials auth resolves
+the app ID from the actual NextAuth callback request headers before looking up `auth.users`. OAuth sign-in uses
+the resolved app ID when linking or creating `auth.accounts` and `auth.users`. If a role is changed while a user
+is already signed in, refresh the session or sign in again before expecting client-only menu visibility to change.
+
 ## Policy Shape
 
 ```ts

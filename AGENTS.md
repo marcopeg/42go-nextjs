@@ -18,7 +18,7 @@ But make it fun to read, like a Chuck Norris joke.
 
 42Go Next Multi is a Next.js 15 boilerplate that enables **multiple independent SaaS applications** to run from a single codebase. Each app has its own configuration, theming, authentication providers, and feature flags, while sharing common infrastructure and components.
 
-**Key Architectural Concept**: Request-based app resolution happens in middleware, setting the AppID which drives all configuration downstream. Apps are defined in `src/AppConfig.ts` and matched via hostname, subdomain, or custom matchers.
+**Key Architectural Concept**: Request-based app resolution happens in the Next request proxy (`src/proxy.ts`), setting the AppID which drives all configuration downstream. Apps are defined in `src/AppConfig.ts` and matched via hostname, subdomain, or custom matchers.
 
 ---
 
@@ -105,7 +105,7 @@ Apps are imported from `src/config/{app-name}/config.ts`.
 
 ### Request Flow
 
-1. **Middleware** (`src/middleware.ts`): Resolves AppID via `getAppID()` and sets `x-app-id` header
+1. **Request Proxy** (`src/proxy.ts`): Resolves AppID via `getAppID()` and sets the `X-42Go-AppID` header
 2. **App Resolution**: Matches request against `AppConfig.match` rules (hostname, subdomain, custom logic)
 3. **Configuration Cascade**: Components/pages use `useAppConfig()` to access app-specific settings
 4. **Feature Gating**: `protectPage()` / `protectRoute()` enforce feature flags and RBAC policies
@@ -123,7 +123,7 @@ Apps are imported from `src/config/{app-name}/config.ts`.
 ```
 src/
 ├── AppConfig.ts              # Multi-app registry and types
-├── middleware.ts             # App resolution and header injection
+├── proxy.ts                  # App resolution and header injection
 ├── 42go/                     # Boilerplate framework (reusable across apps)
 │   ├── auth/                 # NextAuth integration and providers
 │   ├── components/           # Shared components (Markdown, ContentBlock, docs)
@@ -225,21 +225,27 @@ features: ['page:docs', 'page:dashboard', 'api:todos'];
 
 ```typescript
 // Pages (Server Components)
-import { protectPage } from '@/42go/policy/server';
+import { protectPage } from '@/42go/policy';
 
-export default async function DocsPage() {
-  await protectPage({
+const DocsPage = () => {
+  return <div>Docs</div>;
+};
+
+export default protectPage(DocsPage, {
+  require: {
     feature: 'page:docs',
-    auth: true,
-    roles: ['admin'],
-  });
-}
+    session: true,
+    role: 'admin',
+  },
+});
 
 // API Routes
-import { protectRoute } from '@/42go/policy/server';
+import { protectRoute } from '@/42go/policy';
 
-export const GET = protectRoute({ feature: 'api:todos', auth: true }, async (req, policy) => {
+export const GET = protectRoute(async (req: Request) => {
   /* ... */
+}, {
+  require: { feature: 'api:todos', session: true },
 });
 ```
 
@@ -251,7 +257,7 @@ import { AppLayout } from "@/42go/layouts/app";
 
 export default function DashboardPage() {
   return (
-    <AppLayout policy={{ feature: "page:dashboard", auth: true }}>
+    <AppLayout policy={{ require: { feature: "page:dashboard", session: true } }}>
       {/* Content */}
     </AppLayout>
   );
@@ -268,7 +274,7 @@ If `feature` is omitted, it's inferred from the URL:
 ### Response Codes
 
 - Missing feature → **404**
-- Missing auth → **401**
+- Missing session → **401**
 - Failed role/grant check → **403**
 
 ---
@@ -297,7 +303,7 @@ export default function MyAppPage() {
   }, []);
 
   return (
-    <AppLayout policy={{ feature: "page:my-app", auth: true }}>
+    <AppLayout policy={{ require: { feature: "page:my-app", session: true } }}>
       {data ? <MyContent data={data} /> : <Loading />}
     </AppLayout>
   );
@@ -381,8 +387,8 @@ Provider selection happens at runtime based on AppConfig.
 
 ```typescript
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/42go/auth/lib/authOptions';
-const session = await getServerSession(authOptions);
+import { getAuthOptions } from '@/42go/auth/lib/authOptions';
+const session = await getServerSession(await getAuthOptions());
 ```
 
 ### Account Linking
@@ -509,7 +515,7 @@ APP1_GITHUB_CLIENT_ID=xxx
 APP1_GITHUB_CLIENT_SECRET=xxx
 DEFAULT_GOOGLE_CLIENT_ID=xxx
 DEFAULT_GOOGLE_CLIENT_SECRET=xxx
-PGPOOL='{"min":2,"max":10}'
+PGPOOL=2,10,30000
 ```
 
 See `.env.example` for full reference.
@@ -547,7 +553,7 @@ See `.env.example` for full reference.
 4. **Feature flags use prefixes** — `page:` for pages, `api:` for APIs
 5. **Database is PostgreSQL-only** — no MySQL/SQLite support
 6. **shadcn components install from root** — not from subdirectories
-7. **Middleware logs on every request** — `@@@@@ MIDDLEWARE :: START` is expected
+7. **Proxy logs on every matched request** — `@@@@@ MIDDLEWARE :: START` is expected text from `src/proxy.ts`
 8. **AppConfig changes require restart** — not hot-reloaded by default
 9. **Run `npm run qa` after code changes** — catch linting and build errors before committing
 

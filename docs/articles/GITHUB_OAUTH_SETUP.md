@@ -63,7 +63,7 @@ This guide provides step-by-step instructions for setting up GitHub OAuth authen
    GITHUB_CLIENT_SECRET="your-github-client-secret-from-step-1"
 
    # Database (keep your existing database config)
-   PGSTRING="your-database-connection-string"
+   DATABASE_URL="your-database-connection-string"
    ```
 
 3. **Generate NEXTAUTH_SECRET** (if you don't have one):
