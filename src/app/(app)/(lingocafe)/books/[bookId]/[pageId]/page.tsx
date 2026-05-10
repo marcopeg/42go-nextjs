@@ -11,6 +11,7 @@ import type { Policy } from "@/42go/policy/types";
 import {
   BookReaderDesktopSurface,
   BookReaderMobileSurface,
+  type ReaderHeaderTitleMode,
 } from "@/app/(app)/(lingocafe)/books/_components/BookReaderSurfaces";
 import { BookReaderPreferencesPanel } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
 import { BookReaderTableOfContents } from "@/app/(app)/(lingocafe)/books/_components/BookReaderTableOfContents";
@@ -43,9 +44,13 @@ type ReaderRouteState = {
   progressBps: number | null;
 };
 const READER_SCROLL_PROGRESS_IDLE_SAVE_MS = 4000;
+const READER_HEADER_TITLE_TOP_THRESHOLD_PX = 12;
+const READER_HEADER_TITLE_DIRECTION_THRESHOLD_PX = 6;
 const BOOK_READER_PAGE_POLICY: Policy = {
   require: { feature: "page:books", session: true },
 };
+
+type ReaderSurfaceKey = "desktop" | "mobile";
 
 const clampProgressBps = (value: number) =>
   Math.min(10000, Math.max(0, Math.round(value)));
@@ -253,6 +258,26 @@ const scrollToProgressBps = (element: HTMLElement, progressBps: number) => {
   return true;
 };
 
+const getHeaderTitleModeForScroll = (
+  scrollTop: number,
+  delta: number,
+  currentMode: ReaderHeaderTitleMode
+): ReaderHeaderTitleMode => {
+  if (scrollTop <= READER_HEADER_TITLE_TOP_THRESHOLD_PX) {
+    return "book";
+  }
+
+  if (delta >= READER_HEADER_TITLE_DIRECTION_THRESHOLD_PX) {
+    return "page";
+  }
+
+  if (delta <= -READER_HEADER_TITLE_DIRECTION_THRESHOLD_PX) {
+    return "book";
+  }
+
+  return currentMode;
+};
+
 const getInitialReaderPreferences = () => {
   if (typeof window === "undefined") {
     return {};
@@ -285,6 +310,10 @@ const BookReadPage = () => {
   const restoredKeyRef = useRef("");
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestProgressRef = useRef<number | null>(null);
+  const lastScrollTopRef = useRef<Record<ReaderSurfaceKey, number>>({
+    desktop: 0,
+    mobile: 0,
+  });
   const [readerRoute, setReaderRoute] = useState<ReaderRouteState | null>(
     routeFromUrl
   );
@@ -292,6 +321,8 @@ const BookReadPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [readingProgressBps, setReadingProgressBps] = useState(0);
+  const [headerTitleMode, setHeaderTitleMode] =
+    useState<ReaderHeaderTitleMode>("book");
   const [readerPreferencesStore, setReaderPreferencesStore] =
     useState<ReaderPreferencesStore>(getInitialReaderPreferences);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
@@ -309,6 +340,7 @@ const BookReadPage = () => {
     theme === "light" || theme === "dark" ? theme : "system";
   const storedReaderPreferences =
     readerPreferencesStore[activeReaderThemeProfile] ?? null;
+  const canResetReaderPreferences = Boolean(storedReaderPreferences);
   const baseReaderPreferences =
     storedReaderPreferences ?? getDefaultReaderPreferences(readerThemeMode);
   const readerPreferences = {
@@ -509,7 +541,19 @@ const BookReadPage = () => {
         return;
       }
       const restored = scrollToProgressBps(target, restoreProgressBps);
+      const surfaceKey: ReaderSurfaceKey = window.matchMedia(
+        "(min-width: 768px)"
+      ).matches
+        ? "desktop"
+        : "mobile";
+
+      lastScrollTopRef.current[surfaceKey] = target.scrollTop;
       setReadingProgressBps(restoreProgressBps);
+      setHeaderTitleMode(
+        target.scrollTop <= READER_HEADER_TITLE_TOP_THRESHOLD_PX
+          ? "book"
+          : "page"
+      );
 
       if (restored || attempts >= 8) {
         restoredKeyRef.current = restoreKey;
@@ -562,7 +606,19 @@ const BookReadPage = () => {
       });
     };
 
-    const scheduleProgress = (element: HTMLElement) => {
+    const scheduleProgress = (
+      surfaceKey: ReaderSurfaceKey,
+      element: HTMLElement
+    ) => {
+      const previousScrollTop = lastScrollTopRef.current[surfaceKey];
+      const currentScrollTop = element.scrollTop;
+      const delta = currentScrollTop - previousScrollTop;
+
+      lastScrollTopRef.current[surfaceKey] = currentScrollTop;
+      setHeaderTitleMode((currentMode) =>
+        getHeaderTitleModeForScroll(currentScrollTop, delta, currentMode)
+      );
+
       const currentProgressBps = getScrollProgressBps(element);
       latestProgressRef.current = currentProgressBps;
       setReadingProgressBps(currentProgressBps);
@@ -580,10 +636,10 @@ const BookReadPage = () => {
     };
 
     const onDesktopScroll = () => {
-      if (desktopElement) scheduleProgress(desktopElement);
+      if (desktopElement) scheduleProgress("desktop", desktopElement);
     };
     const onMobileScroll = () => {
-      if (mobileElement) scheduleProgress(mobileElement);
+      if (mobileElement) scheduleProgress("mobile", mobileElement);
     };
 
     desktopElement?.addEventListener("scroll", onDesktopScroll, { passive: true });
@@ -637,6 +693,7 @@ const BookReadPage = () => {
           scrollRef={mobileScrollRef}
           backHref={bookshelfHref}
           readingProgressBps={readingProgressBps}
+          headerTitleMode={headerTitleMode}
           preferences={readerPreferences}
           onOpenTableOfContents={openTableOfContents}
           onOpenPreferences={openPreferences}
@@ -650,6 +707,7 @@ const BookReadPage = () => {
           scrollRef={desktopScrollRef}
           backHref={bookshelfHref}
           readingProgressBps={readingProgressBps}
+          headerTitleMode={headerTitleMode}
           preferences={readerPreferences}
           onOpenTableOfContents={openTableOfContents}
           onOpenPreferences={openPreferences}
@@ -661,6 +719,7 @@ const BookReadPage = () => {
           onOpenChange={setIsPreferencesOpen}
           preferences={readerPreferences}
           onPreferencesChange={updateReaderPreferences}
+          canResetPreferences={canResetReaderPreferences}
           onResetPreferences={resetReaderPreferences}
         />
 

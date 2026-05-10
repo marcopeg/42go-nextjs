@@ -5,18 +5,15 @@
 
 ## Blocked
 
-- [UT41: ESLint 9 → 10](./blocked/UT41-eslint-9-10/UT41.task.refined.md) | [plan](./blocked/UT41-eslint-9-10/UT41.plan.md) | [notes](./blocked/UT41-eslint-9-10/UT41.notes.md)
+- [UT41: ESLint 9 → 10](./wip/UT41-eslint-9-10/UT41.task.refined.md) | [plan](./wip/UT41-eslint-9-10/UT41.plan.md) | [notes](./wip/UT41-eslint-9-10/UT41.notes.md)
 
 ## Ready Tasks
 
+- [CO54: Restore Draft-Centric Backlog Metadata and Lifecycle States](./ready/CO54-restore-draft-centric-backlog-metadata-and-lifecycle-states/CO54.task.refined.md) | [plan](./ready/CO54-restore-draft-centric-backlog-metadata-and-lifecycle-states/CO54.plan.md)
 
 ## Drafts
 
-- [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.draft.md)
-- [AAM: RBAC Advanced Features [aam]](./drafts/AAM-rbac-advanced-features-aam/AAM.task.draft.md)
 - [AAN: App-Specific Session Configuration [aan]](./drafts/AAN-app-specific-session-configuration-aan/AAN.task.draft.md)
-- [ABD: Optimize Database Documentation [abd]](./drafts/ABD-optimize-database-documentation-abd/ABD.task.draft.md)
-- [ABE: Optimize Theming Documentation [abe]](./drafts/ABE-optimize-theming-documentation-abe/ABE.task.draft.md)
 - [ABF: Optimize Route Groups Documentation [abf]](./drafts/ABF-optimize-route-groups-documentation-abf/ABF.task.draft.md)
 - [ABG: Optimize Feature Flags Documentation [abg]](./drafts/ABG-optimize-feature-flags-documentation-abg/ABG.task.draft.md)
 - [ABH: Optimize App Config Documentation [abh]](./drafts/ABH-optimize-app-config-documentation-abh/ABH.task.draft.md)
@@ -56,6 +53,11 @@
 - [TR02: Add Image ContentBlock](./drafts/TR02-add-image-contentblock/TR02.task.draft.md)
 - [AEM: Fix Docker build [aem]](./drafts/AEM-fix-docker-build-aem/AEM.task.refined.md)
 - [ADB: Reject Invite [adb]](./drafts/ADB-reject-invite-adb/ADB.task.refined.md)
+- [ADC: Add Tenants Table](./completed/ADC-add-tenants-table/ADC.task.refined.md)
+- [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.draft.md)
+- [AAM: RBAC Advanced Features [aam]](./drafts/AAM-rbac-advanced-features-aam/AAM.task.draft.md)
+- [ABE: Optimize Theming Documentation [abe]](./drafts/ABE-optimize-theming-documentation-abe/ABE.task.draft.md)
+- [ABD: Optimize Database Documentation [abd]](./drafts/ABD-optimize-database-documentation-abd/ABD.task.draft.md)
 
 ## Historical Logs
 

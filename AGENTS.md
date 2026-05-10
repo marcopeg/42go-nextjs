@@ -67,6 +67,26 @@ npx shadcn@latest add <component>   # Add shadcn/ui component
 
 ---
 
+## Visual Verification
+
+For LingoCafe visual checks, use the public test URL instead of fighting local hostname routing:
+
+- URL: `https://lc42go.ngrok.app/`
+- Test user: `john`
+- Password: `john`
+- App: LingoCafe
+
+Recommended flow for reader UI checks:
+
+1. Open `https://lc42go.ngrok.app/`.
+2. Log in with credentials using `john` / `john`.
+3. Open `/books`.
+4. perform the visual test appropriate for the task
+
+If a task gives a different verification URL or account, follow the task. Otherwise use this default. Chuck Norris does not lose time wrestling localhost when ngrok is already holding the door open.
+
+---
+
 ## Multi-App Architecture
 
 ### App Configuration (`src/AppConfig.ts`)
@@ -153,11 +173,11 @@ export function MyComponent() {
 
 ```typescript
 // ✅ Prefer absolute imports
-import { Button } from "@/components/ui/button";
-import { getAppConfig } from "@/42go/config/app-config";
+import { Button } from '@/components/ui/button';
+import { getAppConfig } from '@/42go/config/app-config';
 
 // ❌ Avoid relative imports
-import { Button } from "../../../components/ui/button";
+import { Button } from '../../../components/ui/button';
 ```
 
 ### Export Pattern
@@ -198,32 +218,29 @@ For simple presentational components, a single file is fine.
 Single `features` array in AppConfig controls both availability and access.
 
 ```typescript
-features: ["page:docs", "page:dashboard", "api:todos"];
+features: ['page:docs', 'page:dashboard', 'api:todos'];
 ```
 
 ### Server-Side Protection
 
 ```typescript
 // Pages (Server Components)
-import { protectPage } from "@/42go/policy/server";
+import { protectPage } from '@/42go/policy/server';
 
 export default async function DocsPage() {
   await protectPage({
-    feature: "page:docs",
+    feature: 'page:docs',
     auth: true,
-    roles: ["admin"],
+    roles: ['admin'],
   });
 }
 
 // API Routes
-import { protectRoute } from "@/42go/policy/server";
+import { protectRoute } from '@/42go/policy/server';
 
-export const GET = protectRoute(
-  { feature: "api:todos", auth: true },
-  async (req, policy) => {
-    /* ... */
-  },
-);
+export const GET = protectRoute({ feature: 'api:todos', auth: true }, async (req, policy) => {
+  /* ... */
+});
 ```
 
 ### Client-Side Protection
@@ -296,9 +313,9 @@ export default function MyAppPage() {
 ### Connection
 
 ```typescript
-import { getDB } from "@/42go/db";
+import { getDB } from '@/42go/db';
 const db = await getDB();
-const users = await db("auth.users").select("*");
+const users = await db('auth.users').select('*');
 ```
 
 Always use `getDB()` singleton — never create new connections. Connection pooling is managed via `PGPOOL` environment variable.
@@ -331,7 +348,7 @@ await db.raw(
   WHERE t.id = np.id
     AND t.position IS DISTINCT FROM np.new_order
 `,
-  [taskIds],
+  [taskIds]
 );
 ```
 
@@ -363,8 +380,8 @@ Provider selection happens at runtime based on AppConfig.
 ### Session Access
 
 ```typescript
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/42go/auth/lib/authOptions";
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/42go/auth/lib/authOptions';
 const session = await getServerSession(authOptions);
 ```
 
