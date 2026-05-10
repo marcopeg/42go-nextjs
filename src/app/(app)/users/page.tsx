@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { AppLayout } from "@/42go/layouts/app";
-import type { Policy } from "@/42go/policy";
-import { Button } from "@/components/ui/button";
-import { AlertCircle, Check, Copy, RefreshCw } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { AppLayout, type TActionItem } from '@/42go/layouts/app';
+import type { Policy } from '@/42go/policy';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, Check, Copy, RefreshCw } from 'lucide-react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 type AppUser = {
   id: string;
@@ -23,33 +23,42 @@ type UsersResponse = {
   users: AppUser[];
 };
 
+type UsersListProps = {
+  users: AppUser[];
+  isLoading: boolean;
+  error: string | null;
+  copiedKey: string | null;
+  onCopy: (key: string, value: string) => Promise<void>;
+  onRetry: () => void;
+  onInitialLoad: (signal: AbortSignal) => Promise<void>;
+};
+
 const usersPolicy: Policy = {
   require: {
-    feature: "page:users",
+    feature: 'page:users',
     session: true,
-    role: "backoffice",
-    grants: ["users:list"],
+    role: 'backoffice',
+    grants: ['users:list'],
   },
 };
 
 const formatDate = (value: string | null) => {
-  if (!value) return "-";
+  if (!value) return '-';
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
+  if (Number.isNaN(date.getTime())) return '-';
   return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
   });
 };
 
-const getDisplayName = (user: AppUser) =>
-  user.name || user.username || user.email;
+const getDisplayName = (user: AppUser) => user.name || user.username || user.email;
 
 const CopyableValue = ({
   value,
   copied,
-  className = "",
+  className = '',
   children,
   onCopy,
 }: {
@@ -75,8 +84,8 @@ const CopyableValue = ({
 );
 
 const fetchUsersData = async (signal?: AbortSignal) => {
-  const res = await fetch("/api/users", {
-    credentials: "same-origin",
+  const res = await fetch('/api/users', {
+    credentials: 'same-origin',
     signal,
   });
 
@@ -85,118 +94,66 @@ const fetchUsersData = async (signal?: AbortSignal) => {
       message?: string;
       error?: string;
     } | null;
-    throw new Error(body?.message || body?.error || "Unable to load users");
+    throw new Error(body?.message || body?.error || 'Unable to load users');
   }
 
   return (await res.json()) as UsersResponse;
 };
 
-const UsersList = () => {
-  const [users, setUsers] = useState<AppUser[]>([]);
-  const [appId, setAppId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
-
-  const copyValue = useCallback(async (key: string, value: string) => {
-    await navigator.clipboard.writeText(value);
-    setCopiedKey(key);
-    window.setTimeout(() => {
-      setCopiedKey((current) => (current === key ? null : current));
-    }, 1200);
-  }, []);
-
-  const loadUsers = useCallback(async (signal?: AbortSignal) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const body = await fetchUsersData(signal);
-      setUsers(body.users);
-      setAppId(body.appId);
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
-      setError(err instanceof Error ? err.message : "Unable to load users");
-    } finally {
-      if (!signal?.aborted) setIsLoading(false);
-    }
-  }, []);
-
+const UsersList = ({
+  users,
+  isLoading,
+  error,
+  copiedKey,
+  onCopy,
+  onRetry,
+  onInitialLoad,
+}: UsersListProps) => {
   useEffect(() => {
     const controller = new AbortController();
-    const loadInitialUsers = async () => {
-      try {
-        const body = await fetchUsersData(controller.signal);
-        setUsers(body.users);
-        setAppId(body.appId);
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        setError(err instanceof Error ? err.message : "Unable to load users");
-      } finally {
-        if (!controller.signal.aborted) setIsLoading(false);
-      }
-    };
-
-    loadInitialUsers();
+    onInitialLoad(controller.signal);
     return () => controller.abort();
-  }, []);
+  }, [onInitialLoad]);
 
   return (
-    <div className="rounded-lg border bg-card">
-      <div className="flex flex-col gap-4 border-b border-border p-6 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">All Users</h3>
-          <p className="text-sm text-muted-foreground">
-            {appId ? `${appId} app` : "Current app"}
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => loadUsers()}
-          disabled={isLoading}
-        >
-          <RefreshCw className={isLoading ? "animate-spin" : ""} />
-          Refresh
-        </Button>
-      </div>
-
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col overflow-hidden bg-background">
       {error ? (
         <div className="flex items-start gap-3 p-6 text-sm text-destructive">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <div className="space-y-3">
             <p>{error}</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => loadUsers()}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={onRetry}>
               <RefreshCw />
               Retry
             </Button>
           </div>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="flex-1 overflow-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-muted/30 text-left text-xs font-medium uppercase text-muted-foreground">
-                <th className="px-6 py-3">User</th>
-                <th className="px-6 py-3">Email</th>
-                <th className="px-6 py-3">Created</th>
+              <tr className="text-left text-xs font-medium uppercase text-muted-foreground">
+                <th className="sticky top-0 z-10 border-b bg-background/95 px-6 py-3 backdrop-blur">
+                  User
+                </th>
+                <th className="sticky top-0 z-10 border-b bg-background/95 px-6 py-3 backdrop-blur">
+                  Email
+                </th>
+                <th className="sticky top-0 z-10 border-b bg-background/95 px-6 py-3 backdrop-blur">
+                  Created
+                </th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                Array.from({ length: 3 }).map((_, index) => (
+                Array.from({ length: 8 }).map((_, index) => (
                   <tr key={index} className="border-b last:border-0">
                     <td className="px-6 py-4">
                       <div className="h-4 w-40 rounded bg-muted" />
                     </td>
                     <td className="px-6 py-4">
                       <div className="h-4 w-56 rounded bg-muted" />
+                      <div className="mt-1 h-3 w-72 rounded bg-muted/70" />
                     </td>
                     <td className="px-6 py-4">
                       <div className="h-4 w-24 rounded bg-muted" />
@@ -205,15 +162,12 @@ const UsersList = () => {
                 ))
               ) : users.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={3}
-                    className="px-6 py-10 text-center text-muted-foreground"
-                  >
+                  <td colSpan={3} className="px-6 py-10 text-center text-muted-foreground">
                     No users found.
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                users.map(user => (
                   <tr key={user.id} className="border-b last:border-0">
                     <td className="px-6 py-4">
                       <div className="font-medium">{getDisplayName(user)}</div>
@@ -222,9 +176,7 @@ const UsersList = () => {
                           value={user.username}
                           copied={copiedKey === `${user.id}:username`}
                           className="mt-0.5 text-xs text-muted-foreground"
-                          onCopy={(value) =>
-                            copyValue(`${user.id}:username`, value)
-                          }
+                          onCopy={value => onCopy(`${user.id}:username`, value)}
                         >
                           @{user.username}
                         </CopyableValue>
@@ -236,9 +188,7 @@ const UsersList = () => {
                           value={user.email}
                           copied={copiedKey === `${user.id}:email`}
                           className="text-muted-foreground"
-                          onCopy={(value) =>
-                            copyValue(`${user.id}:email`, value)
-                          }
+                          onCopy={value => onCopy(`${user.id}:email`, value)}
                         >
                           {user.email}
                         </CopyableValue>
@@ -246,7 +196,7 @@ const UsersList = () => {
                           value={user.id}
                           copied={copiedKey === `${user.id}:id`}
                           className="font-mono text-[10px] leading-3 text-muted-foreground/60"
-                          onCopy={(value) => copyValue(`${user.id}:id`, value)}
+                          onCopy={value => onCopy(`${user.id}:id`, value)}
                         >
                           {user.id}
                         </CopyableValue>
@@ -267,14 +217,90 @@ const UsersList = () => {
 };
 
 export default function UsersPage() {
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const applyUsersResponse = useCallback((body: UsersResponse) => {
+    setUsers(body.users);
+  }, []);
+
+  const loadInitialUsers = useCallback(
+    async (signal: AbortSignal) => {
+      try {
+        const body = await fetchUsersData(signal);
+        applyUsersResponse(body);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        setError(err instanceof Error ? err.message : 'Unable to load users');
+      } finally {
+        if (!signal.aborted) setIsLoading(false);
+      }
+    },
+    [applyUsersResponse]
+  );
+
+  const loadUsers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const body = await fetchUsersData();
+      applyUsersResponse(body);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load users');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [applyUsersResponse]);
+
+  const copyValue = useCallback(async (key: string, value: string) => {
+    await navigator.clipboard.writeText(value);
+    setCopiedKey(key);
+    window.setTimeout(() => {
+      setCopiedKey(current => (current === key ? null : current));
+    }, 1200);
+  }, []);
+
+  const RefreshAction = () => (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      aria-label="Refresh users"
+      onClick={loadUsers}
+      disabled={isLoading}
+    >
+      <RefreshCw className={isLoading ? 'animate-spin' : ''} />
+    </Button>
+  );
+
+  const actions: TActionItem[] = [
+    {
+      type: 'component',
+      component: RefreshAction,
+    },
+  ];
+
   return (
     <AppLayout
       stickyHeader
       title="Users"
-      subtitle="Manage your user accounts and permissions"
+      subtitle="Sorted alphabetically"
+      actions={actions}
+      disablePadding
       policy={usersPolicy}
     >
-      <UsersList />
+      <UsersList
+        users={users}
+        isLoading={isLoading}
+        error={error}
+        copiedKey={copiedKey}
+        onCopy={copyValue}
+        onRetry={loadUsers}
+        onInitialLoad={loadInitialUsers}
+      />
     </AppLayout>
   );
 }

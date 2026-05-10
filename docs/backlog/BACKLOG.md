@@ -2,11 +2,17 @@
 
 ## Draft
 
-- [AAM: RBAC Advanced Features [aam]](./draft/AAM-rbac-advanced-features-aam/AAM.task.md)
+- [NC71: HeroBlock: Add Alignment Option](./draft/NC71-heroblock-add-alignment-option/NC71.task.md)
+- [TK89: Docker Image Security Review](./draft/TK89-docker-image-security-review/TK89.task.md)
+- [TR02: Add Image ContentBlock](./draft/TR02-add-image-contentblock/TR02.task.md)
+- [IK47: Add Social Login: Facebook](./draft/IK47-add-social-login-facebook/IK47.task.md)
+- [FE78: HeroBlock: Icon Support](./draft/FE78-heroblock-icon-support/FE78.task.md)
 - [AAN: App-Specific Session Configuration [aan]](./draft/AAN-app-specific-session-configuration-aan/AAN.task.md)
+- [FN30: Remove Google Fonts Build Network Dependency](./draft/FN30-remove-google-fonts-build-network-dependency/FN30.task.md)
 - [AAT: Support i18n](./draft/AAT-support-i18n/AAT.task.md)
 - [ABD: Optimize Database Documentation [abd]](./draft/ABD-optimize-database-documentation-abd/ABD.task.md)
 - [ABE: Optimize Theming Documentation [abe]](./draft/ABE-optimize-theming-documentation-abe/ABE.task.md)
+- [AAM: RBAC Advanced Features [aam]](./draft/AAM-rbac-advanced-features-aam/AAM.task.md)
 - [ABF: Optimize Route Groups Documentation [abf]](./draft/ABF-optimize-route-groups-documentation-abf/ABF.task.md)
 - [ABG: Optimize Feature Flags Documentation [abg]](./draft/ABG-optimize-feature-flags-documentation-abg/ABG.task.md)
 - [ABH: Optimize App Config Documentation [abh]](./draft/ABH-optimize-app-config-documentation-abh/ABH.task.md)
@@ -32,17 +38,11 @@
 - [AQD: Animate check item as slide-away to right [aqd]](./draft/AQD-animate-check-item-as-slide-away-to-right-aqd/AQD.task.md)
 - [AR08: Refactor 42go/auth/providers to Expose Single Provider Modules](./draft/AR08-refactor-42go-auth-providers-to-expose-single-provider-modules/AR08.task.md)
 - [BL01: Books Top-Bar Language and Level Switcher via GM77 Panel](./draft/BL01-books-top-bar-language-level-switcher-via-gm77-panel/BL01.task.md)
-- [FE78: HeroBlock: Icon Support](./draft/FE78-heroblock-icon-support/FE78.task.md)
-- [FN30: Remove Google Fonts Build Network Dependency](./draft/FN30-remove-google-fonts-build-network-dependency/FN30.task.md)
 - [GQ36: Add YouTube ContentBlock](./draft/GQ36-add-youtube-contentblock/GQ36.task.md)
 - [HO30: Codex Web Local E2E Sandbox](./draft/HO30-codex-web-local-e2e-sandbox/HO30.task.md)
 - [HX68: Dynamic Pages Layout [hx68]](./draft/HX68-dynamic-pages-layout-hx68/HX68.task.md)
-- [IK47: Add Social Login: Facebook](./draft/IK47-add-social-login-facebook/IK47.task.md)
 - [KO29: Automate next.config allowedDevOrigins](./draft/KO29-automate-next-config-allowed-dev-origins/KO29.task.md)
-- [NC71: HeroBlock: Add Alignment Option](./draft/NC71-heroblock-add-alignment-option/NC71.task.md)
-- [TK89: Docker Image Security Review](./draft/TK89-docker-image-security-review/TK89.task.md)
 - [TO37: Add Social Login: Apple](./draft/TO37-add-social-login-apple/TO37.task.md)
-- [TR02: Add Image ContentBlock](./draft/TR02-add-image-contentblock/TR02.task.md)
 - [ADB: Reject Invite [adb]](./draft/ADB-reject-invite-adb/ADB.task.md)
 
 ## Refining
@@ -61,6 +61,7 @@
 
 ## Blocked
 
+- [UT41: ESLint 9 → 10](./completed/UT41-eslint-9-10/UT41.task.md) | [plan](./completed/UT41-eslint-9-10/UT41.plan.md) | [notes](./completed/UT41-eslint-9-10/UT41.notes.md)
 
 ## Historical Logs
 
