@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { CaseSensitive, Minus, Plus } from "lucide-react";
 
 import { Modal } from "@/42go/components/modal";
@@ -100,10 +100,8 @@ const FontOptionButton = ({
 
 const PreviewCard = ({
   preferences,
-  mobile = false,
 }: {
   preferences: ReaderPreferences;
-  mobile?: boolean;
 }) => {
   const font = getReaderFont(preferences);
   const fontSize = getReaderFontSize(preferences);
@@ -114,35 +112,18 @@ const PreviewCard = ({
   );
 
   return (
-    <div
-      className={cn(
-        "rounded-[28px] border shadow-sm",
-        mobile ? "p-4" : "p-5"
-      )}
-      style={themeStyle}
-    >
-      <p
-        className="text-xs uppercase tracking-[0.22em]"
-        style={{ color: "var(--reader-fg-muted)" }}
-      >
-        Live preview
-      </p>
+    <div className="rounded-2xl border p-4 shadow-sm" style={themeStyle}>
       <h3
-        className={cn(
-          "font-semibold leading-tight",
-          mobile ? "mt-2 text-[1.5em]" : "mt-3 text-[1.8em]"
-        )}
+        className="font-semibold leading-tight"
         style={{ fontFamily: font.family, fontSize: `${fontSize}px` }}
       >
         Lorem ipsum
       </h3>
       <p
-        className={cn(mobile ? "mt-3 leading-[1.55]" : "mt-4 leading-[1.8]")}
+        className="mt-3 leading-[1.55]"
         style={{ fontFamily: font.family, fontSize: `${fontSize}px` }}
       >
-        {mobile
-          ? "Short preview text for quick visual checks."
-          : "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus posuere velit aliquet."}
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
       </p>
     </div>
   );
@@ -190,21 +171,6 @@ export const BookReaderPreferencesPanel = ({
       ),
     [preferences.backgroundKey, resolvedTheme]
   );
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const updateViewport = () => {
-      setIsMobile(mediaQuery.matches);
-    };
-
-    updateViewport();
-    mediaQuery.addEventListener("change", updateViewport);
-    return () => {
-      mediaQuery.removeEventListener("change", updateViewport);
-    };
-  }, []);
-
   const requestResetPreferences = () => {
     if (!canResetPreferences) return;
     const confirmed = window.confirm(
@@ -221,14 +187,13 @@ export const BookReaderPreferencesPanel = ({
       presentation="panel"
       anchor="right"
       size="md"
-      title="Preferences"
-      subtitle="Reading"
+      title="Reading Preferences"
       ariaLabel="Reading preferences"
       headerClassName="md:h-[68px] md:px-8"
-      bodyClassName="px-0 py-0 md:px-5 md:py-6"
+      bodyClassName="px-0 py-0 md:px-5 md:pb-6 md:pt-0"
     >
-      <div className="sticky top-0 z-10 border-b bg-background/95 px-5 py-4 backdrop-blur md:static md:mb-6 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
-        <PreviewCard preferences={preferences} mobile={isMobile} />
+      <div className="sticky top-0 z-10 border-b bg-background px-5 py-4 md:mb-6 md:border-0 md:px-0 md:pb-4 md:pt-6">
+        <PreviewCard preferences={preferences} />
       </div>
 
       <div className="px-5 py-6 md:p-0">
@@ -236,9 +201,6 @@ export const BookReaderPreferencesPanel = ({
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="font-semibold">Font size</h3>
-              <p className="text-sm text-muted-foreground">
-                Ten stops. No nonsense.
-              </p>
             </div>
             <div className="rounded-full border px-3 py-1 text-sm font-semibold">
               {fontSize}px
@@ -296,29 +258,6 @@ export const BookReaderPreferencesPanel = ({
               <Plus className="h-4 w-4" />
             </Button>
           </div>
-
-          {!isMobile && (
-            <div className="grid grid-cols-10 gap-2">
-              {READER_FONT_SIZE_OPTIONS.map((size, index) => {
-                const active = index === preferences.fontSizeIndex;
-                return (
-                  <button
-                    key={size}
-                    type="button"
-                    aria-label={`Set font size to ${size}px`}
-                    aria-pressed={active}
-                    onClick={() => onPreferencesChange({ fontSizeIndex: index })}
-                    className={cn(
-                      "h-6 rounded-full border transition",
-                      active
-                        ? "border-primary bg-primary"
-                        : "border-border bg-muted hover:border-primary/50"
-                    )}
-                  />
-                );
-              })}
-            </div>
-          )}
         </section>
 
         <section className="mt-8 space-y-4">
@@ -409,7 +348,6 @@ export const BookReaderPreferencesPanel = ({
           These preferences are stored on your device.
         </p>
       </div>
-
     </Modal>
   );
 };
