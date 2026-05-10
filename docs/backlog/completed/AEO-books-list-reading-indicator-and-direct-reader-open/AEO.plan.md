@@ -1,9 +1,3 @@
----
-taskId: AEO
-createdAt: 2026-05-01T15:52:44+00:00
-updatedAt: 2026-05-01T16:04:56+00:00
----
-
 # Plan — Books list reading indicator and direct reader open
 
 ## Goal

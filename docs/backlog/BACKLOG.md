@@ -1,63 +1,66 @@
 # Backlog
 
+## Draft
+
+- [AAM: RBAC Advanced Features [aam]](./draft/AAM-rbac-advanced-features-aam/AAM.task.md)
+- [AAN: App-Specific Session Configuration [aan]](./draft/AAN-app-specific-session-configuration-aan/AAN.task.md)
+- [AAT: Support i18n](./draft/AAT-support-i18n/AAT.task.md)
+- [ABD: Optimize Database Documentation [abd]](./draft/ABD-optimize-database-documentation-abd/ABD.task.md)
+- [ABE: Optimize Theming Documentation [abe]](./draft/ABE-optimize-theming-documentation-abe/ABE.task.md)
+- [ABF: Optimize Route Groups Documentation [abf]](./draft/ABF-optimize-route-groups-documentation-abf/ABF.task.md)
+- [ABG: Optimize Feature Flags Documentation [abg]](./draft/ABG-optimize-feature-flags-documentation-abg/ABG.task.md)
+- [ABH: Optimize App Config Documentation [abh]](./draft/ABH-optimize-app-config-documentation-abh/ABH.task.md)
+- [ABK: Add Social Login: X [abk]](./draft/ABK-add-social-login-x-abk/ABK.task.md)
+- [ABL: Add Social Login: LinkedIn [abl]](./draft/ABL-add-social-login-linkedin-abl/ABL.task.md)
+- [ABN: Migrate to Prisma ORM](./draft/ABN-migrate-to-prisma-orm/ABN.task.md)
+- [ABX: Improve User Menu [abx]](./draft/ABX-improve-user-menu-abx/ABX.task.md)
+- [ACM: Parse Relative Urls [acm]](./draft/ACM-parse-relative-urls-acm/ACM.task.md)
+- [ACW: Document Getting Started with README Information](./draft/ACW-document-getting-started-with-readme-information/ACW.task.md)
+- [ADD: Implement CLI Scripts](./draft/ADD-implement-cli-scripts/ADD.task.md)
+- [ADN: Add config.match.fn [adn]](./draft/ADN-add-config-match-fn-adn/ADN.task.md)
+- [ADO: If config.auth Is Not Defined Return 404 on Login](./draft/ADO-if-config-auth-is-not-defined-return-404-on-login/ADO.task.md)
+- [ADP: Config.public.docs Should Be Enough to Enable Documents](./draft/ADP-config-public-docs-should-be-enough-to-enable-documents/ADP.task.md)
+- [ADR: RBAC Refactor Policies [adr]](./draft/ADR-rbac-refactor-policies-adr/ADR.task.md)
+- [ADS: RBAC SQL Functions](./draft/ADS-rbac-sql-functions/ADS.task.md)
+- [ADW: Client Policy Hook and Component [adw]](./draft/ADW-client-policy-hook-and-component-adw/ADW.task.md)
+- [AEA: Policy & RBAC Testing Strategy [aea]](./draft/AEA-policy-rbac-testing-strategy-aea/AEA.task.md)
+- [AEF: Design anyPolicy OR Helper [aef]](./draft/AEF-design-anypolicy-or-helper-aef/AEF.task.md)
+- [AEG: Unified Policy Engine Tests Implementation [aeg]](./draft/AEG-unified-policy-engine-tests-implementation-aeg/AEG.task.md)
+- [AEI: Extract Policy Utilities & Refactor Imports [aei]](./draft/AEI-extract-policy-utilities-refactor-imports-aei/AEI.task.md)
+- [AK87: HeroBlock: Optional Fields (Title, Subtitle, or Actions Only)](./draft/AK87-heroblock-optional-fields-title-subtitle-or-actions-only/AK87.task.md)
+- [AQC: Copy email from project's shared list [aqc]](./draft/AQC-copy-email-from-project-s-shared-list-aqc/AQC.task.md)
+- [AQD: Animate check item as slide-away to right [aqd]](./draft/AQD-animate-check-item-as-slide-away-to-right-aqd/AQD.task.md)
+- [AR08: Refactor 42go/auth/providers to Expose Single Provider Modules](./draft/AR08-refactor-42go-auth-providers-to-expose-single-provider-modules/AR08.task.md)
+- [BL01: Books Top-Bar Language and Level Switcher via GM77 Panel](./draft/BL01-books-top-bar-language-level-switcher-via-gm77-panel/BL01.task.md)
+- [FE78: HeroBlock: Icon Support](./draft/FE78-heroblock-icon-support/FE78.task.md)
+- [FN30: Remove Google Fonts Build Network Dependency](./draft/FN30-remove-google-fonts-build-network-dependency/FN30.task.md)
+- [GQ36: Add YouTube ContentBlock](./draft/GQ36-add-youtube-contentblock/GQ36.task.md)
+- [HO30: Codex Web Local E2E Sandbox](./draft/HO30-codex-web-local-e2e-sandbox/HO30.task.md)
+- [HX68: Dynamic Pages Layout [hx68]](./draft/HX68-dynamic-pages-layout-hx68/HX68.task.md)
+- [IK47: Add Social Login: Facebook](./draft/IK47-add-social-login-facebook/IK47.task.md)
+- [KO29: Automate next.config allowedDevOrigins](./draft/KO29-automate-next-config-allowed-dev-origins/KO29.task.md)
+- [NC71: HeroBlock: Add Alignment Option](./draft/NC71-heroblock-add-alignment-option/NC71.task.md)
+- [TK89: Docker Image Security Review](./draft/TK89-docker-image-security-review/TK89.task.md)
+- [TO37: Add Social Login: Apple](./draft/TO37-add-social-login-apple/TO37.task.md)
+- [TR02: Add Image ContentBlock](./draft/TR02-add-image-contentblock/TR02.task.md)
+
+## Refining
+
+
+## Refined
+
+- [ADB: Reject Invite [adb]](./refined/ADB-reject-invite-adb/ADB.task.md)
+- [AEM: Fix Docker build [aem]](./refined/AEM-fix-docker-build-aem/AEM.task.md)
+- [QL90: Split Bookshelf Into Reading and Alphabetical Catalog Sections](./refined/QL90-split-bookshelf-into-reading-and-alphabetical-catalog-sections/QL90.task.md)
+
+## Planned
+
+
 ## WIP
 
 
 ## Blocked
 
-- [UT41: ESLint 9 → 10](./wip/UT41-eslint-9-10/UT41.task.refined.md) | [plan](./wip/UT41-eslint-9-10/UT41.plan.md) | [notes](./wip/UT41-eslint-9-10/UT41.notes.md)
-
-## Ready Tasks
-
-- [CO54: Restore Draft-Centric Backlog Metadata and Lifecycle States](./ready/CO54-restore-draft-centric-backlog-metadata-and-lifecycle-states/CO54.task.refined.md) | [plan](./ready/CO54-restore-draft-centric-backlog-metadata-and-lifecycle-states/CO54.plan.md)
-
-## Drafts
-
-- [AAN: App-Specific Session Configuration [aan]](./drafts/AAN-app-specific-session-configuration-aan/AAN.task.draft.md)
-- [ABF: Optimize Route Groups Documentation [abf]](./drafts/ABF-optimize-route-groups-documentation-abf/ABF.task.draft.md)
-- [ABG: Optimize Feature Flags Documentation [abg]](./drafts/ABG-optimize-feature-flags-documentation-abg/ABG.task.draft.md)
-- [ABH: Optimize App Config Documentation [abh]](./drafts/ABH-optimize-app-config-documentation-abh/ABH.task.draft.md)
-- [ABK: Add Social Login: X [abk]](./drafts/ABK-add-social-login-x-abk/ABK.task.draft.md)
-- [ABL: Add Social Login: LinkedIn [abl]](./drafts/ABL-add-social-login-linkedin-abl/ABL.task.draft.md)
-- [ABN: Migrate to Prisma ORM](./drafts/ABN-migrate-to-prisma-orm/ABN.task.draft.md)
-- [ABX: Improve User Menu [abx]](./drafts/ABX-improve-user-menu-abx/ABX.task.draft.md)
-- [ACM: Parse Relative Urls [acm]](./drafts/ACM-parse-relative-urls-acm/ACM.task.draft.md)
-- [ACW: Document Getting Started with README Information](./drafts/ACW-document-getting-started-with-readme-information/ACW.task.draft.md)
-- [ADD: Implement CLI Scripts](./drafts/ADD-implement-cli-scripts/ADD.task.draft.md)
-- [ADN: Add config.match.fn [adn]](./drafts/ADN-add-config-match-fn-adn/ADN.task.draft.md)
-- [ADO: If config.auth Is Not Defined Return 404 on Login](./drafts/ADO-if-config-auth-is-not-defined-return-404-on-login/ADO.task.draft.md)
-- [ADP: Config.public.docs Should Be Enough to Enable Documents](./drafts/ADP-config-public-docs-should-be-enough-to-enable-documents/ADP.task.draft.md)
-- [ADR: RBAC Refactor Policies [adr]](./drafts/ADR-rbac-refactor-policies-adr/ADR.task.draft.md)
-- [ADS: RBAC SQL Functions](./drafts/ADS-rbac-sql-functions/ADS.task.draft.md)
-- [ADW: Client Policy Hook and Component [adw]](./drafts/ADW-client-policy-hook-and-component-adw/ADW.task.draft.md)
-- [AEA: Policy & RBAC Testing Strategy [aea]](./drafts/AEA-policy-rbac-testing-strategy-aea/AEA.task.draft.md)
-- [AEF: Design anyPolicy OR Helper [aef]](./drafts/AEF-design-anypolicy-or-helper-aef/AEF.task.draft.md)
-- [AEG: Unified Policy Engine Tests Implementation [aeg]](./drafts/AEG-unified-policy-engine-tests-implementation-aeg/AEG.task.draft.md)
-- [AEI: Extract Policy Utilities & Refactor Imports [aei]](./drafts/AEI-extract-policy-utilities-refactor-imports-aei/AEI.task.draft.md)
-- [AK87: HeroBlock: Optional Fields (Title, Subtitle, or Actions Only)](./drafts/AK87-heroblock-optional-fields-title-subtitle-or-actions-only/AK87.task.draft.md)
-- [AQC: Copy email from project's shared list [aqc]](./drafts/AQC-copy-email-from-project-s-shared-list-aqc/AQC.task.draft.md)
-- [AQD: Animate check item as slide-away to right [aqd]](./drafts/AQD-animate-check-item-as-slide-away-to-right-aqd/AQD.task.draft.md)
-- [AR08: Refactor 42go/auth/providers to Expose Single Provider Modules](./drafts/AR08-refactor-42go-auth-providers-to-expose-single-provider-modules/AR08.task.draft.md)
-- [BL01: Books Top-Bar Language and Level Switcher via GM77 Panel](./drafts/BL01-books-top-bar-language-level-switcher-via-gm77-panel/BL01.task.draft.md)
-- [FE78: HeroBlock: Icon Support](./drafts/FE78-heroblock-icon-support/FE78.task.draft.md)
-- [FN30: Remove Google Fonts Build Network Dependency](./drafts/FN30-remove-google-fonts-build-network-dependency/FN30.task.draft.md)
-- [GQ36: Add YouTube ContentBlock](./drafts/GQ36-add-youtube-contentblock/GQ36.task.draft.md)
-- [HO30: Codex Web Local E2E Sandbox](./drafts/HO30-codex-web-local-e2e-sandbox/HO30.task.draft.md)
-- [HX68: Dynamic Pages Layout [hx68]](./drafts/HX68-dynamic-pages-layout-hx68/HX68.task.draft.md)
-- [IK47: Add Social Login: Facebook](./drafts/IK47-add-social-login-facebook/IK47.task.draft.md)
-- [KO29: Automate next.config allowedDevOrigins](./drafts/KO29-automate-next-config-allowed-dev-origins/KO29.task.draft.md)
-- [NC71: HeroBlock: Add Alignment Option](./drafts/NC71-heroblock-add-alignment-option/NC71.task.draft.md)
-- [QL90: Split Bookshelf Into Reading and Alphabetical Catalog Sections](./drafts/QL90-split-bookshelf-into-reading-and-alphabetical-catalog-sections/QL90.task.refined.md)
-- [TK89: Docker Image Security Review](./drafts/TK89-docker-image-security-review/TK89.task.draft.md)
-- [TO37: Add Social Login: Apple](./drafts/TO37-add-social-login-apple/TO37.task.draft.md)
-- [TR02: Add Image ContentBlock](./drafts/TR02-add-image-contentblock/TR02.task.draft.md)
-- [AEM: Fix Docker build [aem]](./drafts/AEM-fix-docker-build-aem/AEM.task.refined.md)
-- [ADB: Reject Invite [adb]](./drafts/ADB-reject-invite-adb/ADB.task.refined.md)
-- [ADC: Add Tenants Table](./completed/ADC-add-tenants-table/ADC.task.refined.md)
-- [AAT: Support i18n](./drafts/AAT-support-i18n/AAT.task.draft.md)
-- [AAM: RBAC Advanced Features [aam]](./drafts/AAM-rbac-advanced-features-aam/AAM.task.draft.md)
-- [ABE: Optimize Theming Documentation [abe]](./drafts/ABE-optimize-theming-documentation-abe/ABE.task.draft.md)
-- [ABD: Optimize Database Documentation [abd]](./drafts/ABD-optimize-database-documentation-abd/ABD.task.draft.md)
 
 ## Historical Logs
 

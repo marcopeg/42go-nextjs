@@ -21,22 +21,34 @@ INLINE_STATUS_RE = re.compile(r"^\*\*Status\*\*:\s*(.+?)\s*$", re.IGNORECASE)
 
 STATE_DIRS = OrderedDict(
     [
+        ("draft", "draft"),
+        ("refining", "refining"),
+        ("refined", "refined"),
+        ("planned", "planned"),
         ("wip", "wip"),
         ("blocked", "blocked"),
-        ("ready", "ready"),
-        ("draft", "drafts"),
         ("completed", "completed"),
         ("archived", "archived"),
     ]
 )
 
+LEGACY_STATE_DIRS = OrderedDict(
+    [
+        ("draft", "drafts"),
+        ("planned", "ready"),
+    ]
+)
+
 ACTIVE_SECTION_ORDER = [
+    ("Draft", "draft"),
+    ("Refining", "refining"),
+    ("Refined", "refined"),
+    ("Planned", "planned"),
     ("WIP", "wip"),
     ("Blocked", "blocked"),
-    ("Ready Tasks", "ready"),
-    ("Drafts", "draft"),
 ]
-ACTIVE_STATES = {"wip", "blocked", "ready", "draft"}
+ACTIVE_STATES = {"draft", "refining", "refined", "planned", "wip", "blocked"}
+HISTORY_STATES = {"completed", "archived"}
 
 TASK_FRONTMATTER_ORDER = [
     "taskId",
@@ -67,6 +79,7 @@ STRUCTURAL_COMMIT_HINTS = (
 @dataclass
 class TaskRecord:
     state: str
+    folder_state: str
     folder: Path
     task_file: Path
     draft_task_file: Path | None
@@ -198,7 +211,10 @@ def write_markdown(path: Path, meta: dict[str, str], body: str, kind: str) -> No
     if kind == "question":
         order = QUESTION_FRONTMATTER_ORDER
     body = body.lstrip("\n")
-    path.write_text(dump_frontmatter(meta, order) + body)
+    if kind == "task":
+        path.write_text(dump_frontmatter(meta, order) + body)
+        return
+    path.write_text(body)
 
 
 def extract_title(body: str, fallback: str) -> str:
@@ -276,11 +292,11 @@ def is_task_artifact_file(path: Path) -> bool:
 
 
 def task_artifact_rank(path: Path) -> int:
-    if path.name.endswith(".task.refined.md"):
-        return 0
-    if path.name.endswith(".task.draft.md"):
-        return 1
     if path.name.endswith(".task.md"):
+        return 0
+    if path.name.endswith(".task.refined.md"):
+        return 1
+    if path.name.endswith(".task.draft.md"):
         return 2
     return 99
 
@@ -297,6 +313,36 @@ def task_artifact_by_suffix(folder: Path, suffix: str) -> Path | None:
     return matches[0] if matches else None
 
 
+def status_label(state: str) -> str:
+    if state == "wip":
+        return "WIP"
+    return state.capitalize()
+
+
+def status_index_filename(state: str) -> str:
+    return f"BACKLOG_{state.upper()}.md"
+
+
+def status_index_path(backlog_root: Path, state: str) -> Path:
+    return state_dir(backlog_root, state) / status_index_filename(state)
+
+
+def iter_state_directories(backlog_root: Path) -> list[tuple[str, Path]]:
+    entries: list[tuple[str, Path]] = []
+    seen: set[Path] = set()
+    for state, dirname in STATE_DIRS.items():
+        path = backlog_root / dirname
+        entries.append((state, path))
+        seen.add(path.resolve())
+    for state, dirname in LEGACY_STATE_DIRS.items():
+        path = backlog_root / dirname
+        if path.resolve() in seen:
+            continue
+        entries.append((state, path))
+        seen.add(path.resolve())
+    return entries
+
+
 def task_label(record: TaskRecord) -> str:
     return f"{record.task_id}: {record.title}"
 
@@ -310,8 +356,7 @@ def relative_link(from_dir: Path, target: Path) -> str:
 
 def discover_tasks(backlog_root: Path) -> list[TaskRecord]:
     tasks: list[TaskRecord] = []
-    for state, dirname in STATE_DIRS.items():
-        directory = backlog_root / dirname
+    for folder_state, directory in iter_state_directories(backlog_root):
         if not directory.exists():
             continue
         for folder in sorted(path for path in directory.iterdir() if path.is_dir()):
@@ -320,6 +365,12 @@ def discover_tasks(backlog_root: Path) -> list[TaskRecord]:
                 continue
             meta, body = read_markdown(task_file)
             task_id = str(meta.get("taskId") or strip_task_artifact_suffix(task_file.name))
+            if folder_state in HISTORY_STATES:
+                state = folder_state
+            else:
+                state = str(meta.get("status") or folder_state).strip()
+            if state not in STATE_DIRS:
+                state = folder_state
             title = extract_title(body, folder.name)
             draft_task_file = task_artifact_by_suffix(folder, ".task.draft.md")
             refined_task_file = task_artifact_by_suffix(folder, ".task.refined.md")
@@ -329,6 +380,7 @@ def discover_tasks(backlog_root: Path) -> list[TaskRecord]:
             tasks.append(
                 TaskRecord(
                     state=state,
+                    folder_state=folder_state,
                     folder=folder,
                     task_file=task_file,
                     draft_task_file=draft_task_file,
@@ -377,6 +429,8 @@ def resolve_task(backlog_root: Path, task_ref: str, states: set[str] | None = No
 
 
 def ensure_task_indexes(backlog_root: Path) -> None:
+    for state in ACTIVE_STATES:
+        state_dir(backlog_root, state).mkdir(parents=True, exist_ok=True)
     (backlog_root / "completed").mkdir(parents=True, exist_ok=True)
     (backlog_root / "archived").mkdir(parents=True, exist_ok=True)
 
@@ -444,6 +498,15 @@ def render_active_entry(record: TaskRecord, backlog_root: Path) -> str:
     return " | ".join(parts)
 
 
+def render_status_entry(record: TaskRecord, index_path: Path) -> str:
+    parts = [f"- [{task_label(record)}]({relative_link(index_path.parent, record.task_file)})"]
+    if record.plan_file:
+        parts.append(f"[plan]({relative_link(index_path.parent, record.plan_file)})")
+    if record.notes_file:
+        parts.append(f"[notes]({relative_link(index_path.parent, record.notes_file)})")
+    return " | ".join(parts)
+
+
 def artifact_label(path: Path) -> str:
     name = path.name
     if name.endswith(".md"):
@@ -494,6 +557,15 @@ def rebuild_active_index(backlog_root: Path) -> None:
         ]
     )
     backlog_path.write_text("\n".join(lines))
+
+    for _, state in ACTIVE_SECTION_ORDER:
+        index_path = status_index_path(backlog_root, state)
+        previous_order = parse_index_order(index_path)
+        status_lines = [f"# {status_label(state)}", ""]
+        for record in order_records(by_state[state], previous_order):
+            status_lines.append(render_status_entry(record, index_path))
+        status_lines.append("")
+        index_path.write_text("\n".join(status_lines))
 
 
 def append_history_entry(backlog_root: Path, state: str, record: TaskRecord) -> None:
@@ -568,21 +640,30 @@ def transition_task(
     record = resolve_task(backlog_root, task_ref)
     meta, body = read_markdown(record.task_file)
     meta = apply_task_meta_defaults(meta, record.task_id, to_state, timestamp)
-    if to_state == "wip":
+    if to_state == "refined":
+        meta["reviewedAt"] = meta.get("reviewedAt") or timestamp
+        meta.pop("reviewAfter", None)
+    elif to_state == "planned":
+        meta["plannedAt"] = meta.get("plannedAt") or timestamp
+        meta.pop("reviewAfter", None)
+    elif to_state == "wip":
         meta["startedAt"] = meta.get("startedAt") or timestamp
         meta.pop("reviewAfter", None)
     elif to_state == "blocked":
-        if not review_after:
-            raise ValueError("Blocked transitions require review_after")
-        meta["reviewAfter"] = review_after
+        if review_after:
+            meta["reviewAfter"] = review_after
     elif to_state == "completed":
         meta["completedAt"] = timestamp
         meta.pop("reviewAfter", None)
     elif to_state == "archived":
         meta.pop("reviewAfter", None)
+    elif to_state != "blocked":
+        meta.pop("reviewAfter", None)
 
     destination_folder = state_dir(backlog_root, to_state) / record.folder.name
     if destination_folder != record.folder:
+        if destination_folder.exists():
+            raise FileExistsError(f"Destination task folder already exists: {destination_folder}")
         destination_folder.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(record.folder), str(destination_folder))
         task_file = destination_folder / record.task_file.name

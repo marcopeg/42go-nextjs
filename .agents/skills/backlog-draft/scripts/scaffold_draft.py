@@ -12,12 +12,13 @@ SHARED = Path(__file__).resolve().parents[2] / "backlog-core" / "scripts"
 sys.path.insert(0, str(SHARED))
 
 from backlog_lib import (  # noqa: E402
-    draft_task_filename,
     normalize_task_id,
     now_iso,
     rebuild_active_index,
     relative_link,
     slugify,
+    state_dir,
+    task_filename,
     write_markdown,
 )
 from generate_task_id import build_pool, collect_used_ids  # noqa: E402
@@ -215,8 +216,8 @@ def main() -> int:
     task_id = resolve_task_id(backlog_root, args.task_id)
     timestamp = now_iso()
 
-    task_folder = backlog_root / "drafts" / f"{task_id}-{slugify(title)}"
-    draft_path = task_folder / draft_task_filename(task_id)
+    task_folder = state_dir(backlog_root, "draft") / f"{task_id}-{slugify(title)}"
+    task_path = task_folder / task_filename(task_id)
     if task_folder.exists():
         raise SystemExit(f"Task folder already exists: {task_folder}")
 
@@ -230,13 +231,13 @@ def main() -> int:
     if group:
         meta["group"] = group
 
-    write_markdown(draft_path, meta, render_body(title, data), "task")
+    write_markdown(task_path, meta, render_body(title, data), "task")
 
     if not args.skip_index:
         rebuild_active_index(backlog_root)
 
     backlog_path = backlog_root / "BACKLOG.md"
-    link_count = count_active_links(backlog_path, draft_path)
+    link_count = count_active_links(backlog_path, task_path)
     if not args.skip_index and link_count != 1:
         raise SystemExit(
             f"Expected exactly one active backlog link for {task_id}, found {link_count}."
@@ -247,10 +248,12 @@ def main() -> int:
         "title": title,
         "status": "draft",
         "taskFolder": str(task_folder),
-        "draftPath": str(draft_path),
-        "absoluteDraftPath": str(draft_path.resolve()),
+        "taskPath": str(task_path),
+        "absoluteTaskPath": str(task_path.resolve()),
+        "draftPath": str(task_path),
+        "absoluteDraftPath": str(task_path.resolve()),
         "backlogPath": str(backlog_path),
-        "backlogEntry": relative_link(backlog_path.parent, draft_path),
+        "backlogEntry": relative_link(backlog_path.parent, task_path),
         "createdAt": timestamp,
         "updatedAt": timestamp,
     }

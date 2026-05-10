@@ -1,113 +1,48 @@
 ---
 name: backlog-migrate
-description: Migrates current active backlog tasks to the draft/refined task filename structure.
+description: Migrates active docs/backlog tasks to canonical <taskid>.task.md files, status folders, and frontmatter-free sidecar artifacts.
 ---
 
 # Migrate Backlog
 
-Use `backlog-migrate` when a project already has folder-based backlog tasks but still stores active task definitions as `<taskid>.task.md`.
-
-This skill is for the structural migration to the draft/refined refinement workflow.
-
-Script support:
-
-- use the dedicated migration runner:
-  - `python3 scripts/migrate_backlog.py`
-- useful flags:
-  - `--backlog-root <path>` defaults to `docs/backlog`
-  - `--states draft ready blocked` controls which active states are migrated
-  - `--dry-run` prints intended actions without writing
-  - `--migration-timestamp <iso-timestamp>` makes the run deterministic
+Use `backlog-migrate` when a project has legacy active backlog tasks that use `.task.draft.md`, `.task.refined.md`, `drafts/`, or `ready/`.
 
 ## Target Model
 
-Backlog root:
+- Canonical task file: `<taskid>.task.md`
+- Task frontmatter lives only in the canonical task file.
+- Active statuses: `draft`, `refining`, `refined`, `planned`, `wip`, `blocked`
+- Each active status has its own folder under `docs/backlog/`.
+- Each active status folder has `BACKLOG_<STATUS>.md`.
+- Sidecar artifacts such as plan, notes, question, clarify, and refined files must not own frontmatter.
 
-- `docs/backlog`
-
-Active lifecycle folders:
-
-- drafts: `docs/backlog/drafts/<taskid>-<task-slug>/`
-- ready: `docs/backlog/ready/<taskid>-<task-slug>/`
-- blocked: `docs/backlog/blocked/<taskid>-<task-slug>/`
-
-Task definition files:
-
-- draft task file: `<taskid>.task.draft.md`
-- refined task file: `<taskid>.task.refined.md`
-- legacy task file, migrated away from active states: `<taskid>.task.md`
-
-Mapping rules (mandatory):
-
-- draft tasks with only `<taskid>.task.md` become `<taskid>.task.draft.md`
-- ready tasks with `<taskid>.task.md` become `<taskid>.task.refined.md`
-- blocked tasks with `<taskid>.task.md` become `<taskid>.task.refined.md`
-- ready or blocked tasks that already have `<taskid>.task.draft.md` but no refined file are promoted to `<taskid>.task.refined.md`
-- when a draft task already has `<taskid>.task.refined.md`, leave it as the active task file and preserve any draft file as historical input
-- keep plan files as `<taskid>.plan.md`
-- keep notes files as `<taskid>.notes.md`
-- keep question round files as `<taskid>.question.vN.md`
-- keep unrelated sidecar artifacts in the task folder
-
-Out-of-scope states (mandatory):
-
-- do not migrate completed tasks in this skill
-- do not migrate archived tasks in this skill
-- do not migrate wip tasks unless the operator explicitly extends this skill later
-- do not perform legacy flat backlog migration here
-
-Frontmatter rules (mandatory):
-
-- migrated task files use YAML frontmatter with:
-  - required fields: `taskId`, `status`, `createdAt`, `updatedAt`
-  - optional fields: `group`, `reviewedAt`, `plannedAt`, `startedAt`, `completedAt`, `reviewAfter`
-- preserve existing trustworthy frontmatter values
-- preserve `createdAt`
-- refresh `updatedAt` to the migration timestamp because the active task file is rewritten
-- set `status` to match the lifecycle folder:
-  - `draft` for files under `drafts/`
-  - `ready` for files under `ready/`
-  - `blocked` for files under `blocked/`
-- preserve `reviewAfter` only for blocked tasks
-- do not edit plan, notes, question, completed, or archived frontmatter during this migration
-
-BACKLOG rules (mandatory):
-
-- after migration, rebuild `docs/backlog/BACKLOG.md`
-- draft entries link to `<taskid>.task.draft.md` unless a refined task file exists
-- ready and blocked entries link to `<taskid>.task.refined.md`
-- preserve active section ordering as much as the shared index helper can infer from the previous backlog links
-- keep links to:
-  - `./archived/ARCHIVED.md`
-  - `./completed/COMPLETED.md`
-- each active task must appear in exactly one active section
-
-Safety rules (mandatory):
-
-- run `python3 scripts/migrate_backlog.py --dry-run` before writing unless the operator explicitly requested an immediate write
-- stop if the script reports an error
-- never modify `CHANGELOG.md`
-- do not delete task folders
-- do not drop sidecar files
-- do not invent missing task content
-- do not overwrite an existing refined or draft task file with a different legacy file
-
-Migration procedure:
+## Workflow
 
 1. Read `docs/backlog/BACKLOG.md`.
-2. Inventory task folders under `docs/backlog/drafts/`, `docs/backlog/ready/`, and `docs/backlog/blocked/`.
-3. Run the migration script in dry-run mode.
-4. If the dry run is coherent, run the migration script without `--dry-run`.
-5. Verify that:
-   - draft folders no longer rely on `<taskid>.task.md`
-   - ready folders link to `<taskid>.task.refined.md`
-   - blocked folders link to `<taskid>.task.refined.md`
-   - plan, notes, question, and sidecar files stayed in their folders
-   - `docs/backlog/BACKLOG.md` points to existing files
+2. Run dry-run:
 
-Expected output:
+```bash
+python3 .agents/skills/backlog-migrate/scripts/migrate_backlog.py --dry-run
+```
 
-- current draft task files use `.task.draft.md`
-- current ready and blocked task files use `.task.refined.md`
-- `docs/backlog/BACKLOG.md` links to the current active task artifact
-- no active ready or blocked task depends on legacy `.task.md`
+3. Inspect the JSON action report.
+4. If coherent, run:
+
+```bash
+python3 .agents/skills/backlog-migrate/scripts/migrate_backlog.py
+```
+
+5. The migration script runs `backlog-doctor` automatically after a write migration.
+6. Run `backlog-doctor --dry-run` afterward if you need an extra report.
+
+## Migration Rules
+
+- `.task.draft.md` becomes `<taskid>.task.md`.
+- Metadata from `.task.refined.md` wins over existing draft metadata because current skills wrote lifecycle metadata there.
+- Preserve custom task frontmatter by merging it into `<taskid>.task.md`.
+- Preserve user-authored artifact content.
+- Remove frontmatter from non-main artifacts after task metadata is centralized.
+- Call `backlog-doctor` at the end of write migrations so indexes and sidecar frontmatter are repaired from the canonical model.
+- Move task folders into the folder matching canonical `status`.
+- Do not migrate completed or archived history unless explicitly requested later.
+- Never modify `CHANGELOG.md`.

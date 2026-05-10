@@ -1,143 +1,69 @@
 ---
 name: backlog-draft
-description: Drafts new docs/backlog tasks from rough operator input or commands like draft task, new task, capture this, draft and refine, or create and refine; agents prepare structured sections, run the scaffold script, and report the generated AA11 TaskID plus draft path.
+description: Drafts new docs/backlog tasks from rough operator input; creates a canonical <taskid>.task.md under the draft status folder and updates backlog indexes.
 ---
 
 # Draft Task
 
-Create draft backlog tasks through the scaffold script first. The agent owns interpretation. Python owns deterministic files.
+Use `backlog-draft` when the operator asks to draft, capture, or create a backlog task.
+
+## Storage Model
+
+- Backlog root: `docs/backlog`
+- Draft status folder: `docs/backlog/draft/<taskid>-<task-slug>/`
+- Canonical task file: `<taskid>.task.md`
+- The canonical task file is the only task-level frontmatter owner.
+- New drafts start with `status: draft`.
+- Non-main artifacts must not own task frontmatter.
 
 ## Workflow
 
-1. Treat an explicit request to draft or capture a task as approval to create the draft.
-2. Do not ask for confirmation when the operator intent is clear.
-3. Ask a follow-up only when the task title or target work item is ambiguous enough that a draft would likely capture the wrong thing.
-4. Read `docs/backlog/BACKLOG.md`.
-5. Inspect concretely relevant task files and `.notes.md` files when prior work can improve the draft.
-6. Prepare structured task content from the operator input and lookup results.
-7. Run `.agents/skills/backlog-draft/scripts/scaffold_draft.py`.
-8. Verify the returned draft path exists and the task appears once in `docs/backlog/BACKLOG.md`.
-9. Report the created TaskID and draft path.
-10. If the operator did not already request refinement, ask exactly: `Do you want to start refinement now?`
-11. If the operator requested draft-and-refine, continue into `backlog-refine` after the scaffold succeeds.
-
-## Agent-Owned Work
-
-- Derive the clearest task title from the operator input.
-- Include `group` only when the operator provided it or it is explicit enough to infer safely.
-- Write clear operator-facing section content.
-- Preserve uncertainty, tradeoffs, and open-ended language.
-- Do not narrow the task beyond what the operator implied.
-- Do not hallucinate content to make the template look complete.
-- Populate `Related to` only with concretely relevant items, not loose keyword matches.
-- Do not create a plan file unless the operator explicitly supplied one and asked to store it.
-- Do not create a refined task file; refinement owns that.
-- Never modify `CHANGELOG.md`.
-
-## Script-Owned Work
-
-Use the scaffold script for deterministic creation:
+1. Treat a clear draft/capture request as approval to create the task.
+2. Read `docs/backlog/BACKLOG.md`.
+3. Inspect concretely relevant task files or notes when prior work can improve the draft.
+4. Prepare structured task content from the operator input.
+5. Run:
 
 ```bash
 python3 .agents/skills/backlog-draft/scripts/scaffold_draft.py --input /path/to/input.json
 ```
 
-The script owns:
+6. Verify the returned task path exists and appears once in `docs/backlog/BACKLOG.md`.
+7. Report the TaskID and task path.
+8. If the operator did not already request refinement, ask exactly: `Do you want to start refinement now?`
+
+## Agent-Owned Work
+
+- Derive the clearest task title.
+- Include `group` only when explicit or safe to infer.
+- Preserve uncertainty and open-ended language.
+- Populate `Related to` only with concretely relevant items.
+- Do not create plan, notes, question, or refined files during drafting.
+- Never modify `CHANGELOG.md`.
+
+## Script-Owned Work
+
+The scaffold script owns:
 
 - generating a free AA11-style TaskID
-- creating `docs/backlog/drafts/<taskid>-<task-slug>/`
-- writing `<taskid>.task.draft.md`
-- writing required draft frontmatter
+- creating `docs/backlog/draft/<taskid>-<task-slug>/`
+- writing `<taskid>.task.md`
+- writing required task frontmatter
 - writing every standard body section
-- filling omitted section content with `information is missing`
-- rebuilding `docs/backlog/BACKLOG.md`
-- verifying the draft is linked once in the active backlog
-- printing JSON with at least `taskId`, `taskFolder`, and `draftPath`
-
-Keep `generate_task_id.py` as the narrow ID helper. Use `scaffold_draft.py` for full draft creation.
+- filling missing section content with `information is missing`
+- rebuilding root and status-local backlog indexes
+- printing JSON with at least `taskId`, `taskFolder`, and `taskPath`
 
 ## Scaffold Input
 
-Pass JSON as an input file or stdin. Prefer an input file when section bodies are large.
+Use JSON with:
 
-Required:
+- `title` required
+- `group` optional
+- `sections` optional
 
-- `title`
-
-Optional:
-
-- `group`
-- `sections`
-
-The `sections` object may use the standard section names directly:
-
-```json
-{
-  "title": "Improve Backlog Draft Skill Scaffolding",
-  "group": "agents",
-  "sections": {
-    "Elevator's Pitch": "Short pitch.",
-    "Business Gain": "Business value.",
-    "Current State": "Current behavior.",
-    "Desired State": "Target behavior.",
-    "Definition of Success": "Success definition.",
-    "Additional Context": "Extra context.",
-    "Assumptions": "- Assumption one",
-    "Constraints": "- Constraint one",
-    "Acceptance Criteria": "- [ ] Criterion one",
-    "Dos": "- Do this",
-    "Don'ts": "- Don't do that",
-    "Open Questions": "- Question one",
-    "Related to": "information is missing"
-  }
-}
-```
-
-The script also accepts common aliases such as `pitch`, `businessValue`, `currentState`, `desiredState`, `acceptanceCriteria`, `dos`, `donts`, and `related`.
-
-## Required Sections
-
-The scaffold always writes:
-
-- `Elevator's Pitch`
-- `Business Gain`
-- `Current State`
-- `Desired State`
-- `Definition of Success`
-- `Additional Context`
-- `Assumptions`
-- `Constraints`
-- `Acceptance Criteria`
-- `Dos`
-- `Don'ts`
-- `Open Questions`
-- `Related to`
-
-If the operator did not cover a section, send no content for that section or send an empty value. The script will write exactly `information is missing`.
-
-## Scaffold Output
-
-Parse the JSON output. Use it for verification and final reporting.
-
-Expected fields include:
-
-- `taskId`
-- `title`
-- `status`
-- `taskFolder`
-- `draftPath`
-- `absoluteDraftPath`
-- `backlogPath`
-- `backlogEntry`
-- `createdAt`
-- `updatedAt`
+Section names are the standard task template headings. Common aliases such as `pitch`, `businessValue`, `currentState`, `desiredState`, `acceptanceCriteria`, and `related` are accepted by the script.
 
 ## Chaining
 
-`backlog-draft` may hand off directly to `backlog-refine` only after:
-
-- the draft file exists
-- `docs/backlog/BACKLOG.md` links to it
-- the scaffold output has been checked
-
-Pass the new TaskID and task folder path to `backlog-refine`. Do not rewrite `<taskid>.task.draft.md` during refinement.
+If the operator requested draft-and-refine, continue into `backlog-refine` only after the canonical task file exists and the backlog indexes link to it.

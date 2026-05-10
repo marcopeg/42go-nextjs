@@ -1,9 +1,3 @@
----
-taskId: AEO
-createdAt: 2026-05-01T16:04:56+00:00
-updatedAt: 2026-05-01T16:04:56+00:00
----
-
 # Execution Notes — Books list reading indicator and direct reader open
 **Task**: ./AEO.task.md
 **Plan**: ./AEO.plan.md

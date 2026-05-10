@@ -14,6 +14,9 @@ CAPROVER_APP ?= a42go-multi
 CAPROVER_APP := $(subst ",,$(CAPROVER_APP))
 CAPROVER_APP_TOKEN := $(subst ",,$(CAPROVER_APP_TOKEN))
 CAPROVER_IMAGE ?= $(IMAGE):$(VERSION)
+BACKLOG_DOCTOR_LOCAL := .agents/skills/backlog-doctor/scripts/doctor_backlog.py
+BACKLOG_DOCTOR_HOME := $(HOME)/.agents/skills/backlog-doctor/scripts/doctor_backlog.py
+BACKLOG_ROOT := $(CURDIR)/docs/backlog
 
 export CAPROVER_URL
 export CAPROVER_APP_TOKEN
@@ -61,6 +64,18 @@ app.start:
 
 app: app.install app.start
 qa: npm run qa
+
+doctor:
+	@if [ -f "$(BACKLOG_DOCTOR_LOCAL)" ]; then \
+		echo "Running local backlog doctor"; \
+		python3 "$(BACKLOG_DOCTOR_LOCAL)" --backlog-root "$(BACKLOG_ROOT)"; \
+	elif [ -f "$(BACKLOG_DOCTOR_HOME)" ]; then \
+		echo "Running home backlog doctor"; \
+		python3 "$(BACKLOG_DOCTOR_HOME)" --backlog-root "$(BACKLOG_ROOT)"; \
+	else \
+		echo "No backlog doctor script found in .agents or $$HOME/.agents"; \
+		exit 1; \
+	fi
 
 ngrok:
 	ngrok http --url=42go.ngrok.app 3000

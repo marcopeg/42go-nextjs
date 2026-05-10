@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     transition_parser.add_argument(
         "--to-state",
         required=True,
-        choices=["draft", "ready", "wip", "blocked", "completed", "archived"],
+        choices=["draft", "refining", "refined", "planned", "wip", "blocked", "completed", "archived"],
     )
     transition_parser.add_argument("--review-after")
     return parser.parse_args()

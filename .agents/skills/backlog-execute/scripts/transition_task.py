@@ -16,7 +16,11 @@ from backlog_lib import transition_task  # noqa: E402
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Transition a backlog task for backlog-execute.")
     parser.add_argument("task_id")
-    parser.add_argument("--to-state", required=True, choices=["draft", "ready", "wip", "blocked", "completed", "archived"])
+    parser.add_argument(
+        "--to-state",
+        required=True,
+        choices=["draft", "refining", "refined", "planned", "wip", "blocked", "completed", "archived"],
+    )
     parser.add_argument("--review-after")
     parser.add_argument("--backlog-root", default="docs/backlog")
     return parser.parse_args()
