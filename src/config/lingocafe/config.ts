@@ -9,7 +9,13 @@ export default {
   match: {
     url: ['^read.lingocafe.app+$', '^lc42go.ngrok.app+$'],
   },
-  features: ['page:books', 'api:lingocafe', 'api:profile'],
+  features: [
+    'page:books',
+    'page:users',
+    'api:lingocafe',
+    'api:profile',
+    'api:users',
+  ],
   theme: {
     default: 'system',
   },

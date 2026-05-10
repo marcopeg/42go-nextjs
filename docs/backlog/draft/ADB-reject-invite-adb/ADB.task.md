@@ -1,11 +1,10 @@
 ---
 taskId: ADB
-status: refined
+status: draft
 createdAt: 2026-04-23T15:27:45+02:00
-updatedAt: 2026-05-10T09:55:08+02:00
+updatedAt: 2026-05-10T16:33:19.483Z
 reviewedAt: 2026-05-10T09:55:08+02:00
 ---
-
 # Reject Invite [adb]
 
 Decline a project invite from the Projects page. No mercy for unwanted collaborations.

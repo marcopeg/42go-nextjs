@@ -43,6 +43,7 @@
 - [TK89: Docker Image Security Review](./draft/TK89-docker-image-security-review/TK89.task.md)
 - [TO37: Add Social Login: Apple](./draft/TO37-add-social-login-apple/TO37.task.md)
 - [TR02: Add Image ContentBlock](./draft/TR02-add-image-contentblock/TR02.task.md)
+- [ADB: Reject Invite [adb]](./draft/ADB-reject-invite-adb/ADB.task.md)
 
 ## Refining
 
@@ -50,7 +51,7 @@
 ## Refined
 
 - [AEM: Fix Docker build [aem]](./refined/AEM-fix-docker-build-aem/AEM.task.md)
-- [ADB: Reject Invite [adb]](./refined/ADB-reject-invite-adb/ADB.task.md)
+- [VI41: Design LingoCafe Events Analytics Export Skill](./refined/VI41-design-lingocafe-events-analytics-export-skill/VI41.task.md) | [plan](./refined/VI41-design-lingocafe-events-analytics-export-skill/VI41.plan.md)
 
 ## Planned
 

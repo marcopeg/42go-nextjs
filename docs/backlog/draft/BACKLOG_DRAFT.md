@@ -41,3 +41,4 @@
 - [TK89: Docker Image Security Review](./TK89-docker-image-security-review/TK89.task.md)
 - [TO37: Add Social Login: Apple](./TO37-add-social-login-apple/TO37.task.md)
 - [TR02: Add Image ContentBlock](./TR02-add-image-contentblock/TR02.task.md)
+- [ADB: Reject Invite [adb]](./ADB-reject-invite-adb/ADB.task.md)
