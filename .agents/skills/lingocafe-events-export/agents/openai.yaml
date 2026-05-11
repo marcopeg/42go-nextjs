@@ -1,0 +1,4 @@
+interface:
+  display_name: "LingoCafe Events Export"
+  short_description: "Download LingoCafe events into local CSV and Parquet batches."
+  default_prompt: "Export new LingoCafe events to the local analytics archive."

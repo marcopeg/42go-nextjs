@@ -162,20 +162,22 @@ prod.clean:
 	docker system prune -f
 	@echo "✅ Production artifacts cleaned"
 
-prod.init: migrate seed
+
 
 prod.app.stop:
 	docker compose -f docker-compose.prod.yml stop app
 	docker compose -f docker-compose.prod.yml rm -f app
 
-prod.app.rebuild: prod.app.stop prod.build.light prod.start prod.logs
-prod.app.restart: prod.app.stop prod.start prod.logs
+
 
 prod: prod.build.light prod.start prod.init
 	@echo "🎉 Production environment is ready!"
 	@echo "🌐 Access the application at: http://localhost:4000"
 	@echo "📋 View logs with: make prod.logs"
 
+prod.init: migrate seed
+prod.app.rebuild: prod.app.stop prod.build.light prod.start prod.logs
+prod.app.restart: prod.app.stop prod.start prod.logs
 
 
 ###
@@ -210,10 +212,6 @@ publish.universal:
 		--push \
 		.
 
-deploy: publish deploy.caprover
-
-deploy.nocache: publish.nocache deploy.caprover
-
 deploy.caprover:
 	@if [ -z "$$CAPROVER_URL" ]; then \
 		echo "CAPROVER_URL is required. Add it to .env or pass CAPROVER_URL=https://captain.example.com"; \
@@ -229,6 +227,9 @@ deploy.caprover:
 		--caproverApp "$(CAPROVER_APP)" \
 		--imageName "$(CAPROVER_IMAGE)" \
 		--appToken "$$CAPROVER_APP_TOKEN"
+
+deploy.nocache: publish.nocache deploy.caprover
+deploy: publish deploy.caprover
 
 
 

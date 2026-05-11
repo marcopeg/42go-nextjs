@@ -42,3 +42,4 @@
 - [KO29: Automate next.config allowedDevOrigins](./KO29-automate-next-config-allowed-dev-origins/KO29.task.md)
 - [TO37: Add Social Login: Apple](./TO37-add-social-login-apple/TO37.task.md)
 - [ADB: Reject Invite [adb]](./ADB-reject-invite-adb/ADB.task.md)
+- [WS58: Promote Events to Core App-Scoped Event System](./WS58-promote-events-to-core-app-scoped-event-system/WS58.task.md)

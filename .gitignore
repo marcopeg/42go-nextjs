@@ -56,6 +56,9 @@ pnpm-lock.yaml
 # HAL State
 /.hal
 
+# Local analytics exports
+/.local/lingocafe-analytics/
+
 # Database dumps
 /knex/dumps/*
 !/knex/dumps/.gitkeep
