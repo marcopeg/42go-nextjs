@@ -14,13 +14,14 @@ python3 -m venv .local/42go-events-analytics/.venv
 pip install -r .agents/skills/42go-events-export/requirements.txt
 ```
 
-Set the source database URL:
+Optionally set a dedicated source database URL:
 
 ```bash
 export EVENTS_DATABASE_URL="postgres://user:pass@host:5432/db"
 ```
 
-The env var name lives in `scripts/export_events.py` as the top-level constant `DATABASE_URL_ENV_VAR`.
+When `EVENTS_DATABASE_URL` is unset, the exporter falls back to `DATABASE_URL`.
+The env var names live in `scripts/export_events.py` as top-level constants.
 
 The archive root defaults to `.local/42go-events-analytics`. Override it with:
 

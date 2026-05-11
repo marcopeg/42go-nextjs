@@ -10,7 +10,7 @@ Use this skill to download new core `events.events` rows into the local analytic
 ## Rules
 
 - Treat PostgreSQL as read-only. Never delete, truncate, retain, or clean up source events in this skill.
-- Use `EVENTS_DATABASE_URL` for the source database.
+- Use `EVENTS_DATABASE_URL` for the source database; fall back to `DATABASE_URL` when unset.
 - Use `.local/42go-events-analytics` as the default archive root.
 - Write paired CSV and Parquet files from the same export batch.
 - Advance `events/state.json` only after both files are written and the Parquet file passes a smoke read.
@@ -30,7 +30,6 @@ pip install -r .agents/skills/42go-events-export/requirements.txt
 Export new events:
 
 ```bash
-EVENTS_DATABASE_URL="postgres://..." \
 python3 .agents/skills/42go-events-export/scripts/export_events.py
 ```
 

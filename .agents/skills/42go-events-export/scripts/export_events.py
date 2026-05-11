@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 DATABASE_URL_ENV_VAR = "EVENTS_DATABASE_URL"
+FALLBACK_DATABASE_URL_ENV_VAR = "DATABASE_URL"
 ARCHIVE_DIR_ENV_VAR = "EVENTS_ANALYTICS_DIR"
 DEFAULT_ARCHIVE_DIR = Path(".local/42go-events-analytics")
 DEFAULT_LIMIT = 10000
@@ -99,9 +100,16 @@ def load_dotenv_value(path: Path, key: str) -> str | None:
 
 
 def get_database_url() -> str:
-    value = os.environ.get(DATABASE_URL_ENV_VAR) or load_dotenv_value(Path(".env"), DATABASE_URL_ENV_VAR)
+    value = (
+        os.environ.get(DATABASE_URL_ENV_VAR)
+        or load_dotenv_value(Path(".env"), DATABASE_URL_ENV_VAR)
+        or os.environ.get(FALLBACK_DATABASE_URL_ENV_VAR)
+        or load_dotenv_value(Path(".env"), FALLBACK_DATABASE_URL_ENV_VAR)
+    )
     if not value:
-        raise SystemExit(f"{DATABASE_URL_ENV_VAR} is required.")
+        raise SystemExit(
+            f"{DATABASE_URL_ENV_VAR} or {FALLBACK_DATABASE_URL_ENV_VAR} is required."
+        )
     return value
 
 
