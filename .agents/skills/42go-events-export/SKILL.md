@@ -1,48 +1,49 @@
 ---
-name: lingocafe-events-export
-description: Download LingoCafe `lingocafe.events` rows from PostgreSQL into a repo-local analytics archive with paired CSV and Parquet batches. Use when Codex needs to export new LingoCafe events, inspect the event archive, run local event analytics smoke checks, or explain the Mac-local CSV/Parquet workflow.
+name: 42go-events-export
+description: Download core `events.events` rows from PostgreSQL into a repo-local analytics archive with paired CSV and Parquet batches. Use when Codex needs to export new 42go core events, inspect the event archive, run local event analytics smoke checks, or explain the Mac-local CSV/Parquet workflow.
 ---
 
-# LingoCafe Events Export
+# 42go Events Export
 
-Use this skill to download new `lingocafe.events` rows into the local analytics archive.
+Use this skill to download new core `events.events` rows into the local analytics archive.
 
 ## Rules
 
 - Treat PostgreSQL as read-only. Never delete, truncate, retain, or clean up source events in this skill.
-- Use `LC_EVENTS_DATABASE_URL` for the source database.
-- Use `.local/lingocafe-analytics` as the default archive root.
+- Use `EVENTS_DATABASE_URL` for the source database.
+- Use `.local/42go-events-analytics` as the default archive root.
 - Write paired CSV and Parquet files from the same export batch.
 - Advance `events/state.json` only after both files are written and the Parquet file passes a smoke read.
 - Use `created_at, id` as the export cursor. Use `event_at` for behavioral analytics.
+- Preserve `app_id` in every exported row.
 
 ## Public Commands
 
 Set up local Python dependencies:
 
 ```bash
-python3 -m venv .local/lingocafe-analytics/.venv
-. .local/lingocafe-analytics/.venv/bin/activate
-pip install -r .agents/skills/lingocafe-events-export/requirements.txt
+python3 -m venv .local/42go-events-analytics/.venv
+. .local/42go-events-analytics/.venv/bin/activate
+pip install -r .agents/skills/42go-events-export/requirements.txt
 ```
 
 Export new events:
 
 ```bash
-LC_EVENTS_DATABASE_URL="postgres://..." \
-python3 .agents/skills/lingocafe-events-export/scripts/export_events.py
+EVENTS_DATABASE_URL="postgres://..." \
+python3 .agents/skills/42go-events-export/scripts/export_events.py
 ```
 
 Run a weekly-active-users smoke query against local Parquet files:
 
 ```bash
-python3 .agents/skills/lingocafe-events-export/scripts/analyze_events.py wau
+python3 .agents/skills/42go-events-export/scripts/analyze_events.py wau
 ```
 
 ## Archive Layout
 
 ```text
-.local/lingocafe-analytics/
+.local/42go-events-analytics/
   events/
     csv/batch-YYYYMMDDTHHMMSSZ.csv
     parquet/batch-YYYYMMDDTHHMMSSZ.parquet

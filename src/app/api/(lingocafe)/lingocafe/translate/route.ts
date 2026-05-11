@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { recordEvent } from "@/42go/events/server";
 import { protectRoute } from "@/42go/policy";
 
 import {
@@ -9,6 +10,7 @@ import {
 import {
   TranslationProviderError,
   hasUserFeatureFlag,
+  type TranslationResult,
   translateText,
 } from "@/app/api/(lingocafe)/lingocafe/_lib/translation";
 
@@ -16,7 +18,39 @@ const translationPayloadSchema = z.object({
   text: z.string().trim().min(1).max(5000),
   from: z.string().trim().min(2).max(16),
   to: z.string().trim().min(2).max(16),
+  bookId: z.string().trim().min(1).max(256).optional(),
+  pageId: z.string().trim().min(1).max(256).optional(),
+  sentenceId: z.string().trim().min(1).max(256).optional(),
 });
+
+const recordTranslateEvent = async ({
+  userId,
+  translation,
+  context,
+}: {
+  userId: string;
+  translation: TranslationResult;
+  context: z.infer<typeof translationPayloadSchema>;
+}) => {
+  try {
+    await recordEvent({
+      appId: "lingocafe",
+      userId,
+      name: "page.translate",
+      data: {
+        cache_type: translation.source,
+        from: translation.from,
+        to: translation.to,
+        translation_hash: translation.hash,
+        ...(context.bookId ? { book_id: context.bookId } : {}),
+        ...(context.pageId ? { page_id: context.pageId } : {}),
+        ...(context.sentenceId ? { sentence_id: context.sentenceId } : {}),
+      },
+    });
+  } catch (error) {
+    console.error("LingoCafe translate event logging failed:", error);
+  }
+};
 
 const postTranslation = async (req: Request) => {
   const userId = await getSessionUserId();
@@ -58,9 +92,16 @@ const postTranslation = async (req: Request) => {
   }
 
   try {
+    const translation = await translateText(parsed.data);
+    await recordTranslateEvent({
+      userId,
+      translation,
+      context: parsed.data,
+    });
+
     return json({
       ok: true,
-      translation: await translateText(parsed.data),
+      translation,
     });
   } catch (error) {
     if (error instanceof TranslationProviderError) {

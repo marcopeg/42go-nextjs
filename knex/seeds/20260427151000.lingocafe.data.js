@@ -12,9 +12,9 @@ exports.seed = async function seed(knex) {
 
     if (staleLingocafeUserIds.length > 0) {
       await trx
-        .withSchema("lingocafe")
+        .withSchema("events")
         .from("events")
-        .whereIn("user_id", staleLingocafeUserIds)
+        .where({ app_id: "lingocafe" })
         .del();
       await trx
         .withSchema("lingocafe")

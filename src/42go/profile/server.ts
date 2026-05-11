@@ -3,6 +3,7 @@ import "server-only";
 import type { Knex } from "knex";
 
 import { getDB } from "@/42go/db";
+import { recordEvent } from "@/42go/events/server";
 import { normalizeConsentData } from "@/42go/profile/consent";
 import type {
   TConsentData,
@@ -84,6 +85,72 @@ const toLoadResult = (
   };
 };
 
+const stableValue = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(stableValue);
+  if (!value || typeof value !== "object") return value ?? null;
+
+  const source = value as Record<string, unknown>;
+  return Object.keys(source)
+    .sort()
+    .reduce<Record<string, unknown>>((acc, key) => {
+      acc[key] = stableValue(source[key]);
+      return acc;
+    }, {});
+};
+
+const isDifferent = (before: unknown, after: unknown) =>
+  JSON.stringify(stableValue(before)) !== JSON.stringify(stableValue(after));
+
+const recordProfileLifecycleEvents = async ({
+  userId,
+  appId,
+  before,
+  after,
+  db,
+}: {
+  userId: string;
+  appId: string;
+  before: TProfileLoadResult;
+  after: TProfileLoadResult;
+  db: Knex.Transaction;
+}) => {
+  if (!before.profile && after.profile) {
+    await recordEvent({
+      appId,
+      userId,
+      name: "user.profile.created",
+      data: { prev: null, next: after.profile },
+      db,
+    });
+  } else if (isDifferent(before.profile, after.profile)) {
+    await recordEvent({
+      appId,
+      userId,
+      name: "user.profile.updated",
+      data: { prev: before.profile, next: after.profile },
+      db,
+    });
+  }
+
+  if (!before.consent && after.consent) {
+    await recordEvent({
+      appId,
+      userId,
+      name: "user.consent.created",
+      data: { prev: null, next: after.consent },
+      db,
+    });
+  } else if (isDifferent(before.consent, after.consent)) {
+    await recordEvent({
+      appId,
+      userId,
+      name: "user.consent.updated",
+      data: { prev: before.consent, next: after.consent },
+      db,
+    });
+  }
+};
+
 export const loadProfile = async ({
   userId,
   config,
@@ -128,6 +195,7 @@ export const saveProfile = async ({
     await trx("auth.users").where({ id: userId }).update(updateValues);
 
     const after = toLoadResult(await loadRawUserProfile(trx, userId), config);
+    await recordProfileLifecycleEvents({ userId, appId, before, after, db: trx });
     await hooks?.onSaved?.({ userId, appId, before, after, db: trx });
 
     return after;

@@ -4,6 +4,7 @@ import type { Knex } from "knex";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { getAppID } from "@/42go/config/app-config";
 import { getDB } from "@/42go/db";
+import { recordEvent } from "@/42go/events/server";
 import { loadProfile } from "@/42go/profile/server";
 import type { TProfileLoadResult } from "@/42go/profile";
 import { getAppConfig } from "@/42go/config/app-config";
@@ -663,13 +664,16 @@ export const trackReaderEvent = async ({
   meta?: Record<string, unknown>;
   db?: Knex | Knex.Transaction;
 }) => {
-  await db.raw("SELECT lingocafe.events_prepare_partitions()");
-  await db("lingocafe.events").insert({
-    user_id: userId,
-    name,
-    book_id: bookId ?? null,
-    page_id: pageId,
-    data,
+  await recordEvent({
+    appId: "lingocafe",
+    userId,
+    name: name.replace(/^lingocafe\./, ""),
+    data: {
+      ...(bookId ? { book_id: bookId } : {}),
+      ...(pageId ? { page_id: pageId } : {}),
+      ...data,
+    },
     meta,
+    db,
   });
 };

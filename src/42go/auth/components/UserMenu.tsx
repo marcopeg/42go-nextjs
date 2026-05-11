@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useAppConfig } from "@/42go/config/use-app-config";
+import { configureEventTracker, flushEvents, trackEvent } from "@/42go/events/client";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -34,8 +35,11 @@ export function UserMenu() {
     );
   }
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     const callbackUrl = appConfig?.auth?.logout?.url || "/";
+    configureEventTracker(appConfig?.app?.events);
+    trackEvent("user.logout");
+    await flushEvents({ keepalive: true });
     signOut({ callbackUrl });
   };
 

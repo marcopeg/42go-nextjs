@@ -10,6 +10,7 @@ import type { TAppConfigMatch } from "@/42go/lib/app-id/matchers";
 import type { TAppIconsConfig } from "@/42go/icons";
 import type { TProfileConfig } from "@/42go/components/ProfileBlock";
 import type { TConsentConfig } from "@/42go/profile";
+import type { TEventsConfig } from "@/42go/events";
 
 // Import different apps
 import DefaultApp from "./config/default/config";
@@ -86,6 +87,13 @@ export interface TAppConfigItem {
      * Consent blocks must still be explicitly listed in `profile.items`.
      */
     consent?: TConsentConfig;
+    /**
+     * Core app-scoped event collection settings.
+     *
+     * Client collection is disabled unless `enabled` is true and the app also
+     * exposes the `api:events` feature.
+     */
+    events?: TEventsConfig;
     menu?: {
       /**
        * Controls where the desktop sidebar collapse button appears.

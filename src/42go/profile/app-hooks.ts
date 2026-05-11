@@ -3,14 +3,8 @@ import "server-only";
 import type { TProfileSaveHooks } from "@/42go/profile";
 
 export const getProfileSaveHooks = async (
-  appId: string
+  _appId: string
 ): Promise<TProfileSaveHooks | undefined> => {
-  if (appId === "lingocafe") {
-    const { lingoCafeProfileHooks } = await import(
-      "@/config/lingocafe/profile-hooks"
-    );
-    return lingoCafeProfileHooks;
-  }
-
+  void _appId;
   return undefined;
 };

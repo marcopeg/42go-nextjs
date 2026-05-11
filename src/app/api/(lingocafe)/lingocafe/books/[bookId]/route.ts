@@ -37,7 +37,7 @@ const getBookInfo = async (
 
   await trackReaderEvent({
     userId,
-    name: "book-info",
+    name: "book.info",
     bookId: book.id,
   });
 

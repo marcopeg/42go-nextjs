@@ -11,6 +11,7 @@ import {
 } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 
+import { useEventTracker } from "@/42go/events/use-events";
 import type { ReaderBookPage } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 import {
   readCachedReaderTranslation,
@@ -469,6 +470,7 @@ export const BookPageReader = ({
   bookPage,
   preferences,
 }: BookPageReaderProps) => {
+  const { trackEvent } = useEventTracker();
   const font = getReaderFont(preferences);
   const fontSize = getReaderFontSize(preferences);
   const titleSize = Math.round(fontSize * 1.7);
@@ -518,12 +520,24 @@ export const BookPageReader = ({
       text: translationState.text,
       from: bookPage.translation.from,
       to: bookPage.translation.to,
+      bookId: bookPage.page.bookId,
+      pageId: bookPage.page.pageId,
+      sentenceId: translationState.id,
     };
 
     const loadTranslation = async () => {
       try {
         const cached = await readCachedReaderTranslation(input);
         if (cached) {
+          trackEvent("page.translate", {
+            cache_type: cached.source,
+            from: cached.from,
+            to: cached.to,
+            translation_hash: cached.hash,
+            book_id: bookPage.page.bookId,
+            page_id: bookPage.page.pageId,
+            sentence_id: translationState.id,
+          });
           setTranslationState((current) =>
             current?.id === translationState.id
               ? {
@@ -599,6 +613,9 @@ export const BookPageReader = ({
   }, [
     bookPage.translation.from,
     bookPage.translation.to,
+    bookPage.page.bookId,
+    bookPage.page.pageId,
+    trackEvent,
     translationEnabled,
     translationState,
   ]);

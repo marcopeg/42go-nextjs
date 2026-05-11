@@ -57,6 +57,7 @@ pnpm-lock.yaml
 /.hal
 
 # Local analytics exports
+/.local/42go-events-analytics/
 /.local/lingocafe-analytics/
 
 # Database dumps

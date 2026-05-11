@@ -58,18 +58,24 @@ const isSystemSchema = (schema) =>
   schema.startsWith("pg_toast_temp_");
 
 const isBaseLightExclusion = (table) => {
+  if (table.schema === "events") {
+    return table.name === "events" || table.name.startsWith("events_");
+  }
+
   if (table.schema !== "lingocafe") {
     return false;
   }
 
   return (
-    table.name === "events" ||
-    table.name.startsWith("events_") ||
     table.name === "translation_cache" ||
     table.name === "books" ||
     table.name === "books_pages"
   );
 };
+
+const isObsoleteLingocafeEventsTable = (table) =>
+  table.schema === "lingocafe" &&
+  (table.name === "events" || table.name.startsWith("events_"));
 
 const isNonMigrationBackedTable = (table) =>
   table.schema === "notes" && /^notes_\d+$/.test(table.name);
@@ -105,13 +111,13 @@ const getMonthBounds = (yearMonth) => {
 const renderEventPartitionStatements = (yearMonths) =>
   [...new Set(yearMonths)].sort().map((yearMonth) => {
     const { partitionName, startDate, endDate } = getMonthBounds(yearMonth);
-    return `CREATE TABLE IF NOT EXISTS ${quoteIdent("lingocafe")}.${quoteIdent(partitionName)} PARTITION OF ${quoteIdent("lingocafe")}.${quoteIdent("events")} FOR VALUES FROM ('${startDate} 00:00:00+00') TO ('${endDate} 00:00:00+00');`;
+    return `CREATE TABLE IF NOT EXISTS ${quoteIdent("events")}.${quoteIdent(partitionName)} PARTITION OF ${quoteIdent("events")}.${quoteIdent("events")} FOR VALUES FROM ('${startDate} 00:00:00+00') TO ('${endDate} 00:00:00+00');`;
   });
 
 const getEventPartitionMonthsFromDump = (content) => {
   const yearMonths = new Set();
   const eventInsertPattern =
-    /^INSERT INTO "lingocafe"\."events" \("created_at",.*?\) VALUES \('(\d{4})-(\d{2})-/gm;
+    /^INSERT INTO "events"\."events" \("created_at",.*?\) VALUES \('(\d{4})-(\d{2})-/gm;
   let match = eventInsertPattern.exec(content);
 
   while (match) {
@@ -220,6 +226,9 @@ const selectTables = ({ tables, foreignKeys }, mode) => {
     if (table.schema === "public" && KNEX_TABLES.has(table.name)) {
       excluded.add(table.oid);
       exclusionReasons.set(key, "knex migration metadata");
+    } else if (isObsoleteLingocafeEventsTable(table)) {
+      excluded.add(table.oid);
+      exclusionReasons.set(key, "obsolete LingoCafe event table");
     } else if (isNonMigrationBackedTable(table)) {
       excluded.add(table.oid);
       exclusionReasons.set(key, "not created by migrations");
@@ -330,7 +339,7 @@ const buildInsertStatements = async (client, table) => {
 const renderDump = async ({ client, mode, orderedTables, excluded }) => {
   const generatedAt = new Date().toISOString();
   const eventsTable = orderedTables.find(
-    (table) => table.schema === "lingocafe" && table.name === "events",
+    (table) => table.schema === "events" && table.name === "events",
   );
   const eventPartitionStatements = [];
   if (eventsTable) {

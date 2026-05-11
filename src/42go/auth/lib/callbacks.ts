@@ -3,6 +3,7 @@ import { getDB } from "@/42go/db";
 import { getUserGrants, getUserRoles } from "@/42go/policy/access";
 import { getAppID } from "@/42go/config/app-config";
 import { apps } from "@/AppConfig";
+import { recordEvent } from "@/42go/events/server";
 
 const FALLBACK_APP_ID = "default";
 
@@ -23,6 +24,31 @@ const resolveRbacAppId = async (
   return FALLBACK_APP_ID;
 };
 
+const recordAuthEvent = async ({
+  appId,
+  userId,
+  name,
+  method,
+}: {
+  appId: string;
+  userId?: string | null;
+  name: "user.login" | "user.signup";
+  method: string;
+}) => {
+  if (!userId) return;
+
+  try {
+    await recordEvent({
+      appId,
+      userId,
+      name,
+      data: { method },
+    });
+  } catch (error) {
+    console.error(`Auth event logging failed for ${name}:`, error);
+  }
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const signIn = async ({ user, account }: any) => {
   // ProviderID will store the tokens as unique tokens per app/user
@@ -32,6 +58,7 @@ export const signIn = async ({ user, account }: any) => {
   if (account?.provider === "github" || account?.provider === "google") {
     try {
       const db = getDB();
+      let isSignup = false;
       const existingUser = await db("auth.users")
         .where("app_id", appID)
         .andWhere("email", user.email!)
@@ -94,6 +121,7 @@ export const signIn = async ({ user, account }: any) => {
         user.id = existingUser.id;
         if (appID) user.appId = appID;
       } else {
+        isSignup = true;
         // const newUserId = `${account.provider}_${account.providerAccountId}`;
         const newUserId = uuidv4();
 
@@ -129,12 +157,35 @@ export const signIn = async ({ user, account }: any) => {
         if (appID) user.appId = appID;
       }
 
+      if (isSignup) {
+        await recordAuthEvent({
+          appId: user.appId || appID || FALLBACK_APP_ID,
+          userId: user.id,
+          name: "user.signup",
+          method: account.provider,
+        });
+      }
+
+      await recordAuthEvent({
+        appId: user.appId || appID || FALLBACK_APP_ID,
+        userId: user.id,
+        name: "user.login",
+        method: account.provider,
+      });
+
       return true;
     } catch (error) {
       console.error(`${account?.provider} OAuth sign-in error:`, error);
       return false;
     }
   }
+
+  await recordAuthEvent({
+    appId: user?.appId || appID || FALLBACK_APP_ID,
+    userId: user?.id,
+    name: "user.login",
+    method: account?.provider || "credentials",
+  });
 
   return true;
 };

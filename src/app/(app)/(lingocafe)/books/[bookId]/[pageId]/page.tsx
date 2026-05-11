@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 
 import { Modal } from "@/42go/components/modal";
 import { useTheme } from "@/42go/config/ThemeProvider";
+import { useEventTracker } from "@/42go/events/use-events";
 import { AppLayout } from "@/42go/layouts/app";
 import type { Policy } from "@/42go/policy/types";
 import {
@@ -51,6 +52,14 @@ const BOOK_READER_PAGE_POLICY: Policy = {
 };
 
 type ReaderSurfaceKey = "desktop" | "mobile";
+type ReaderPreferenceKey = keyof ReaderPreferences;
+
+const READER_SETTING_KEYS: ReaderPreferenceKey[] = [
+  "fontSizeIndex",
+  "fontFamilyKey",
+  "backgroundKey",
+  "foregroundKey",
+];
 
 const clampProgressBps = (value: number) =>
   Math.min(10000, Math.max(0, Math.round(value)));
@@ -295,6 +304,7 @@ const BookReadPage = () => {
   const searchParams = useSearchParams();
   const { status } = useSession();
   const { resolvedTheme, theme } = useTheme();
+  const { trackEvent } = useEventTracker();
   const bookId = parseParam(params?.bookId);
   const pageId = parseParam(params?.pageId);
   const urlProgressBps = useMemo(
@@ -353,6 +363,7 @@ const BookReadPage = () => {
   const apiHref = readerRoute?.apiHref || "";
   const bookshelfHref = "/books";
   const activeBookId = bookPage?.book.id || readerRoute?.bookId || bookId;
+  const activePageId = bookPage?.page.pageId || readerRoute?.pageId || pageId;
   const bookInfoHref = activeBookId
     ? `/books/${encodeURIComponent(activeBookId)}`
     : bookshelfHref;
@@ -380,7 +391,24 @@ const BookReadPage = () => {
     [readerRoute?.href, router]
   );
 
+  const getReaderSettingsEventData = () => ({
+    ...(activeBookId ? { book_id: activeBookId } : {}),
+    ...(activePageId ? { page_id: activePageId } : {}),
+    theme_profile: activeReaderThemeProfile,
+    theme_mode: readerThemeMode,
+  });
+
+  const getChangedReaderPreferenceKeys = (
+    next: Partial<ReaderPreferences>
+  ): ReaderPreferenceKey[] =>
+    (Object.keys(next) as ReaderPreferenceKey[]).filter(
+      (key) => readerPreferences[key] !== next[key]
+    );
+
   const openPreferences = () => {
+    if (!isPreferencesOpen) {
+      trackEvent("read.settings.opened", getReaderSettingsEventData());
+    }
     setIsPreferencesOpen(true);
   };
 
@@ -401,6 +429,23 @@ const BookReadPage = () => {
   }, [readerPreferencesStore]);
 
   const updateReaderPreferences = (next: Partial<ReaderPreferences>) => {
+    const changedKeys = getChangedReaderPreferenceKeys(next);
+    if (changedKeys.length > 0) {
+      const nextValues = changedKeys.reduce<Record<string, unknown>>(
+        (acc, key) => {
+          acc[key] = next[key];
+          return acc;
+        },
+        {}
+      );
+      trackEvent("read.settings.changed", {
+        ...getReaderSettingsEventData(),
+        action: "update",
+        changed_fields: changedKeys,
+        next_values: nextValues,
+      });
+    }
+
     setReaderPreferencesStore((current) => {
       const nextStore: ReaderPreferencesStore = {
         ...current,
@@ -420,6 +465,12 @@ const BookReadPage = () => {
     });
   };
   const resetReaderPreferences = () => {
+    trackEvent("read.settings.changed", {
+      ...getReaderSettingsEventData(),
+      action: "reset",
+      changed_fields: READER_SETTING_KEYS,
+    });
+
     setReaderPreferencesStore((current) => {
       const next = { ...current };
       delete next[activeReaderThemeProfile];

@@ -27,13 +27,14 @@ make restore from=20260509T161705Z.dump.light.sql
 
 - `DATABASE_URL` is the source database for backup and the target database for restore.
 - `mode=full` dumps data for application tables in every non-system schema, excluding Knex migration bookkeeping tables.
-- `mode=light` skips `lingocafe.events*`, `lingocafe.translation_cache`, `lingocafe.books`, `lingocafe.books_pages`, and any selected table that cannot be restored without excluded parent data.
+- `mode=light` skips `events.events*`, `lingocafe.translation_cache`, `lingocafe.books`, `lingocafe.books_pages`, and any selected table that cannot be restored without excluded parent data.
+- Both modes skip obsolete `lingocafe.events*` tables when they still exist in older databases. Core events live under `events.events`.
 - Both modes skip dynamic `notes.notes_*` bucket tables because migrations do not create those tables, so data-only SQL cannot restore them into a migration-only database.
 - Restore also strips dynamic `notes.notes_*` entries from older dumps before running `psql`.
 - Dump files are written to `knex/dumps/{utc-timestamp}.dump.{mode}.sql`.
 - Dump files are SQL text files and contain data only. They do not contain schema DDL, ownership, grants, or migration metadata rows.
 - The generated SQL includes the restore instructions: transaction wrapper, dependency-safe truncate statement, and dependency-ordered inserts.
-- Full dumps with `lingocafe.events` data also include partition creation statements for event months present in the dump, because migrations only prepare a rolling set of event partitions.
+- Full dumps with `events.events` data also include partition creation statements for event months present in the dump, because migrations only prepare a rolling set of event partitions.
 - Migrations must be run manually before restore. Do not run migrations automatically in this skill.
 - `make restore from=...` only executes the selected dump against `DATABASE_URL`.
 - Restore accepts either an explicit readable path or a bare dump filename. Bare filenames are resolved from `knex/dumps/`.

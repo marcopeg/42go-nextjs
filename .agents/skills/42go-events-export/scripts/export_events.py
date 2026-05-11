@@ -11,18 +11,17 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-DATABASE_URL_ENV_VAR = "LC_EVENTS_DATABASE_URL"
-ARCHIVE_DIR_ENV_VAR = "LC_EVENTS_ANALYTICS_DIR"
-DEFAULT_ARCHIVE_DIR = Path(".local/lingocafe-analytics")
+DATABASE_URL_ENV_VAR = "EVENTS_DATABASE_URL"
+ARCHIVE_DIR_ENV_VAR = "EVENTS_ANALYTICS_DIR"
+DEFAULT_ARCHIVE_DIR = Path(".local/42go-events-analytics")
 DEFAULT_LIMIT = 10000
 EVENT_COLUMNS = [
     "created_at",
     "id",
+    "app_id",
     "user_id",
     "event_at",
     "name",
-    "book_id",
-    "page_id",
     "data",
     "meta",
 ]
@@ -55,7 +54,7 @@ def iso_utc(value: datetime) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Download new lingocafe.events rows into paired CSV and Parquet batches."
+        description="Download new events.events rows into paired CSV and Parquet batches."
     )
     parser.add_argument(
         "--archive-dir",
@@ -76,6 +75,10 @@ def parse_args() -> argparse.Namespace:
         "--dry-run",
         action="store_true",
         help="Fetch and report the next batch without writing files or advancing state.",
+    )
+    parser.add_argument(
+        "--app-id",
+        help="Optional app_id filter. Use a separate archive directory when exporting one app at a time.",
     )
     return parser.parse_args()
 
@@ -144,11 +147,10 @@ def normalize_row(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "created_at": row["created_at"].astimezone(UTC),
         "id": str(row["id"]),
+        "app_id": row["app_id"],
         "user_id": row["user_id"],
         "event_at": row["event_at"].astimezone(UTC),
         "name": row["name"],
-        "book_id": row["book_id"],
-        "page_id": row["page_id"],
         "data": json_payload(row["data"]),
         "meta": json_payload(row["meta"]),
     }
@@ -168,7 +170,7 @@ def import_psycopg():
     except ImportError as error:
         raise SystemExit(
             "Missing PostgreSQL dependency. Run: "
-            "pip install -r .agents/skills/lingocafe-events-export/requirements.txt"
+            "pip install -r .agents/skills/42go-events-export/requirements.txt"
         ) from error
     return psycopg, dict_row
 
@@ -180,7 +182,7 @@ def import_pyarrow():
     except ImportError as error:
         raise SystemExit(
             "Missing Parquet dependency. Run: "
-            "pip install -r .agents/skills/lingocafe-events-export/requirements.txt"
+            "pip install -r .agents/skills/42go-events-export/requirements.txt"
         ) from error
     return pa, pq
 
@@ -191,7 +193,7 @@ def import_duckdb():
     except ImportError as error:
         raise SystemExit(
             "Missing DuckDB dependency. Run: "
-            "pip install -r .agents/skills/lingocafe-events-export/requirements.txt"
+            "pip install -r .agents/skills/42go-events-export/requirements.txt"
         ) from error
     return duckdb
 
@@ -201,7 +203,12 @@ def load_cursor(paths: Paths) -> tuple[str | None, str | None]:
     return state.get("last_created_at"), state.get("last_id")
 
 
-def fetch_rows(database_url: str, cursor: tuple[str | None, str | None], limit: int) -> list[dict[str, Any]]:
+def fetch_rows(
+    database_url: str,
+    cursor: tuple[str | None, str | None],
+    limit: int,
+    app_id: str | None = None,
+) -> list[dict[str, Any]]:
     if limit <= 0:
         raise SystemExit("--limit must be greater than zero.")
 
@@ -211,19 +218,24 @@ def fetch_rows(database_url: str, cursor: tuple[str | None, str | None], limit: 
         SELECT
           created_at,
           id::text AS id,
+          app_id,
           user_id,
           event_at,
           name,
-          book_id,
-          page_id,
           data,
           meta
-        FROM lingocafe.events
+        FROM events.events
     """
     params: list[Any] = []
+    where: list[str] = []
+    if app_id:
+        where.append("app_id = %s")
+        params.append(app_id)
     if last_created_at and last_id:
-        base_sql += " WHERE (created_at, id) > (%s::timestamptz, %s::uuid)"
+        where.append("(created_at, id) > (%s::timestamptz, %s::uuid)")
         params.extend([last_created_at, last_id])
+    if where:
+        base_sql += " WHERE " + " AND ".join(where)
     base_sql += " ORDER BY created_at ASC, id ASC LIMIT %s"
     params.append(limit)
 
@@ -274,11 +286,10 @@ def write_parquet_batch(path: Path, rows: list[dict[str, Any]]) -> None:
         [
             ("created_at", pa.timestamp("us", tz="UTC")),
             ("id", pa.string()),
+            ("app_id", pa.string()),
             ("user_id", pa.string()),
             ("event_at", pa.timestamp("us", tz="UTC")),
             ("name", pa.string()),
-            ("book_id", pa.string()),
-            ("page_id", pa.string()),
             ("data", pa.string()),
             ("meta", pa.string()),
         ]
@@ -352,7 +363,7 @@ def export_events(args: argparse.Namespace) -> int:
     ensure_dirs(paths)
     database_url = get_database_url()
     cursor = load_cursor(paths)
-    raw_rows = fetch_rows(database_url, cursor, args.limit)
+    raw_rows = fetch_rows(database_url, cursor, args.limit, args.app_id)
 
     if not raw_rows:
         print("No new events to export.")
@@ -366,6 +377,7 @@ def export_events(args: argparse.Namespace) -> int:
             json.dumps(
                 {
                     "rows": len(rows),
+                    "app_id": args.app_id,
                     "last_created_at": iso_utc(last["created_at"]),
                     "last_id": last["id"],
                     "would_advance_cursor": True,
@@ -393,6 +405,7 @@ def export_events(args: argparse.Namespace) -> int:
             {
                 "batch_id": batch_id,
                 "rows": len(rows),
+                "app_id": args.app_id,
                 "csv": str(csv_path),
                 "parquet": str(parquet_path),
                 "last_created_at": iso_utc(last["created_at"]),

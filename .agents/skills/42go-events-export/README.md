@@ -1,6 +1,6 @@
-# LingoCafe Events Export
+# 42go Events Export
 
-This skill downloads LingoCafe event rows from PostgreSQL into a Mac-local analytics archive. The VPS database is treated as a live event buffer. Heavy analytics run locally.
+This skill downloads core 42go event rows from PostgreSQL into a Mac-local analytics archive. The VPS database is treated as a live event buffer. Heavy analytics run locally.
 
 The export is download-only. It never deletes, truncates, retains, or cleans up source rows.
 
@@ -9,23 +9,23 @@ The export is download-only. It never deletes, truncates, retains, or cleans up 
 Create a local virtual environment and install the skill dependencies:
 
 ```bash
-python3 -m venv .local/lingocafe-analytics/.venv
-. .local/lingocafe-analytics/.venv/bin/activate
-pip install -r .agents/skills/lingocafe-events-export/requirements.txt
+python3 -m venv .local/42go-events-analytics/.venv
+. .local/42go-events-analytics/.venv/bin/activate
+pip install -r .agents/skills/42go-events-export/requirements.txt
 ```
 
 Set the source database URL:
 
 ```bash
-export LC_EVENTS_DATABASE_URL="postgres://user:pass@host:5432/db"
+export EVENTS_DATABASE_URL="postgres://user:pass@host:5432/db"
 ```
 
 The env var name lives in `scripts/export_events.py` as the top-level constant `DATABASE_URL_ENV_VAR`.
 
-The archive root defaults to `.local/lingocafe-analytics`. Override it with:
+The archive root defaults to `.local/42go-events-analytics`. Override it with:
 
 ```bash
-export LC_EVENTS_ANALYTICS_DIR="/path/to/archive"
+export EVENTS_ANALYTICS_DIR="/path/to/archive"
 ```
 
 ## Export
@@ -33,21 +33,24 @@ export LC_EVENTS_ANALYTICS_DIR="/path/to/archive"
 Run:
 
 ```bash
-python3 .agents/skills/lingocafe-events-export/scripts/export_events.py
+python3 .agents/skills/42go-events-export/scripts/export_events.py
 ```
 
 Useful options:
 
 ```bash
-python3 .agents/skills/lingocafe-events-export/scripts/export_events.py --limit 5000
-python3 .agents/skills/lingocafe-events-export/scripts/export_events.py --dry-run
-python3 .agents/skills/lingocafe-events-export/scripts/export_events.py --archive-dir .local/lingocafe-analytics
+python3 .agents/skills/42go-events-export/scripts/export_events.py --limit 5000
+python3 .agents/skills/42go-events-export/scripts/export_events.py --dry-run
+python3 .agents/skills/42go-events-export/scripts/export_events.py --archive-dir .local/42go-events-analytics
+python3 .agents/skills/42go-events-export/scripts/export_events.py --app-id lingocafe
 ```
+
+Use a separate archive directory when exporting only one app at a time, because `state.json` stores the cursor for that archive.
 
 ## Archive Layout
 
 ```text
-.local/lingocafe-analytics/
+.local/42go-events-analytics/
   events/
     csv/batch-YYYYMMDDTHHMMSSZ.csv
     parquet/batch-YYYYMMDDTHHMMSSZ.parquet
@@ -88,7 +91,7 @@ The cursor advances only after:
 Weekly active users smoke query:
 
 ```bash
-python3 .agents/skills/lingocafe-events-export/scripts/analyze_events.py wau
+python3 .agents/skills/42go-events-export/scripts/analyze_events.py wau
 ```
 
 The command reads local Parquet files only. It does not query PostgreSQL.
@@ -97,8 +100,8 @@ The command reads local Parquet files only. It does not query PostgreSQL.
 
 Average time spent on a book should be calculated from local events by:
 
-1. Reading events ordered by `user_id`, `book_id`, and `event_at`.
-2. Keeping events with a book context, such as `page-open` and `page-scroll`.
+1. Reading events ordered by `user_id`, `json_extract_string(data, '$.book_id')`, and `event_at`.
+2. Keeping events with a book context, such as `lingocafe.page-open` and `lingocafe.page-scroll`.
 3. Starting a new session when the previous event for that user/book is more than an inactivity threshold away.
 4. Using 30 minutes as the first documented threshold unless later product work chooses another value.
 5. Summing bounded event gaps inside a session.
@@ -109,14 +112,14 @@ Sketch:
 WITH ordered AS (
   SELECT
     user_id,
-    book_id,
+    json_extract_string(data, '$.book_id') AS book_id,
     event_at,
     LAG(event_at) OVER (
-      PARTITION BY user_id, book_id
+      PARTITION BY user_id, json_extract_string(data, '$.book_id')
       ORDER BY event_at
     ) AS previous_event_at
-  FROM read_parquet('.local/lingocafe-analytics/events/parquet/*.parquet')
-  WHERE book_id IS NOT NULL
+  FROM read_parquet('.local/42go-events-analytics/events/parquet/*.parquet')
+  WHERE json_extract_string(data, '$.book_id') IS NOT NULL
 ),
 bounded AS (
   SELECT
@@ -139,5 +142,5 @@ This is a starting point, not a final reporting model.
 
 - Do not add source deletion to this skill.
 - Do not run heavy analytics on the VPS database.
-- Do not commit `.local/lingocafe-analytics`.
+- Do not commit `.local/42go-events-analytics`.
 - Keep credentials in environment variables.

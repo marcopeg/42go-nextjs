@@ -94,56 +94,6 @@ exports.up = async function up(knex) {
     table.index(["from", "to"], "idx_lingocafe_translation_cache_langs");
     table.index(["last_used_at"], "idx_lingocafe_translation_cache_last_used");
   });
-
-  await knex.raw(`
-    CREATE TABLE lingocafe.events (
-      created_at timestamptz NOT NULL DEFAULT now(),
-      id uuid NOT NULL DEFAULT public.uuid_generate_v4(),
-      user_id text NOT NULL,
-      event_at timestamptz NOT NULL DEFAULT now(),
-      name text NOT NULL,
-      book_id text NULL,
-      page_id text NULL,
-      data jsonb NOT NULL DEFAULT '{}'::jsonb,
-      meta jsonb NOT NULL DEFAULT '{}'::jsonb,
-      PRIMARY KEY (created_at, id),
-      CHECK (page_id IS NULL OR book_id IS NOT NULL)
-    ) PARTITION BY RANGE (created_at)
-  `);
-
-  await knex.raw(`
-    CREATE OR REPLACE FUNCTION lingocafe.events_prepare_partitions(
-      p_months_ahead integer DEFAULT 3
-    ) RETURNS void
-    AS $$
-    DECLARE
-      v_base timestamptz := date_trunc('month', now());
-      v_i integer;
-      v_start timestamptz;
-      v_end timestamptz;
-      v_partition_name text;
-    BEGIN
-      IF p_months_ahead IS NULL OR p_months_ahead < 0 THEN
-        RAISE EXCEPTION 'p_months_ahead must be >= 0';
-      END IF;
-
-      FOR v_i IN 0..p_months_ahead LOOP
-        v_start := v_base + make_interval(months => v_i);
-        v_end := v_base + make_interval(months => v_i + 1);
-        v_partition_name := format('events_%s', to_char(v_start, 'YYYYMM'));
-
-        EXECUTE format(
-          'CREATE TABLE IF NOT EXISTS lingocafe.%I PARTITION OF lingocafe.events FOR VALUES FROM (%L) TO (%L)',
-          v_partition_name,
-          v_start,
-          v_end
-        );
-      END LOOP;
-    END;
-    $$ LANGUAGE plpgsql
-  `);
-
-  await knex.raw("SELECT lingocafe.events_prepare_partitions()");
 };
 
 /**

@@ -6,8 +6,8 @@ import argparse
 import os
 from pathlib import Path
 
-ARCHIVE_DIR_ENV_VAR = "LC_EVENTS_ANALYTICS_DIR"
-DEFAULT_ARCHIVE_DIR = Path(".local/lingocafe-analytics")
+ARCHIVE_DIR_ENV_VAR = "EVENTS_ANALYTICS_DIR"
+DEFAULT_ARCHIVE_DIR = Path(".local/42go-events-analytics")
 
 
 def import_duckdb():
@@ -16,13 +16,13 @@ def import_duckdb():
     except ImportError as error:
         raise SystemExit(
             "Missing DuckDB dependency. Run: "
-            "pip install -r .agents/skills/lingocafe-events-export/requirements.txt"
+            "pip install -r .agents/skills/42go-events-export/requirements.txt"
         ) from error
     return duckdb
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run local LingoCafe event analytics smoke checks.")
+    parser = argparse.ArgumentParser(description="Run local 42go event analytics smoke checks.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     wau = subparsers.add_parser("wau", help="Compute weekly active users from local Parquet batches.")

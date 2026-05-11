@@ -13,6 +13,7 @@ export default {
     'page:books',
     'page:users',
     'api:lingocafe',
+    'api:events',
     'api:profile',
     'api:users',
   ],
@@ -129,6 +130,13 @@ export default {
           collect: ['source', 'method', 'ip', 'ua'],
         },
       ],
+    },
+    events: {
+      enabled: true,
+      requireSession: true,
+      allowAnonymous: false,
+      batchSize: 10,
+      flushIntervalMs: 5000,
     },
     menu: {
       top: {

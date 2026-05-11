@@ -44,7 +44,6 @@
 - [KO29: Automate next.config allowedDevOrigins](./draft/KO29-automate-next-config-allowed-dev-origins/KO29.task.md)
 - [TO37: Add Social Login: Apple](./draft/TO37-add-social-login-apple/TO37.task.md)
 - [ADB: Reject Invite [adb]](./draft/ADB-reject-invite-adb/ADB.task.md)
-- [WS58: Promote Events to Core App-Scoped Event System](./draft/WS58-promote-events-to-core-app-scoped-event-system/WS58.task.md)
 
 ## Refining
 
@@ -58,6 +57,8 @@
 
 ## WIP
 
+- [WS58: Promote Events to Core App-Scoped Event System](./wip/WS58-promote-events-to-core-app-scoped-event-system/WS58.task.md) | [plan](./wip/WS58-promote-events-to-core-app-scoped-event-system/WS58.plan.md) | [notes](./wip/WS58-promote-events-to-core-app-scoped-event-system/WS58.notes.md)
+- [LU73: Audit AppConfig Client Secret Exposure](./wip/LU73-audit-appconfig-client-secret-exposure/LU73.task.md) | [plan](./wip/LU73-audit-appconfig-client-secret-exposure/LU73.plan.md) | [notes](./wip/LU73-audit-appconfig-client-secret-exposure/LU73.notes.md)
 
 ## Blocked
 

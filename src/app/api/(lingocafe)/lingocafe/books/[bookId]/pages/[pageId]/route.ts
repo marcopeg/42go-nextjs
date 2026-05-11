@@ -58,7 +58,7 @@ const getBookPage = async (
 
   await trackReaderEvent({
     userId,
-    name: "page-open",
+    name: "page.open",
     bookId,
     pageId,
     data: { progress_bps: progress.progressBps },
@@ -119,7 +119,7 @@ const trackPageScroll = async (
 
   await trackReaderEvent({
     userId,
-    name: "page-scroll",
+    name: "page.scroll",
     bookId,
     pageId,
     data: { progress_bps: progressBps },
