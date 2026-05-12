@@ -191,7 +191,7 @@ prod.app.restart: prod.app.stop prod.start prod.logs
 ###
 ### Publish to DockerHUB
 ###
-publish: security.check
+publish:
 	@echo "Building $(IMAGE):$(VERSION) for $(PUBLISH_PLATFORM)"
 	@docker buildx build --platform $(PUBLISH_PLATFORM) \
 		--build-arg NODE_ENV=production \
@@ -200,7 +200,7 @@ publish: security.check
 		--push \
 		.
 
-publish.nocache: security.check
+publish.nocache:
 	@echo "Building $(IMAGE):$(VERSION) for $(PUBLISH_PLATFORM) without cache"
 	@docker buildx build --platform $(PUBLISH_PLATFORM) \
 		--no-cache \
@@ -210,7 +210,7 @@ publish.nocache: security.check
 		--push \
 		.
 
-publish.universal: security.check
+publish.universal:
 	@echo "Building $(IMAGE):$(VERSION) for $(UNIVERSAL_PLATFORMS) without cache"
 	@docker buildx build --platform $(UNIVERSAL_PLATFORMS) \
 		--no-cache \

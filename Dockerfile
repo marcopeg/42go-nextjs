@@ -1,17 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ==========================================
-# STAGE 1: Dependencies Cache Layer
-# ==========================================
-FROM node:22-alpine AS deps
-WORKDIR /app
-
-# Install dependencies only when needed
-COPY package.json package-lock.json* ./
-RUN --mount=type=cache,id=npm-prod,target=/root/.npm,sharing=locked npm ci --omit=dev
-
-# ==========================================
-# STAGE 2: Build Dependencies
+# STAGE 1: Build Dependencies
 # ==========================================
 FROM node:22-alpine AS build-deps
 WORKDIR /app
@@ -21,7 +11,7 @@ COPY package.json package-lock.json* ./
 RUN --mount=type=cache,id=npm-build,target=/root/.npm,sharing=locked npm ci
 
 # ==========================================
-# STAGE 3: Builder Stage
+# STAGE 2: Builder Stage
 # ==========================================
 FROM node:22-alpine AS builder
 WORKDIR /app
@@ -44,7 +34,7 @@ ENV NEXT_BUILD_CPUS=1
 RUN npm run build && rm -f .next/standalone/.env .next/standalone/.env.*
 
 # ==========================================
-# STAGE 4: Ultra-Slim Production Runner
+# STAGE 3: Ultra-Slim Production Runner
 # ==========================================
 FROM node:22-alpine AS runner
 
@@ -60,9 +50,6 @@ ENV HOSTNAME=0.0.0.0
 ENV NODE_OPTIONS="--max-old-space-size=512"
 
 WORKDIR /app
-
-# Copy production dependencies
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Copy Next.js standalone output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

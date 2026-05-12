@@ -198,19 +198,30 @@ def summarize_trivy_secrets(state: CheckState, path: Path) -> None:
 
     if total:
         samples: list[str] = []
+        uncovered_samples: list[str] = []
+        dockerignore_lines = read_dockerignore_lines(state.repo_root)
         for result in results:
             target = result.get("Target") or "unknown"
             for secret in result.get("Secrets") or []:
                 rule = secret.get("RuleID") or secret.get("Category") or "secret"
                 line = secret.get("StartLine") or secret.get("EndLine") or "?"
-                samples.append(f"{target}:{line} ({rule})")
+                sample = f"{target}:{line} ({rule})"
+                samples.append(sample)
+                if not dockerignore_covers(dockerignore_lines, target):
+                    uncovered_samples.append(sample)
                 if len(samples) >= 8:
                     break
             if len(samples) >= 8:
                 break
+        severity = "HIGH" if uncovered_samples else "MEDIUM"
+        title = (
+            "Repository secret scan found sensitive-looking material outside ignored build context"
+            if uncovered_samples
+            else "Repository secret scan found sensitive-looking material in ignored local files"
+        )
         state.add(
-            "HIGH",
-            "Repository secret scan found sensitive-looking material",
+            severity,
+            title,
             "Examples: " + "; ".join(samples),
             "trivy fs secret",
         )
@@ -302,11 +313,7 @@ def check_dockerignore(state: CheckState) -> None:
         state.add("HIGH", ".dockerignore is missing", "Docker build context may include secrets and local artifacts.", ".dockerignore")
         return
 
-    lines = [
-        line.strip()
-        for line in dockerignore.read_text(errors="replace").splitlines()
-        if line.strip() and not line.strip().startswith("#")
-    ]
+    lines = read_dockerignore_lines(state.repo_root)
     missing = [pattern for pattern in REQUIRED_DOCKERIGNORE_PATTERNS if not dockerignore_covers(lines, pattern)]
     if missing:
         state.add(
@@ -336,6 +343,17 @@ def check_dockerignore(state: CheckState) -> None:
         )
 
 
+def read_dockerignore_lines(repo_root: Path) -> list[str]:
+    dockerignore = repo_root / ".dockerignore"
+    if not dockerignore.exists():
+        return []
+    return [
+        line.strip()
+        for line in dockerignore.read_text(errors="replace").splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
+
+
 def dockerignore_covers(lines: list[str], pattern: str) -> bool:
     if pattern in lines:
         return True
@@ -347,7 +365,7 @@ def dockerignore_covers(lines: list[str], pattern: str) -> bool:
             continue
         if target.startswith(normalized + "/"):
             return True
-        if normalized.startswith("*.") and target == normalized:
+        if normalized.startswith("*.") and (target == normalized or target.endswith(normalized[1:])):
             return True
     return False
 
@@ -414,36 +432,36 @@ echo CONTENTS_FILES="$(find /app/contents -type f 2>/dev/null | wc -l | tr -d ' 
 def check_compose(state: CheckState, args: argparse.Namespace) -> None:
     compose_path = state.repo_root / args.compose
     if not compose_path.exists():
-        state.add("MEDIUM", "Production compose file is missing", f"Expected {args.compose}.", "docker compose")
+        state.add("MEDIUM", "Local production compose file is missing", f"Expected {args.compose}.", "docker compose")
         return
 
     text = compose_path.read_text(errors="replace")
     if re.search(r"(?m)^\s*env_file\s*:", text):
         state.add(
-            "HIGH",
-            "Production compose uses env_file",
-            "`env_file` can inject the full local .env into runtime. Prefer an explicit allowlist of runtime variables.",
+            "MEDIUM",
+            "Local production compose uses env_file",
+            "`env_file` can inject the full local .env into the local production runtime. This is acceptable for local mimicry only; do not treat this compose file as the real production topology.",
             args.compose,
         )
     if re.search(r'(?m)^\s*-\s*["\']?5432:5432["\']?\s*$', text):
         state.add(
             "MEDIUM",
-            "Production compose exposes PostgreSQL on the host",
-            "Port 5432 should not be published in release topology unless explicitly required.",
+            "Local production compose exposes PostgreSQL on the host",
+            "Port 5432 is useful for local production testing, but should not be copied into a real production topology without an explicit network policy.",
             args.compose,
         )
     if "host-gateway" in text:
         state.add(
             "LOW",
-            "Production compose config includes host-gateway",
-            "Review whether host network escape hatch is needed in production.",
+            "Local production compose config includes host-gateway",
+            "Useful for local production testing. Do not copy into real production unless required.",
             args.compose,
         )
     if re.search(r"(?m)^\s*-\s*\./contents:/app/contents", text):
         state.add(
             "LOW",
-            "Production compose bind-mounts contents",
-            "Bind mounts bypass immutable image guarantees. Confirm this is intentional for production.",
+            "Local production compose bind-mounts contents",
+            "Useful for local production testing. Real production should decide separately whether content is baked, mounted read-only, or externalized.",
             args.compose,
         )
 

@@ -29,7 +29,7 @@ python3 .agents/skills/42go-security-check/scripts/run_security_check.py --build
 - `trivy fs --scanners secret` source secret scan
 - `.dockerignore` coverage for local dumps, backups, env files, agent files, docs, and build outputs
 - final Docker image user, env files, npmrc files, SQL/dump artifacts, docs/backlog/agent folders, and source map count
-- `docker-compose.prod.yml` risky release settings such as `env_file: .env`, exposed database ports, bind-mounted app content, and host-gateway entries
+- `docker-compose.prod.yml` local-production settings such as `env_file: .env`, exposed database ports, bind-mounted app content, and host-gateway entries
 
 The script never prints secret values. Secret findings are summarized by rule, file, and line only.
 
@@ -55,4 +55,5 @@ Use `make security.check.draft` when the gate findings should become a draft bac
 - Use `--draft` when there are actionable findings or the user explicitly asks for backlog work.
 - Use `--fail-on-findings` for release gating.
 - Do not paste raw Trivy secret payloads, environment values, tokens, or `.env` content into chat or backlog tasks.
+- Treat `docker-compose.prod.yml` as a local production mimic. It can warn about env and networking posture, but it is not the real production deployment topology.
 - If Docker or Trivy is missing, report that as a gate failure and draft the remediation task when `--draft` is set.
