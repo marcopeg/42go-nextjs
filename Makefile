@@ -17,6 +17,8 @@ CAPROVER_IMAGE ?= $(IMAGE):$(VERSION)
 BACKLOG_DOCTOR_LOCAL := .agents/skills/backlog-doctor/scripts/doctor_backlog.py
 BACKLOG_DOCTOR_HOME := $(HOME)/.agents/skills/backlog-doctor/scripts/doctor_backlog.py
 BACKLOG_ROOT := $(CURDIR)/docs/backlog
+SECURITY_CHECK := .agents/skills/42go-docker-security-check/scripts/run_security_check.py
+SECURITY_IMAGE ?= 42go-next:latest
 
 export CAPROVER_URL
 export CAPROVER_APP_TOKEN
@@ -64,6 +66,12 @@ app.start:
 
 app: app.install app.start
 qa: npm run qa
+
+security.check:
+	python3 "$(SECURITY_CHECK)" --build --image "$(SECURITY_IMAGE)" --fail-on-findings
+
+security.check.draft:
+	python3 "$(SECURITY_CHECK)" --build --image "$(SECURITY_IMAGE)" --draft --fail-on-findings
 
 doctor:
 	@if [ -f "$(BACKLOG_DOCTOR_LOCAL)" ]; then \
@@ -183,7 +191,7 @@ prod.app.restart: prod.app.stop prod.start prod.logs
 ###
 ### Publish to DockerHUB
 ###
-publish:
+publish: security.check
 	@echo "Building $(IMAGE):$(VERSION) for $(PUBLISH_PLATFORM)"
 	@docker buildx build --platform $(PUBLISH_PLATFORM) \
 		--build-arg NODE_ENV=production \
@@ -192,7 +200,7 @@ publish:
 		--push \
 		.
 
-publish.nocache:
+publish.nocache: security.check
 	@echo "Building $(IMAGE):$(VERSION) for $(PUBLISH_PLATFORM) without cache"
 	@docker buildx build --platform $(PUBLISH_PLATFORM) \
 		--no-cache \
@@ -202,7 +210,7 @@ publish.nocache:
 		--push \
 		.
 
-publish.universal:
+publish.universal: security.check
 	@echo "Building $(IMAGE):$(VERSION) for $(UNIVERSAL_PLATFORMS) without cache"
 	@docker buildx build --platform $(UNIVERSAL_PLATFORMS) \
 		--no-cache \

@@ -44,6 +44,7 @@
 - [TO37: Add Social Login: Apple](./draft/TO37-add-social-login-apple/TO37.task.md)
 - [ADB: Reject Invite [adb]](./draft/ADB-reject-invite-adb/ADB.task.md)
 - [QW92: Split AppConfig Into Public and Server-Only Configuration](./draft/QW92-split-appconfig-into-public-and-server-only-configuration/QW92.task.md)
+- [QS23: Fix Docker Security Gate Findings](./draft/QS23-fix-docker-security-gate-findings/QS23.task.md)
 
 ## Refining
 
@@ -51,13 +52,13 @@
 
 ## Refined
 
-- [TK89: Docker Image Security Review](./refined/TK89-docker-image-security-review/TK89.task.md) | [plan](./refined/TK89-docker-image-security-review/TK89.plan.md)
 
 ## Planned
 
 
 ## WIP
 
+- [TK89: Docker Image Security Review](./wip/TK89-docker-image-security-review/TK89.task.md) | [plan](./wip/TK89-docker-image-security-review/TK89.plan.md) | [notes](./wip/TK89-docker-image-security-review/TK89.notes.md)
 
 ## Blocked
 

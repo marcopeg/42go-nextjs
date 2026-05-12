@@ -1,0 +1,4 @@
+interface:
+  display_name: "42Go Docker Security Check"
+  short_description: "Run Docker and Trivy security gates for 42Go."
+  default_prompt: "Run the 42Go Docker security check and draft backlog fixes for any findings."
