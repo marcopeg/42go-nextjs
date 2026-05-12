@@ -1,6 +1,5 @@
 # Draft
 
-- [TK89: Docker Image Security Review](./TK89-docker-image-security-review/TK89.task.md)
 - [NC71: HeroBlock: Add Alignment Option](./NC71-heroblock-add-alignment-option/NC71.task.md)
 - [TR02: Add Image ContentBlock](./TR02-add-image-contentblock/TR02.task.md)
 - [IK47: Add Social Login: Facebook](./IK47-add-social-login-facebook/IK47.task.md)

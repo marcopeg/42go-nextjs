@@ -2,7 +2,6 @@
 
 ## Draft
 
-- [TK89: Docker Image Security Review](./draft/TK89-docker-image-security-review/TK89.task.md)
 - [NC71: HeroBlock: Add Alignment Option](./draft/NC71-heroblock-add-alignment-option/NC71.task.md)
 - [TR02: Add Image ContentBlock](./draft/TR02-add-image-contentblock/TR02.task.md)
 - [IK47: Add Social Login: Facebook](./draft/IK47-add-social-login-facebook/IK47.task.md)
@@ -52,6 +51,7 @@
 
 ## Refined
 
+- [TK89: Docker Image Security Review](./refined/TK89-docker-image-security-review/TK89.task.md) | [plan](./refined/TK89-docker-image-security-review/TK89.plan.md)
 
 ## Planned
 
@@ -61,7 +61,6 @@
 
 ## Blocked
 
-- [UT41: ESLint 9 → 10](./completed/UT41-eslint-9-10/UT41.task.md) | [plan](./completed/UT41-eslint-9-10/UT41.plan.md) | [notes](./completed/UT41-eslint-9-10/UT41.notes.md)
 
 ## Historical Logs
 
