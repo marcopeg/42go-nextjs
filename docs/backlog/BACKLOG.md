@@ -48,7 +48,6 @@
 
 ## Refining
 
-- [AEM: Fix Docker build [aem]](./refining/AEM-fix-docker-build-aem/AEM.task.md)
 
 ## Refined
 
