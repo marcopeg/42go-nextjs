@@ -293,7 +293,25 @@ def run_trivy(state: CheckState, args: argparse.Namespace) -> None:
 
     commands = [
         (["trivy", "image", "--scanners", "vuln", "--format", "json", "--output", str(image_json), args.image], image_json, summarize_trivy_image),
-        (["trivy", "config", "--format", "json", "--output", str(config_json), "."], config_json, summarize_trivy_config),
+        (
+            [
+                "trivy",
+                "config",
+                "--skip-dirs",
+                ".next",
+                "--skip-dirs",
+                "node_modules",
+                "--skip-dirs",
+                ".devcontainer",
+                "--format",
+                "json",
+                "--output",
+                str(config_json),
+                ".",
+            ],
+            config_json,
+            summarize_trivy_config,
+        ),
         (["trivy", "fs", "--scanners", "secret", "--format", "json", "--output", str(secrets_json), "."], secrets_json, summarize_trivy_secrets),
     ]
     for command, artifact, summarizer in commands:

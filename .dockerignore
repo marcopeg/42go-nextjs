@@ -8,6 +8,7 @@
 .vscode
 .vscode-test
 .vscode-test-*
+.devcontainer
 
 # Local dependencies and framework caches
 node_modules

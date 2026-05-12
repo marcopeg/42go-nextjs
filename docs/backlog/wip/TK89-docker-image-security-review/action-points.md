@@ -4,12 +4,13 @@ Source: `TK89.output.md`
 
 ## Release Blockers
 
-- [ ] Upgrade vulnerable runtime dependencies, starting with `next` from `16.2.4` to at least `16.2.6`.
+- [x] Upgrade vulnerable runtime dependencies, starting with `next` from `16.2.4` to at least `16.2.6`.
 - [ ] Upgrade or resolve the vulnerable `picomatch` dependency path so Trivy no longer reports the high advisory.
 - [ ] Run `npm run qa` after dependency updates.
 - [ ] Rebuild the Docker image with no cache.
 - [ ] Rerun `trivy image` against the rebuilt image and confirm no critical/high runtime findings remain, or document a formal accepted risk.
-- [ ] Move `db-backups` and `knex/dumps` outside the repository, or formally accept the local-only repository hygiene risk.
+- [x] Validate `node:26-alpine` with local-production `make prod`.
+- [x] Move `db-backups` and `knex/dumps` outside the repository, or formally accept the local-only repository hygiene risk.
 - [ ] Rotate any credentials or tokens that were present in SQL dump files if those files ever left this machine or entered shared build/cache infrastructure.
 - [ ] Remove production source maps from the final image, or formally accept the source disclosure risk for a public Docker Hub image.
 
@@ -25,7 +26,7 @@ Source: `TK89.output.md`
 
 ## Runtime Hardening
 
-- [ ] Document `docker-compose.prod.yml` as local production only: it mimics a production build locally but is not the real production topology.
+- [x] Document `docker-compose.prod.yml` as local production only: it mimics a production build locally but is not the real production topology.
 - [ ] Keep `env_file: .env` acceptable only for local production; do not reuse it for real production deployment.
 - [ ] Keep PostgreSQL host port `5432` acceptable only for local production; do not reuse it for real production deployment.
 - [ ] Review `extra_hosts: host.docker.internal:host-gateway` as local-only and avoid copying it to real production unless required.

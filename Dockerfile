@@ -3,7 +3,7 @@
 # ==========================================
 # STAGE 1: Build Dependencies
 # ==========================================
-FROM node:22-alpine AS build-deps
+FROM node:26-alpine AS build-deps
 WORKDIR /app
 
 # Install all dependencies (including devDependencies)
@@ -13,7 +13,7 @@ RUN --mount=type=cache,id=npm-build,target=/root/.npm,sharing=locked npm ci
 # ==========================================
 # STAGE 2: Builder Stage
 # ==========================================
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 WORKDIR /app
 
 # Copy node_modules from build-deps stage
@@ -36,7 +36,7 @@ RUN npm run build && rm -f .next/standalone/.env .next/standalone/.env.*
 # ==========================================
 # STAGE 3: Ultra-Slim Production Runner
 # ==========================================
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
@@ -59,8 +59,18 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 # Copy package.json for proper startup
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
-# Remove any accidentally included env files from the runtime workdir (defense in depth)
-RUN rm -f .env .env.* || true
+# Remove package-manager tooling and any accidentally included env files from
+# the runtime image. The server only needs `node server.js`.
+RUN rm -rf \
+    /usr/local/lib/node_modules/npm \
+    /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm \
+    /usr/local/bin/npx \
+    /usr/local/bin/corepack \
+    /opt/yarn* \
+    /usr/local/bin/yarn \
+    /usr/local/bin/yarnpkg && \
+    rm -f .env .env.* || true
 
 # Switch to non-root user
 USER nextjs
