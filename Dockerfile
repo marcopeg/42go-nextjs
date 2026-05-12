@@ -29,9 +29,12 @@ ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
 ENV NEXT_BUILD_CPUS=1
 
-# Build the application with standalone output, then remove any env files
-# before the runner stage copies standalone into a final image layer.
-RUN npm run build && rm -f .next/standalone/.env .next/standalone/.env.*
+# Build the application with standalone output. Source maps are useful when
+# uploaded to a private error tracker, but they expose readable production
+# internals in a public image; keep them out of the runtime artifact.
+RUN npm run build && \
+    find .next/standalone .next/static -type f -name '*.map' -delete && \
+    rm -f .next/standalone/.env .next/standalone/.env.*
 
 # ==========================================
 # STAGE 3: Ultra-Slim Production Runner
