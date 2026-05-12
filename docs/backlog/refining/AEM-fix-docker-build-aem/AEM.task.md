@@ -1,11 +1,10 @@
 ---
 taskId: AEM
-status: refined
+status: refining
 createdAt: 2026-04-23T15:27:45+02:00
-updatedAt: 2026-05-10T09:55:08+02:00
+updatedAt: 2026-05-12T10:23:56.928Z
 reviewedAt: 2026-05-10T09:55:08+02:00
 ---
-
 # Fix Docker build [aem]
 
 Investigate and fix why Next.js middleware doesn’t appear to execute when the app is built and run in Docker with `output: "standalone"` using `node server.js`. Locally with `next start`, middleware logs and debug headers are visible; in the container they’re not, and `getAppID` warns the header is missing.

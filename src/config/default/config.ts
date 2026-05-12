@@ -32,11 +32,9 @@ export default {
   },
   features: [
     "page:docs",
-    "page:todos",
     "page:users",
     "api:waitlist",
     "api:feedback",
-    "api:todos",
     "api:users",
     "api:quicklists",
     "api:notes",

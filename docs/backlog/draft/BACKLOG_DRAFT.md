@@ -1,7 +1,7 @@
 # Draft
 
-- [NC71: HeroBlock: Add Alignment Option](./NC71-heroblock-add-alignment-option/NC71.task.md)
 - [TK89: Docker Image Security Review](./TK89-docker-image-security-review/TK89.task.md)
+- [NC71: HeroBlock: Add Alignment Option](./NC71-heroblock-add-alignment-option/NC71.task.md)
 - [TR02: Add Image ContentBlock](./TR02-add-image-contentblock/TR02.task.md)
 - [IK47: Add Social Login: Facebook](./IK47-add-social-login-facebook/IK47.task.md)
 - [FE78: HeroBlock: Icon Support](./FE78-heroblock-icon-support/FE78.task.md)
@@ -42,3 +42,4 @@
 - [KO29: Automate next.config allowedDevOrigins](./KO29-automate-next-config-allowed-dev-origins/KO29.task.md)
 - [TO37: Add Social Login: Apple](./TO37-add-social-login-apple/TO37.task.md)
 - [ADB: Reject Invite [adb]](./ADB-reject-invite-adb/ADB.task.md)
+- [QW92: Split AppConfig Into Public and Server-Only Configuration](./QW92-split-appconfig-into-public-and-server-only-configuration/QW92.task.md)

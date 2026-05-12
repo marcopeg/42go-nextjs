@@ -2,8 +2,8 @@
 
 ## Draft
 
-- [NC71: HeroBlock: Add Alignment Option](./draft/NC71-heroblock-add-alignment-option/NC71.task.md)
 - [TK89: Docker Image Security Review](./draft/TK89-docker-image-security-review/TK89.task.md)
+- [NC71: HeroBlock: Add Alignment Option](./draft/NC71-heroblock-add-alignment-option/NC71.task.md)
 - [TR02: Add Image ContentBlock](./draft/TR02-add-image-contentblock/TR02.task.md)
 - [IK47: Add Social Login: Facebook](./draft/IK47-add-social-login-facebook/IK47.task.md)
 - [FE78: HeroBlock: Icon Support](./draft/FE78-heroblock-icon-support/FE78.task.md)
@@ -44,24 +44,24 @@
 - [KO29: Automate next.config allowedDevOrigins](./draft/KO29-automate-next-config-allowed-dev-origins/KO29.task.md)
 - [TO37: Add Social Login: Apple](./draft/TO37-add-social-login-apple/TO37.task.md)
 - [ADB: Reject Invite [adb]](./draft/ADB-reject-invite-adb/ADB.task.md)
+- [QW92: Split AppConfig Into Public and Server-Only Configuration](./draft/QW92-split-appconfig-into-public-and-server-only-configuration/QW92.task.md)
 
 ## Refining
 
+- [AEM: Fix Docker build [aem]](./refining/AEM-fix-docker-build-aem/AEM.task.md)
 
 ## Refined
 
-- [AEM: Fix Docker build [aem]](./refined/AEM-fix-docker-build-aem/AEM.task.md)
 
 ## Planned
 
 
 ## WIP
 
-- [WS58: Promote Events to Core App-Scoped Event System](./wip/WS58-promote-events-to-core-app-scoped-event-system/WS58.task.md) | [plan](./wip/WS58-promote-events-to-core-app-scoped-event-system/WS58.plan.md) | [notes](./wip/WS58-promote-events-to-core-app-scoped-event-system/WS58.notes.md)
-- [LU73: Audit AppConfig Client Secret Exposure](./wip/LU73-audit-appconfig-client-secret-exposure/LU73.task.md) | [plan](./wip/LU73-audit-appconfig-client-secret-exposure/LU73.plan.md) | [notes](./wip/LU73-audit-appconfig-client-secret-exposure/LU73.notes.md)
 
 ## Blocked
 
+- [UT41: ESLint 9 → 10](./completed/UT41-eslint-9-10/UT41.task.md) | [plan](./completed/UT41-eslint-9-10/UT41.plan.md) | [notes](./completed/UT41-eslint-9-10/UT41.notes.md)
 
 ## Historical Logs
 

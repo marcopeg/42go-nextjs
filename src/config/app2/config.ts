@@ -9,7 +9,7 @@ export default {
   match: {
     url: ["^app2\\.localhost:\\d+$"],
   },
-  features: ["page:todos", "page:about", "api:todos:write"],
+  features: ["page:about"],
   theme: {
     default: "light",
   },
