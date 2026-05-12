@@ -34,3 +34,12 @@ docs
 .DS_Store
 *.log
 *.pem
+
+# others
+.local
+.tmp
+knex
+db-backups
+*.sql
+*.dump
+*.backup

@@ -17,7 +17,7 @@ CAPROVER_IMAGE ?= $(IMAGE):$(VERSION)
 BACKLOG_DOCTOR_LOCAL := .agents/skills/backlog-doctor/scripts/doctor_backlog.py
 BACKLOG_DOCTOR_HOME := $(HOME)/.agents/skills/backlog-doctor/scripts/doctor_backlog.py
 BACKLOG_ROOT := $(CURDIR)/docs/backlog
-SECURITY_CHECK := .agents/skills/42go-docker-security-check/scripts/run_security_check.py
+SECURITY_CHECK := .agents/skills/42go-security-check/scripts/run_security_check.py
 SECURITY_IMAGE ?= 42go-next:latest
 
 export CAPROVER_URL

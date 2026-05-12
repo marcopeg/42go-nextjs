@@ -12,13 +12,13 @@ Use this skill whenever the user asks to audit Docker security, check publish re
 Run the bundled gate script from the repository root:
 
 ```bash
-python3 .agents/skills/42go-docker-security-check/scripts/run_security_check.py --image 42go-next:latest --draft --fail-on-findings
+python3 .agents/skills/42go-security-check/scripts/run_security_check.py --image 42go-next:latest --draft --fail-on-findings
 ```
 
 For a fresh image audit, add `--build`:
 
 ```bash
-python3 .agents/skills/42go-docker-security-check/scripts/run_security_check.py --build --image 42go-next:latest --draft --fail-on-findings
+python3 .agents/skills/42go-security-check/scripts/run_security_check.py --build --image 42go-next:latest --draft --fail-on-findings
 ```
 
 ## What It Checks

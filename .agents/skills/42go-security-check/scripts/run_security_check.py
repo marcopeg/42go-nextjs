@@ -307,7 +307,7 @@ def check_dockerignore(state: CheckState) -> None:
         for line in dockerignore.read_text(errors="replace").splitlines()
         if line.strip() and not line.strip().startswith("#")
     ]
-    missing = [pattern for pattern in REQUIRED_DOCKERIGNORE_PATTERNS if pattern not in lines]
+    missing = [pattern for pattern in REQUIRED_DOCKERIGNORE_PATTERNS if not dockerignore_covers(lines, pattern)]
     if missing:
         state.add(
             "MEDIUM",
@@ -334,6 +334,22 @@ def check_dockerignore(state: CheckState) -> None:
             "Examples: " + ", ".join(present_sensitive_files),
             "source tree",
         )
+
+
+def dockerignore_covers(lines: list[str], pattern: str) -> bool:
+    if pattern in lines:
+        return True
+
+    target = pattern.strip("/")
+    for line in lines:
+        normalized = line.strip().strip("/")
+        if not normalized:
+            continue
+        if target.startswith(normalized + "/"):
+            return True
+        if normalized.startswith("*.") and target == normalized:
+            return True
+    return False
 
 
 def parse_image_probe(output: str) -> dict[str, str]:
