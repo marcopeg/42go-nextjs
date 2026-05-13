@@ -163,6 +163,12 @@ module.exports = {
 };
 ```
 
+## Font Strategy
+
+The shared app shell uses a vendored Inter variable font through `next/font/local`. This keeps typography consistent while keeping local, CI, Docker, and Codex sandbox builds deterministic because production builds do not fetch Google Fonts through `next/font/google`.
+
+The Inter font files and SIL Open Font License live in `src/app/fonts/inter/`. If an app needs different custom typography later, keep those font files local to the repository too, for example beside the app theme under `public/app-themes/<app-id>/` or in a colocated app font folder. Runtime links to Google Fonts avoid build-time fetching, but they still add a runtime network dependency and are not the default strategy.
+
 ## Component Theming
 
 ### Using Theme Context

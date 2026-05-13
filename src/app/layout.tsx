@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { getAppInfo } from "@/42go/config/app-config";
 import { InjectAppID } from "@/42go/config/InjectAppID";
 import { Providers } from "@/components/Providers";
@@ -10,8 +10,22 @@ import "./tokens.css";
 import "./tailwind.css";
 import { HeadTags } from "@/42go/pwa/HeadTags";
 
-// Expose Inter via CSS variable to integrate with Tailwind's font-sans token
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = localFont({
+  src: [
+    {
+      path: "./fonts/inter/Inter-Variable.ttf",
+      style: "normal",
+      weight: "100 900",
+    },
+    {
+      path: "./fonts/inter/Inter-Italic-Variable.ttf",
+      style: "italic",
+      weight: "100 900",
+    },
+  ],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const generateMetadata = async (): Promise<Metadata> => {
   const { id: appID, config } = await getAppInfo();
