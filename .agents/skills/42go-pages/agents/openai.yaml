@@ -1,0 +1,4 @@
+interface:
+  display_name: "42go Pages"
+  short_description: "Configure public composable pages."
+  default_prompt: "Use $42go-pages to configure a public page, choose ContentBlock items, or add a custom page component."
