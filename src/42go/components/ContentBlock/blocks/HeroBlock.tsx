@@ -2,6 +2,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { ScrollAnimation } from "@/components/ui/scroll-animation";
+import { cn } from "@/42go/utils/utils";
 import type { Components } from "react-markdown";
 
 // Utility type: require at least one of a set of keys
@@ -23,10 +24,42 @@ interface THeroContentFields {
   }>;
 }
 
+type THeroAlignment = "left" | "center" | "right";
+
 export type THeroBlock = {
   type: "hero";
+  alignment?: THeroAlignment;
   backgroundImage?: string;
 } & RequireAtLeastOne<THeroContentFields, "title" | "subtitle" | "actions">;
+
+const heroAlignmentClasses: Record<
+  THeroAlignment,
+  {
+    section: string;
+    content: string;
+    actions: string;
+    backgroundPosition: string;
+  }
+> = {
+  left: {
+    section: "text-left",
+    content: "mr-auto text-left",
+    actions: "items-start sm:justify-start",
+    backgroundPosition: "left center",
+  },
+  center: {
+    section: "text-center",
+    content: "mx-auto text-center",
+    actions: "justify-center",
+    backgroundPosition: "center",
+  },
+  right: {
+    section: "text-right",
+    content: "ml-auto text-right",
+    actions: "items-end sm:justify-end",
+    backgroundPosition: "right center",
+  },
+};
 
 // Custom markdown components for accent styling
 const markdownComponentsH1: Components = {
@@ -38,8 +71,10 @@ const markdownComponentsH2: Components = {
   p: ({ children }) => <span>{children}</span>,
 };
 
-export function HeroBlock({ data }: { data: THeroBlock }) {
+export const HeroBlock = ({ data }: { data: THeroBlock }) => {
   const { title, subtitle, backgroundImage } = data;
+  const alignment = data.alignment ?? "center";
+  const alignmentClasses = heroAlignmentClasses[alignment];
   const actions = data.actions?.filter(Boolean) ?? [];
   const hasTitle = Boolean(title);
   const hasSubtitle = Boolean(subtitle);
@@ -49,7 +84,12 @@ export function HeroBlock({ data }: { data: THeroBlock }) {
   if (!hasTitle && !hasSubtitle && !hasActions) return null;
 
   return (
-    <section className="w-full py-10 md:py-20 flex flex-col items-center justify-center text-center">
+    <section
+      className={cn(
+        "w-full py-10 md:py-20 flex flex-col items-center justify-center",
+        alignmentClasses.section
+      )}
+    >
       <div
         className="hero-block relative w-full max-w-6xl mx-auto px-6"
         style={
@@ -57,7 +97,7 @@ export function HeroBlock({ data }: { data: THeroBlock }) {
             ? {
                 backgroundImage: `url(${backgroundImage})`,
                 backgroundSize: "cover",
-                backgroundPosition: "center",
+                backgroundPosition: alignmentClasses.backgroundPosition,
                 borderRadius: "0.5rem",
               }
             : undefined
@@ -70,7 +110,12 @@ export function HeroBlock({ data }: { data: THeroBlock }) {
         <div className="relative z-10 py-16">
           {hasTitle && (
             <ScrollAnimation type="fade" delay={0.1}>
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4 max-w-4xl mx-auto">
+              <h1
+                className={cn(
+                  "text-4xl md:text-6xl font-bold tracking-tight mb-4 max-w-4xl",
+                  alignmentClasses.content
+                )}
+              >
                 <ReactMarkdown components={markdownComponentsH1}>
                   {title as string}
                 </ReactMarkdown>
@@ -81,7 +126,12 @@ export function HeroBlock({ data }: { data: THeroBlock }) {
           {!hasTitle && hasSubtitle && (
             // Escalate subtitle to h1 semantics if no title provided
             <ScrollAnimation type="fade" delay={0.1}>
-              <h1 className="text-3xl md:text-5xl font-semibold tracking-tight mb-4 max-w-3xl mx-auto">
+              <h1
+                className={cn(
+                  "text-3xl md:text-5xl font-semibold tracking-tight mb-4 max-w-3xl",
+                  alignmentClasses.content
+                )}
+              >
                 <ReactMarkdown components={markdownComponentsH2}>
                   {subtitle as string}
                 </ReactMarkdown>
@@ -91,7 +141,12 @@ export function HeroBlock({ data }: { data: THeroBlock }) {
 
           {hasTitle && hasSubtitle && (
             <ScrollAnimation type="fade" delay={0.2}>
-              <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              <p
+                className={cn(
+                  "text-xl text-muted-foreground mb-8 max-w-2xl",
+                  alignmentClasses.content
+                )}
+              >
                 <ReactMarkdown components={markdownComponentsH2}>
                   {subtitle as string}
                 </ReactMarkdown>
@@ -104,7 +159,12 @@ export function HeroBlock({ data }: { data: THeroBlock }) {
               type={hasTitle || hasSubtitle ? "scale" : "fade"}
               delay={0.3}
             >
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-4">
+              <div
+                className={cn(
+                  "flex flex-col sm:flex-row gap-4 mt-4",
+                  alignmentClasses.actions
+                )}
+              >
                 {actions.map((action, index) => (
                   <Button
                     key={index}
@@ -122,4 +182,4 @@ export function HeroBlock({ data }: { data: THeroBlock }) {
       </div>
     </section>
   );
-}
+};

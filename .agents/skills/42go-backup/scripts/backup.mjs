@@ -12,7 +12,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env", quiet: true });
 
 const VALID_MODES = new Set(["full", "light"]);
-const DUMPS_DIR = path.join("knex", "dumps");
+const DUMPS_DIR = path.join(".local", "42go-backups");
 const KNEX_TABLES = new Set(["knex_migrations", "knex_migrations_lock"]);
 
 const usage = () => `Usage:
@@ -80,10 +80,18 @@ const isObsoleteLingocafeEventsTable = (table) =>
 const isNonMigrationBackedTable = (table) =>
   table.schema === "notes" && /^notes_\d+$/.test(table.name);
 
-const getDatabaseUrl = () => {
-  const value = process.env.DATABASE_URL;
+const getBackupDatabaseUrl = () => {
+  const value = process.env.BACKUP_DATABASE_URL;
   if (!value) {
-    fail("DATABASE_URL is required.");
+    fail("BACKUP_DATABASE_URL is required.");
+  }
+  return value;
+};
+
+const getRestoreDatabaseUrl = () => {
+  const value = process.env.RESTORE_DATABASE_URL;
+  if (!value) {
+    fail("RESTORE_DATABASE_URL is required.");
   }
   return value;
 };
@@ -412,7 +420,7 @@ const backup = async (mode) => {
     fail("Backup requires --mode full or --mode light.");
   }
 
-  const client = new Client({ connectionString: getDatabaseUrl() });
+  const client = new Client({ connectionString: getBackupDatabaseUrl() });
   await client.connect();
 
   try {
@@ -562,7 +570,7 @@ const restore = async (from) => {
   if (!from) {
     fail("Restore requires --from <dump.sql>.");
   }
-  getDatabaseUrl();
+  const restoreDatabaseUrl = getRestoreDatabaseUrl();
   const dumpPath = await resolveDumpPath(from);
   console.log(`Restoring from ${dumpPath}`);
   const preparedDump = await stripDynamicNotesTables(dumpPath);
@@ -579,7 +587,7 @@ const restore = async (from) => {
     await new Promise((resolve, reject) => {
       const child = spawn(
         "psql",
-        ["--set", "ON_ERROR_STOP=1", process.env.DATABASE_URL, "--file", preparedDump.dumpPath],
+        ["--set", "ON_ERROR_STOP=1", restoreDatabaseUrl, "--file", preparedDump.dumpPath],
         { stdio: "inherit" },
       );
       child.on("error", reject);

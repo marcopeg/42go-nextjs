@@ -9,21 +9,21 @@ The export is download-only. It never deletes, truncates, retains, or cleans up 
 Create a local virtual environment and install the skill dependencies:
 
 ```bash
-python3 -m venv .local/42go-events-analytics/.venv
-. .local/42go-events-analytics/.venv/bin/activate
+python3 -m venv .local/42go-events/.venv
+. .local/42go-events/.venv/bin/activate
 pip install -r .agents/skills/42go-events-export/requirements.txt
 ```
 
-Optionally set a dedicated source database URL:
+Set the required source database URL:
 
 ```bash
 export EVENTS_DATABASE_URL="postgres://user:pass@host:5432/db"
 ```
 
-When `EVENTS_DATABASE_URL` is unset, the exporter falls back to `DATABASE_URL`.
+When `EVENTS_DATABASE_URL` is unset, the exporter fails.
 The env var names live in `scripts/export_events.py` as top-level constants.
 
-The archive root defaults to `.local/42go-events-analytics`. Override it with:
+The archive root defaults to `.local/42go-events`. Override it with:
 
 ```bash
 export EVENTS_ANALYTICS_DIR="/path/to/archive"
@@ -42,25 +42,26 @@ Useful options:
 ```bash
 python3 .agents/skills/42go-events-export/scripts/export_events.py --limit 5000
 python3 .agents/skills/42go-events-export/scripts/export_events.py --dry-run
-python3 .agents/skills/42go-events-export/scripts/export_events.py --archive-dir .local/42go-events-analytics
-python3 .agents/skills/42go-events-export/scripts/export_events.py --app-id lingocafe
+python3 .agents/skills/42go-events-export/scripts/export_events.py --archive-dir .local/42go-events
 ```
 
-Use a separate archive directory when exporting only one app at a time, because `state.json` stores the cursor for that archive.
+The raw export mirrors the online `events.events` table by time. It does not create app-scoped raw folders or app-filtered raw exports. Build app-specific analytics as a later ETL step from the raw monthly files.
 
 ## Archive Layout
 
 ```text
-.local/42go-events-analytics/
+.local/42go-events/
   events/
-    csv/batch-YYYYMMDDTHHMMSSZ.csv
-    parquet/batch-YYYYMMDDTHHMMSSZ.parquet
+    csv/events_YYYYMM.csv
+    parquet/events_YYYYMM.parquet
     state.json
     manifest.jsonl
     inflight.json
 ```
 
-`inflight.json` exists only while a batch is incomplete. If the script dies before `state.json` advances, rerunning reuses the same batch ID and overwrites incomplete outputs.
+Monthly file names mimic the PostgreSQL partition strategy from `events.events_prepare_partitions()`, for example `events_202605.csv` and `events_202605.parquet`.
+
+`inflight.json` exists only while a run is incomplete. If the script dies before `state.json` advances, rerunning reuses the same run ID and rewrites the affected monthly outputs. Old local `batch-*.csv` and `batch-*.parquet` files are deleted by successful exporter runs, including no-new-row runs. Source database rows are never deleted.
 
 ## Cursor Semantics
 
@@ -80,12 +81,14 @@ WHERE (created_at, id) > (:last_created_at, :last_id)
 
 `event_at` is the analytics timestamp. It is not used as the extraction cursor.
 
+The exporter groups fetched rows by `created_at` month. For each touched month, it reads existing monthly files when present, merges old rows plus new rows, de-duplicates by event `id`, and atomically rewrites the monthly CSV and Parquet files.
+
 The cursor advances only after:
 
-1. The CSV batch is written.
-2. The Parquet batch is written.
-3. DuckDB can read the Parquet batch.
-4. `manifest.jsonl` records the completed batch.
+1. Every touched monthly CSV file is written.
+2. Every touched monthly Parquet file is written.
+3. DuckDB can read each touched monthly Parquet file and count the expected rows.
+4. `manifest.jsonl` records the completed run and touched months.
 
 ## Local Analytics
 
@@ -119,7 +122,7 @@ WITH ordered AS (
       PARTITION BY user_id, json_extract_string(data, '$.book_id')
       ORDER BY event_at
     ) AS previous_event_at
-  FROM read_parquet('.local/42go-events-analytics/events/parquet/*.parquet')
+  FROM read_parquet('.local/42go-events/events/parquet/*.parquet')
   WHERE json_extract_string(data, '$.book_id') IS NOT NULL
 ),
 bounded AS (
@@ -143,5 +146,5 @@ This is a starting point, not a final reporting model.
 
 - Do not add source deletion to this skill.
 - Do not run heavy analytics on the VPS database.
-- Do not commit `.local/42go-events-analytics`.
+- Do not commit `.local/42go-events`.
 - Keep credentials in environment variables.

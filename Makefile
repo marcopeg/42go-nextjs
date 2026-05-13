@@ -269,6 +269,13 @@ backup:
 restore:
 	node .agents/skills/42go-backup/scripts/backup.mjs restore --from "$(from)"
 
+events:
+	@if [ -x ".local/42go-events/.venv/bin/python" ]; then \
+		.local/42go-events/.venv/bin/python .agents/skills/42go-events-export/scripts/export_events.py; \
+	else \
+		python3 .agents/skills/42go-events-export/scripts/export_events.py; \
+	fi
+
 migrate.status:
 	npx knex migrate:status 
 

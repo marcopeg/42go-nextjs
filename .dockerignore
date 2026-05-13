@@ -38,6 +38,7 @@ docs
 
 # others
 .local
+.local/42go-backups
 .tmp
 knex
 db-backups

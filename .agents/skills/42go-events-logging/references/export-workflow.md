@@ -1,6 +1,6 @@
 # Export Workflow
 
-Use the `42go-events-export` skill to download events from PostgreSQL into paired CSV and Parquet batches.
+Use the `42go-events-export` skill to download events from PostgreSQL into paired monthly CSV and Parquet files.
 
 The export cursor is:
 
@@ -19,5 +19,5 @@ EVENTS_DATABASE_URL
 Default local archive:
 
 ```text
-.local/42go-events-analytics
+.local/42go-events
 ```

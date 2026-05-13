@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 ARCHIVE_DIR_ENV_VAR = "EVENTS_ANALYTICS_DIR"
-DEFAULT_ARCHIVE_DIR = Path(".local/42go-events-analytics")
+DEFAULT_ARCHIVE_DIR = Path(".local/42go-events")
 
 
 def import_duckdb():
@@ -25,7 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run local 42go event analytics smoke checks.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    wau = subparsers.add_parser("wau", help="Compute weekly active users from local Parquet batches.")
+    wau = subparsers.add_parser("wau", help="Compute weekly active users from local monthly Parquet files.")
     wau.add_argument(
         "--archive-dir",
         default=os.environ.get(ARCHIVE_DIR_ENV_VAR, str(DEFAULT_ARCHIVE_DIR)),
@@ -41,7 +41,7 @@ def parquet_glob(archive_dir: Path) -> str:
 def run_wau(archive_dir: Path) -> int:
     parquet_dir = archive_dir / "events" / "parquet"
     if not parquet_dir.exists() or not list(parquet_dir.glob("*.parquet")):
-        print(f"No Parquet batches found under {parquet_dir}.")
+        print(f"No monthly Parquet files found under {parquet_dir}.")
         return 0
 
     duckdb = import_duckdb()
@@ -58,7 +58,7 @@ def run_wau(archive_dir: Path) -> int:
         rows = connection.execute(query, [parquet_glob(archive_dir)]).fetchall()
 
     if not rows:
-        print("No events found in local Parquet batches.")
+        print("No events found in local monthly Parquet files.")
         return 0
 
     print("week_start,weekly_active_users")
