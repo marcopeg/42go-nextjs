@@ -10,7 +10,6 @@
 
 ## Refining
 
-- [YA00: Extract LingoCafe Profile Onboarding Overlay](./refining/YA00-extract-lingocafe-profile-onboarding-overlay/YA00.task.md)
 
 ## Refined
 
@@ -20,6 +19,7 @@
 
 ## WIP
 
+- [YA00: Extract LingoCafe Profile Onboarding Overlay](./wip/YA00-extract-lingocafe-profile-onboarding-overlay/YA00.task.md) | [plan](./wip/YA00-extract-lingocafe-profile-onboarding-overlay/YA00.plan.md) | [notes](./wip/YA00-extract-lingocafe-profile-onboarding-overlay/YA00.notes.md)
 
 ## Blocked
 

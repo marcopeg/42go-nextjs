@@ -1,20 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import { AppLayout } from "@/42go/layouts/app";
 import type { TComponentBlock } from "@/42go/components/ContentBlock/blocks/ComponentBlock";
 import type { Policy } from "@/42go/policy/types";
-import { Button } from "@/components/ui/button";
 import { BookCard } from "@/app/(app)/(lingocafe)/books/_components/BookCard";
 import { BooksHeaderLanguageFlag } from "@/app/(app)/(lingocafe)/books/_components/BooksHeaderLanguageFlag";
 import type { ReaderBook } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
-import { useAppConfig } from "@/42go/config/use-app-config";
-import { ProfileConsent } from "@/42go/profile/ProfileConsent";
-import { getConsentCurrentValues } from "@/42go/profile/consent";
-import type { TConsentData, TConsentConfig } from "@/42go/profile";
+import type { TConsentData } from "@/42go/profile";
 import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
 
 type LanguageOption = {
@@ -48,7 +44,6 @@ type ReaderData = {
 };
 
 const fallbackLanguages = getLingoCafeReaderLanguages();
-const consentMethod = "checkbox-submit";
 const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
 const fallbackReadingAction: ReaderBook["readingAction"] = {
   kind: "unavailable",
@@ -158,45 +153,17 @@ const BooksSection = ({
 );
 
 const BooksPage = () => {
-  const config = useAppConfig();
   const { status } = useSession();
   const [data, setData] = useState<ReaderData | null>(null);
-  const [ownLang, setOwnLang] = useState("");
-  const [targetLang, setTargetLang] = useState("");
-  const [targetLevel, setTargetLevel] = useState("");
-  const [consentValues, setConsentValues] = useState<Record<string, boolean>>(
-    {}
-  );
-  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const showLoading = useLingocafeRouteLoading({
     isLoading: loading,
     canDelay: !!data,
   });
 
-  const applyReaderData = (
-    payload: ReaderData,
-    consentConfig?: TConsentConfig | null
-  ) => {
-    setData(payload);
-    setOwnLang(payload.profile?.ownLang || "");
-    setTargetLang(payload.profile?.targetLang || "");
-    setTargetLevel(payload.profile?.targetLevel || "");
-    setConsentValues(
-      getConsentCurrentValues(payload.profile?.consent, consentConfig)
-    );
-  };
-
-  useEffect(() => {
-    if (status !== "authenticated") {
-      return;
-    }
-
-    const controller = new AbortController();
-
-    const loadBooks = async () => {
+  const loadBooks = useCallback(
+    async (signal?: AbortSignal) => {
       setLoading(true);
       setError(null);
 
@@ -204,7 +171,7 @@ const BooksPage = () => {
         const res = await fetch("/api/lingocafe/books", {
           credentials: "same-origin",
           cache: "no-store",
-          signal: controller.signal,
+          signal,
         });
 
         if (!res.ok) {
@@ -212,81 +179,56 @@ const BooksPage = () => {
         }
 
         const payload = normalizeReaderData(await res.json());
-        applyReaderData(payload, config?.app?.consent);
+        setData(payload);
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Could not load books.");
       } finally {
         setLoading(false);
       }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (status !== "authenticated") {
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      loadBooks(controller.signal);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [loadBooks, status]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    const reloadAfterProfileCompletion = () => {
+      loadBooks();
     };
 
-    loadBooks();
+    window.addEventListener("profile:complete", reloadAfterProfileCompletion);
 
-    return () => controller.abort();
-  }, [config?.app?.consent, status]);
-
-  const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSubmitted(true);
-    setSaving(true);
-    setError(null);
-
-    try {
-      const res = await fetch("/api/profile", {
-        method: "POST",
-        credentials: "same-origin",
-        cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profile: {
-            ownLang,
-            targetLang,
-            targetLevel,
-          },
-          consent: consentValues,
-          source: "books-onboarding",
-          method: consentMethod,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error(
-          await getResponseMessage(res, "Could not save language preferences.")
-        );
-      }
-
-      const booksRes = await fetch("/api/lingocafe/books", {
-        credentials: "same-origin",
-        cache: "no-store",
-      });
-
-      if (!booksRes.ok) {
-        throw new Error(await getResponseMessage(booksRes, "Could not reload books."));
-      }
-
-      applyReaderData(
-        normalizeReaderData(await booksRes.json()),
-        config?.app?.consent
+    return () =>
+      window.removeEventListener(
+        "profile:complete",
+        reloadAfterProfileCompletion
       );
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Could not save language preferences."
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+  }, [loadBooks, status]);
 
   const targetLabel =
     data?.languages.target.find(
       (option) => option.code === data.profile?.targetLang
     )?.label || data?.profile?.targetLang;
-  const showProfileForm = !!data && !data.profile?.isComplete;
+  const showProfileIncomplete = !!data && !data.profile?.isComplete;
   const headerActions: TComponentBlock[] =
-    !showProfileForm && data?.profile?.targetLang
+    !showProfileIncomplete && data?.profile?.targetLang
       ? [
           {
             type: "component",
@@ -298,11 +240,6 @@ const BooksPage = () => {
           },
         ]
       : [];
-  const languages = data?.languages || fallbackLanguages;
-  const consentItems = config?.app?.consent?.items || [];
-  const missingRequiredConsent = consentItems.some(
-    (item) => item.required && consentValues[item.name] !== true
-  );
   const bookshelf = useMemo(() => {
     const books = data?.books ?? [];
     const currentlyReading = books
@@ -323,8 +260,8 @@ const BooksPage = () => {
     <AppLayout
       title="Books"
       subtitle={
-        showProfileForm
-          ? "Welcome, complete your profile."
+        showProfileIncomplete
+          ? "Profile incomplete."
           : targetLabel
             ? undefined
             : "Here are the books."
@@ -346,124 +283,42 @@ const BooksPage = () => {
           </div>
         )}
 
-        {!showLoading && showProfileForm && (
-          <form
-            onSubmit={saveProfile}
-            className="max-w-xl space-y-5 rounded-lg border bg-card p-5 shadow-sm"
-          >
-            <div>
-              <h2 className="text-lg font-semibold">
-                Welcome, complete your profile
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Set your own language, target language, and reading level.
-              </p>
-            </div>
-
-            <label className="block space-y-2 text-sm font-medium">
-              <span>Your language</span>
-              <select
-                value={ownLang}
-                onChange={(event) => setOwnLang(event.target.value)}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                required
-              >
-                <option value="">Choose your language</option>
-                {languages.own.map((option) => (
-                  <option key={option.code} value={option.code}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block space-y-2 text-sm font-medium">
-              <span>Reading language</span>
-              <select
-                value={targetLang}
-                onChange={(event) => setTargetLang(event.target.value)}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                required
-              >
-                <option value="">Choose reading language</option>
-                {languages.target.map((option) => (
-                  <option key={option.code} value={option.code}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block space-y-2 text-sm font-medium">
-              <span>Reading level</span>
-              <select
-                value={targetLevel}
-                onChange={(event) => setTargetLevel(event.target.value)}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                required
-              >
-                <option value="">Choose reading level</option>
-                {languages.levels.map((option) => (
-                  <option key={option.code} value={option.code}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="border-t pt-4">
-              <ProfileConsent
-                items={consentItems}
-                values={consentValues}
-                onChange={(name, value) =>
-                  setConsentValues((current) => ({
-                    ...current,
-                    [name]: value,
-                  }))
-                }
-                disabled={saving}
-                submitted={submitted}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              disabled={
-                saving ||
-                !ownLang ||
-                !targetLang ||
-                !targetLevel ||
-                missingRequiredConsent
-              }
-            >
-              {saving ? "Saving..." : "Save preferences"}
-            </Button>
-          </form>
-        )}
-
-        {!showLoading && !showProfileForm && data && data.books.length === 0 && (
+        {!showLoading && showProfileIncomplete && (
           <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground shadow-sm">
-            No books are available for this language yet.
+            Profile incomplete, can&apos;t show books now.
           </div>
         )}
 
-        {!showLoading && !showProfileForm && data && data.books.length > 0 && (
-          <div className="min-w-0 space-y-8">
-            {bookshelf.hasCurrentlyReading ? (
-              <BooksSection
-                title="Currently Reading"
-                books={bookshelf.currentlyReading}
-              />
-            ) : null}
+        {!showLoading &&
+          !showProfileIncomplete &&
+          data &&
+          data.books.length === 0 && (
+            <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground shadow-sm">
+              No books are available for this language yet.
+            </div>
+          )}
 
-            {!bookshelf.hasCurrentlyReading || bookshelf.catalog.length > 0 ? (
-              <BooksSection
-                title={bookshelf.hasCurrentlyReading ? "Catalog" : undefined}
-                books={bookshelf.catalog}
-              />
-            ) : null}
-          </div>
-        )}
+        {!showLoading &&
+          !showProfileIncomplete &&
+          data &&
+          data.books.length > 0 && (
+            <div className="min-w-0 space-y-8">
+              {bookshelf.hasCurrentlyReading ? (
+                <BooksSection
+                  title="Currently Reading"
+                  books={bookshelf.currentlyReading}
+                />
+              ) : null}
+
+              {!bookshelf.hasCurrentlyReading ||
+              bookshelf.catalog.length > 0 ? (
+                <BooksSection
+                  title={bookshelf.hasCurrentlyReading ? "Catalog" : undefined}
+                  books={bookshelf.catalog}
+                />
+              ) : null}
+            </div>
+          )}
       </div>
     </AppLayout>
   );

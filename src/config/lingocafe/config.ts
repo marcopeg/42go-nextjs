@@ -72,6 +72,13 @@ export default {
     },
     profile: {
       schema: lingoCafeProfileSchema,
+      guard: {
+        slot: 'layout',
+        loader: () =>
+          import(
+            '@/app/(app)/(lingocafe)/_components/LingocafeOnboardingGuard'
+          ),
+      },
       items: [
         { type: 'TestRBAC' },
         // { type: 'AccountInfo' },

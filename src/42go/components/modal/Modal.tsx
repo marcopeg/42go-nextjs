@@ -46,11 +46,25 @@ const panelStackSizeClasses: Record<ModalSize, string> = {
 
 const panelAnchorClasses: Record<ModalAnchor, string> = {
   right:
-    "md:inset-y-0 md:left-auto md:right-0 md:h-screen md:border-l md:data-[state=closed]:slide-out-to-right md:data-[state=open]:slide-in-from-right",
-  left: "md:inset-y-0 md:left-0 md:right-auto md:h-screen md:border-r md:data-[state=closed]:slide-out-to-left md:data-[state=open]:slide-in-from-left",
-  top: "md:inset-x-0 md:top-0 md:bottom-auto md:max-h-[calc(100vh-4rem)] md:border-b md:data-[state=closed]:slide-out-to-top md:data-[state=open]:slide-in-from-top",
+    "md:inset-y-0 md:left-auto md:right-0 md:h-screen md:border-l",
+  left: "md:inset-y-0 md:left-0 md:right-auto md:h-screen md:border-r",
+  top: "md:inset-x-0 md:top-0 md:bottom-auto md:max-h-[calc(100vh-4rem)] md:border-b",
   bottom:
-    "md:inset-x-0 md:top-auto md:bottom-0 md:max-h-[calc(100vh-4rem)] md:border-t md:data-[state=closed]:slide-out-to-bottom md:data-[state=open]:slide-in-from-bottom",
+    "md:inset-x-0 md:top-auto md:bottom-0 md:max-h-[calc(100vh-4rem)] md:border-t",
+};
+
+const panelAnchorOpenAnimationClasses: Record<ModalAnchor, string> = {
+  right: "md:data-[state=open]:slide-in-from-right",
+  left: "md:data-[state=open]:slide-in-from-left",
+  top: "md:data-[state=open]:slide-in-from-top",
+  bottom: "md:data-[state=open]:slide-in-from-bottom",
+};
+
+const panelAnchorCloseAnimationClasses: Record<ModalAnchor, string> = {
+  right: "md:data-[state=closed]:slide-out-to-right",
+  left: "md:data-[state=closed]:slide-out-to-left",
+  top: "md:data-[state=closed]:slide-out-to-top",
+  bottom: "md:data-[state=closed]:slide-out-to-bottom",
 };
 
 const hasVisibleTitle = (title: ModalProps["title"]) =>
@@ -72,6 +86,8 @@ export const Modal = ({
   showClose = true,
   closeLabel = "Close modal",
   closeOnOverlayClick = true,
+  skipOpenAnimation = false,
+  skipCloseAnimation = false,
   onOpenAutoFocus,
   className,
   overlayClassName,
@@ -109,8 +125,10 @@ export const Modal = ({
             style={{ zIndex: contentZIndex }}
             className={cn(
               "relative z-[710] flex min-h-full w-full flex-col bg-background text-foreground shadow-2xl outline-none",
-              "data-[state=closed]:animate-out data-[state=open]:animate-in",
-              "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+              !skipCloseAnimation &&
+                "data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
+              !skipOpenAnimation &&
+                "data-[state=open]:animate-in data-[state=open]:fade-in-0",
               isPanel
                 ? cn(
                     "md:fixed",
@@ -119,12 +137,24 @@ export const Modal = ({
                       ? panelStackSizeClasses[size]
                       : panelSideSizeClasses[size],
                     panelAnchorClasses[anchor],
-                    "md:data-[state=closed]:fade-out-0 md:data-[state=open]:fade-in-0"
+                    !skipCloseAnimation &&
+                      cn(
+                        "md:data-[state=closed]:fade-out-0",
+                        panelAnchorCloseAnimationClasses[anchor]
+                      ),
+                    !skipOpenAnimation &&
+                      cn(
+                        "md:data-[state=open]:fade-in-0",
+                        panelAnchorOpenAnimationClasses[anchor]
+                      )
                 )
               : cn(
                   "md:fixed md:left-1/2 md:top-1/2 md:h-auto md:max-h-[calc(100vh-4rem)] md:w-[calc(100vw-2rem)] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-lg md:border",
                   modalSizeClasses[size],
-                  "md:data-[state=closed]:zoom-out-95 md:data-[state=open]:zoom-in-95 md:data-[state=closed]:slide-out-to-bottom-0 md:data-[state=open]:slide-in-from-bottom-0"
+                  !skipCloseAnimation &&
+                    "md:data-[state=closed]:zoom-out-95 md:data-[state=closed]:slide-out-to-bottom-0",
+                  !skipOpenAnimation &&
+                    "md:data-[state=open]:zoom-in-95 md:data-[state=open]:slide-in-from-bottom-0"
                 ),
               className
             )}

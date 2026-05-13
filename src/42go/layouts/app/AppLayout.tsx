@@ -7,6 +7,7 @@ import { SidebarMenu } from "./SidebarMenu";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { Toolbar } from "./Toolbar";
 import { useAppConfig } from "@/42go/config/use-app-config";
+import { ProfileLayoutGuard } from "./ProfileLayoutGuard";
 
 const getSideMenuState = () => {
   try {
@@ -175,6 +176,8 @@ export const AppLayout = ({
           <div className="w-full px-6">{footer}</div>
         </footer>
       )}
+
+      <ProfileLayoutGuard guard={config?.app?.profile?.guard} />
     </div>
   );
 };

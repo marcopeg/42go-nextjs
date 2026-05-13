@@ -46,9 +46,13 @@ import { Modal } from "@/42go/components/modal";
 - `showClose?: boolean`
 - `closeLabel?: string`
 - `closeOnOverlayClick?: boolean`
+- `skipOpenAnimation?: boolean`
+- `skipCloseAnimation?: boolean`
 - `bodyClassName`, `headerClassName`, `footerClassName`, `className`, `overlayClassName`
 
 There is no public `animation` prop. Animation is inferred from `presentation` and `anchor`. There are no raw width/height props in the first version; use size presets.
+
+Use `skipOpenAnimation` when a blocking surface should appear immediately, such as a required onboarding gate. Use `skipCloseAnimation` when a surface should disappear immediately. Leave both false for normal dialogs and panels.
 
 There is no public `stack` or `zIndex` prop. Stacking is inferred from nested `Modal` usage.
 

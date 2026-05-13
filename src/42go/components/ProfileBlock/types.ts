@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type {
   TProfileCoreConfig,
   TProfileData,
@@ -84,6 +84,21 @@ export type TProfileBlockItem =
   | TProfilePlatformBlock
   | TProfileComponentBlock;
 
+export type TProfileLayoutGuardProps = {
+  refreshKey: number;
+};
+
+export type TProfileLayoutGuardLoader = () => Promise<{
+  default: ComponentType<TProfileLayoutGuardProps>;
+}>;
+
+export type TProfileLayoutGuardConfig = {
+  slot: "layout";
+  component?: ComponentType<TProfileLayoutGuardProps>;
+  loader?: TProfileLayoutGuardLoader;
+  fallback?: ReactNode;
+};
+
 export type TProfileStoreSnapshot = {
   profile: TProfileData;
   consent: Record<string, boolean>;
@@ -93,6 +108,7 @@ export type TProfileStoreSnapshot = {
 
 export type TProfileConfig = TProfileCoreConfig & {
   items?: readonly TProfileBlockItem[];
+  guard?: TProfileLayoutGuardConfig;
 };
 
 export type TProfilePageRendererHandle = {
