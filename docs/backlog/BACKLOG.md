@@ -4,12 +4,12 @@
 
 - [FE78: HeroBlock: Icon Support](./draft/FE78-heroblock-icon-support/FE78.task.md)
 - [TR02: Add Image ContentBlock](./draft/TR02-add-image-contentblock/TR02.task.md)
+- [GQ36: Add YouTube ContentBlock](./draft/GQ36-add-youtube-contentblock/GQ36.task.md)
 - [AAN: App-Specific Session Configuration [aan]](./draft/AAN-app-specific-session-configuration-aan/AAN.task.md)
 - [ABK: Add Social Login: X [abk]](./draft/ABK-add-social-login-x-abk/ABK.task.md)
 - [IK47: Add Social Login: Facebook](./draft/IK47-add-social-login-facebook/IK47.task.md)
 - [TO37: Add Social Login: Apple](./draft/TO37-add-social-login-apple/TO37.task.md)
 - [ABL: Add Social Login: LinkedIn [abl]](./draft/ABL-add-social-login-linkedin-abl/ABL.task.md)
-- [GQ36: Add YouTube ContentBlock](./draft/GQ36-add-youtube-contentblock/GQ36.task.md)
 - [AAT: Support i18n](./draft/AAT-support-i18n/AAT.task.md)
 - [ABD: Optimize Database Documentation [abd]](./draft/ABD-optimize-database-documentation-abd/ABD.task.md)
 - [ABE: Optimize Theming Documentation [abe]](./draft/ABE-optimize-theming-documentation-abe/ABE.task.md)
@@ -55,10 +55,11 @@
 
 ## WIP
 
-- [NH52: Add AppLayout Profile Guard Before Slot](./wip/NH52-add-applayout-profile-guard-before-slot/NH52.task.md) | [plan](./wip/NH52-add-applayout-profile-guard-before-slot/NH52.plan.md)
+- [NH52: Add AppLayout Profile Guard Before Slot](./wip/NH52-add-applayout-profile-guard-before-slot/NH52.task.md) | [plan](./wip/NH52-add-applayout-profile-guard-before-slot/NH52.plan.md) | [notes](./wip/NH52-add-applayout-profile-guard-before-slot/NH52.notes.md)
 
 ## Blocked
 
+- [UT41: ESLint 9 → 10](./completed/UT41-eslint-9-10/UT41.task.md) | [plan](./completed/UT41-eslint-9-10/UT41.plan.md) | [notes](./completed/UT41-eslint-9-10/UT41.notes.md)
 
 ## Historical Logs
 

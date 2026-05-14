@@ -3,12 +3,6 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { apps, type TAppConfig, type TAppID } from "@/AppConfig";
 
-declare global {
-  interface Window {
-    __APP_ID__?: TAppID;
-  }
-}
-
 const AppIDContext = createContext<TAppID>(null);
 
 export const AppConfigProvider = ({
@@ -20,13 +14,7 @@ export const AppConfigProvider = ({
 }) => <AppIDContext.Provider value={appID}>{children}</AppIDContext.Provider>;
 
 export function useAppID(): TAppID {
-  const contextAppID = useContext(AppIDContext);
-  if (contextAppID) return contextAppID;
-
-  if (typeof window !== "undefined") {
-    return window.__APP_ID__ as TAppID;
-  }
-  return null;
+  return useContext(AppIDContext);
 }
 
 export function useAppConfig(): TAppConfig {

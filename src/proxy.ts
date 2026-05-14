@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getAppID } from "@/42go/config/app-config";
+import { resolveAppIDFromHeaders } from "@/42go/config/app-config";
 import { APP_ID_HEADER } from "@/42go/lib/app-id";
 
 export async function proxy(request: NextRequest) {
   console.log("@@@@@ MIDDLEWARE :: START");
 
-  // Resolve the AppID using the unified resolution function
-  const appID = await getAppID();
-  // console.log("@appID:", appID);
-
-  // Set the AppID header for caching in subsequent calls
+  // The app id header is reserved for the proxy. Public requests may use
+  // configured header matchers, but cannot choose this internal value.
   const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete(APP_ID_HEADER);
+
+  const appID = resolveAppIDFromHeaders(requestHeaders);
   if (appID) {
     requestHeaders.set(APP_ID_HEADER, appID);
   }

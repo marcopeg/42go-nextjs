@@ -3,15 +3,11 @@ import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
 import { getDB } from "@/42go/db";
-import { APP_ID_HEADER } from "@/42go/lib/app-id";
 import type { AbstractHeaders } from "@/42go/config/abstract-headers";
-import { getAppInfo } from "@/42go/config/app-config";
-import { apps, type TAppID } from "@/AppConfig";
 import {
-  matchAppByHeaders,
-  matchAppByUrl,
-  matchByEnvironment,
-} from "@/42go/lib/app-id/matchers";
+  getAppInfo,
+  resolveAppIDFromAbstractHeaders,
+} from "@/42go/config/app-config";
 
 type AuthRequestHeaders = Record<string, unknown> | undefined;
 
@@ -36,23 +32,25 @@ const fromAuthRequestHeaders = (
   has: (name: string) => getHeaderValue(headers, name) !== null,
   host: getHeaderValue(headers, "host") || undefined,
   url: undefined,
+  forEach: (callback) => {
+    if (!headers) return;
+
+    for (const [key, value] of Object.entries(headers)) {
+      if (Array.isArray(value)) {
+        value.forEach((item) => callback(item?.toString() ?? "", key));
+        continue;
+      }
+
+      if (value !== undefined && value !== null) {
+        callback(value.toString(), key);
+      }
+    }
+  },
 });
 
 const resolveAppIdFromAuthHeaders = (
   headers: AuthRequestHeaders
-): TAppID => {
-  const explicitAppId = getHeaderValue(headers, APP_ID_HEADER);
-  if (explicitAppId && explicitAppId in apps) return explicitAppId as TAppID;
-
-  const envMatch = matchByEnvironment(apps);
-  if (envMatch) return envMatch;
-
-  const abstractHeaders = fromAuthRequestHeaders(headers);
-  return (
-    matchAppByHeaders(abstractHeaders, apps) ||
-    matchAppByUrl(abstractHeaders, apps)
-  );
-};
+) => resolveAppIDFromAbstractHeaders(fromAuthRequestHeaders(headers));
 
 export const getProviders = async () => {
   const { id: appID, config } = await getAppInfo();

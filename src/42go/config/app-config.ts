@@ -2,7 +2,10 @@ import { headers as getHeaders } from "next/headers";
 
 import { APP_ID_HEADER } from "@/42go/lib/app-id";
 import { type TAppConfig, type TAppID, apps, DEFAULT_APP } from "@/AppConfig";
-import { fromHeaders } from "@/42go/config/abstract-headers";
+import {
+  fromHeaders,
+  type AbstractHeaders,
+} from "@/42go/config/abstract-headers";
 import {
   matchAppByHeaders,
   matchAppByUrl,
@@ -14,6 +17,62 @@ export type { TAppConfig, TAppID } from "@/AppConfig";
 const isBuildContext = () =>
   process.env.NEXT_PHASE === "phase-production-build" ||
   process.env.NEXT_PRIVATE_BUILD_WORKER === "1";
+
+const isReservedAppIDHeader = (name: string) =>
+  name.toLowerCase() === APP_ID_HEADER.toLowerCase();
+
+const withoutReservedAppIDHeader = (
+  headers: AbstractHeaders
+): AbstractHeaders => ({
+  get: (name) => (isReservedAppIDHeader(name) ? null : headers.get(name)),
+  has: (name) => (isReservedAppIDHeader(name) ? false : headers.has(name)),
+  host: headers.host,
+  url: headers.url,
+  forEach: headers.forEach
+    ? (callback) => {
+        headers.forEach?.((value, key) => {
+          if (!isReservedAppIDHeader(key)) callback(value, key);
+        });
+      }
+    : undefined,
+});
+
+const getFallbackAppID = (): TAppID => {
+  if (DEFAULT_APP === null) {
+    console.warn(
+      `No app could be resolved and no DEFAULT_APP set. Returning null.`
+    );
+    return null;
+  }
+
+  if (apps[DEFAULT_APP as keyof typeof apps]) {
+    console.warn(`No app could be resolved, using default: ${DEFAULT_APP}`);
+    return DEFAULT_APP;
+  }
+
+  console.error(`Default app ${DEFAULT_APP} is not defined in apps config`);
+  return null;
+};
+
+export const resolveAppIDFromAbstractHeaders = (
+  headers: AbstractHeaders
+): TAppID => {
+  const safeHeaders = withoutReservedAppIDHeader(headers);
+
+  const envMatch = matchByEnvironment(apps);
+  if (envMatch) return envMatch;
+
+  const headerMatch = matchAppByHeaders(safeHeaders, apps);
+  if (headerMatch) return headerMatch;
+
+  const urlMatch = matchAppByUrl(safeHeaders, apps);
+  if (urlMatch) return urlMatch;
+
+  return getFallbackAppID();
+};
+
+export const resolveAppIDFromHeaders = (headers: Headers): TAppID =>
+  resolveAppIDFromAbstractHeaders(fromHeaders(headers));
 
 /**
  * Main app ID resolution function that works for both server components and API routes.
@@ -46,53 +105,7 @@ export const getAppID = async (): Promise<TAppID> => {
     return null;
   }
 
-  // Step 2: Check for explicit header (set by middleware)
-  const appIDHeader = headers.get(APP_ID_HEADER);
-  if (appIDHeader) {
-    // Check if the resolved appID is valid
-    if (apps[appIDHeader as keyof typeof apps]) {
-      return appIDHeader as TAppID;
-    }
-    console.warn(`Invalid app ID from header: ${appIDHeader}`);
-  }
-
-  // Step 3: Run the matchers
-  const abstractHeaders = fromHeaders(headers);
-
-  // Try environment matching
-  const envMatch = matchByEnvironment(apps);
-  if (envMatch) {
-    return envMatch;
-  }
-
-  // Try header pattern matching
-  const headerMatch = matchAppByHeaders(abstractHeaders, apps);
-  if (headerMatch) {
-    return headerMatch;
-  }
-
-  // Try URL pattern matching
-  const urlMatch = matchAppByUrl(abstractHeaders, apps);
-  if (urlMatch) {
-    return urlMatch;
-  }
-
-  // Step 4: Fallback
-  if (DEFAULT_APP === null) {
-    console.warn(
-      `No app could be resolved and no DEFAULT_APP set. Returning null.`
-    );
-    return null;
-  }
-
-  // Step 5: Check if default app is valid
-  if (apps[DEFAULT_APP as keyof typeof apps]) {
-    console.warn(`No app could be resolved, using default: ${DEFAULT_APP}`);
-    return DEFAULT_APP;
-  }
-
-  console.error(`Default app ${DEFAULT_APP} is not defined in apps config`);
-  return null;
+  return resolveAppIDFromHeaders(headers);
 };
 
 export const getAppConfig = async (appID?: TAppID): Promise<TAppConfig> => {

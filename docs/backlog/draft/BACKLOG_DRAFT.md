@@ -2,12 +2,12 @@
 
 - [FE78: HeroBlock: Icon Support](./FE78-heroblock-icon-support/FE78.task.md)
 - [TR02: Add Image ContentBlock](./TR02-add-image-contentblock/TR02.task.md)
+- [GQ36: Add YouTube ContentBlock](./GQ36-add-youtube-contentblock/GQ36.task.md)
 - [AAN: App-Specific Session Configuration [aan]](./AAN-app-specific-session-configuration-aan/AAN.task.md)
 - [ABK: Add Social Login: X [abk]](./ABK-add-social-login-x-abk/ABK.task.md)
 - [IK47: Add Social Login: Facebook](./IK47-add-social-login-facebook/IK47.task.md)
 - [TO37: Add Social Login: Apple](./TO37-add-social-login-apple/TO37.task.md)
 - [ABL: Add Social Login: LinkedIn [abl]](./ABL-add-social-login-linkedin-abl/ABL.task.md)
-- [GQ36: Add YouTube ContentBlock](./GQ36-add-youtube-contentblock/GQ36.task.md)
 - [AAT: Support i18n](./AAT-support-i18n/AAT.task.md)
 - [ABD: Optimize Database Documentation [abd]](./ABD-optimize-database-documentation-abd/ABD.task.md)
 - [ABE: Optimize Theming Documentation [abe]](./ABE-optimize-theming-documentation-abe/ABE.task.md)

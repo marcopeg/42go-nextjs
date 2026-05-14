@@ -47,7 +47,7 @@ Override values from `src/app/tokens.css`:
 }
 ```
 
-The `theme.default` AppConfig field still controls the initial light, dark, or system preference through `next-themes`. App theme stylesheets only provide app-specific token overrides.
+The `theme.default` AppConfig field still controls the initial light, dark, or system preference through the shared script-free `ThemeProvider`. App theme stylesheets only provide app-specific token overrides.
 
 ## Validation
 

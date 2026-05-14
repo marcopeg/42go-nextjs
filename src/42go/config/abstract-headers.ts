@@ -9,6 +9,7 @@ export interface AbstractHeaders {
   has(name: string): boolean;
   host?: string;
   url?: string;
+  forEach?: (callback: (value: string, key: string) => void) => void;
 }
 
 /**
@@ -20,6 +21,9 @@ export const fromNextRequest = (req: NextRequest): AbstractHeaders => ({
   has: (name: string) => req.headers.has(name),
   host: req.headers.get("host") || undefined,
   url: req.url,
+  forEach: (callback) => {
+    req.headers.forEach((value, key) => callback(value, key));
+  },
 });
 
 /**
@@ -32,4 +36,7 @@ export const fromHeaders = (headers: Headers): AbstractHeaders => ({
   host: headers.get("host") || undefined,
   // URL is not available in this context, matchers should handle gracefully
   url: undefined,
+  forEach: (callback) => {
+    headers.forEach((value, key) => callback(value, key));
+  },
 });

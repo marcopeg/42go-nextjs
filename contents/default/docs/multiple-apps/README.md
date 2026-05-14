@@ -56,6 +56,10 @@ This setting works by matching the request's headers against one or more rules t
 
 > You can use regular expressions for both the `key` and the `value`.
 
+Use configured header matchers for public header-based app selection, such as internal API calls that send `X-App-Type: calendar`.
+
+The reserved `X-42Go-AppID` header is proxy-owned. Incoming requests are not allowed to select an app by sending it directly. The request proxy strips any incoming value, resolves the app from the configured matchers, and then forwards the trusted internal value to the rest of the request pipeline.
+
 ```ts
 const app: AppConfigItem = {
   match: {
@@ -95,11 +99,12 @@ const app: AppConfigItem = {
 
 If these functionalities are not enough, you can modify the `@/middleware.ts` and implement whatever _Request_ matching logic that you need to put in place to pick the active _App_ configuration.
 
-Just make sure you forward the final value as internal header:
+Just make sure you resolve the app from trusted request signals first, then forward the final value as the internal header:
 
 ```ts
 const requestHeaders = new Headers(request.headers);
-requestHeaders.set(APP_HEADER_NAME, "-- your choiche goes here --");
+requestHeaders.delete(APP_ID_HEADER);
+requestHeaders.set(APP_ID_HEADER, "-- resolved app id goes here --");
 ```
 
 ### Default App

@@ -26,10 +26,6 @@ const hydrateProviderState = ({
   appID: TAppID;
   initialProfileCompletion: TProfileCompletionState | null;
 }) => {
-  if (typeof window !== "undefined") {
-    window.__APP_ID__ = appID || undefined;
-  }
-
   if (appID === "lingocafe") {
     hydrateLingoCafeProfileCompletion(initialProfileCompletion);
   }
