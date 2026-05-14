@@ -84,8 +84,17 @@ export type TProfileBlockItem =
   | TProfilePlatformBlock
   | TProfileComponentBlock;
 
+export type TProfileLayoutGuardSlot = "before" | "layout";
+
+export type TProfileBeforeGuardReleaseOptions = {
+  delayMs?: number;
+};
+
+export type TProfileBeforeGuardShouldBlock = () => boolean;
+
 export type TProfileLayoutGuardProps = {
   refreshKey: number;
+  releaseBeforeGuard?: (options?: TProfileBeforeGuardReleaseOptions) => void;
 };
 
 export type TProfileLayoutGuardLoader = () => Promise<{
@@ -93,10 +102,11 @@ export type TProfileLayoutGuardLoader = () => Promise<{
 }>;
 
 export type TProfileLayoutGuardConfig = {
-  slot: "layout";
+  slot: TProfileLayoutGuardSlot;
   component?: ComponentType<TProfileLayoutGuardProps>;
   loader?: TProfileLayoutGuardLoader;
   fallback?: ReactNode;
+  shouldBlock?: TProfileBeforeGuardShouldBlock;
 };
 
 export type TProfileStoreSnapshot = {

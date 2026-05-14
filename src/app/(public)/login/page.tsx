@@ -5,7 +5,8 @@ import {
   GitHubLogin,
   GoogleLogin,
 } from "@/42go/auth/components/login-strategies";
-import { getAppConfig } from "@/42go/config/app-config";
+import { getAppInfo } from "@/42go/config/app-config";
+import { LoginProfileStateReset } from "@/config/lingocafe/LoginProfileStateReset";
 
 const safeInternalPath = (input?: string | null): string | null => {
   if (!input || typeof input !== "string") return null;
@@ -17,7 +18,7 @@ const safeInternalPath = (input?: string | null): string | null => {
 };
 
 export default async function LoginPage() {
-  const appConfig = await getAppConfig();
+  const { id: appID, config: appConfig } = await getAppInfo();
   const fallback = "/dashboard";
   const configured = appConfig?.app?.default?.page ?? null;
   const callbackUrl = safeInternalPath(configured) ?? fallback;
@@ -56,6 +57,7 @@ export default async function LoginPage() {
 
   return (
     <div className="login-page max-w-md mx-auto mt-8 p-6">
+      {appID === "lingocafe" ? <LoginProfileStateReset /> : null}
       <h1 className="text-2xl font-bold text-center mb-6">Sign In</h1>
 
       {/* Error Display */}

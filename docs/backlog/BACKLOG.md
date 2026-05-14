@@ -46,7 +46,6 @@
 
 ## Refining
 
-- [NH52: LingoCafe Onboarding Follow-up](./refining/NH52-add-applayout-profile-guard-before-slot/NH52.task.md)
 
 ## Refined
 
@@ -56,6 +55,7 @@
 
 ## WIP
 
+- [NH52: Add AppLayout Profile Guard Before Slot](./wip/NH52-add-applayout-profile-guard-before-slot/NH52.task.md) | [plan](./wip/NH52-add-applayout-profile-guard-before-slot/NH52.plan.md)
 
 ## Blocked
 

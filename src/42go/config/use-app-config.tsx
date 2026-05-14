@@ -1,4 +1,6 @@
-import { useMemo } from "react";
+"use client";
+
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { apps, type TAppConfig, type TAppID } from "@/AppConfig";
 
 declare global {
@@ -7,7 +9,20 @@ declare global {
   }
 }
 
+const AppIDContext = createContext<TAppID>(null);
+
+export const AppConfigProvider = ({
+  appID,
+  children,
+}: {
+  appID: TAppID;
+  children: ReactNode;
+}) => <AppIDContext.Provider value={appID}>{children}</AppIDContext.Provider>;
+
 export function useAppID(): TAppID {
+  const contextAppID = useContext(AppIDContext);
+  if (contextAppID) return contextAppID;
+
   if (typeof window !== "undefined") {
     return window.__APP_ID__ as TAppID;
   }

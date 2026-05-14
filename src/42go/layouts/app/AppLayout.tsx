@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppLayoutProps } from "./types";
 import { ProtectComponent } from "@/42go/policy/client";
 import { SidebarMenu } from "./SidebarMenu";
@@ -8,6 +8,10 @@ import { MobileBottomNav } from "./MobileBottomNav";
 import { Toolbar } from "./Toolbar";
 import { useAppConfig } from "@/42go/config/use-app-config";
 import { ProfileLayoutGuard } from "./ProfileLayoutGuard";
+import type {
+  TProfileBeforeGuardReleaseOptions,
+  TProfileLayoutGuardConfig,
+} from "@/42go/components/ProfileBlock";
 
 const getSideMenuState = () => {
   try {
@@ -18,7 +22,15 @@ const getSideMenuState = () => {
   }
 };
 
-export const AppLayout = ({
+const shouldBlockBeforeGuard = (guard: TProfileLayoutGuardConfig) => {
+  try {
+    return guard.shouldBlock ? guard.shouldBlock() : true;
+  } catch {
+    return true;
+  }
+};
+
+const AppLayoutShell = ({
   children,
   title,
   subtitle,
@@ -178,6 +190,65 @@ export const AppLayout = ({
       )}
 
       <ProfileLayoutGuard guard={config?.app?.profile?.guard} />
+    </div>
+  );
+};
+
+export const AppLayout = (props: AppLayoutProps) => {
+  const config = useAppConfig();
+  const guard = config?.app?.profile?.guard;
+  const beforeGuard = guard?.slot === "before" ? guard : undefined;
+  const [isBeforeGuardBlocking, setIsBeforeGuardBlocking] = useState(() =>
+    beforeGuard ? shouldBlockBeforeGuard(beforeGuard) : false
+  );
+  const [isBeforeGuardVisible, setIsBeforeGuardVisible] = useState(() =>
+    beforeGuard ? shouldBlockBeforeGuard(beforeGuard) : false
+  );
+  const releaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current);
+    };
+  }, []);
+
+  const releaseBeforeGuard = useCallback(
+    (options?: TProfileBeforeGuardReleaseOptions) => {
+      const delayMs = Math.max(0, options?.delayMs ?? 0);
+
+      setIsBeforeGuardBlocking(false);
+
+      if (releaseTimerRef.current) {
+        clearTimeout(releaseTimerRef.current);
+        releaseTimerRef.current = null;
+      }
+
+      if (delayMs > 0) {
+        releaseTimerRef.current = setTimeout(() => {
+          setIsBeforeGuardVisible(false);
+          releaseTimerRef.current = null;
+        }, delayMs);
+        return;
+      }
+
+      setIsBeforeGuardVisible(false);
+    },
+    []
+  );
+
+  if (!beforeGuard) return <AppLayoutShell {...props} />;
+
+  return (
+    <div className="min-h-screen bg-background">
+      {isBeforeGuardVisible ? (
+        <ProfileLayoutGuard
+          guard={beforeGuard}
+          slot="before"
+          onBeforeGuardRelease={releaseBeforeGuard}
+        />
+      ) : null}
+
+      {!isBeforeGuardBlocking ? <AppLayoutShell {...props} /> : null}
     </div>
   );
 };

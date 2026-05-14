@@ -1,11 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { getServerSession } from "next-auth";
 import { getAppInfo } from "@/42go/config/app-config";
 import { InjectAppID } from "@/42go/config/InjectAppID";
 import { Providers } from "@/components/Providers";
 import { Toaster } from "@/components/ui/sonner";
 import { resolvePWAColor, type TColorInput } from "@/42go/pwa/colors";
 import { resolveAppIcons } from "@/42go/icons";
+import { getAuthOptions } from "@/42go/auth/lib/authOptions";
+import { loadProfile } from "@/42go/profile/server";
+import type { TProfileContextConfig } from "@/42go/profile";
+import type { TProfileCompletionState } from "@/config/lingocafe/profile-completion-cache";
 import "./tokens.css";
 import "./tailwind.css";
 import { HeadTags } from "@/42go/pwa/HeadTags";
@@ -74,6 +79,36 @@ export const generateViewport = async (): Promise<Viewport> => {
   };
 };
 
+const getInitialProfileComplete = async ({
+  appID,
+  config,
+}: {
+  appID: string | null;
+  config: Awaited<ReturnType<typeof getAppInfo>>["config"];
+}): Promise<TProfileCompletionState | null> => {
+  if (!appID || config?.app?.profile?.guard?.slot !== "before") return null;
+
+  const session = await getServerSession(await getAuthOptions());
+  const userId = session?.user?.id;
+  if (!userId) return null;
+
+  const profileConfig: TProfileContextConfig = {
+    ...(config?.app?.profile || {}),
+    consent: config?.app?.consent,
+  };
+  const loaded = await loadProfile({
+    userId,
+    appId: appID,
+    config: profileConfig,
+  });
+
+  return {
+    appId: appID,
+    userId,
+    isComplete: loaded.isComplete,
+  };
+};
+
 const RootLayout = async ({
   children,
 }: Readonly<{
@@ -81,13 +116,35 @@ const RootLayout = async ({
 }>) => {
   const { id: appID, config } = await getAppInfo();
   const themeDefault = config?.theme?.default;
+  const initialProfileComplete = await getInitialProfileComplete({
+    appID,
+    config,
+  });
+  const providerKey = JSON.stringify({
+    appID,
+    initialProfileComplete,
+  });
 
   // Conditionally render the app's body based on a recognised configuration
   // TODO: redirect to a default app?
   const body = appID ? (
-    <Providers defaultTheme={themeDefault}>{children}</Providers>
+    <Providers
+      key={providerKey}
+      appID={appID}
+      defaultTheme={themeDefault}
+      initialProfileCompletion={initialProfileComplete}
+    >
+      {children}
+    </Providers>
   ) : (
-    <Providers defaultTheme={themeDefault}>not found</Providers>
+    <Providers
+      key={providerKey}
+      appID={appID}
+      defaultTheme={themeDefault}
+      initialProfileCompletion={initialProfileComplete}
+    >
+      not found
+    </Providers>
   );
 
   return (

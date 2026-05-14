@@ -14,11 +14,6 @@ export const InjectAppID = ({ id }: InjectAppIDProps) => {
       {stylesheet.appHref && (
         <link rel="stylesheet" href={stylesheet.appHref} />
       )}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `window.__APP_ID__ = ${JSON.stringify(id ?? null)};`,
-        }}
-      />
     </>
   );
 };

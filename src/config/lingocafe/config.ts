@@ -2,6 +2,7 @@ import { TAppConfigItem } from '../../AppConfig';
 import { HomePage } from './home-page';
 import { User, Users, BookOpen } from 'lucide-react';
 import { LingocafePreferences } from '@/app/(app)/(lingocafe)/_components/LingocafePreferences';
+import { hasCachedLingoCafeProfileCompletion } from '@/config/lingocafe/profile-completion-cache';
 import { lingoCafeProfileSchema } from '@/config/lingocafe/profile-options';
 
 export default {
@@ -73,7 +74,8 @@ export default {
     profile: {
       schema: lingoCafeProfileSchema,
       guard: {
-        slot: 'layout',
+        slot: 'before',
+        shouldBlock: () => !hasCachedLingoCafeProfileCompletion(),
         loader: () =>
           import(
             '@/app/(app)/(lingocafe)/_components/LingocafeOnboardingGuard'

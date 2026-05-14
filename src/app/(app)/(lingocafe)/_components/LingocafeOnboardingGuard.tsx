@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { signOut, useSession } from "next-auth/react";
 
 import { Modal } from "@/42go/components/modal";
@@ -9,6 +15,7 @@ import { useAppConfig } from "@/42go/config/use-app-config";
 import { ProfileConsent } from "@/42go/profile/ProfileConsent";
 import { useProfileController } from "@/42go/profile/client";
 import { Button } from "@/components/ui/button";
+import { setCachedLingoCafeProfileCompletion } from "@/config/lingocafe/profile-completion-cache";
 import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
 
 const languages = getLingoCafeReaderLanguages();
@@ -18,19 +25,64 @@ const getStringValue = (value: unknown) =>
 
 export const LingocafeOnboardingGuard = ({
   refreshKey: _refreshKey,
+  releaseBeforeGuard,
 }: TProfileLayoutGuardProps) => {
   void _refreshKey;
 
   const config = useAppConfig();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const userId = session?.user?.id;
   const [submitted, setSubmitted] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(true);
+  const releasedRef = useRef(false);
   const controller = useProfileController({
     profile: config?.app?.profile,
     consent: config?.app?.consent,
   });
 
-  if (status !== "authenticated") return null;
+  const releaseGuard = useCallback(
+    (delayMs = 0) => {
+      if (!releaseBeforeGuard || releasedRef.current) return;
+
+      releasedRef.current = true;
+      releaseBeforeGuard({ delayMs });
+    },
+    [releaseBeforeGuard]
+  );
+
+  useEffect(() => {
+    if (!releaseBeforeGuard) return;
+
+    if (status === "unauthenticated") {
+      releaseGuard();
+      return;
+    }
+
+    if (!controller.loading && controller.isComplete) {
+      setCachedLingoCafeProfileCompletion(true, userId);
+      releaseGuard();
+      return;
+    }
+
+    if (!controller.loading && !controller.isComplete) {
+      setCachedLingoCafeProfileCompletion(false, userId);
+    }
+  }, [
+    controller.isComplete,
+    controller.loading,
+    releaseBeforeGuard,
+    releaseGuard,
+    status,
+    userId,
+  ]);
+
+  const showLoadingOnly =
+    releaseBeforeGuard &&
+    status !== "authenticated" &&
+    status !== "unauthenticated";
+
+  if (status !== "authenticated" && !showLoadingOnly) return null;
   if (!controller.loading && controller.isComplete) return null;
 
   const profile = controller.profile;
@@ -63,6 +115,13 @@ export const LingocafeOnboardingGuard = ({
       const payload = await controller.save();
 
       if (payload.isComplete) {
+        setCachedLingoCafeProfileCompletion(true, userId);
+
+        if (releaseBeforeGuard) {
+          setModalOpen(false);
+          releaseGuard(300);
+        }
+
         window.dispatchEvent(new Event("profile:complete"));
         return;
       }
@@ -77,7 +136,7 @@ export const LingocafeOnboardingGuard = ({
 
   return (
     <Modal
-      open={true}
+      open={modalOpen}
       onOpenChange={() => {}}
       presentation="panel"
       anchor="top"
