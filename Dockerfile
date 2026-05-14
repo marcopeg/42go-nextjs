@@ -1,9 +1,13 @@
 # syntax=docker/dockerfile:1.7
 
+# Keep the release image on the current Node LTS line. Node current releases can
+# break native Next.js build workers under linux/amd64 buildx emulation.
+ARG NODE_IMAGE=node:24-alpine
+
 # ==========================================
 # STAGE 1: Build Dependencies
 # ==========================================
-FROM node:26-alpine AS build-deps
+FROM ${NODE_IMAGE} AS build-deps
 WORKDIR /app
 
 # Install all dependencies (including devDependencies)
@@ -13,7 +17,7 @@ RUN --mount=type=cache,id=npm-build,target=/root/.npm,sharing=locked npm ci
 # ==========================================
 # STAGE 2: Builder Stage
 # ==========================================
-FROM node:26-alpine AS builder
+FROM ${NODE_IMAGE} AS builder
 WORKDIR /app
 
 # Copy node_modules from build-deps stage
@@ -39,7 +43,7 @@ RUN npm run build && \
 # ==========================================
 # STAGE 3: Ultra-Slim Production Runner
 # ==========================================
-FROM node:26-alpine AS runner
+FROM ${NODE_IMAGE} AS runner
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \

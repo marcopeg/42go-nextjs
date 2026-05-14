@@ -55,11 +55,9 @@
 
 ## WIP
 
-- [NH52: Add AppLayout Profile Guard Before Slot](./wip/NH52-add-applayout-profile-guard-before-slot/NH52.task.md) | [plan](./wip/NH52-add-applayout-profile-guard-before-slot/NH52.plan.md) | [notes](./wip/NH52-add-applayout-profile-guard-before-slot/NH52.notes.md)
 
 ## Blocked
 
-- [UT41: ESLint 9 → 10](./completed/UT41-eslint-9-10/UT41.task.md) | [plan](./completed/UT41-eslint-9-10/UT41.plan.md) | [notes](./completed/UT41-eslint-9-10/UT41.notes.md)
 
 ## Historical Logs
 
