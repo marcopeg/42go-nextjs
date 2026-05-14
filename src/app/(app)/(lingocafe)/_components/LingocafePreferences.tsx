@@ -18,7 +18,7 @@ export const LingocafePreferences = () => {
   const targetLevel =
     typeof profile.targetLevel === "string" ? profile.targetLevel : "";
   const disabled = loading || saving;
-  const missing = !ownLang || !targetLang || !targetLevel;
+  const missing = !ownLang || !targetLang;
 
   const validate = useCallback(() => {
     setSubmitted(true);
@@ -26,7 +26,7 @@ export const LingocafePreferences = () => {
     if (missing) {
       return {
         ok: false as const,
-        message: "Choose your language, learning language, and level.",
+        message: "Choose your language and learning language.",
       };
     }
 
@@ -43,7 +43,7 @@ export const LingocafePreferences = () => {
       <div className="space-y-5">
         {submitted && missing && (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            Choose your language, learning language, and level.
+            Choose your language and learning language.
           </div>
         )}
 
@@ -97,14 +97,15 @@ export const LingocafePreferences = () => {
               <span>Level</span>
               <select
                 value={targetLevel}
-                onChange={(event) =>
-                  setProfileValue("targetLevel", event.target.value)
-                }
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setProfileValue("targetLevel", value || null);
+                }}
                 disabled={disabled}
-                aria-invalid={submitted && !targetLevel}
+                aria-invalid={false}
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:border-destructive"
               >
-                <option value="">Choose level</option>
+                <option value="">No level yet</option>
                 {languages.levels.map((option) => (
                   <option key={option.code} value={option.code}>
                     {option.label}

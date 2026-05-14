@@ -33,10 +33,40 @@ export const lingoCafeProfileOptions = {
     { code: "sv", label: "Swedish" },
   ] satisfies LingoCafeLanguageOption[],
   targetLevel: [
+    { code: "zero", label: "Zero" },
+    { code: "a1", label: "A1" },
     { code: "a2", label: "A2" },
     { code: "b1", label: "B1" },
+    { code: "b2", label: "B2" },
+    { code: "expert", label: "Expert" },
   ] satisfies LingoCafeLevelOption[],
 } as const;
+
+const ownLanguageAliases: Record<string, string> = {
+  nb: "no",
+  nn: "no",
+};
+
+export const resolveLingoCafeOwnLanguage = (
+  languageTags: readonly string[] | string | null | undefined
+) => {
+  const candidates = Array.isArray(languageTags)
+    ? languageTags
+    : languageTags
+      ? [languageTags]
+      : [];
+  const ownLangCodes = new Set(
+    lingoCafeProfileOptions.ownLang.map((option) => option.code)
+  );
+
+  for (const tag of candidates) {
+    const primary = tag.trim().toLowerCase().split(/[-_]/)[0] || "";
+    const code = ownLanguageAliases[primary] || primary;
+    if (ownLangCodes.has(code)) return code;
+  }
+
+  return "en";
+};
 
 export const getLingoCafeReaderLanguages = () => ({
   own: [...lingoCafeProfileOptions.ownLang],
@@ -47,7 +77,7 @@ export const getLingoCafeReaderLanguages = () => ({
 export const lingoCafeProfileSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["ownLang", "targetLang", "targetLevel"],
+  required: ["ownLang", "targetLang"],
   properties: {
     ownLang: {
       type: "string",
@@ -58,8 +88,11 @@ export const lingoCafeProfileSchema = {
       enum: lingoCafeProfileOptions.targetLang.map((option) => option.code),
     },
     targetLevel: {
-      type: "string",
-      enum: lingoCafeProfileOptions.targetLevel.map((option) => option.code),
+      type: ["string", "null"],
+      enum: [
+        ...lingoCafeProfileOptions.targetLevel.map((option) => option.code),
+        null,
+      ],
     },
   },
 } as const;

@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type FormEvent,
@@ -12,16 +13,26 @@ import { signOut, useSession } from "next-auth/react";
 import { Modal } from "@/42go/components/modal";
 import type { TProfileLayoutGuardProps } from "@/42go/components/ProfileBlock";
 import { useAppConfig } from "@/42go/config/use-app-config";
+import type { TProfileData } from "@/42go/profile";
 import { ProfileConsent } from "@/42go/profile/ProfileConsent";
 import { useProfileController } from "@/42go/profile/client";
 import { Button } from "@/components/ui/button";
 import { setCachedLingoCafeProfileCompletion } from "@/config/lingocafe/profile-completion-cache";
-import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
+import {
+  getLingoCafeReaderLanguages,
+  resolveLingoCafeOwnLanguage,
+} from "@/config/lingocafe/profile-options";
 
 const languages = getLingoCafeReaderLanguages();
 
 const getStringValue = (value: unknown) =>
   typeof value === "string" ? value : "";
+
+const getBrowserLanguageTags = () => {
+  if (typeof navigator === "undefined") return [];
+  if (navigator.languages.length > 0) return navigator.languages;
+  return navigator.language ? [navigator.language] : [];
+};
 
 export const LingocafeOnboardingGuard = ({
   refreshKey: _refreshKey,
@@ -40,6 +51,10 @@ export const LingocafeOnboardingGuard = ({
     profile: config?.app?.profile,
     consent: config?.app?.consent,
   });
+  const detectedOwnLang = useMemo(
+    () => resolveLingoCafeOwnLanguage(getBrowserLanguageTags()),
+    []
+  );
 
   const releaseGuard = useCallback(
     (delayMs = 0) => {
@@ -87,6 +102,7 @@ export const LingocafeOnboardingGuard = ({
 
   const profile = controller.profile;
   const ownLang = getStringValue(profile.ownLang);
+  const effectiveOwnLang = ownLang || detectedOwnLang;
   const targetLang = getStringValue(profile.targetLang);
   const targetLevel = getStringValue(profile.targetLevel);
   const consentItems = config?.app?.consent?.items || [];
@@ -96,9 +112,8 @@ export const LingocafeOnboardingGuard = ({
   const canSubmit =
     !controller.loading &&
     !controller.saving &&
-    !!ownLang &&
+    !!effectiveOwnLang &&
     !!targetLang &&
-    !!targetLevel &&
     !missingRequiredConsent;
 
   const saveProfile = async (event: FormEvent<HTMLFormElement>) => {
@@ -112,7 +127,16 @@ export const LingocafeOnboardingGuard = ({
     }
 
     try {
-      const payload = await controller.save();
+      const profileToSave: TProfileData = {
+        ...controller.profile,
+        ownLang: effectiveOwnLang,
+      };
+
+      if (!targetLevel) {
+        delete profileToSave.targetLevel;
+      }
+
+      const payload = await controller.save({ profile: profileToSave });
 
       if (payload.isComplete) {
         setCachedLingoCafeProfileCompletion(true, userId);
@@ -167,26 +191,7 @@ export const LingocafeOnboardingGuard = ({
           </div>
         ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <label className="block space-y-2 text-sm font-medium">
-                <span>Your language</span>
-                <select
-                  value={ownLang}
-                  onChange={(event) =>
-                    controller.setProfileValue("ownLang", event.target.value)
-                  }
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                  required
-                >
-                  <option value="">Choose</option>
-                  {languages.own.map((option) => (
-                    <option key={option.code} value={option.code}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
+            <div className="grid gap-4 sm:grid-cols-2">
               <label className="block space-y-2 text-sm font-medium">
                 <span>Reading language</span>
                 <select
@@ -213,16 +218,13 @@ export const LingocafeOnboardingGuard = ({
                 <span>Reading level</span>
                 <select
                   value={targetLevel}
-                  onChange={(event) =>
-                    controller.setProfileValue(
-                      "targetLevel",
-                      event.target.value
-                    )
-                  }
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    controller.setProfileValue("targetLevel", value || null);
+                  }}
                   className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                  required
                 >
-                  <option value="">Choose</option>
+                  <option value="">No level yet</option>
                   {languages.levels.map((option) => (
                     <option key={option.code} value={option.code}>
                       {option.label}

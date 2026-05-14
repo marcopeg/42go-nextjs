@@ -26,6 +26,7 @@ type ProfileAccountState = NonNullable<TProfileLoadResult["account"]>;
 type ProfileSaveInput = {
   source?: string;
   method?: string;
+  profile?: TProfileData;
 };
 
 export type TProfileClientController = {
@@ -42,7 +43,7 @@ export type TProfileClientController = {
   setProfileValues: (values: Record<string, JsonValue>) => void;
   setConsentValue: (name: string, value: boolean) => void;
   setAccountValue: (key: "name" | "image", value: string | null) => void;
-  validate: () => boolean;
+  validate: (profileOverride?: TProfileData) => boolean;
   save: (input?: ProfileSaveInput) => Promise<TProfileLoadResult>;
   reload: () => Promise<void>;
 };
@@ -219,8 +220,10 @@ export const useProfileController = ({
     };
   }, [isDirty]);
 
-  const validate = useCallback(() => {
-    if (!isPlainJsonObject(profile)) {
+  const validate = useCallback((profileOverride?: TProfileData) => {
+    const profileToValidate = profileOverride ?? profile;
+
+    if (!isPlainJsonObject(profileToValidate)) {
       setErrors([{ path: "/", message: "Profile must be a JSON object." }]);
       return false;
     }
@@ -231,8 +234,14 @@ export const useProfileController = ({
   }, [profile]);
 
   const save = useCallback(
-    async ({ source = "profile", method = "profile-save" }: ProfileSaveInput = {}) => {
-      if (!validate()) {
+    async ({
+      source = "profile",
+      method = "profile-save",
+      profile: profileOverride,
+    }: ProfileSaveInput = {}) => {
+      const profileToSave = profileOverride ?? profile;
+
+      if (!validate(profileToSave)) {
         throw new Error("Fix the highlighted profile errors before saving.");
       }
 
@@ -246,7 +255,7 @@ export const useProfileController = ({
           cache: "no-store",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            profile,
+            profile: profileToSave,
             consent,
             account: account
               ? {
