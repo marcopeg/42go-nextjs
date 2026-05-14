@@ -10,6 +10,7 @@ type ProfileConsentProps = {
   onChange: (name: string, value: boolean) => void;
   disabled?: boolean;
   submitted?: boolean;
+  showRequiredMarker?: boolean;
 };
 
 const markdownTokenPattern =
@@ -72,6 +73,7 @@ export const ProfileConsent = ({
   onChange,
   disabled = false,
   submitted = false,
+  showRequiredMarker = true,
 }: ProfileConsentProps) => (
   <div className="space-y-4">
     {items.map((item) => {
@@ -91,7 +93,7 @@ export const ProfileConsent = ({
           />
           <span className={invalid ? "text-destructive" : undefined}>
             {label}
-            {item.required && (
+            {showRequiredMarker && item.required && (
               <span className="ml-1 text-muted-foreground">(required)</span>
             )}
           </span>

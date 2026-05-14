@@ -4,7 +4,7 @@ sessionSlug: "prepare-a-documented-vibe-coding-session-for-42go-next-multi"
 goal: "Prepare a documented vibe coding session for 42Go Next Multi"
 status: "active"
 createdAt: "2026-05-14T20:32:42+02:00"
-updatedAt: "2026-05-14T20:39:31+02:00"
+updatedAt: "2026-05-14T21:39:41+02:00"
 sourceSession: "./session.md"
 ---
 # Session Memory — Prepare a documented vibe coding session for 42Go Next Multi
@@ -25,7 +25,7 @@ Prepare a documented vibe coding session for 42Go Next Multi
 
 - LingoCafe `targetLevel` is optional profile data. `ownLang` and `targetLang` remain required for profile completeness.
 - LingoCafe onboarding no longer asks for `ownLang`; it derives the value from the browser language and includes it in the profile save payload.
-- Supported LingoCafe level options are now `zero`, `a1`, `a2`, `b1`, `b2`, and `expert`.
+- Supported LingoCafe onboarding level labels are Beginner, Intermediate, and Advanced, saved as `a1`, `a2`, and `b2`; users can also leave level unset.
 
 ## Architecture Notes
 

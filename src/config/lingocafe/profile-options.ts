@@ -1,6 +1,7 @@
 export type LingoCafeLanguageOption = {
   code: string;
   label: string;
+  flag?: string;
 };
 
 export type LingoCafeLevelOption = {
@@ -26,19 +27,16 @@ export const lingoCafeProfileOptions = {
     { code: "el", label: "Greek" },
   ] satisfies LingoCafeLanguageOption[],
   targetLang: [
-    { code: "en", label: "English" },
-    { code: "it", label: "Italian" },
-    { code: "es", label: "Spanish" },
-    { code: "de", label: "German" },
-    { code: "sv", label: "Swedish" },
+    { code: "en", label: "English", flag: "🇬🇧" },
+    { code: "es", label: "Spanish", flag: "🇪🇸" },
+    { code: "it", label: "Italian", flag: "🇮🇹" },
+    { code: "de", label: "German", flag: "🇩🇪" },
+    { code: "sv", label: "Swedish", flag: "🇸🇪" },
   ] satisfies LingoCafeLanguageOption[],
   targetLevel: [
-    { code: "zero", label: "Zero" },
-    { code: "a1", label: "A1" },
-    { code: "a2", label: "A2" },
-    { code: "b1", label: "B1" },
-    { code: "b2", label: "B2" },
-    { code: "expert", label: "Expert" },
+    { code: "a1", label: "Beginner" },
+    { code: "a2", label: "Intermediate" },
+    { code: "b2", label: "Advanced" },
   ] satisfies LingoCafeLevelOption[],
 } as const;
 

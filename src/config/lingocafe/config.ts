@@ -10,14 +10,7 @@ export default {
   match: {
     url: ['^read.lingocafe.app+$', '^lc42go.ngrok.app+$'],
   },
-  features: [
-    'page:books',
-    'page:users',
-    'api:lingocafe',
-    'api:events',
-    'api:profile',
-    'api:users',
-  ],
+  features: ['page:books', 'page:users', 'api:lingocafe', 'api:events', 'api:profile', 'api:users'],
   theme: {
     default: 'system',
   },
@@ -76,10 +69,7 @@ export default {
       guard: {
         slot: 'before',
         shouldBlock: () => !hasCachedLingoCafeProfileCompletion(),
-        loader: () =>
-          import(
-            '@/app/(app)/(lingocafe)/_components/LingocafeOnboardingGuard'
-          ),
+        loader: () => import('@/app/(app)/(lingocafe)/_components/LingocafeOnboardingGuard'),
       },
       items: [
         { type: 'TestRBAC' },
@@ -127,7 +117,7 @@ export default {
           required: false,
           version: 'mkt-2026-05-04',
           label:
-            'Keep me updated on new title releases and early access to new features.\n_You can unsubscribe at any time_',
+            '**Keep me updated** on new title releases and early access to new features.\n_You can unsubscribe at any time_',
           collect: ['source', 'method', 'ip', 'ua'],
         },
         {
@@ -135,7 +125,7 @@ export default {
           required: false,
           version: 'alpha-2026-05-04',
           label:
-            'Join the Early Birds Programme — free, unlimited access while the app is in development, in exchange for sharing feedback through surveys, in-app prompts, and occasional interviews. Continued access requires participation.\n[Programme Terms](https://lingocafe.app/en/legal/early-birds-program/)',
+            '**Join Early Birds**\nGet early access to new features and help shape LingoCafe with occasional feedback.\n[Programme Terms](https://lingocafe.app/en/legal/early-birds-program/)',
           collect: ['source', 'method', 'ip', 'ua'],
         },
       ],

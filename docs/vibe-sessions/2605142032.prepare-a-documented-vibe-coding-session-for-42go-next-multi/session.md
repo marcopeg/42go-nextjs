@@ -4,7 +4,7 @@ sessionSlug: "prepare-a-documented-vibe-coding-session-for-42go-next-multi"
 goal: "Prepare a documented vibe coding session for 42Go Next Multi"
 status: "active"
 startedAt: "2026-05-14T20:32:42+02:00"
-updatedAt: "2026-05-14T20:39:31+02:00"
+updatedAt: "2026-05-14T22:16:43+02:00"
 memoryFile: "./memory.md"
 ---
 # Vibe Session — Prepare a documented vibe coding session for 42Go Next Multi
@@ -90,3 +90,23 @@ Implemented optional targetLevel, expanded LingoCafe level options to zero/a1/a2
 ### 2026-05-14 20:39 — Promote LingoCafe profile decisions
 
 Promoted stable context into `docs/vibe-sessions/2605142032.prepare-a-documented-vibe-coding-session-for-42go-next-multi/memory.md`. Recorded that targetLevel is optional, onboarding derives ownLang from browser language, and level options are zero/a1/a2/b1/b2/expert.
+
+### 2026-05-14 21:39 — LingoCafe onboarding visual redesign
+
+Updated the onboarding UI toward the provided design: language choice cards for English, Spanish, Italian, German, and Swedish; optional level cards with Beginner=a1, Intermediate=a2, Advanced=b2; split required and optional consent panels while reusing configured consent labels and legal links. Validation passed with npm run qa and git diff --check.
+
+### 2026-05-14 21:39 — Promote onboarding level mapping
+
+Promoted stable context into `docs/vibe-sessions/2605142032.prepare-a-documented-vibe-coding-session-for-42go-next-multi/memory.md`. Recorded the durable LingoCafe onboarding mapping: Beginner saves a1, Intermediate saves a2, Advanced saves b2, and level may remain unset.
+
+### 2026-05-14 21:44 — Onboarding mobile polish
+
+Removed the level unset controls from onboarding, renamed the optional consent column to Useful, added bottom padding, placed Start Reading before Log out on mobile, and changed mobile language cards to two columns. Validation passed with npm run qa and git diff --check.
+
+### 2026-05-14 21:52 — Onboarding spacing polish
+
+Removed the reading-level optional marker, removed the divider before step 3, added more spacing above the first step title, and added mobile bottom padding under the safety note. Validation passed with npm run qa and git diff --check.
+
+### 2026-05-14 22:16 — Early Birds consent copy
+
+Updated the optional Early Birds consent label to the shorter Join Early Birds copy while keeping the existing Programme Terms link. Validation passed with npm run qa and git diff --check.
