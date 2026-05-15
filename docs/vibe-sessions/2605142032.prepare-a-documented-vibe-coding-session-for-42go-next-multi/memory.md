@@ -4,7 +4,7 @@ sessionSlug: "prepare-a-documented-vibe-coding-session-for-42go-next-multi"
 goal: "Prepare a documented vibe coding session for 42Go Next Multi"
 status: "active"
 createdAt: "2026-05-14T20:32:42+02:00"
-updatedAt: "2026-05-14T22:34:42+02:00"
+updatedAt: "2026-05-15T14:22:33+02:00"
 sourceSession: "./session.md"
 ---
 # Session Memory — Prepare a documented vibe coding session for 42Go Next Multi
@@ -29,10 +29,17 @@ Prepare a documented vibe coding session for 42Go Next Multi
 - LingoCafe onboarding uses card-based language and level selection, with two language cards per row on mobile and no explicit "skip" or "I'm not sure" level controls.
 - LingoCafe onboarding groups required consent separately from useful optional consent; consent labels and legal URLs remain config-driven through `app.consent.items`.
 - The Early Birds optional consent copy is "Join Early Birds" followed by "Get early access to new features and help shape LingoCafe with occasional feedback.", while keeping the existing Programme Terms link.
+- LingoCafe profile language preferences are split into three panels: "Your fluent language" as a dropdown, "Reading language" as onboarding-style flag cards, and "Reading level" as onboarding-style level cards. The profile page still allows clearing `targetLevel`.
+- LingoCafe onboarding uses a centered hero on mobile and desktop, with a celebratory emoji before the title and numbered step markers that center on mobile and align against the title/subtitle row on desktop.
+- LingoCafe onboarding consent uses the reusable `ProfileConsent` switch variant. The switch is right-aligned, animated, and the whole visible row text toggles the value while embedded legal links continue to open normally.
+- LingoCafe onboarding keeps the Start Reading CTA active unless loading or saving. Missing required information is reported through a native confirm dialog with a simple bullet list; the missing target language also shows an inline "This is missing" indicator after failed submit.
+- The onboarding modal disables open autofocus so secondary controls such as Log out do not appear pre-selected on page load.
 
 ## Architecture Notes
 
-- None yet.
+- Theme initialization must not read browser storage during the first client render. `ThemeProvider` initializes from `localStorage` in a post-hydration effect so server HTML and first client HTML stay aligned.
+- Global client UI that depends on theme context, such as `Toaster`, should render inside `Providers` so it uses `ThemeProvider` instead of reading a mutable module snapshot during hydration.
+- Mobile Chrome/iOS-style login hydration issues may be caused by browser or password-manager DOM mutation before React hydrates. The credentials form and inputs tolerate this with `suppressHydrationWarning`, and global PWA head tags include `format-detection` to reduce mobile auto-linkification.
 
 ## Working Agreements
 

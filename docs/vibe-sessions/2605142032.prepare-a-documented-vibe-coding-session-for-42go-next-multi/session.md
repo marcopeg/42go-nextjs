@@ -4,7 +4,7 @@ sessionSlug: "prepare-a-documented-vibe-coding-session-for-42go-next-multi"
 goal: "Prepare a documented vibe coding session for 42Go Next Multi"
 status: "active"
 startedAt: "2026-05-14T20:32:42+02:00"
-updatedAt: "2026-05-15T14:20:51+02:00"
+updatedAt: "2026-05-15T14:39:41+02:00"
 memoryFile: "./memory.md"
 ---
 # Vibe Session — Prepare a documented vibe coding session for 42Go Next Multi
@@ -186,3 +186,23 @@ Moved theme initialization out of the first client render and into a post-hydrat
 ### 2026-05-15 14:20 — Mobile login hydration hardening
 
 Added hydration-warning suppression to credential login form and inputs to tolerate mobile password-manager attribute injection, and added an iOS/WebKit format-detection meta tag to prevent automatic telephone/date/address/email linkification before React hydrates. npm run qa passed; scoped git diff --check passed for touched code files.
+
+### 2026-05-15 14:22 — Promote LingoCafe UI and hydration decisions
+
+Promoted stable context into `docs/vibe-sessions/2605142032.prepare-a-documented-vibe-coding-session-for-42go-next-multi/memory.md`. Promoted stable LingoCafe onboarding/profile UI decisions, consent switch behavior, active CTA validation behavior, modal autofocus handling, and mobile login hydration architecture notes into session memory.
+
+### 2026-05-15 14:25 — Mobile onboarding step marker alignment
+
+Changed the onboarding step layout to use the same two-column marker/title structure on mobile and desktop, so the numbered badge sits to the left of each title/subtitle instead of centered above it. npm run qa passed; scoped git diff --check passed for the onboarding guard.
+
+### 2026-05-15 14:28 — Mobile onboarding step progress badge
+
+Changed mobile onboarding step markers to left-aligned progress badges above each title using '1 of 3', '2 of 3', and '3 of 3', while preserving desktop number circles in the left title column. npm run qa passed; scoped git diff --check passed for the onboarding guard.
+
+### 2026-05-15 14:32 — Mobile step header spacing normalized
+
+Normalized mobile onboarding step header spacing by removing the extra offset after the step badge and using the same spacing between each title and subtitle. npm run qa passed; scoped git diff --check passed for the onboarding guard.
+
+### 2026-05-15 14:39 — Language missing state as card border
+
+Changed the onboarding target-language missing state from an inline badge to a red-tinted border/background around the whole language question block. Replaced aria-invalid with data-invalid to avoid unsupported ARIA warnings. npm run qa passed; scoped git diff --check passed for the onboarding guard.

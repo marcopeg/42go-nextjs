@@ -202,7 +202,7 @@ export const LingocafeOnboardingGuard = ({
             Welcome to LingoCafe!
           </h1>
           <p className="text-lg leading-7 text-muted-foreground mb-8">
-            Let&apos;s personalize your reading experience three easy steps.
+            Let&apos;s personalize your reading experience <b>three easy steps</b>.
             <br />
             <small>
               <i>You can change these anytime in your profile.</i>
@@ -216,21 +216,24 @@ export const LingocafeOnboardingGuard = ({
           </div>
         ) : (
           <>
-            <section className="grid gap-4 pt-6 md:grid-cols-[3rem_1fr] md:items-start md:pt-0">
-              <div className="mx-auto flex size-9 items-center justify-center rounded-full bg-emerald-600 text-base font-semibold text-white shadow-sm md:mx-0 md:self-center">
-                1
+            <section
+              data-invalid={targetLangMissing ? 'true' : undefined}
+              className={
+                targetLangMissing
+                  ? '-mx-4 mt-6 grid gap-4 rounded-lg border border-destructive/40 bg-destructive/5 p-4 md:mt-0 md:grid-cols-[3rem_1fr] md:items-start'
+                  : '-mx-4 mt-6 grid gap-4 rounded-lg border border-transparent p-4 md:mt-0 md:grid-cols-[3rem_1fr] md:items-start'
+              }
+            >
+              <div className="flex h-9 w-fit items-center justify-center rounded-full bg-emerald-600 px-3 text-sm font-semibold text-white shadow-sm md:size-9 md:self-center md:px-0 md:text-base">
+                <span className="md:hidden">1 of 3</span>
+                <span className="hidden md:inline">1</span>
               </div>
-              <div className="space-y-4 pt-3 md:contents">
+              <div className="space-y-4 md:contents">
                 <div className="md:pt-5">
-                  <h2 className="flex flex-col gap-2 text-2xl font-semibold tracking-normal sm:flex-row sm:items-center">
+                  <h2 className="text-2xl font-semibold tracking-normal">
                     Which language do you want to improve?
-                    {targetLangMissing ? (
-                      <span className="w-fit rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-sm font-medium text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
-                        This is missing
-                      </span>
-                    ) : null}
                   </h2>
-                  <p className="mt-1 text-base text-muted-foreground">
+                  <p className="mt-2 text-base text-muted-foreground">
                     This helps us show you books in the right language.
                   </p>
                 </div>
@@ -268,15 +271,16 @@ export const LingocafeOnboardingGuard = ({
             </section>
 
             <section className="grid gap-4 pt-10 md:grid-cols-[3rem_1fr] md:items-start md:pt-0">
-              <div className="mx-auto flex size-9 items-center justify-center rounded-full bg-emerald-600 text-base font-semibold text-white shadow-sm md:mx-0 md:self-center">
-                2
+              <div className="flex h-9 w-fit items-center justify-center rounded-full bg-emerald-600 px-3 text-sm font-semibold text-white shadow-sm md:size-9 md:self-center md:px-0 md:text-base">
+                <span className="md:hidden">2 of 3</span>
+                <span className="hidden md:inline">2</span>
               </div>
               <div className="space-y-4 md:contents">
                 <div>
                   <h2 className="text-2xl font-semibold tracking-normal">
                     What&apos;s your reading level?
                   </h2>
-                  <p className="mt-1 text-base text-muted-foreground">
+                  <p className="mt-2 text-base text-muted-foreground">
                     We&apos;ll recommend books that match your level.
                   </p>
                 </div>
@@ -308,13 +312,14 @@ export const LingocafeOnboardingGuard = ({
             </section>
 
             <section className="grid gap-4 pt-12 md:grid-cols-[3rem_1fr] md:items-start md:pt-0">
-              <div className="mx-auto flex size-9 items-center justify-center rounded-full bg-emerald-600 text-base font-semibold text-white shadow-sm md:mx-0 md:self-center">
-                3
+              <div className="flex h-9 w-fit items-center justify-center rounded-full bg-emerald-600 px-3 text-sm font-semibold text-white shadow-sm md:size-9 md:self-center md:px-0 md:text-base">
+                <span className="md:hidden">3 of 3</span>
+                <span className="hidden md:inline">3</span>
               </div>
               <div className="space-y-4 md:contents">
                 <div>
                   <h2 className="text-2xl font-semibold tracking-normal">The Boring One</h2>
-                  <p className="mt-1 text-base text-muted-foreground">
+                  <p className="mt-2 text-base text-muted-foreground">
                     But very important for both of us!
                   </p>
                 </div>
