@@ -4,7 +4,7 @@ sessionSlug: "prepare-a-documented-vibe-coding-session-for-42go-next-multi"
 goal: "Prepare a documented vibe coding session for 42Go Next Multi"
 status: "active"
 startedAt: "2026-05-14T20:32:42+02:00"
-updatedAt: "2026-05-15T14:39:41+02:00"
+updatedAt: "2026-05-15T14:48:16+02:00"
 memoryFile: "./memory.md"
 ---
 # Vibe Session — Prepare a documented vibe coding session for 42Go Next Multi
@@ -206,3 +206,7 @@ Normalized mobile onboarding step header spacing by removing the extra offset af
 ### 2026-05-15 14:39 — Language missing state as card border
 
 Changed the onboarding target-language missing state from an inline badge to a red-tinted border/background around the whole language question block. Replaced aria-invalid with data-invalid to avoid unsupported ARIA warnings. npm run qa passed; scoped git diff --check passed for the onboarding guard.
+
+### 2026-05-15 14:48 — Profile reading level segmented control
+
+Changed the LingoCafe account Reading level preference from large cards to the same segmented tablist pattern used by the Theme preference, while preserving the ability to clear the optional level by selecting the active tab again. npm run qa passed; scoped git diff --check passed for LingocafePreferences.
