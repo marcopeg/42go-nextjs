@@ -72,7 +72,7 @@ export default {
         loader: () => import('@/app/(app)/(lingocafe)/_components/LingocafeOnboardingGuard'),
       },
       items: [
-        { type: 'TestRBAC' },
+        // { type: 'TestRBAC' },
         // { type: 'AccountInfo' },
         {
           type: 'component',
@@ -117,17 +117,17 @@ export default {
           required: false,
           version: 'mkt-2026-05-04',
           label:
-            '**Keep me updated** on new title releases and early access to new features.\n_You can unsubscribe at any time_',
+            '**Keep me updated** on new title releases and early access to new features.\n\n_You can unsubscribe at any time!_',
           collect: ['source', 'method', 'ip', 'ua'],
         },
-        {
-          name: 'alpha',
-          required: false,
-          version: 'alpha-2026-05-04',
-          label:
-            '**Join Early Birds**\nGet early access to new features and help shape LingoCafe with occasional feedback.\n[Programme Terms](https://lingocafe.app/en/legal/early-birds-program/)',
-          collect: ['source', 'method', 'ip', 'ua'],
-        },
+        // {
+        //   name: 'alpha',
+        //   required: false,
+        //   version: 'alpha-2026-05-04',
+        //   label:
+        //     '**Join Early Birds**\nGet early access to new features and help shape LingoCafe with occasional feedback.\n[Programme Terms](https://lingocafe.app/en/legal/early-birds-program/)',
+        //   collect: ['source', 'method', 'ip', 'ua'],
+        // },
       ],
     },
     events: {

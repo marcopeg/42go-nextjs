@@ -4,7 +4,7 @@ sessionSlug: "prepare-a-documented-vibe-coding-session-for-42go-next-multi"
 goal: "Prepare a documented vibe coding session for 42Go Next Multi"
 status: "active"
 startedAt: "2026-05-14T20:32:42+02:00"
-updatedAt: "2026-05-15T14:48:16+02:00"
+updatedAt: "2026-05-15T15:06:36+02:00"
 memoryFile: "./memory.md"
 ---
 # Vibe Session — Prepare a documented vibe coding session for 42Go Next Multi
@@ -210,3 +210,7 @@ Changed the onboarding target-language missing state from an inline badge to a r
 ### 2026-05-15 14:48 — Profile reading level segmented control
 
 Changed the LingoCafe account Reading level preference from large cards to the same segmented tablist pattern used by the Theme preference, while preserving the ability to clear the optional level by selecting the active tab again. npm run qa passed; scoped git diff --check passed for LingocafePreferences.
+
+### 2026-05-15 15:06 — Promote latest onboarding and account preferences decisions
+
+Promoted stable context into `docs/vibe-sessions/2605142032.prepare-a-documented-vibe-coding-session-for-42go-next-multi/memory.md`. Promoted the final mobile step progress badge behavior, normalized mobile step header spacing, card-style target-language missing state, and Theme-style account reading level segmented control into session memory.

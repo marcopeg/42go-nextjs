@@ -4,7 +4,7 @@ sessionSlug: "prepare-a-documented-vibe-coding-session-for-42go-next-multi"
 goal: "Prepare a documented vibe coding session for 42Go Next Multi"
 status: "active"
 createdAt: "2026-05-14T20:32:42+02:00"
-updatedAt: "2026-05-15T14:22:33+02:00"
+updatedAt: "2026-05-15T15:06:36+02:00"
 sourceSession: "./session.md"
 ---
 # Session Memory — Prepare a documented vibe coding session for 42Go Next Multi
@@ -29,10 +29,11 @@ Prepare a documented vibe coding session for 42Go Next Multi
 - LingoCafe onboarding uses card-based language and level selection, with two language cards per row on mobile and no explicit "skip" or "I'm not sure" level controls.
 - LingoCafe onboarding groups required consent separately from useful optional consent; consent labels and legal URLs remain config-driven through `app.consent.items`.
 - The Early Birds optional consent copy is "Join Early Birds" followed by "Get early access to new features and help shape LingoCafe with occasional feedback.", while keeping the existing Programme Terms link.
-- LingoCafe profile language preferences are split into three panels: "Your fluent language" as a dropdown, "Reading language" as onboarding-style flag cards, and "Reading level" as onboarding-style level cards. The profile page still allows clearing `targetLevel`.
-- LingoCafe onboarding uses a centered hero on mobile and desktop, with a celebratory emoji before the title and numbered step markers that center on mobile and align against the title/subtitle row on desktop.
+- LingoCafe profile language preferences are split into three panels: "Your fluent language" as a dropdown, "Reading language" as onboarding-style flag cards, and "Reading level" as a Theme-style segmented tablist. The profile page still allows clearing `targetLevel` by selecting the active level again.
+- LingoCafe onboarding uses a centered hero on mobile and desktop, with a celebratory emoji before the title. Desktop step markers remain compact number circles aligned beside each title/subtitle row; mobile step markers are left-aligned progress badges above the title using "1 of 3", "2 of 3", and "3 of 3".
+- LingoCafe onboarding mobile step headers use consistent spacing: the gap between progress badge and title matches the gap between title and subtitle.
 - LingoCafe onboarding consent uses the reusable `ProfileConsent` switch variant. The switch is right-aligned, animated, and the whole visible row text toggles the value while embedded legal links continue to open normally.
-- LingoCafe onboarding keeps the Start Reading CTA active unless loading or saving. Missing required information is reported through a native confirm dialog with a simple bullet list; the missing target language also shows an inline "This is missing" indicator after failed submit.
+- LingoCafe onboarding keeps the Start Reading CTA active unless loading or saving. Missing required information is reported through a native confirm dialog with a simple bullet list; the missing target language is also shown as a red-tinted border/background around the whole language question block after failed submit.
 - The onboarding modal disables open autofocus so secondary controls such as Log out do not appear pre-selected on page load.
 
 ## Architecture Notes
