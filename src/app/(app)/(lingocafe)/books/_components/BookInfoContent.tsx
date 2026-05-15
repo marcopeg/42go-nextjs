@@ -5,15 +5,12 @@ import Link from "next/link";
 import ReactMarkdown, { type Components } from "react-markdown";
 import {
   BookOpen,
-  Bookmark,
   ChevronDown,
   ChevronRight,
   FileText,
   Globe2,
   GraduationCap,
-  Heart,
   type LucideIcon,
-  MoreHorizontal,
 } from "lucide-react";
 
 import { BookCover } from "@/app/(app)/(lingocafe)/books/_components/BookCover";
@@ -168,30 +165,6 @@ const BookReadingAction = ({
     </Button>
   );
 };
-
-const SecondaryActionPlaceholder = ({
-  icon: Icon,
-  label,
-}: {
-  icon: LucideIcon;
-  label: string;
-}) => (
-  <span
-    aria-label={`${label} not available yet`}
-    className="grid h-12 flex-1 place-items-center rounded-md border bg-background text-foreground shadow-sm md:size-12 md:flex-none"
-    role="img"
-  >
-    <Icon className="size-5" strokeWidth={2} />
-  </span>
-);
-
-const BookInfoSecondaryActions = () => (
-  <div className="flex gap-3">
-    <SecondaryActionPlaceholder icon={Bookmark} label="Bookmark" />
-    <SecondaryActionPlaceholder icon={Heart} label="Favorite" />
-    <SecondaryActionPlaceholder icon={MoreHorizontal} label="More actions" />
-  </div>
-);
 
 const bookDescriptionMarkdownComponents: Components = {
   h1: ({ children }) => (
@@ -420,6 +393,41 @@ const BookInfoContents = ({ pages }: { pages: ReaderBookInfoPage[] }) => {
   );
 };
 
+const BookCoverHero = ({ book }: { book: ReaderBookInfo }) => {
+  const author = book.author.trim();
+
+  return (
+    <div className="relative min-w-0 overflow-hidden rounded-lg shadow-sm">
+      <BookCover
+        book={book}
+        className="max-w-full rounded-lg border-0"
+        imageClassName="object-cover"
+        sizes="(min-width: 1024px) 256px, (min-width: 768px) 224px, 88vw"
+      />
+
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-black/70 via-black/35 to-transparent"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 via-black/25 to-transparent"
+      />
+
+      <div className="pointer-events-none absolute inset-x-0 top-0 p-4">
+        <h1 className="line-clamp-4 break-words font-serif text-2xl font-bold leading-tight tracking-normal text-amber-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] md:text-3xl lg:text-4xl">
+          {book.title}
+        </h1>
+        {author ? (
+          <p className="mt-2 line-clamp-2 break-words text-sm font-medium text-amber-100/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] md:text-base">
+            by {author}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
 export const BookInfoContent = ({
   book,
   collapsedDescriptionMinWords,
@@ -467,14 +475,10 @@ export const BookInfoContent = ({
   );
 
   return (
-    <div className="min-w-0 max-w-full space-y-8 md:w-full md:max-w-5xl md:pl-10 md:space-y-10">
+    <div className="min-w-0 max-w-full space-y-8 pb-20 md:w-full md:max-w-5xl md:pl-10 md:space-y-10">
       <div className="grid min-w-0 max-w-full gap-6 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start md:gap-10 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-14">
         <aside className="mx-auto w-full max-w-full overflow-hidden md:sticky md:top-24 md:max-w-none">
-          <BookCover
-            book={book}
-            className="max-w-full rounded-none border-0 md:rounded-lg md:border"
-            sizes="(min-width: 1024px) 256px, (min-width: 768px) 224px, 88vw"
-          />
+          <BookCoverHero book={book} />
 
           <div className="mt-5 hidden gap-3 py-4 md:grid">
             {metricItems.map((item) => (
@@ -489,15 +493,6 @@ export const BookInfoContent = ({
         </aside>
 
         <section className="min-w-0 max-w-full space-y-5">
-          <div className="space-y-2">
-            <h1 className="break-words text-2xl font-semibold tracking-normal md:text-4xl">
-              {book.title}
-            </h1>
-            <p className="break-words text-base text-muted-foreground md:text-lg">
-              {book.author}
-            </p>
-          </div>
-
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:hidden">
             {metricItems.map((item) => (
               <MobileMetaItem
@@ -515,14 +510,11 @@ export const BookInfoContent = ({
             collapsedDescriptionMinWords={collapsedDescriptionMinWords}
           />
 
-          <div className="sticky top-0 z-20 grid gap-3 bg-background/95 py-3 backdrop-blur md:top-16 md:flex md:items-center">
-            <div className="md:w-56">
+          <div className="sticky bottom-0 z-20 -mx-4 bg-background/95 px-4 py-3 backdrop-blur md:mx-0 md:flex md:justify-end md:px-0">
+            <div className="md:w-64">
               <BookReadingAction action={book.readingAction} />
             </div>
-            <BookInfoSecondaryActions />
           </div>
-
-          <div className="py-5 md:py-7" />
 
           <BookInfoContents pages={book.pages} />
         </section>

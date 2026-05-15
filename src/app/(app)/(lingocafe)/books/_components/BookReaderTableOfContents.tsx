@@ -98,8 +98,8 @@ export const BookReaderTableOfContents = ({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title="Innehåll"
-      subtitle={bookPage ? `${bookPage.pages.length} sidor` : "Book structure"}
+      title="Contents"
+      subtitle={bookPage ? `${bookPage.pages.length} pages` : "Book structure"}
       ariaLabel="Table of contents"
       presentation="panel"
       anchor="right"
@@ -120,7 +120,12 @@ export const BookReaderTableOfContents = ({
       ) : (
         <div className="space-y-5">
           <section className="rounded-[28px] border bg-muted/20 p-4">
-            <div className="flex gap-4">
+            <Link
+              href={bookInfoHref}
+              onClick={() => onOpenChange(false)}
+              className="-m-2 flex gap-4 rounded-2xl p-2 outline-none transition hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50"
+              aria-label={`Open book info for ${bookPage.book.title}`}
+            >
               <BookCover
                 book={bookPage.book}
                 className="w-20 shrink-0 rounded-sm"
@@ -134,7 +139,7 @@ export const BookReaderTableOfContents = ({
                   {bookPage.book.author}
                 </p>
               </div>
-            </div>
+            </Link>
             <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
               <div className="h-1 flex-1 rounded-full bg-border">
                 <div
@@ -148,7 +153,7 @@ export const BookReaderTableOfContents = ({
 
           <div className="flex items-center gap-2 px-1 text-sm font-medium">
             <BookOpenText className="h-4 w-4" />
-            <span>Innehåll</span>
+            <span>Contents</span>
           </div>
 
           <div className="space-y-2">

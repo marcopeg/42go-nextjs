@@ -114,7 +114,7 @@ const getCurrentPageIndex = (bookPage: ReaderBookPage) => {
 const getCurrentPageLabel = (bookPage: ReaderBookPage) => {
   const total = bookPage.pages.length || 1;
   const current = Math.min(total, getCurrentPageIndex(bookPage) + 1);
-  return `Sida ${current} av ${total}`;
+  return `Page ${current} of ${total}`;
 };
 
 const getBookProgressPercent = (bookPage: ReaderBookPage) => {
@@ -437,7 +437,7 @@ export const BookReaderDesktopSurface = ({
               <ReaderHeaderAction
                 onClick={onOpenTableOfContents}
                 icon={BookOpenText}
-                label="Innehåll"
+                label="Contents"
               />
             </>
           }
@@ -547,7 +547,7 @@ export const BookReaderMobileSurface = ({
               <ReaderHeaderAction
                 onClick={onOpenTableOfContents}
                 icon={BookOpenText}
-                label="Innehåll"
+                label="Contents"
               />
             </>
           }

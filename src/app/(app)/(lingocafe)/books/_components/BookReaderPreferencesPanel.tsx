@@ -143,7 +143,7 @@ export const BookReaderPreferencesTrigger = ({
     size="icon"
     type="button"
     onClick={onClick}
-    aria-label="Inställningar"
+    aria-label="Settings"
     className={cn(
       "h-9 w-9 px-0 text-current hover:bg-black/10 hover:text-current dark:hover:bg-white/10 md:h-10 md:w-10",
       className
@@ -339,13 +339,13 @@ export const BookReaderPreferencesPanel = ({
         <div
           aria-hidden={usesAutoBackground}
           className={cn(
-            "grid transition-[grid-template-rows,opacity,margin-top] duration-300 ease-out",
+            "overflow-hidden transition-[max-height,opacity,margin-top] duration-300 ease-out",
             usesAutoBackground
-              ? "mt-0 grid-rows-[0fr] opacity-0"
-              : "mt-8 grid-rows-[1fr] opacity-100"
+              ? "mt-0 max-h-0 opacity-0"
+              : "mt-8 max-h-72 opacity-100"
           )}
         >
-          <section className="min-h-0 overflow-hidden space-y-4">
+          <section className="space-y-4">
             <div>
               <h3 className="font-semibold">Text color</h3>
               <p className="text-sm text-muted-foreground">
@@ -382,7 +382,7 @@ export const BookReaderPreferencesPanel = ({
           {canResetPreferences && (
             <Button
               type="button"
-              variant="destructive"
+              variant="link"
               className="w-full"
               onClick={requestResetPreferences}
             >
