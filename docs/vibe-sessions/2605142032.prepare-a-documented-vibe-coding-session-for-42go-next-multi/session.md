@@ -4,7 +4,7 @@ sessionSlug: "prepare-a-documented-vibe-coding-session-for-42go-next-multi"
 goal: "Prepare a documented vibe coding session for 42Go Next Multi"
 status: "active"
 startedAt: "2026-05-14T20:32:42+02:00"
-updatedAt: "2026-05-15T10:55:05+02:00"
+updatedAt: "2026-05-15T14:20:51+02:00"
 memoryFile: "./memory.md"
 ---
 # Vibe Session — Prepare a documented vibe coding session for 42Go Next Multi
@@ -130,3 +130,59 @@ Centered the LingoCafe onboarding welcome title and subtitle across mobile and d
 ### 2026-05-15 10:55 — Mobile onboarding hand placement
 
 Reloaded the user-edited onboarding guard and adjusted the hero title so the hand icon stacks above the title on mobile while staying inline from the small breakpoint upward. Validation passed with npm run qa and git diff --check.
+
+### 2026-05-15 11:00 — Onboarding consent switches
+
+Reloaded the user-edited onboarding guard and changed onboarding consent controls to right-aligned animated switch toggles via a ProfileConsent control variant. The default checkbox consent rendering remains available for non-onboarding usage. Validation passed with npm run qa and git diff --check.
+
+### 2026-05-15 11:02 — Onboarding footer aligned
+
+Changed the onboarding footer so Start Reading appears above Log out on desktop and mobile. Validation passed with npm run qa and git diff --check.
+
+### 2026-05-15 11:18 — Onboarding step markers centered
+
+Centered the numbered onboarding step markers vertically beside each step block on desktop by adding desktop grid item centering. Verified with git diff --check and npm run qa.
+
+### 2026-05-15 11:22 — Onboarding step marker header alignment
+
+Adjusted onboarding step layout so desktop numbered markers center vertically against each step title/subtitle header, while the choices and consent panels remain below in the content column. Verified with git diff --check and npm run qa.
+
+### 2026-05-15 11:26 — Mobile onboarding step spacing
+
+Added mobile-only top padding before onboarding steps 2 and 3 to create more breathing room between step blocks while preserving desktop spacing. Verified with git diff --check and npm run qa.
+
+### 2026-05-15 11:40 — Mobile onboarding badges centered
+
+Centered onboarding step number badges horizontally on mobile while keeping desktop badges aligned in the left grid column. Verified with git diff --check and npm run qa.
+
+### 2026-05-15 12:18 — More mobile spacing before steps
+
+Increased mobile-only top spacing before onboarding steps 2 and 3 while preserving desktop spacing. Verified with git diff --check and npm run qa.
+
+### 2026-05-15 13:11 — Desktop spacing and welcome icon
+
+Removed extra desktop top padding before onboarding step 3 so desktop spacing between steps 1-2 and 2-3 is consistent. Replaced the yellow hand hero icon with a green CircleCheckBig success icon. Verified with git diff --check and npm run qa.
+
+### 2026-05-15 13:13 — Playful onboarding hero icon
+
+Replaced the green completion-style hero icon with a celebratory party emoji so the onboarding header feels welcoming and playful rather than finished-state oriented. Verified with git diff --check and npm run qa.
+
+### 2026-05-15 13:16 — Onboarding active CTA feedback
+
+Kept the Start Reading button active unless the form is loading or saving, added a simple missing-items message when required onboarding details are incomplete, and removed the horizontal divider above the CTA. Verified with git diff --check and npm run qa.
+
+### 2026-05-15 13:18 — Onboarding modal autofocus disabled
+
+Disabled the onboarding modal's open autofocus so the logout button no longer appears pre-selected on page load. Verified with git diff --check and npm run qa.
+
+### 2026-05-15 13:21 — Onboarding validation and consent row toggles
+
+Changed incomplete onboarding submission to show a native confirm dialog with a bullet list of missing items, added an inline missing indicator to the language step after failed submit, and made switch consent rows toggle when clicking the visible label text while preserving link clicks. Verified with git diff --check and npm run qa.
+
+### 2026-05-15 13:56 — Login hydration mismatch fix
+
+Moved theme initialization out of the first client render and into a post-hydration effect, and rendered the global Toaster inside Providers so it consumes ThemeProvider context instead of reading mutable theme snapshot during hydration. This targets the login reload hydration attribute mismatch reported on LingoCafe mobile. npm run qa passed; scoped git diff --check passed for changed code files. Global git diff --check remains blocked by unrelated backlog markdown EOF whitespace.
+
+### 2026-05-15 14:20 — Mobile login hydration hardening
+
+Added hydration-warning suppression to credential login form and inputs to tolerate mobile password-manager attribute injection, and added an iOS/WebKit format-detection meta tag to prevent automatic telephone/date/address/email linkification before React hydrates. npm run qa passed; scoped git diff --check passed for touched code files.

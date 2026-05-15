@@ -16,6 +16,11 @@ export const HeadTags = async () => {
 
   return (
     <>
+      <meta
+        name="format-detection"
+        content="telephone=no,date=no,address=no,email=no"
+      />
+
       {pwa && (
         <>
           {/* iOS PWA meta */}

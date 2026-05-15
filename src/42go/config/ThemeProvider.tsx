@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useEffect,
   useContext,
   useState,
   useSyncExternalStore,
@@ -89,7 +90,10 @@ const normalizeTheme = (
     ? value
     : fallback;
 
-const initializeTheme = (defaultTheme: ThemeValue = "system") => {
+const initializeTheme = (
+  defaultTheme: ThemeValue = "system",
+  { notify = false }: { notify?: boolean } = {}
+) => {
   if (typeof window === "undefined") return;
 
   let storedTheme: string | null = null;
@@ -100,7 +104,7 @@ const initializeTheme = (defaultTheme: ThemeValue = "system") => {
   }
 
   setThemeSnapshot(normalizeTheme(storedTheme, defaultTheme), {
-    notify: false,
+    notify,
   });
 };
 
@@ -149,11 +153,10 @@ export const ThemeProvider = ({
       }
     }
   );
-  const [didInitialize] = useState(() => {
-    initializeTheme(defaultTheme);
-    return true;
-  });
-  void didInitialize;
+
+  useEffect(() => {
+    initializeTheme(defaultTheme, { notify: true });
+  }, [defaultTheme]);
 
   const current = useSyncExternalStore(
     subscribeToTheme,

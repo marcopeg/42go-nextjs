@@ -125,25 +125,16 @@ const RootLayout = async ({
     initialProfileComplete,
   });
 
-  // Conditionally render the app's body based on a recognised configuration
-  // TODO: redirect to a default app?
-  const body = appID ? (
+  const content = appID ? children : "not found";
+  const body = (
     <Providers
       key={providerKey}
       appID={appID}
       defaultTheme={themeDefault}
       initialProfileCompletion={initialProfileComplete}
     >
-      {children}
-    </Providers>
-  ) : (
-    <Providers
-      key={providerKey}
-      appID={appID}
-      defaultTheme={themeDefault}
-      initialProfileCompletion={initialProfileComplete}
-    >
-      not found
+      {content}
+      <Toaster richColors />
     </Providers>
   );
 
@@ -155,10 +146,7 @@ const RootLayout = async ({
         <HeadTags />
       </head>
       {/* Use Tailwind font token so themes and utilities stay consistent */}
-      <body className="font-sans">
-        {body}
-        <Toaster richColors />
-      </body>
+      <body className="font-sans">{body}</body>
     </html>
   );
 };

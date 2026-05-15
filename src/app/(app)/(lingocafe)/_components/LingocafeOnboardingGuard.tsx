@@ -7,7 +7,6 @@ import {
   BookOpen,
   Check,
   Gift,
-  Hand,
   LockKeyhole,
   Rocket,
   ShieldCheck,
@@ -124,6 +123,12 @@ export const LingocafeOnboardingGuard = ({
   const missingRequiredConsent = consentItems.some(
     item => item.required && controller.consent[item.name] !== true
   );
+  const missingItems = [
+    !targetLang ? 'Select the language you want to improve.' : null,
+    !effectiveOwnLang ? 'Let us detect your browser language.' : null,
+    missingRequiredConsent ? 'Accept the required terms.' : null,
+  ].filter((item): item is string => Boolean(item));
+  const targetLangMissing = submitted && !targetLang;
   const canSubmit =
     !controller.loading &&
     !controller.saving &&
@@ -137,7 +142,9 @@ export const LingocafeOnboardingGuard = ({
     setMessage(null);
 
     if (!canSubmit) {
-      setMessage('Complete the required profile fields before continuing.');
+      window.confirm(
+        `Before starting, please complete:\n\n${missingItems.map(item => `- ${item}`).join('\n')}`
+      );
       return;
     }
 
@@ -180,6 +187,7 @@ export const LingocafeOnboardingGuard = ({
       size="full"
       showClose={false}
       closeOnOverlayClick={false}
+      onOpenAutoFocus={event => event.preventDefault()}
       skipOpenAnimation={true}
       className="md:!h-screen md:!max-h-none md:!border-b-0"
       bodyClassName="flex min-h-0 justify-center p-6 pb-16 pt-12 md:items-start md:pb-20"
@@ -188,7 +196,9 @@ export const LingocafeOnboardingGuard = ({
       <form onSubmit={saveProfile} className="flex w-full max-w-5xl flex-col gap-8 pb-8">
         <div className="mx-auto max-w-3xl space-y-3 text-center">
           <h1 className="flex flex-col items-center justify-center gap-3 text-3xl font-semibold tracking-normal text-foreground sm:flex-row md:text-4xl">
-            <Hand className="size-10 text-amber-400 sm:size-9" aria-hidden="true" />
+            <span className="text-4xl leading-none sm:text-3xl" aria-hidden="true">
+              🎉
+            </span>
             Welcome to LingoCafe!
           </h1>
           <p className="text-lg leading-7 text-muted-foreground mb-8">
@@ -206,21 +216,26 @@ export const LingocafeOnboardingGuard = ({
           </div>
         ) : (
           <>
-            <section className="grid gap-4 md:grid-cols-[3rem_1fr]">
-              <div className="flex size-9 items-center justify-center rounded-full bg-emerald-600 text-base font-semibold text-white shadow-sm">
+            <section className="grid gap-4 pt-6 md:grid-cols-[3rem_1fr] md:items-start md:pt-0">
+              <div className="mx-auto flex size-9 items-center justify-center rounded-full bg-emerald-600 text-base font-semibold text-white shadow-sm md:mx-0 md:self-center">
                 1
               </div>
-              <div className="space-y-4 pt-3 md:pt-5">
-                <div>
-                  <h2 className="text-2xl font-semibold tracking-normal">
+              <div className="space-y-4 pt-3 md:contents">
+                <div className="md:pt-5">
+                  <h2 className="flex flex-col gap-2 text-2xl font-semibold tracking-normal sm:flex-row sm:items-center">
                     Which language do you want to improve?
+                    {targetLangMissing ? (
+                      <span className="w-fit rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-sm font-medium text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
+                        This is missing
+                      </span>
+                    ) : null}
                   </h2>
                   <p className="mt-1 text-base text-muted-foreground">
                     This helps us show you books in the right language.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+                <div className="grid grid-cols-2 gap-3 md:col-start-2 lg:grid-cols-5">
                   {languages.target.map(option => {
                     const selected = targetLang === option.code;
 
@@ -252,11 +267,11 @@ export const LingocafeOnboardingGuard = ({
               </div>
             </section>
 
-            <section className="grid gap-4 md:grid-cols-[3rem_1fr]">
-              <div className="flex size-9 items-center justify-center rounded-full bg-emerald-600 text-base font-semibold text-white shadow-sm">
+            <section className="grid gap-4 pt-10 md:grid-cols-[3rem_1fr] md:items-start md:pt-0">
+              <div className="mx-auto flex size-9 items-center justify-center rounded-full bg-emerald-600 text-base font-semibold text-white shadow-sm md:mx-0 md:self-center">
                 2
               </div>
-              <div className="space-y-4">
+              <div className="space-y-4 md:contents">
                 <div>
                   <h2 className="text-2xl font-semibold tracking-normal">
                     What&apos;s your reading level?
@@ -266,7 +281,7 @@ export const LingocafeOnboardingGuard = ({
                   </p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 md:col-start-2 sm:grid-cols-2 lg:grid-cols-3">
                   {levelItems.map(item => {
                     const Icon = item.icon;
                     const selected = targetLevel === item.code;
@@ -292,11 +307,11 @@ export const LingocafeOnboardingGuard = ({
               </div>
             </section>
 
-            <section className="grid gap-4 pt-4 md:grid-cols-[3rem_1fr]">
-              <div className="flex size-9 items-center justify-center rounded-full bg-emerald-600 text-base font-semibold text-white shadow-sm">
+            <section className="grid gap-4 pt-12 md:grid-cols-[3rem_1fr] md:items-start md:pt-0">
+              <div className="mx-auto flex size-9 items-center justify-center rounded-full bg-emerald-600 text-base font-semibold text-white shadow-sm md:mx-0 md:self-center">
                 3
               </div>
-              <div className="space-y-4">
+              <div className="space-y-4 md:contents">
                 <div>
                   <h2 className="text-2xl font-semibold tracking-normal">The Boring One</h2>
                   <p className="mt-1 text-base text-muted-foreground">
@@ -304,7 +319,7 @@ export const LingocafeOnboardingGuard = ({
                   </p>
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
+                <div className="grid gap-4 md:col-start-2 lg:grid-cols-2">
                   <div className="rounded-lg border bg-background p-5 shadow-xs">
                     <div className="mb-4 flex items-center gap-3 text-lg font-semibold">
                       <ShieldCheck className="size-6 text-foreground" aria-hidden="true" />
@@ -317,6 +332,7 @@ export const LingocafeOnboardingGuard = ({
                       disabled={controller.saving}
                       submitted={submitted}
                       showRequiredMarker={false}
+                      control="switch"
                     />
                   </div>
 
@@ -332,6 +348,7 @@ export const LingocafeOnboardingGuard = ({
                       disabled={controller.saving}
                       submitted={submitted}
                       showRequiredMarker={false}
+                      control="switch"
                     />
                   </div>
                 </div>
@@ -339,7 +356,7 @@ export const LingocafeOnboardingGuard = ({
             </section>
 
             {message ? (
-              <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
                 {message}
               </div>
             ) : null}
@@ -352,12 +369,12 @@ export const LingocafeOnboardingGuard = ({
           </>
         )}
 
-        <div className="flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col items-center gap-3 pt-5">
           <Button
             type="submit"
             size="hero"
-            className="order-1 min-h-14 flex-1 bg-emerald-600 text-lg hover:bg-emerald-700 sm:order-2 sm:max-w-3xl"
-            disabled={!canSubmit}
+            className="min-h-14 w-full bg-emerald-600 text-lg hover:bg-emerald-700 sm:max-w-3xl"
+            disabled={controller.loading || controller.saving}
           >
             <BookOpen className="size-5" aria-hidden="true" />
             {controller.saving ? 'Saving...' : 'Start Reading'}
@@ -367,7 +384,7 @@ export const LingocafeOnboardingGuard = ({
           <Button
             type="button"
             variant="ghost"
-            className="order-2 justify-center text-muted-foreground sm:order-1 sm:justify-start sm:px-0 sm:hover:px-3"
+            className="justify-center text-muted-foreground"
             onClick={() => signOut({ callbackUrl: config?.auth?.logout?.url || '/' })}
           >
             Log out

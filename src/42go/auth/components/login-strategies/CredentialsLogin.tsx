@@ -52,13 +52,14 @@ export function CredentialsLogin({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
       {/* Stacked Input Fields */}
       <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
         <input
           type="text"
           id="username"
           name="username"
+          suppressHydrationWarning
           required
           disabled={isLoading || isOtherLoading}
           className="w-full px-4 py-3 border-0 border-b border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-0 focus:border-gray-300 dark:focus:border-gray-600 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50 bg-transparent"
@@ -71,6 +72,7 @@ export function CredentialsLogin({
           type="password"
           id="password"
           name="password"
+          suppressHydrationWarning
           required
           disabled={isLoading || isOtherLoading}
           className="w-full px-4 py-3 border-0 focus:outline-none focus:ring-0 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50 bg-transparent"

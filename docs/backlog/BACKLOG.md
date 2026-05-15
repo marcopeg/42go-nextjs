@@ -43,6 +43,7 @@
 - [QW92: Split AppConfig Into Public and Server-Only Configuration](./draft/QW92-split-appconfig-into-public-and-server-only-configuration/QW92.task.md)
 - [HZ45: Docker Release Quality and Hardening v2](./draft/HZ45-docker-release-quality-and-hardening-v2/HZ45.task.md)
 - [AK87: HeroBlock: Optional Fields (Title, Subtitle, or Actions Only)](./draft/AK87-heroblock-optional-fields-title-subtitle-or-actions-only/AK87.task.md)
+- [AL66: Validate Translation Requests Against Book Page Content](./draft/AL66-validate-translation-requests-against-book-page-content/AL66.task.md)
 
 ## Refining
 
