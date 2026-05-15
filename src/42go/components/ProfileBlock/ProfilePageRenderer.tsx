@@ -26,9 +26,7 @@ import {
 
 const defaultProfileItems: TProfileBlockItem[] = [];
 
-type ProfileFeedback =
-  | { type: "success"; message: string }
-  | { type: "error"; message: string; errors?: string[] };
+type ProfileFeedback = { type: "error"; message: string; errors?: string[] };
 
 type ProfilePageRendererProps = {
   profile?: TProfileConfig | null;
@@ -102,49 +100,66 @@ export const ProfilePageRenderer = forwardRef<
     });
   }, []);
 
-  const save = useCallback(async (): Promise<TProfileSaveSummary> => {
+  const validate = useCallback(async (): Promise<TProfileSaveSummary | null> => {
+    setFeedback(null);
+    const handles = Array.from(handlesRef.current.entries());
+
+    const validations = await Promise.all(
+      handles.map(async ([, handle]) => ({
+        result: await (handle.validate?.() ?? { ok: true }),
+      }))
+    );
+    const validationErrors = validations
+      .filter(({ result }) => !result.ok)
+      .flatMap(({ result }) => (result.ok ? [] : [result.message]));
+
+    if (validationErrors.length > 0) {
+      const summary: TProfileSaveSummary = {
+        ok: false,
+        phase: "validation",
+        message: "Fix the highlighted profile errors before saving.",
+        errors: validationErrors,
+      };
+      setFeedback({
+        type: "error",
+        message: summary.message,
+        errors: summary.errors,
+      });
+      return summary;
+    }
+
+    if (!controller.validate()) {
+      const errors =
+        controller.errors.length > 0
+          ? controller.errors.map((error) => error.message)
+          : ["Profile contains invalid values."];
+      const summary: TProfileSaveSummary = {
+        ok: false,
+        phase: "validation",
+        message: "Fix the highlighted profile errors before saving.",
+        errors,
+      };
+      setFeedback({
+        type: "error",
+        message: summary.message,
+        errors: summary.errors,
+      });
+      return summary;
+    }
+
+    return null;
+  }, [controller]);
+
+  const save = useCallback(async ({
+    skipValidation = false,
+  }: { skipValidation?: boolean } = {}): Promise<TProfileSaveSummary> => {
     setFeedback(null);
     const handles = Array.from(handlesRef.current.entries());
 
     try {
-      const validations = await Promise.all(
-        handles.map(async ([blockId, handle]) => ({
-          blockId,
-          result: await (handle.validate?.() ?? { ok: true }),
-        }))
-      );
-      const validationErrors = validations
-        .filter(({ result }) => !result.ok)
-        .flatMap(({ result }) => (result.ok ? [] : [result.message]));
-
-      if (validationErrors.length > 0) {
-        const summary: TProfileSaveSummary = {
-          ok: false,
-          phase: "validation",
-          message: "Fix the highlighted profile errors before saving.",
-          errors: validationErrors,
-        };
-        setFeedback({
-          type: "error",
-          message: summary.message,
-          errors: summary.errors,
-        });
-        return summary;
-      }
-
-      if (!controller.validate()) {
-        const summary: TProfileSaveSummary = {
-          ok: false,
-          phase: "validation",
-          message: "Fix the highlighted profile errors before saving.",
-          errors: controller.errors.map((error) => error.message),
-        };
-        setFeedback({
-          type: "error",
-          message: summary.message,
-          errors: summary.errors,
-        });
-        return summary;
+      if (!skipValidation) {
+        const validationSummary = await validate();
+        if (validationSummary) return validationSummary;
       }
 
       const consentBlock = profileItems.find((item) => item.type === "Consent");
@@ -164,7 +179,6 @@ export const ProfilePageRenderer = forwardRef<
         phase: "complete",
         message: "Preferences saved.",
       };
-      setFeedback({ type: "success", message: summary.message });
       await Promise.all(
         handles.map(([, handle]) => handle.onSaveSuccess?.() ?? undefined)
       );
@@ -191,31 +205,25 @@ export const ProfilePageRenderer = forwardRef<
       );
       return summary;
     }
-  }, [controller, profileItems]);
+  }, [controller, profileItems, validate]);
 
-  useImperativeHandle(ref, () => ({ save }), [save]);
+  useImperativeHandle(ref, () => ({ save, validate }), [save, validate]);
 
   return (
     <ProfileProvider controller={controller}>
       <div className="space-y-6">
         {feedback && (
           <div
-            className={
-              feedback.type === "success"
-                ? "rounded-md border border-green-600/30 bg-green-600/10 px-4 py-3 text-sm text-green-700 dark:text-green-300"
-                : "rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-            }
+            className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           >
             <p>{feedback.message}</p>
-            {feedback.type === "error" &&
-              feedback.errors &&
-              feedback.errors.length > 0 && (
-                <ul className="mt-2 list-disc space-y-1 pl-5">
-                  {feedback.errors.map((error) => (
-                    <li key={error}>{error}</li>
-                  ))}
-                </ul>
-              )}
+            {feedback.errors && feedback.errors.length > 0 && (
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {feedback.errors.map((error) => (
+                  <li key={error}>{error}</li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 
@@ -237,10 +245,6 @@ export const ProfilePageRenderer = forwardRef<
           <div className="rounded-md border bg-card px-4 py-3 text-sm text-muted-foreground">
             No profile blocks are configured.
           </div>
-        )}
-
-        {controller.isDirty && (
-          <p className="text-sm text-muted-foreground">Unsaved changes.</p>
         )}
 
         <AppVersion />

@@ -12,6 +12,8 @@ import {
   getReaderFont,
   getReaderFontSize,
   getReaderThemeStyle,
+  READER_APP_BACKGROUND_KEY,
+  READER_APP_FOREGROUND_KEY,
   READER_BACKGROUND_OPTIONS,
   READER_FONT_OPTIONS,
   READER_FONT_SIZE_OPTIONS,
@@ -163,6 +165,7 @@ export const BookReaderPreferencesPanel = ({
   const font = getReaderFont(preferences);
   const fontSize = getReaderFontSize(preferences);
   const background = getReaderBackground(preferences);
+  const usesAutoBackground = background.key === READER_APP_BACKGROUND_KEY;
   const foregrounds = useMemo(
     () =>
       getAvailableReaderForegrounds(
@@ -171,6 +174,34 @@ export const BookReaderPreferencesPanel = ({
       ),
     [preferences.backgroundKey, resolvedTheme]
   );
+  const selectBackground = (backgroundKey: string) => {
+    if (backgroundKey === READER_APP_BACKGROUND_KEY) {
+      onPreferencesChange({
+        backgroundKey,
+        foregroundKey: READER_APP_FOREGROUND_KEY,
+      });
+      return;
+    }
+
+    const nextForegrounds = getAvailableReaderForegrounds(
+      backgroundKey,
+      resolvedTheme === "dark" ? "dark" : "light"
+    );
+    const hasCurrentForeground = nextForegrounds.some(
+      (option) => option.key === preferences.foregroundKey
+    );
+    const fallbackForeground =
+      nextForegrounds.find(
+        (option) => option.key !== READER_APP_FOREGROUND_KEY
+      ) ?? nextForegrounds[0];
+
+    onPreferencesChange({
+      backgroundKey,
+      ...(!hasCurrentForeground && fallbackForeground
+        ? { foregroundKey: fallbackForeground.key }
+        : {}),
+    });
+  };
   const requestResetPreferences = () => {
     if (!canResetPreferences) return;
     const confirmed = window.confirm(
@@ -298,41 +329,57 @@ export const BookReaderPreferencesPanel = ({
                   label={option.label}
                   color={option.value}
                   active={option.key === background.key}
-                  onClick={() =>
-                    onPreferencesChange({ backgroundKey: option.key })
-                  }
+                  onClick={() => selectBackground(option.key)}
                 />
               ))}
             </div>
           </div>
         </section>
 
-        <section className="mt-8 space-y-4">
-          <div>
-            <h3 className="font-semibold">Text color</h3>
-            <p className="text-sm text-muted-foreground">
-              Only high-contrast matches survive this cage match.
-            </p>
-          </div>
-          <div className="-mx-1 overflow-x-auto pb-2 md:mx-0 md:overflow-visible md:pb-0">
-            <div className="flex gap-4 px-1 md:grid md:grid-cols-3 md:px-0">
-              {foregrounds.map((option) => (
-                <PreferenceSwatch
-                  key={option.key}
-                  label={option.label}
-                  color={option.value}
-                  active={option.key === preferences.foregroundKey}
-                  onClick={() =>
-                    onPreferencesChange({ foregroundKey: option.key })
-                  }
-                />
-              ))}
+        <div
+          aria-hidden={usesAutoBackground}
+          className={cn(
+            "grid transition-[grid-template-rows,opacity,margin-top] duration-300 ease-out",
+            usesAutoBackground
+              ? "mt-0 grid-rows-[0fr] opacity-0"
+              : "mt-8 grid-rows-[1fr] opacity-100"
+          )}
+        >
+          <section className="min-h-0 overflow-hidden space-y-4">
+            <div>
+              <h3 className="font-semibold">Text color</h3>
+              <p className="text-sm text-muted-foreground">
+                Only high-contrast matches survive this cage match.
+              </p>
             </div>
-          </div>
-        </section>
+            <div className="-mx-1 overflow-x-auto pb-2 md:mx-0 md:overflow-visible md:pb-0">
+              <div className="flex gap-4 px-1 md:grid md:grid-cols-3 md:px-0">
+                {foregrounds.map((option) => (
+                  <PreferenceSwatch
+                    key={option.key}
+                    label={option.label}
+                    color={option.value}
+                    active={option.key === preferences.foregroundKey}
+                    onClick={() =>
+                      onPreferencesChange({ foregroundKey: option.key })
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
 
-        {canResetPreferences && (
-          <section className="mt-8 border-t pt-6">
+        <section className="mt-8 space-y-3 border-t pt-6">
+          <Button
+            type="button"
+            className="w-full"
+            onClick={() => onOpenChange(false)}
+          >
+            Done
+          </Button>
+
+          {canResetPreferences && (
             <Button
               type="button"
               variant="destructive"
@@ -341,8 +388,8 @@ export const BookReaderPreferencesPanel = ({
             >
               Reset reading preferences
             </Button>
-          </section>
-        )}
+          )}
+        </section>
 
         <p className="mt-6 text-center text-xs text-muted-foreground/60">
           These preferences are stored on your device.

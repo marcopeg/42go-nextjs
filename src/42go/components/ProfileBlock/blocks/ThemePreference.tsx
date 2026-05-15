@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { MonitorCog, MoonStar, Sun } from "lucide-react";
 
 import type { ThemeValue } from "@/AppConfig";
+import { useProfileBlockHandle } from "@/42go/components/ProfileBlock/ProfileBlockRuntime";
 import { SimplePanel } from "@/42go/components/panel";
 import { useTheme } from "@/42go/config/ThemeProvider";
 import { cn } from "@/lib/utils";
@@ -31,17 +32,37 @@ export const ThemePreference = ({
 }: ThemePreferenceProps) => {
   const { mounted, setTheme, theme } = useTheme();
   const currentTheme = normalizeTheme(theme);
+  const [savedTheme, setSavedTheme] = useState<ThemeValue | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isDirty =
+    mounted && savedTheme !== null && currentTheme !== savedTheme;
+
+  useProfileBlockHandle(
+    useMemo(
+      () => ({
+        dirty: isDirty,
+        onSaveSuccess: () => {
+          setSavedTheme(currentTheme);
+          setErrorMessage(null);
+        },
+      }),
+      [currentTheme, isDirty]
+    )
+  );
 
   const handleThemeChange = (nextTheme: ThemeValue) => {
     if (!mounted || nextTheme === currentTheme) return;
 
     const previousTheme = currentTheme;
+    const hasSavedTheme = savedTheme !== null;
     setErrorMessage(null);
+    setSavedTheme((current) => current ?? previousTheme);
 
     try {
       setTheme(nextTheme);
     } catch {
+      if (!hasSavedTheme) setSavedTheme(null);
+
       try {
         setTheme(previousTheme);
       } catch {

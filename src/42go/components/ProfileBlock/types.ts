@@ -122,5 +122,6 @@ export type TProfileConfig = TProfileCoreConfig & {
 };
 
 export type TProfilePageRendererHandle = {
-  save: () => Promise<TProfileSaveSummary>;
+  validate: () => Promise<TProfileSaveSummary | null>;
+  save: (options?: { skipValidation?: boolean }) => Promise<TProfileSaveSummary>;
 };

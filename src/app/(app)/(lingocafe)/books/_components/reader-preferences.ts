@@ -81,7 +81,7 @@ export const READER_FONT_OPTIONS: Array<
 export const READER_BACKGROUND_OPTIONS: ReaderPreferenceOption[] = [
   {
     key: READER_APP_BACKGROUND_KEY,
-    label: "App",
+    label: "Auto",
     value: "var(--background)",
   },
   { key: "paper", label: "Paper", value: "#f7f1e3" },
