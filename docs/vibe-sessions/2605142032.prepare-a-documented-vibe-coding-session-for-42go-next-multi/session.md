@@ -4,7 +4,7 @@ sessionSlug: "prepare-a-documented-vibe-coding-session-for-42go-next-multi"
 goal: "Prepare a documented vibe coding session for 42Go Next Multi"
 status: "active"
 startedAt: "2026-05-14T20:32:42+02:00"
-updatedAt: "2026-05-14T22:16:43+02:00"
+updatedAt: "2026-05-15T10:55:05+02:00"
 memoryFile: "./memory.md"
 ---
 # Vibe Session — Prepare a documented vibe coding session for 42Go Next Multi
@@ -110,3 +110,23 @@ Removed the reading-level optional marker, removed the divider before step 3, ad
 ### 2026-05-14 22:16 — Early Birds consent copy
 
 Updated the optional Early Birds consent label to the shorter Join Early Birds copy while keeping the existing Programme Terms link. Validation passed with npm run qa and git diff --check.
+
+### 2026-05-14 22:34 — Promote final onboarding decisions
+
+Promoted stable context into `docs/vibe-sessions/2605142032.prepare-a-documented-vibe-coding-session-for-42go-next-multi/memory.md`. Promoted the final LingoCafe onboarding decisions: card-based language/level selection, mobile two-column language cards, config-driven consent links, Useful optional consent grouping, and shorter Early Birds copy with Programme Terms link retained.
+
+### 2026-05-14 22:40 — Profile language preferences cards
+
+Updated the LingoCafe profile language preferences custom block to use onboarding-style cards for reading language and reading level, kept ownLang as a dropdown with the label Your fluent language, and kept targetLevel optional by toggling a selected level off. Validation passed with npm run qa and git diff --check.
+
+### 2026-05-14 22:46 — Profile language preferences split panels
+
+Split the LingoCafe profile language preferences custom block into three sibling panels: Your fluent language, Reading language, and Reading level. The target language and level controls keep the onboarding-style card interactions. Validation passed with npm run qa and git diff --check.
+
+### 2026-05-15 10:50 — Onboarding hero centered
+
+Centered the LingoCafe onboarding welcome title and subtitle across mobile and desktop. Validation passed with npm run qa and git diff --check.
+
+### 2026-05-15 10:55 — Mobile onboarding hand placement
+
+Reloaded the user-edited onboarding guard and adjusted the hero title so the hand icon stacks above the title on mobile while staying inline from the small breakpoint upward. Validation passed with npm run qa and git diff --check.

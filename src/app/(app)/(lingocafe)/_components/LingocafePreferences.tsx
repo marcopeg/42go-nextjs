@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { BarChart3, Check, Rocket, Sprout } from "lucide-react";
 
 import { SimplePanel } from "@/42go/components/panel";
 import { useProfileBlockHandle } from "@/42go/components/ProfileBlock/ProfileBlockRuntime";
@@ -8,6 +9,27 @@ import { useProfile } from "@/42go/profile/client";
 import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
 
 const languages = getLingoCafeReaderLanguages();
+
+const levelItems = [
+  {
+    code: "a1",
+    label: "Beginner",
+    icon: Sprout,
+    iconClassName: "text-emerald-600",
+  },
+  {
+    code: "a2",
+    label: "Intermediate",
+    icon: BarChart3,
+    iconClassName: "text-amber-500",
+  },
+  {
+    code: "b2",
+    label: "Advanced",
+    icon: Rocket,
+    iconClassName: "text-violet-600",
+  },
+] as const;
 
 export const LingocafePreferences = () => {
   const { profile, setProfileValue, loading, saving } = useProfile();
@@ -35,87 +57,119 @@ export const LingocafePreferences = () => {
 
   useProfileBlockHandle(useMemo(() => ({ validate }), [validate]));
 
+  if (loading) {
+    return (
+      <SimplePanel title="Language Preferences">
+        <p className="text-sm text-muted-foreground">
+          Loading language preferences...
+        </p>
+      </SimplePanel>
+    );
+  }
+
   return (
-    <SimplePanel
-      title="Language Preferences"
-      description="Set how LingoCafe chooses your reading material."
-    >
-      <div className="space-y-5">
-        {submitted && missing && (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            Choose your language and learning language.
-          </div>
-        )}
+    <div className="space-y-5">
+      {submitted && missing && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          Choose your fluent language and reading language.
+        </div>
+      )}
 
-        {loading ? (
-          <p className="text-sm text-muted-foreground">
-            Loading language preferences...
-          </p>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-3">
-            <label className="block space-y-2 text-sm font-medium">
-              <span>Your language</span>
-              <select
-                value={ownLang}
-                onChange={(event) =>
-                  setProfileValue("ownLang", event.target.value)
+      <SimplePanel
+        title="Your fluent language"
+        description="Used when LingoCafe translates or explains reading content."
+      >
+        <label className="block max-w-sm space-y-2 text-sm font-medium">
+          <span className="sr-only">Your fluent language</span>
+          <select
+            value={ownLang}
+            onChange={(event) =>
+              setProfileValue("ownLang", event.target.value)
+            }
+            disabled={disabled}
+            aria-invalid={submitted && !ownLang}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:border-destructive"
+          >
+            <option value="">Choose language</option>
+            {languages.own.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </SimplePanel>
+
+      <SimplePanel
+        title="Reading language"
+        description="Choose the language you want to improve."
+      >
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          {languages.target.map((option) => {
+            const selected = targetLang === option.code;
+
+            return (
+              <button
+                key={option.code}
+                type="button"
+                aria-pressed={selected}
+                disabled={disabled}
+                onClick={() => setProfileValue("targetLang", option.code)}
+                className={
+                  selected
+                    ? "relative flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border-2 border-emerald-600 bg-emerald-50 px-3 text-center shadow-xs outline-none transition focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-950/30"
+                    : "flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border bg-background px-3 text-center shadow-xs outline-none transition hover:border-emerald-500 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
                 }
-                disabled={disabled}
-                aria-invalid={submitted && !ownLang}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:border-destructive"
               >
-                <option value="">Choose language</option>
-                {languages.own.map((option) => (
-                  <option key={option.code} value={option.code}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                {selected && (
+                  <span className="absolute -right-2 -top-2 flex size-7 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
+                    <Check className="size-4" aria-hidden="true" />
+                  </span>
+                )}
+                <span className="text-3xl leading-none" aria-hidden="true">
+                  {option.flag}
+                </span>
+                <span className="text-sm font-semibold">{option.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </SimplePanel>
 
-            <label className="block space-y-2 text-sm font-medium">
-              <span>Learning language</span>
-              <select
-                value={targetLang}
-                onChange={(event) =>
-                  setProfileValue("targetLang", event.target.value)
+      <SimplePanel
+        title="Reading level"
+        description="Pick the level that best matches your reading comfort."
+      >
+        <div className="grid gap-3 sm:grid-cols-3">
+          {levelItems.map((item) => {
+            const Icon = item.icon;
+            const selected = targetLevel === item.code;
+
+            return (
+              <button
+                key={item.code}
+                type="button"
+                aria-pressed={selected}
+                disabled={disabled}
+                onClick={() =>
+                  setProfileValue("targetLevel", selected ? null : item.code)
                 }
-                disabled={disabled}
-                aria-invalid={submitted && !targetLang}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:border-destructive"
+                className={
+                  selected
+                    ? "flex min-h-16 items-center justify-center gap-3 rounded-lg border-2 border-emerald-600 bg-emerald-50 px-4 text-base font-semibold shadow-xs outline-none transition focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-950/30"
+                    : "flex min-h-16 items-center justify-center gap-3 rounded-lg border bg-background px-4 text-base font-semibold shadow-xs outline-none transition hover:border-emerald-500 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+                }
               >
-                <option value="">Choose language</option>
-                {languages.target.map((option) => (
-                  <option key={option.code} value={option.code}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block space-y-2 text-sm font-medium">
-              <span>Level</span>
-              <select
-                value={targetLevel}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setProfileValue("targetLevel", value || null);
-                }}
-                disabled={disabled}
-                aria-invalid={false}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:border-destructive"
-              >
-                <option value="">No level yet</option>
-                {languages.levels.map((option) => (
-                  <option key={option.code} value={option.code}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        )}
-      </div>
-    </SimplePanel>
+                <Icon
+                  className={`size-6 ${item.iconClassName}`}
+                  aria-hidden="true"
+                />
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </SimplePanel>
+    </div>
   );
 };

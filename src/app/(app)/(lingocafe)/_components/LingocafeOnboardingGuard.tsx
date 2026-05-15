@@ -186,14 +186,17 @@ export const LingocafeOnboardingGuard = ({
       ariaLabel="Complete your LingoCafe profile"
     >
       <form onSubmit={saveProfile} className="flex w-full max-w-5xl flex-col gap-8 pb-8">
-        <div className="space-y-3">
-          <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-normal text-foreground md:text-4xl">
-            <Hand className="size-9 text-amber-400" aria-hidden="true" />
+        <div className="mx-auto max-w-3xl space-y-3 text-center">
+          <h1 className="flex flex-col items-center justify-center gap-3 text-3xl font-semibold tracking-normal text-foreground sm:flex-row md:text-4xl">
+            <Hand className="size-10 text-amber-400 sm:size-9" aria-hidden="true" />
             Welcome to LingoCafe!
           </h1>
-          <p className="max-w-3xl text-lg leading-7 text-muted-foreground">
-            Let&apos;s personalize your reading experience in a few easy steps. You can change these
-            anytime in your profile.
+          <p className="text-lg leading-7 text-muted-foreground mb-8">
+            Let&apos;s personalize your reading experience three easy steps.
+            <br />
+            <small>
+              <i>You can change these anytime in your profile.</i>
+            </small>
           </p>
         </div>
 
@@ -295,9 +298,9 @@ export const LingocafeOnboardingGuard = ({
               </div>
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-2xl font-semibold tracking-normal">Almost there!</h2>
+                  <h2 className="text-2xl font-semibold tracking-normal">The Boring One</h2>
                   <p className="mt-1 text-base text-muted-foreground">
-                    A couple of quick things before you start reading.
+                    But very important for both of us!
                   </p>
                 </div>
 
