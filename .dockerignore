@@ -27,6 +27,7 @@ test-results
 
 # Repository docs/backlog are not needed by the application image
 docs
+contents/.obsidian
 
 # Secrets and local machine files
 .env

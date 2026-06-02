@@ -24,8 +24,9 @@ export const HomePage: Page = {
       image: {
         src: `${lingoCafeAssetsBasePath}/mkt/s2.landing-side-540.webp`,
         alt: 'Image ContentBlock stacked layout example',
-        width: 1080,
-        height: 1350,
+        width: 540,
+        height: 675,
+        unoptimized: true,
         // sizes: '(max-width: 400px) 100vw, 400px',
         align: 'left',
         // style: 'transparent',
@@ -34,7 +35,7 @@ export const HomePage: Page = {
       content: {
         valign: 'center',
         animation: 'fade',
-        path: './src/config/lingocafe/s1.md',
+        path: './contents/lingocafe/landing.p1.md',
       },
     },
     {
@@ -46,6 +47,9 @@ export const HomePage: Page = {
         size: 'hero',
       },
       align: 'center',
+      margin: {
+        bottom: '[10vh]',
+      },
     },
   ],
 };

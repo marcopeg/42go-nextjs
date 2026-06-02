@@ -62,6 +62,7 @@ WORKDIR /app
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/contents ./contents
 
 # Copy package.json for proper startup
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
