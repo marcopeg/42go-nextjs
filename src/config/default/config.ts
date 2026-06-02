@@ -1,4 +1,4 @@
-import { UserMenu } from "@/42go/auth/components/UserMenu";
+import { UserMenu } from '@/42go/auth/components/UserMenu';
 import {
   Zap,
   LayoutDashboard,
@@ -10,71 +10,70 @@ import {
   User,
   BookOpen,
   Layers,
-} from "lucide-react";
-import QuicklistIcon from "@/config/quicklist/QuicklistIcon";
-import { TAppConfigItem } from "../../AppConfig";
+} from 'lucide-react';
+import QuicklistIcon from '@/config/quicklist/QuicklistIcon';
+import { TAppConfigItem } from '../../AppConfig';
 
-import { HomePage } from "@/config/home-page";
-import { AboutPage } from "@/config/about-page";
-import { PricingPage } from "@/config/pricing-page";
+import { HomePage } from './home-page';
+import { AboutPage } from './about-page';
+import { PricingPage } from './pricing-page';
 
 export default {
-  name: "DEFAULT APP",
+  name: 'DEFAULT APP',
   match: {
-    url: ["^next.42go.dev+$", "^42go.ngrok.app+$", "^localhost:\\d+$"],
+    url: ['^next.42go.dev+$', '^42go.ngrok.app+$', '^localhost:\\d+$'],
     header: {
-      mode: "all",
+      mode: 'all',
       keys: [
-        { key: "foo", value: "bar" },
-        { key: "faa", value: "bar" },
+        { key: 'foo', value: 'bar' },
+        { key: 'faa', value: 'bar' },
       ],
     },
   },
   features: [
-    "page:docs",
-    "page:users",
-    "api:waitlist",
-    "api:feedback",
-    "api:users",
-    "api:quicklists",
-    "api:notes",
-    "api:lingocafe",
-    "api:profile",
-    "page:quicklists",
-    "page:books",
-    "page:demo-panel",
-    "page:demo-modal",
+    'page:docs',
+    'page:users',
+    'api:waitlist',
+    'api:feedback',
+    'api:users',
+    'api:quicklists',
+    'api:notes',
+    'api:lingocafe',
+    'api:profile',
+    'page:quicklists',
+    'page:books',
+    'page:demo-panel',
+    'page:demo-modal',
   ],
   theme: {
-    default: "system",
+    default: 'system',
   },
   public: {
     meta: {
-      title: "Default App - Chuck Norris Edition",
-      description:
-        "The default application that's tougher than a two-dollar steak",
-      keywords: ["nextjs", "default", "chuck-norris", "legendary"],
-      authors: [{ name: "Chuck Norris" }],
+      title: 'Default App - Chuck Norris Edition',
+      description: "The default application that's tougher than a two-dollar steak",
+      keywords: ['nextjs', 'default', 'chuck-norris', 'legendary'],
+      authors: [{ name: 'Chuck Norris' }],
     },
     toolbar: {
-      title: "NextKit",
-      subtitle: "Build SaaS in minutes",
+      title: 'NextKit',
+      subtitle: 'Build SaaS in minutes',
       icon: Zap,
       // href: "/", // this is the default value
       actions: [
         {
-          type: "link",
-          label: "Docs",
-          href: "/docs",
-          variant: "link",
+          type: 'link',
+          label: 'Docs',
+          href: '/docs',
+          variant: 'link',
         },
         {
-          type: "link",
-          label: "Stack",
-          href: "/stack",
-          variant: "link",
+          type: 'link',
+          label: 'Stack',
+          href: '/stack',
+          variant: 'link',
         },
-        { type: "component", component: UserMenu },
+        { type: 'component', component: UserMenu },
       ],
     },
     pages: {
@@ -84,55 +83,54 @@ export default {
       stack: {
         items: [
           {
-            type: "markdown",
-            source: "# Stack Demo",
+            type: 'markdown',
+            source: '# Stack Demo',
           },
           {
-            type: "stack",
-            direction: { base: "column", md: "row" },
-            spacing: "md",
+            type: 'stack',
+            direction: { base: 'column', md: 'row' },
+            spacing: 'md',
             items: [
               {
-                alignSelf: "center",
+                alignSelf: 'center',
                 items: [
                   {
-                    type: "markdown",
-                    source: "Legacy inline block before rich cells.",
+                    type: 'markdown',
+                    source: 'Legacy inline block before rich cells.',
                   },
                 ],
               },
               {
                 items: [
                   {
-                    type: "markdown",
-                    source: "**Left cell** with _markdown_.",
+                    type: 'markdown',
+                    source: '**Left cell** with _markdown_.',
                   },
-                  { type: "cta", action: { href: "/login", label: "Login" } },
+                  { type: 'cta', action: { href: '/login', label: 'Login' } },
                 ],
-                alignSelf: "start",
+                alignSelf: 'start',
                 grow: true,
-                className: "p-2 border rounded-md",
+                className: 'p-2 border rounded-md',
               },
               {
                 items: [
                   {
-                    type: "stack",
-                    direction: "column",
-                    spacing: "sm",
+                    type: 'stack',
+                    direction: 'column',
+                    spacing: 'sm',
                     items: [
-                      { type: "markdown", source: "Nested **A**" },
-                      { type: "markdown", source: "Nested **B**" },
+                      { type: 'markdown', source: 'Nested **A**' },
+                      { type: 'markdown', source: 'Nested **B**' },
                     ],
                   },
                 ],
-                alignSelf: "center",
-                basis: "1/3",
-                className: "p-2 bg-muted/30 rounded-md",
+                alignSelf: 'center',
+                basis: '1/3',
+                className: 'p-2 bg-muted/30 rounded-md',
               },
               {
-                type: "markdown",
-                source:
-                  "End of inner stack. *Balanced like Chuck Norris on a roundhouse*.",
+                type: 'markdown',
+                source: 'End of inner stack. *Balanced like Chuck Norris on a roundhouse*.',
               },
             ],
           },
@@ -140,7 +138,7 @@ export default {
       },
     },
     docs: {
-      source: "./contents/default/docs",
+      source: './contents/default/docs',
       cache: {
         duration: -1, // No expiration
       },
@@ -152,31 +150,31 @@ export default {
     // },
     profile: {
       items: [
-        { type: "AccountInfo" },
-        { type: "Consent", source: "profile", method: "checkbox-submit" },
-        { type: "TestRBAC" },
-        { type: "Logout" },
+        { type: 'AccountInfo' },
+        { type: 'Consent', source: 'profile', method: 'checkbox-submit' },
+        { type: 'TestRBAC' },
+        { type: 'Logout' },
       ],
     },
     consent: {
       items: [
         {
-          name: "terms",
+          name: 'terms',
           required: true,
-          version: "default-terms-2026-05-05",
-          label: "I accept the Terms and Conditions",
+          version: 'default-terms-2026-05-05',
+          label: 'I accept the Terms and Conditions',
         },
         {
-          name: "privacy",
+          name: 'privacy',
           required: true,
-          version: "default-privacy-2026-05-05",
-          label: "I acknowledge the Privacy Policy",
+          version: 'default-privacy-2026-05-05',
+          label: 'I acknowledge the Privacy Policy',
         },
         {
-          name: "marketing",
+          name: 'marketing',
           required: false,
-          version: "default-marketing-2026-05-05",
-          label: "I consent to receive product updates",
+          version: 'default-marketing-2026-05-05',
+          label: 'I consent to receive product updates',
         },
       ],
     },
@@ -184,63 +182,63 @@ export default {
       top: {
         items: [
           {
-            title: "Dashboard",
-            href: "/dashboard",
+            title: 'Dashboard',
+            href: '/dashboard',
             icon: LayoutDashboard,
           },
           {
-            title: "Analytics",
-            href: "/analytics",
+            title: 'Analytics',
+            href: '/analytics',
             icon: BarChart3,
-            badge: "Pro",
+            badge: 'Pro',
           },
           {
-            title: "Users",
-            href: "/users",
+            title: 'Users',
+            href: '/users',
             icon: Users,
             policy: {
-              require: { role: "backoffice" },
+              require: { role: 'backoffice' },
             },
           },
           {
-            title: "Documents",
-            href: "/documents",
+            title: 'Documents',
+            href: '/documents',
             icon: FileText,
             policy: {
-              require: { role: "backoffice" },
+              require: { role: 'backoffice' },
             },
           },
           {
-            title: "Quicklists",
-            href: "/quicklists",
+            title: 'Quicklists',
+            href: '/quicklists',
             icon: QuicklistIcon,
             policy: {
-              require: { feature: "page:quicklists" },
+              require: { feature: 'page:quicklists' },
             },
           },
           {
-            title: "LingoCafe",
-            href: "/books",
+            title: 'LingoCafe',
+            href: '/books',
             // Other icons worth trying later: Languages, GraduationCap, Library.
             icon: BookOpen,
             policy: {
-              require: { feature: "page:books" },
+              require: { feature: 'page:books' },
             },
           },
           {
-            title: "Panel Demo",
-            href: "/demo-panel",
+            title: 'Panel Demo',
+            href: '/demo-panel',
             icon: Layers,
             policy: {
-              require: { feature: "page:demo-panel" },
+              require: { feature: 'page:demo-panel' },
             },
           },
           {
-            title: "Modal Demo",
-            href: "/demo-modal",
+            title: 'Modal Demo',
+            href: '/demo-modal',
             icon: Layers,
             policy: {
-              require: { feature: "page:demo-modal" },
+              require: { feature: 'page:demo-modal' },
             },
           },
         ],
@@ -248,16 +246,16 @@ export default {
       bottom: {
         items: [
           {
-            title: "Home",
-            href: "/",
+            title: 'Home',
+            href: '/',
             icon: Home,
           },
           {
-            title: "Settings",
-            href: "/settings",
+            title: 'Settings',
+            href: '/settings',
             icon: Settings,
             policy: {
-              require: { role: "backoffice" },
+              require: { role: 'backoffice' },
             },
           },
         ],
@@ -265,57 +263,57 @@ export default {
       mobile: {
         items: [
           {
-            title: "Home",
-            href: "/dashboard",
+            title: 'Home',
+            href: '/dashboard',
             icon: Home,
           },
           {
-            title: "Analytics",
-            href: "/analytics",
+            title: 'Analytics',
+            href: '/analytics',
             icon: BarChart3,
             policy: {
-              require: { role: "backoffice" },
+              require: { role: 'backoffice' },
             },
           },
           {
-            title: "Users",
-            href: "/users",
+            title: 'Users',
+            href: '/users',
             icon: Users,
             policy: {
-              require: { role: "backoffice" },
+              require: { role: 'backoffice' },
             },
           },
           {
-            title: "Profile",
-            href: "/profile",
+            title: 'Profile',
+            href: '/profile',
             icon: User,
           },
         ],
       },
       collapsible: {
-        position: "bottom",
+        position: 'bottom',
       },
     },
   },
   auth: {
     providers: [
       {
-        type: "credentials" as const,
+        type: 'credentials' as const,
         config: {},
       },
       {
-        type: "github" as const,
+        type: 'github' as const,
         config: {
           clientId: process.env.GITHUB_CLIENT_ID!,
           clientSecret: process.env.GITHUB_CLIENT_SECRET!,
         },
       },
       {
-        type: "google" as const,
+        type: 'google' as const,
         config: {
           clientId: process.env.GOOGLE_CLIENT_ID!,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-          prompt: "select_account",
+          prompt: 'select_account',
         },
       },
     ],

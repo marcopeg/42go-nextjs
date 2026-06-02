@@ -1,5 +1,9 @@
 import React from "react";
 import type { ContentBlockItem as ServerContentBlockItem } from "../server";
+import {
+  resolveContentBlockPaddingProps,
+  type TContentBlockPadding,
+} from "@/42go/components/ContentBlock/render-component";
 
 // Responsive helper type
 // Plain string overrides all breakpoints. Object allows per-breakpoint overrides.
@@ -33,6 +37,7 @@ export interface TStackBlock {
   type: "stack";
   direction?: ResponsiveValue<"row" | "column">; // default 'row'
   spacing?: ResponsiveValue<"none" | "sm" | "md" | "lg" | "xl">; // default 'none'
+  padding?: TContentBlockPadding;
   wrap?: boolean;
   align?: "start" | "center" | "end" | "stretch";
   justify?: "start" | "center" | "end" | "between" | "around" | "evenly";
@@ -105,6 +110,7 @@ export const StackBlock = ({
   const {
     direction = "row",
     spacing = "none",
+    padding,
     wrap,
     align,
     justify,
@@ -112,6 +118,7 @@ export const StackBlock = ({
   } = data;
 
   if (!items || items.length === 0) return null;
+  const paddingProps = resolveContentBlockPaddingProps(padding);
 
   const classNames: string[] = ["flex"];
   classNames.push(
@@ -121,6 +128,7 @@ export const StackBlock = ({
   if (wrap) classNames.push("flex-wrap");
   if (align) classNames.push(alignMap[align] ?? "");
   if (justify) classNames.push(justifyMap[justify] ?? "");
+  if (paddingProps?.className) classNames.push(paddingProps.className);
 
   const cellAlignSelfMap: Record<string, string> = {
     auto: "self-auto",
@@ -163,7 +171,11 @@ export const StackBlock = ({
   };
 
   return (
-    <div role="group" className={classNames.filter(Boolean).join(" ")}>
+    <div
+      role="group"
+      className={classNames.filter(Boolean).join(" ")}
+      style={paddingProps?.style}
+    >
       {items.map(renderStackItem)}
     </div>
   );

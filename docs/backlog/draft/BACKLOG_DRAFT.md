@@ -1,7 +1,6 @@
 # Draft
 
 - [FE78: HeroBlock: Icon Support](./FE78-heroblock-icon-support/FE78.task.md)
-- [TR02: Add Image ContentBlock](./TR02-add-image-contentblock/TR02.task.md)
 - [GQ36: Add YouTube ContentBlock](./GQ36-add-youtube-contentblock/GQ36.task.md)
 - [AAN: App-Specific Session Configuration [aan]](./AAN-app-specific-session-configuration-aan/AAN.task.md)
 - [ABK: Add Social Login: X [abk]](./ABK-add-social-login-x-abk/ABK.task.md)

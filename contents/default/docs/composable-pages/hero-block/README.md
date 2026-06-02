@@ -14,6 +14,8 @@ const config = {
         items: [
           {
             type: "hero",
+            margin: { top: "0", bottom: "0" },
+            padding: { top: "0", bottom: "0" },
             alignment: "center",
             title: "Next **Multi**",
             subtitle: "Yet **Another** NextJS **Wrapper**",
@@ -90,3 +92,16 @@ Accepted values:
 - `"right"`
 
 Defaults to `"center"`, which matches the original Hero Block layout.
+
+### padding
+
+Optional. Controls the Hero Block's internal top and bottom padding.
+
+Defaults to zero. The old built-in outer and inner vertical padding is only added when explicitly configured through `padding`.
+
+```ts
+padding: {
+  top: "0",
+  bottom: { base: "8", md: "16" },
+}
+```

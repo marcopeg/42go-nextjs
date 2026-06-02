@@ -2,6 +2,11 @@ import fs from "fs";
 import path from "path";
 import React, { cache } from "react";
 import Markdown from "@/42go/components/Markdown";
+import { cn } from "@/42go/utils/utils";
+import {
+  resolveContentBlockPaddingProps,
+  type TContentBlockPadding,
+} from "@/42go/components/ContentBlock/render-component";
 
 // Chuck Norris style: roundhouse cache using React's cache()
 const readMarkdownFile = cache(async (filePath: string): Promise<string> => {
@@ -9,8 +14,16 @@ const readMarkdownFile = cache(async (filePath: string): Promise<string> => {
 });
 
 export type TMarkdownBlock =
-  | { type: "markdown"; source: string; path?: never }
-  | { type: "markdown"; path: string; source?: never };
+  | ({
+      type: "markdown";
+      source: string;
+      path?: never;
+    } & { padding?: TContentBlockPadding })
+  | ({
+      type: "markdown";
+      path: string;
+      source?: never;
+    } & { padding?: TContentBlockPadding });
 
 /**
  * Renders Markdown from either an inline source or a file path.
@@ -19,6 +32,7 @@ export type TMarkdownBlock =
 
 export async function MarkdownBlock({ data }: { data: TMarkdownBlock }) {
   let content = "";
+  const paddingProps = resolveContentBlockPaddingProps(data.padding);
 
   if (data.source) {
     content = data.source;
@@ -52,7 +66,10 @@ export async function MarkdownBlock({ data }: { data: TMarkdownBlock }) {
 
   // MarkdownRenderer is a client component, so wrap with max-width for readability
   return (
-    <div className="max-w-4xl mx-auto px-4">
+    <div
+      className={cn("max-w-4xl mx-auto px-4", paddingProps?.className)}
+      style={paddingProps?.style}
+    >
       <Markdown source={content} />
     </div>
   );

@@ -14,6 +14,7 @@ Evidence:
   type: "hero";
   alignment?: "left" | "center" | "right";
   backgroundImage?: string;
+  padding?: { top?: string | object; bottom?: string | object };
   title?: string;
   subtitle?: string;
   actions?: Array<{
@@ -32,6 +33,7 @@ At least one of `title`, `subtitle`, or `actions` is required by the type.
 - `alignment` defaults to `"center"`.
 - `alignment` controls text alignment, content origin, action justification, and background image origin.
 - `backgroundImage` uses `cover`, an overlay, and alignment-specific `backgroundPosition`.
+- `padding.top` and `padding.bottom` control Hero Block internal vertical spacing; default is zero.
 - If there is no title but there is subtitle, the subtitle is rendered as the page hero `<h1>`.
 
 ## Example

@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { ScrollAnimation } from "@/components/ui/scroll-animation";
 import Markdown from "@/42go/components/Markdown";
+import { cn } from "@/42go/utils/utils";
+import {
+  resolveContentBlockPaddingProps,
+  type TContentBlockPadding,
+} from "@/42go/components/ContentBlock/render-component";
 
 export interface TWaitlistBlock {
   type: "waitlist";
@@ -18,6 +23,7 @@ export interface TWaitlistBlock {
     | { type: "message"; content: string }
     | { type: "redirect"; url: string };
   resetLabel?: string;
+  padding?: TContentBlockPadding;
 }
 
 export const WaitlistBlock = (props: TWaitlistBlock) => {
@@ -27,6 +33,7 @@ export const WaitlistBlock = (props: TWaitlistBlock) => {
   const router = useRouter();
   const { toast } = useToast();
   const emailInputRef = useRef<HTMLInputElement>(null);
+  const paddingProps = resolveContentBlockPaddingProps(props.padding);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +80,10 @@ export const WaitlistBlock = (props: TWaitlistBlock) => {
   };
 
   return (
-    <section className="py-12">
+    <section
+      className={cn(paddingProps?.className)}
+      style={paddingProps?.style}
+    >
       <ScrollAnimation type="slideUp" delay={0.05}>
         <div className="text-center mb-8">
           {props.title && (

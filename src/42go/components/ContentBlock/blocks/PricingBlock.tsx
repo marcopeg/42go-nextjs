@@ -3,11 +3,17 @@ import Markdown from "@/42go/components/Markdown";
 import { Button } from "@/components/ui/button";
 import { ScrollAnimation } from "@/components/ui/scroll-animation";
 import { Check, X, Clock } from "lucide-react";
+import { cn } from "@/42go/utils/utils";
+import {
+  resolveContentBlockPaddingProps,
+  type TContentBlockPadding,
+} from "@/42go/components/ContentBlock/render-component";
 
 export interface TPricingBlock {
   type: "pricing";
   title?: string;
   subtitle?: string;
+  padding?: TContentBlockPadding;
   tiers: Array<{
     name?: string;
     price?: string;
@@ -28,6 +34,7 @@ export interface TPricingBlock {
 
 export const PricingBlock = ({ data }: { data: TPricingBlock }) => {
   const { title, subtitle, tiers } = data;
+  const paddingProps = resolveContentBlockPaddingProps(data.padding);
 
   const getFeatureIcon = (status: string) => {
     switch (status) {
@@ -43,7 +50,13 @@ export const PricingBlock = ({ data }: { data: TPricingBlock }) => {
   };
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8">
+    <section
+      className={cn(
+        "px-4 sm:px-6 lg:px-8",
+        paddingProps?.className
+      )}
+      style={paddingProps?.style}
+    >
       <div className="max-w-7xl mx-auto">
         {title && (
           <ScrollAnimation type="fade" delay={0.05}>

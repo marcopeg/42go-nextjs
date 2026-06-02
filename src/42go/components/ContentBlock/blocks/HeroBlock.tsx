@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { ScrollAnimation } from "@/components/ui/scroll-animation";
 import { cn } from "@/42go/utils/utils";
 import type { Components } from "react-markdown";
+import {
+  resolveContentBlockPaddingProps,
+  type TContentBlockPadding,
+} from "@/42go/components/ContentBlock/render-component";
 
 // Utility type: require at least one of a set of keys
 type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<
@@ -30,6 +34,7 @@ export type THeroBlock = {
   type: "hero";
   alignment?: THeroAlignment;
   backgroundImage?: string;
+  padding?: TContentBlockPadding;
 } & RequireAtLeastOne<THeroContentFields, "title" | "subtitle" | "actions">;
 
 const heroAlignmentClasses: Record<
@@ -79,6 +84,7 @@ export const HeroBlock = ({ data }: { data: THeroBlock }) => {
   const hasTitle = Boolean(title);
   const hasSubtitle = Boolean(subtitle);
   const hasActions = actions.length > 0;
+  const paddingProps = resolveContentBlockPaddingProps(data.padding);
 
   // Runtime safety: if misconfigured (shouldn't happen due to types), render nothing.
   if (!hasTitle && !hasSubtitle && !hasActions) return null;
@@ -86,9 +92,11 @@ export const HeroBlock = ({ data }: { data: THeroBlock }) => {
   return (
     <section
       className={cn(
-        "w-full py-10 md:py-20 flex flex-col items-center justify-center",
+        "w-full flex flex-col items-center justify-center",
+        paddingProps?.className,
         alignmentClasses.section
       )}
+      style={paddingProps?.style}
     >
       <div
         className="hero-block relative w-full max-w-6xl mx-auto px-6"
@@ -107,7 +115,7 @@ export const HeroBlock = ({ data }: { data: THeroBlock }) => {
           <div className="absolute inset-0 bg-black/50 rounded-lg" />
         )}
 
-        <div className="relative z-10 py-16">
+        <div className="relative z-10">
           {hasTitle && (
             <ScrollAnimation type="fade" delay={0.1}>
               <h1

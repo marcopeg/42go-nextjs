@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">42go composable content demo</title>
+  <desc id="desc">A layered abstract interface illustration for the image ContentBlock demo.</desc>
+  <rect width="1200" height="800" fill="#f8fafc"/>
+  <rect x="96" y="92" width="1008" height="616" rx="28" fill="#111827"/>
+  <rect x="136" y="136" width="928" height="536" rx="20" fill="#ffffff"/>
+  <rect x="184" y="184" width="336" height="64" rx="12" fill="#2563eb"/>
+  <rect x="184" y="280" width="832" height="28" rx="14" fill="#cbd5e1"/>
+  <rect x="184" y="336" width="640" height="28" rx="14" fill="#e2e8f0"/>
+  <rect x="184" y="424" width="248" height="144" rx="18" fill="#dcfce7"/>
+  <rect x="476" y="424" width="248" height="144" rx="18" fill="#fef3c7"/>
+  <rect x="768" y="424" width="248" height="144" rx="18" fill="#fee2e2"/>
+  <circle cx="244" cy="496" r="32" fill="#16a34a"/>
+  <circle cx="536" cy="496" r="32" fill="#d97706"/>
+  <circle cx="828" cy="496" r="32" fill="#dc2626"/>
+  <path d="M910 214c0-38 31-69 69-69s69 31 69 69-31 69-69 69-69-31-69-69Z" fill="#0f172a"/>
+  <path d="M958 214h42M979 193v42" stroke="#ffffff" stroke-width="18" stroke-linecap="round"/>
+</svg>

@@ -1,15 +1,29 @@
 import { Button } from "@/components/ui/button";
 import OriginDisplay from "@/components/OriginDisplay";
+import { cn } from "@/42go/utils/utils";
+import {
+  resolveContentBlockPaddingProps,
+  type TContentBlockPadding,
+} from "@/42go/components/ContentBlock/render-component";
 
 export interface TDemoBlock {
   type: "demo";
   title?: string;
   description?: string;
+  padding?: TContentBlockPadding;
 }
 
 export function DemoBlock({ data }: { data: TDemoBlock }) {
+  const paddingProps = resolveContentBlockPaddingProps(data.padding);
+
   return (
-    <div className="demo-block w-full space-y-8 p-6">
+    <div
+      className={cn(
+        "demo-block w-full space-y-8 px-6",
+        paddingProps?.className
+      )}
+      style={paddingProps?.style}
+    >
       {data.title && (
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold">{data.title}</h1>

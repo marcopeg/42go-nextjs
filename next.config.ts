@@ -1,24 +1,29 @@
 import type { NextConfig } from 'next';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
-const defaultLingoCafeAssetsBasePath = 'https://assets.lingocafe.app';
 
 const getBuildCpus = () => {
   const value = Number(process.env.NEXT_BUILD_CPUS);
   return Number.isInteger(value) && value > 0 ? value : undefined;
 };
 
-const getLingoCafeAssetsRemotePattern = () => {
-  const basePath = process.env.LC_ASSETS_BASE_PATH?.trim() || defaultLingoCafeAssetsBasePath;
+const getContentImageRemotePatterns = () => {
+  const patterns = process.env.CONTENT_IMAGE_REMOTE_PATTERNS?.trim();
+  if (!patterns) return [];
 
-  try {
-    const url = new URL(basePath);
-    const pathname = url.pathname.replace(/\/+$/, '');
-
-    return new URL(`${url.origin}${pathname || ''}/**`);
-  } catch {
-    return new URL('https://assets.lingocafe.app/**');
-  }
+  return patterns
+    .split(/[\s,]+/)
+    .map((pattern) => pattern.trim())
+    .filter(Boolean)
+    .flatMap((pattern) => {
+      try {
+        const url = new URL(pattern);
+        if (url.pathname === "/") url.pathname = "/**";
+        return [url];
+      } catch {
+        return [];
+      }
+    });
 };
 
 // React/Turbopack dev tooling needs eval and live HMR connections.
@@ -26,7 +31,7 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ''}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https:",
+  `img-src 'self' data: https:${isDevelopment ? " http:" : ""}`,
   isDevelopment ? "connect-src 'self' ws: wss: http: https:" : "connect-src 'self'",
   "frame-ancestors 'none'",
 ].join('; ');
@@ -47,7 +52,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['knex'],
 
   images: {
-    remotePatterns: [getLingoCafeAssetsRemotePattern()],
+    remotePatterns: getContentImageRemotePatterns(),
   },
 
   // Security headers

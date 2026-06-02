@@ -7,6 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { ScrollAnimation } from "@/components/ui/scroll-animation";
 import { Markdown } from "@/42go/components/Markdown/Markdown";
+import { cn } from "@/42go/utils/utils";
+import {
+  resolveContentBlockPaddingProps,
+  type TContentBlockPadding,
+} from "@/42go/components/ContentBlock/render-component";
 
 export interface TFeedbackBlock {
   type: "feedback";
@@ -21,6 +26,7 @@ export interface TFeedbackBlock {
     | { type: "message"; content: string }
     | { type: "redirect"; url: string };
   resetLabel?: string;
+  padding?: TContentBlockPadding;
 }
 
 export function FeedbackBlock(props: TFeedbackBlock) {
@@ -31,6 +37,7 @@ export function FeedbackBlock(props: TFeedbackBlock) {
   const [success, setSuccess] = useState(false);
   const { toast } = useToast();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const paddingProps = resolveContentBlockPaddingProps(props.padding);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +103,10 @@ export function FeedbackBlock(props: TFeedbackBlock) {
   const canSubmit = !loading && isEmailValid && isMessageValid;
 
   return (
-    <section className="py-16">
+    <section
+      className={cn(paddingProps?.className)}
+      style={paddingProps?.style}
+    >
       <ScrollAnimation type="slideUp">
         <div className="text-center mb-12">
           {props.title && (

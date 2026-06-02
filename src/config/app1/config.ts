@@ -1,39 +1,39 @@
-import { TAppConfigItem } from "../../AppConfig";
-import { CheckSquare, User } from "lucide-react";
+import { TAppConfigItem } from '../../AppConfig';
+import { CheckSquare, User } from 'lucide-react';
 
-import { HomePage } from "@/config/home-page";
-import { AboutPage } from "@/config/about-page";
-import { PricingPage } from "@/config/pricing-page";
+import { HomePage } from '@/config/default/home-page';
+import { AboutPage } from '@/config/default/about-page';
+import { PricingPage } from '@/config/default/pricing-page';
 
 export default {
-  name: "APP n1",
+  name: 'APP n1',
   match: {
-    url: ["^app1\\.localhost:\\d+$"],
+    url: ['^app1\\.localhost:\\d+$'],
     header: {
       keys: [
-        { key: "Authorization", value: "/^Bearer .+app1-api-key.+$/" },
-        { key: "X-App-Type", value: "app1" },
+        { key: 'Authorization', value: '/^Bearer .+app1-api-key.+$/' },
+        { key: 'X-App-Type', value: 'app1' },
       ],
     },
   },
-  features: ["page:docs", "api:getTodos", "api:waitlist", "api:feedback"],
+  features: ['page:docs', 'api:getTodos', 'api:waitlist', 'api:feedback'],
   theme: {
-    default: "dark",
+    default: 'dark',
     // PublicLayout: App1PublicLayout,
   },
   public: {
     meta: {
-      title: "App1 - Todo Master",
+      title: 'App1 - Todo Master',
       description:
-        "The ultimate todo application that gets things done faster than Chuck Norris kicks",
-      keywords: ["todos", "productivity", "app1", "tasks"],
-      authors: [{ name: "Chuck Norris", url: "https://chucknorris.com" }],
+        'The ultimate todo application that gets things done faster than Chuck Norris kicks',
+      keywords: ['todos', 'productivity', 'app1', 'tasks'],
+      authors: [{ name: 'Chuck Norris', url: 'https://chucknorris.com' }],
     },
     toolbar: {
-      title: "Todo Master",
-      subtitle: "Get things done faster",
+      title: 'Todo Master',
+      subtitle: 'Get things done faster',
       icon: CheckSquare,
-      href: "/",
+      href: '/',
       // actions: [
       //   {
       //     label: "Join Us!",
@@ -55,7 +55,7 @@ export default {
       pricing: PricingPage,
     },
     docs: {
-      source: "/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default",
+      source: '/Users/marcopeg/dv/marcopeg/42go-next/docs/articles/default',
     },
   },
   app: {
@@ -64,8 +64,8 @@ export default {
         disableMore: true,
         items: [
           {
-            title: "Account",
-            href: "/profile",
+            title: 'Account',
+            href: '/profile',
             icon: User,
           },
         ],
@@ -75,11 +75,11 @@ export default {
   auth: {
     providers: [
       {
-        type: "credentials" as const,
+        type: 'credentials' as const,
         config: {},
       },
       {
-        type: "github" as const,
+        type: 'github' as const,
         config: {
           clientId: process.env.APP1_GITHUB_CLIENT_ID!,
           clientSecret: process.env.APP1_GITHUB_CLIENT_SECRET!,
@@ -87,7 +87,7 @@ export default {
       },
     ],
     logout: {
-      url: "/",
+      url: '/',
     },
   },
 } as const satisfies TAppConfigItem;

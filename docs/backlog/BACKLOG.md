@@ -3,7 +3,6 @@
 ## Draft
 
 - [FE78: HeroBlock: Icon Support](./draft/FE78-heroblock-icon-support/FE78.task.md)
-- [TR02: Add Image ContentBlock](./draft/TR02-add-image-contentblock/TR02.task.md)
 - [GQ36: Add YouTube ContentBlock](./draft/GQ36-add-youtube-contentblock/GQ36.task.md)
 - [AAN: App-Specific Session Configuration [aan]](./draft/AAN-app-specific-session-configuration-aan/AAN.task.md)
 - [ABK: Add Social Login: X [abk]](./draft/ABK-add-social-login-x-abk/ABK.task.md)
@@ -50,12 +49,14 @@
 
 ## Refined
 
+- [JD93: Enable Email-Only Login With Magic Link and Account Creation](./refined/JD93-enable-email-only-login-with-magic-link-and-account-creation/JD93.task.md) | [plan](./refined/JD93-enable-email-only-login-with-magic-link-and-account-creation/JD93.plan.md)
 
 ## Planned
 
 
 ## WIP
 
+- [TR02: Add Image ContentBlock](./wip/TR02-add-image-contentblock/TR02.task.md) | [plan](./wip/TR02-add-image-contentblock/TR02.plan.md) | [notes](./wip/TR02-add-image-contentblock/TR02.notes.md)
 
 ## Blocked
 

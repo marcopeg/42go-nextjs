@@ -57,6 +57,7 @@ Do not load every block implementation by default. Use the index, then read the 
 - [Core blocks index](references/core-blocks-index.md)
 - [Hero](references/core-hero.md)
 - [Markdown](references/core-markdown.md)
+- [Image](references/core-image.md)
 - [Component and Link](references/core-component-link.md)
 - [CTA and Stack](references/core-cta-stack.md)
 - [Pricing, Waitlist, Feedback, Demo](references/core-marketing.md)

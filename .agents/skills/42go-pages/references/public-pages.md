@@ -85,3 +85,31 @@ public: {
 ```
 
 Use lowercase route keys for catch-all pages. `HomePage` is the reserved root key.
+
+## Shared Block Spacing
+
+Every `ContentBlockItem` supports optional block-level margin and internal padding:
+
+```ts
+{
+  type: "markdown",
+  margin: {
+    top: { base: "8", md: "16" },
+    bottom: "12",
+  },
+  padding: {
+    top: "0",
+    bottom: "8",
+  },
+  source: "Public copy.",
+}
+```
+
+- `margin.top` controls spacing above the block.
+- `margin.bottom` controls spacing below the block.
+- `padding.top` controls internal spacing at the top of the block.
+- `padding.bottom` controls internal spacing at the bottom of the block.
+- `margin` is implemented by the shared renderer; `padding` is implemented internally by each native block.
+- Server page blocks default to `margin.top: "[8rem]"`, `margin.bottom: "0"`, and zero internal padding.
+- Values can be a single Tailwind spacing unit string or a responsive dictionary with `base`, `sm`, `md`, `lg`, `xl`, and `2xl`.
+- Supported unit forms are numeric Tailwind spacing tokens such as `"8"`, `"1.5"`, `"px"`, `"auto"`, and arbitrary values such as `"[3.75rem]"`.

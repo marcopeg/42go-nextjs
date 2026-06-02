@@ -2,6 +2,144 @@ import type { Page } from "@/42go/components/DynamicPage";
 
 const Foo = ({ name }: { name: string }) => <div>Hello, {name}!</div>;
 
+const contentImageRemotePatterns = process.env.CONTENT_IMAGE_REMOTE_PATTERNS ?? "";
+
+const imageBlockExamples: Page["items"] = [
+  {
+    type: "image",
+    image: {
+      src: "/images/content-blocks/demo-image.svg",
+      alt: "Abstract 42go composable content interface",
+      width: 1200,
+      height: 800,
+      sizes: "(max-width: 768px) 100vw, 50vw",
+      align: "left",
+    },
+    content: {
+      source:
+        "## Image ContentBlock\n\nPair a stable `next/image` asset with optional **Markdown** side content. The `sizes` hint keeps responsive loading honest.",
+    },
+  },
+  {
+    type: "image",
+    image: {
+      src: "/images/content-blocks/demo-image.svg",
+      alt: "Image ContentBlock stacked layout example",
+      width: 1200,
+      height: 800,
+      sizes: "(max-width: 768px) 100vw, 900px",
+      align: "top",
+      animation: "slideUp",
+    },
+    content: {
+      animation: "fade",
+      source:
+        "### Stacked Layout\n\nUse `align: \"top\"` or `align: \"bottom\"` when the image should lead the section instead of sitting beside the copy.",
+    },
+  },
+  {
+    type: "image",
+    image: {
+      src: "/images/content-blocks/demo-image.svg",
+      alt: "Image ContentBlock left layout with fade effect",
+      width: 1200,
+      height: 800,
+      sizes: "(max-width: 768px) 100vw, 50vw",
+      align: "left",
+      valign: "center",
+      animation: "fade",
+    },
+    content: {
+      valign: "top",
+      animation: "none",
+      source:
+        "### Left: Fade Image\n\nThe image fades in while the copy stays aligned to the top of the taller image. Use this when the layout should feel calm and direct.",
+    },
+  },
+  {
+    type: "image",
+    image: {
+      src: "/images/content-blocks/demo-image.svg",
+      alt: "Image ContentBlock right layout with scale effect",
+      width: 1200,
+      height: 800,
+      sizes: "(max-width: 768px) 100vw, 50vw",
+      align: "right",
+      valign: "bottom",
+      animation: "scale",
+    },
+    content: {
+      valign: "center",
+      animation: "fade",
+      source:
+        "### Right: Scale Image\n\nThe copy leads on desktop and stays centered while the image sits at the bottom edge of the shared row. Mobile still stacks the image above content.",
+    },
+  },
+  {
+    type: "image",
+    image: {
+      src: "/images/content-blocks/demo-image.svg",
+      alt: "Image ContentBlock left layout with slide and scale effects",
+      width: 1200,
+      height: 800,
+      sizes: "(max-width: 768px) 100vw, 50vw",
+      align: "left",
+      valign: "top",
+      animation: "slideUp",
+    },
+    content: {
+      valign: "bottom",
+      animation: "scale",
+      source:
+        "### Left: Slide Image, Bottom Copy\n\nThis example uses `slideUp` on the image and `scale` on Markdown content aligned to the bottom of the image row.",
+    },
+  },
+  {
+    type: "image",
+    image: {
+      src: "/images/content-blocks/demo-image.svg",
+      alt: "Image ContentBlock right layout with static image and slide content",
+      width: 1200,
+      height: 800,
+      sizes: "(max-width: 768px) 100vw, 50vw",
+      align: "right",
+      valign: "center",
+      animation: "none",
+    },
+    content: {
+      valign: "top",
+      animation: "slideUp",
+      source:
+        "### Right: Centered Image, Long Copy\n\nThe image renders immediately and stays vertically centered when the text grows taller.\n\nAdd another paragraph and the image still holds the middle of the shared outbox. The content uses the existing `slideUp` reveal.",
+    },
+  },
+];
+
+const remoteImageBlockExamples: Page["items"] =
+  contentImageRemotePatterns.includes("images.unsplash.com") ||
+  contentImageRemotePatterns.includes("images.unsplash.com/**")
+    ? [
+        {
+          type: "image",
+          image: {
+            src: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1200&q=80",
+            alt: "Architectural geometric building facade",
+            width: 1200,
+            height: 800,
+            sizes: "(max-width: 768px) 100vw, 50vw",
+            unoptimized: true,
+            align: "right",
+            valign: "center",
+          },
+          content: {
+            valign: "center",
+            source:
+              "### Remote Images\n\nExternal images render only when their host is explicitly listed in `CONTENT_IMAGE_REMOTE_PATTERNS`.",
+          },
+        },
+      ]
+    : [];
+
 export const HomePage: Page = {
   items: [
     {
@@ -21,6 +159,9 @@ export const HomePage: Page = {
         },
       ],
     },
+
+    ...imageBlockExamples,
+    ...remoteImageBlockExamples,
 
     // Feedback block before waitlist
     {

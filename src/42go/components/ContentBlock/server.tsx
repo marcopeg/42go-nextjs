@@ -1,4 +1,9 @@
-import { createRenderer, type BlocksMap } from "./render-component";
+import {
+  createRenderer,
+  type BlocksMap,
+  type WithContentBlockMargin,
+  type WithContentBlockPadding,
+} from "./render-component";
 
 import { HeroBlock, type THeroBlock } from "./blocks/HeroBlock";
 import { DemoBlock, type TDemoBlock } from "./blocks/DemoBlock";
@@ -10,8 +15,9 @@ import { WaitlistBlock, type TWaitlistBlock } from "./blocks/WaitlistBlock";
 import { FeedbackBlock, type TFeedbackBlock } from "./blocks/FeedbackBlock";
 import { CTABlock, type CTAConfig } from "./blocks/CTABlock";
 import { StackBlock, type TStackBlock } from "./blocks/StackBlock";
+import { ImageBlock, type TImageBlock } from "./blocks/ImageBlock";
 
-export type ContentBlockItem =
+type BaseContentBlockItem =
   | THeroBlock
   | TDemoBlock
   | TMarkdownBlock
@@ -21,9 +27,21 @@ export type ContentBlockItem =
   | TWaitlistBlock
   | TFeedbackBlock
   | CTAConfig
-  | TStackBlock; // stack itself has a type
+  | TStackBlock
+  | TImageBlock; // stack itself has a type
+
+export type ContentBlockItem = WithContentBlockMargin<
+  WithContentBlockPadding<BaseContentBlockItem>
+>;
 
 export const blocksMap: BlocksMap = {} as BlocksMap;
+
+const pageBlockRendererOptions = {
+  defaultMargin: {
+    top: "[8rem]",
+    bottom: "0",
+  },
+};
 
 // Build blocksMap after function definition to allow renderer injection into stack
 Object.assign(blocksMap, {
@@ -40,14 +58,15 @@ Object.assign(blocksMap, {
     <FeedbackBlock {...data} />
   )) as unknown,
   cta: (({ data }: { data: CTAConfig }) => <CTABlock {...data} />) as unknown,
+  image: ImageBlock as unknown,
   // Stack: inject renderer lazily for recursion
   stack: (({ data }: { data: TStackBlock }) => {
-    const renderer = createRenderer(blocksMap);
+    const renderer = createRenderer(blocksMap, pageBlockRendererOptions);
     return <StackBlock data={data} renderItem={renderer} />;
   }) as unknown,
 } as BlocksMap);
 
 export const ContentBlock = ({ items }: { items: ContentBlockItem[] }) => {
-  const renderer = createRenderer(blocksMap);
+  const renderer = createRenderer(blocksMap, pageBlockRendererOptions);
   return items.map(renderer);
 };

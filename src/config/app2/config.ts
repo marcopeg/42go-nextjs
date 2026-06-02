@@ -1,29 +1,28 @@
-import { TAppConfigItem } from "../../AppConfig";
+import { TAppConfigItem } from '../../AppConfig';
 
-import { HomePage } from "@/config/home-page";
-import { AboutPage } from "@/config/about-page";
-import { PricingPage } from "@/config/pricing-page";
+import { HomePage } from '@/config/default/home-page';
+import { AboutPage } from '@/config/default/about-page';
+import { PricingPage } from '@/config/default/pricing-page';
 
 export default {
-  name: "APP n2",
+  name: 'APP n2',
   match: {
-    url: ["^app2\\.localhost:\\d+$"],
+    url: ['^app2\\.localhost:\\d+$'],
   },
-  features: ["page:about"],
+  features: ['page:about'],
   theme: {
-    default: "light",
+    default: 'light',
   },
   public: {
     meta: {
-      title: "App2 - Write Operations",
-      description:
-        "Specialized app for write operations, as powerful as Chuck Norris's beard",
-      keywords: ["write", "operations", "app2", "api"],
-      authors: [{ name: "Chuck Norris Team" }],
+      title: 'App2 - Write Operations',
+      description: "Specialized app for write operations, as powerful as Chuck Norris's beard",
+      keywords: ['write', 'operations', 'app2', 'api'],
+      authors: [{ name: 'Chuck Norris Team' }],
     },
     toolbar: {
-      title: "", // Empty title to test fallback to app name
-      subtitle: "Write Operations",
+      title: '', // Empty title to test fallback to app name
+      subtitle: 'Write Operations',
       // actions: [
       //   {
       //     label: "Dashboard",
@@ -48,11 +47,11 @@ export default {
   auth: {
     providers: [
       {
-        type: "google" as const,
+        type: 'google' as const,
         config: {
           clientId: process.env.APP2_GOOGLE_CLIENT_ID!,
           clientSecret: process.env.APP2_GOOGLE_CLIENT_SECRET!,
-          prompt: "select_account",
+          prompt: 'select_account',
         },
       },
     ],

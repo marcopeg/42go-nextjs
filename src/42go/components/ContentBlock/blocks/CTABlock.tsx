@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 
 // Icon resolver: direct Lucide import (static mapping for common icons, fallback to null)
 import * as LucideIcons from "lucide-react";
+import {
+  resolveContentBlockPaddingProps,
+  type TContentBlockPadding,
+} from "@/42go/components/ContentBlock/render-component";
 const resolveIcon = (iconName?: string) => {
   if (!iconName) return null;
   // PascalCase only, e.g. "Download"
@@ -69,6 +73,7 @@ export interface CTAConfig {
     background?: string;
     foreground?: string;
   };
+  padding?: TContentBlockPadding;
   className?: string;
 }
 
@@ -142,9 +147,11 @@ export const CTABlock = ({
   direction = "row",
   spacing = "md",
   colors,
+  padding,
   className,
 }: CTAConfig) => {
   const sanitizedColors = sanitizeColors(colors);
+  const paddingProps = resolveContentBlockPaddingProps(padding);
   const flexDirection =
     direction === "column" ? "flex-col" : "flex-col sm:flex-row";
 
@@ -166,8 +173,10 @@ export const CTABlock = ({
         `flex ${flexDirection} gap-4 sm:gap-6`,
         alignClasses,
         spacingClasses[spacing],
+        paddingProps?.className,
         className
       )}
+      style={paddingProps?.style}
       data-block="cta"
     >
       <ActionButton action={action} customColors={sanitizedColors} />
