@@ -11,5 +11,7 @@ export const getNextAuthUrl = async (req: NextRequest) => {
 };
 
 export const setNextAuthUrl = async (req: NextRequest) => {
+  // Internal NextAuth v4 bridge: derive the origin per request instead of
+  // requiring a static deployment env var for multi-app hostnames.
   process.env.NEXTAUTH_URL = await getNextAuthUrl(req);
 };

@@ -54,9 +54,8 @@ This guide provides step-by-step instructions for setting up GitHub OAuth authen
 2. **Update .env.local with GitHub Credentials**:
 
    ```bash
-   # NextAuth.js Configuration
-   NEXTAUTH_URL="http://localhost:3000"
-   NEXTAUTH_SECRET="your-secure-random-string-here"
+   # Auth configuration
+   AUTH_SECRET="your-secure-random-string-here"
 
    # GitHub OAuth Configuration
    GITHUB_CLIENT_ID="your-github-client-id-from-step-1"
@@ -66,7 +65,7 @@ This guide provides step-by-step instructions for setting up GitHub OAuth authen
    DATABASE_URL="your-database-connection-string"
    ```
 
-3. **Generate NEXTAUTH_SECRET** (if you don't have one):
+3. **Generate AUTH_SECRET** (if you don't have one):
    ```bash
    openssl rand -base64 32
    ```
@@ -114,8 +113,7 @@ This guide provides step-by-step instructions for setting up GitHub OAuth authen
    ```bash
    vercel env add GITHUB_CLIENT_ID
    vercel env add GITHUB_CLIENT_SECRET
-   vercel env add NEXTAUTH_SECRET
-   vercel env add NEXTAUTH_URL
+   vercel env add AUTH_SECRET
    ```
 
    **Heroku**:
@@ -123,8 +121,7 @@ This guide provides step-by-step instructions for setting up GitHub OAuth authen
    ```bash
    heroku config:set GITHUB_CLIENT_ID=your-production-client-id
    heroku config:set GITHUB_CLIENT_SECRET=your-production-client-secret
-   heroku config:set NEXTAUTH_SECRET=your-secure-random-string
-   heroku config:set NEXTAUTH_URL=https://yourdomain.com
+   heroku config:set AUTH_SECRET=your-secure-random-string
    ```
 
    **Docker/Self-hosted**:
@@ -175,10 +172,11 @@ This guide provides step-by-step instructions for setting up GitHub OAuth authen
    - Verify `GITHUB_CLIENT_SECRET` is correct
    - Generate a new client secret if needed
 
-4. **"NEXTAUTH_URL not set" Error**:
-   - Ensure `NEXTAUTH_URL` environment variable is set
-   - Development: `http://localhost:3000`
-   - Production: `https://yourdomain.com`
+4. **Origin or callback URL mismatch**:
+   - This repo derives the auth origin from the request host and forwarded protocol.
+   - Verify the browser URL matches the OAuth callback domain you configured.
+   - Development callback: `http://localhost:3000/api/auth/callback/github`
+   - Production callback: `https://yourdomain.com/api/auth/callback/github`
 
 ### Debug Mode
 

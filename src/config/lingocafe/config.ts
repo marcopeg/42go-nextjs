@@ -48,6 +48,22 @@ export default {
         config: {},
       },
       {
+        type: 'email' as const,
+        config: {
+          from: 'LingoCafe <no-reply@lingocafe.app>',
+          useStrategy: process.env.LC_EMAIL_AUTH_STRATEGY || 'resend',
+          strategies: {
+            console: { type: 'console' },
+            resend: {
+              type: 'resend',
+              apiKey: process.env.LC_RESEND_API_KEY,
+              from: 'LingoCafe <no-reply@lingocafe.app>',
+              subject: 'Your LingoCafe sign-in code',
+            },
+          },
+        },
+      },
+      {
         type: 'google' as const,
         config: {
           clientId: process.env.LC_GOOGLE_CLIENT_ID!,

@@ -6,7 +6,7 @@
  */
 
 // Core provider types supported by the system
-export type AuthProviderType = "credentials" | "github" | "google";
+export type AuthProviderType = "credentials" | "github" | "google" | "email";
 
 // Provider-specific configuration interfaces
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -28,6 +28,53 @@ export interface GoogleProviderConfig {
   prompt?: "select_account" | "consent" | "none";
 }
 
+export type EmailCodeMode = "digits" | "alphabet" | "alphanumeric" | "complex";
+export type EmailDuration = `${number}${"s" | "m" | "h"}`;
+
+export interface EmailCodeGenerationConfig {
+  length?: number;
+  mode?: EmailCodeMode;
+  caseSensitive?: boolean;
+  duration?: EmailDuration;
+}
+
+export interface EmailThrottleConfig {
+  delay?: EmailDuration[];
+  message?: string;
+}
+
+export interface EmailEventsConfig {
+  requested?: boolean;
+  resent?: boolean;
+  codeVerified?: boolean;
+  loginFailed?: boolean;
+}
+
+export interface EmailLoginUiConfig {
+  primaryActionLabel?: string;
+}
+
+export type EmailStrategyConfig =
+  | {
+      type: "console";
+    }
+  | {
+      type: "resend";
+      apiKey?: string;
+      from?: string;
+      subject?: string;
+    };
+
+export interface EmailProviderConfig {
+  from?: string;
+  code?: EmailCodeGenerationConfig;
+  throttle?: EmailThrottleConfig;
+  events?: EmailEventsConfig;
+  ui?: EmailLoginUiConfig;
+  useStrategy?: string;
+  strategies?: Record<string, EmailStrategyConfig>;
+}
+
 // Type mapping for provider configs
 export type ProviderConfig<T extends AuthProviderType> = T extends "credentials"
   ? CredentialsProviderConfig
@@ -35,6 +82,8 @@ export type ProviderConfig<T extends AuthProviderType> = T extends "credentials"
   ? GitHubProviderConfig
   : T extends "google"
   ? GoogleProviderConfig
+  : T extends "email"
+  ? EmailProviderConfig
   : never;
 
 // Generic provider interface with type safety
@@ -47,12 +96,14 @@ export interface AuthProvider<T extends AuthProviderType = AuthProviderType> {
 export type CredentialsProvider = AuthProvider<"credentials">;
 export type GitHubProvider = AuthProvider<"github">;
 export type GoogleProvider = AuthProvider<"google">;
+export type EmailProvider = AuthProvider<"email">;
 
 // Union type for all possible providers
 export type AnyAuthProvider =
   | CredentialsProvider
   | GitHubProvider
-  | GoogleProvider;
+  | GoogleProvider
+  | EmailProvider;
 
 // Helper type for provider arrays in AppConfig
 export type TAuthProviders = AnyAuthProvider[];

@@ -1,0 +1,341 @@
+---
+title: Authentication
+---
+
+# Authentication
+
+42Go authentication is configured per app through `AppConfig.auth.providers`.
+Each app can enable credentials, OAuth providers, email magic links, or a mix.
+
+```ts
+auth: {
+  providers: [
+    { type: "credentials", config: {} },
+    {
+      type: "google",
+      config: {
+        clientId: process.env.GOOGLE_CLIENT_ID!,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        prompt: "select_account",
+      },
+    },
+  ],
+}
+```
+
+The active app is resolved from the request before authentication runs. Users,
+OAuth accounts, roles, grants, and email verification tokens are scoped to the
+resolved app ID.
+
+## Provider Types
+
+### Credentials
+
+Credentials login uses `auth.users` and checks the submitted username or email
+against the current app.
+
+```ts
+{
+  type: "credentials",
+  config: {},
+}
+```
+
+Seed users in development include `john` / `john` and `jane` / `jane`.
+
+### Google
+
+```ts
+{
+  type: "google",
+  config: {
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    prompt: "select_account",
+  },
+}
+```
+
+### GitHub
+
+```ts
+{
+  type: "github",
+  config: {
+    clientId: process.env.GITHUB_CLIENT_ID!,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+  },
+}
+```
+
+### Email Magic Link and Code
+
+Email authentication sends both a magic link and a numeric code. The user can
+click the link or enter the code. The verified flow creates a user for the
+current app if one does not already exist.
+
+```ts
+{
+  // Enables the passwordless email provider for this app.
+  type: "email",
+  config: {
+    // Selects which delivery strategy key to use from config.strategies.
+    // Supported today: "console" and "resend".
+    // "console" prints the code/link to server logs.
+    // "resend" sends real email through the Resend HTTP API.
+    useStrategy: "resend",
+
+    // Sender address shown in the email.
+    // For Resend production delivery, this must belong to a verified domain.
+    // Example: "LingoCafe <login@auth.lingocafe.app>"
+    from: "LingoCafe <login@auth.lingocafe.app>",
+
+    // Controls the human-entered code that is included in the email.
+    code: {
+      // Number of characters in the delivered code.
+      // Default recommendation: 6.
+      length: 6,
+
+      // Character family used for generated codes.
+      // Supported values:
+      // - "digits": 0-9
+      // - "alphabet": letters
+      // - "alphanumeric": letters and digits
+      // - "complex": letters, digits, and symbols
+      mode: "digits",
+
+      // When false, alphabetic codes are normalized to lowercase.
+      // Digits are unaffected.
+      caseSensitive: false,
+
+      // How long the delivered code and magic link remain valid.
+      // Supported format: positive integer plus unit.
+      // Supported units: "s" seconds, "m" minutes, "h" hours.
+      // Examples: "30s", "5m", "1h".
+      // Plain numbers such as "4" are invalid and fail at startup.
+      duration: "5m",
+    },
+
+    // Controls how often a user may request or resend an email.
+    // This does not change how long a code remains valid.
+    throttle: {
+      // Progressive cooldown sequence between allowed requests.
+      // The first value is stored after the first email is sent, so it gates
+      // the first resend request. The second value gates the next resend.
+      // The final value is reused for all later attempts.
+      // If omitted, defaults to ["30s", "1m", "2m", "3m", "5m", "10m"].
+      delay: ["30s", "1m", "2m", "3m", "5m", "10m"],
+
+      // Safe user-facing message shown when a request is throttled.
+      // Do not reveal whether the email belongs to an existing account.
+      message: "Wait before requesting another sign-in email.",
+    },
+
+    // Login-page copy for this provider.
+    ui: {
+      // Text for the primary email action.
+      primaryActionLabel: "Send me a magic link",
+    },
+
+    // Available delivery strategies for this app.
+    // useStrategy selects one of these keys.
+    strategies: {
+      // Development/test strategy. Logs the code and magic link.
+      console: { type: "console" },
+
+      // Production strategy using Resend.
+      // The type field is required because it selects the implementation.
+      resend: {
+        type: "resend",
+
+        // Server-only Resend API key.
+        apiKey: "re_...",
+
+        // Optional per-strategy override for the sender address.
+        // Falls back to config.from when omitted.
+        from: "LingoCafe <login@auth.lingocafe.app>",
+
+        // Optional email subject.
+        subject: "Your sign-in code",
+      },
+    },
+  },
+}
+```
+
+`code.duration` and `throttle.delay` control different things.
+
+`code.duration` is the lifetime of one generated code or magic link. If it is
+`"5m"`, the user has 5 minutes to use that specific login secret. After that,
+the stored token cannot create a session.
+
+`throttle.delay` is the resend cooldown sequence for the same app and email
+address. With `["30s", "1m", "2m", "3m", "5m", "10m"]`, the user waits
+30 seconds before the first resend, 1 minute before the next resend, and then
+continues through the configured sequence. The last value is reused after the
+sequence is exhausted.
+
+The default selected strategy is `console`. It prints the code and magic link to
+server logs and is useful in local development. It is allowed in production
+only when selected by configuration, but it exposes login secrets to logs.
+The example above uses inline values to show the final AppConfig shape. In a
+real app, source secrets such as `apiKey` from server-only environment
+variables or your secret manager.
+
+## Production Email With Resend
+
+Resend is the first external delivery strategy supported by 42Go email auth.
+The implementation sends directly to the Resend HTTP API.
+
+Useful Resend references:
+
+- [Managing Domains](https://resend.com/docs/dashboard/domains/introduction)
+- [API Keys](https://resend.com/docs/dashboard/api-keys/introduction)
+- [Send Email API](https://resend.com/docs/api-reference/emails)
+- [API key handling](https://resend.com/docs/knowledge-base/how-to-handle-api-keys)
+
+### 1. Verify a Sending Domain
+
+In Resend, add a domain or subdomain. Resend recommends using a subdomain such
+as `auth.example.com` or `updates.example.com` to isolate sending reputation.
+
+Add the DNS records shown by Resend:
+
+- SPF
+- DKIM
+
+DMARC is optional, but recommended for production trust.
+
+### 2. Create an API Key
+
+Create a Resend API key with sending access. Store it only in server
+environment variables.
+
+### 3. Configure AppConfig
+
+Use an address from the verified Resend domain and select the `resend` strategy.
+The example uses inline values to show the final shape. Source secrets from
+server-only environment variables or your secret manager in production.
+
+```ts
+{
+  type: "email",
+  config: {
+    from: "LingoCafe <login@auth.lingocafe.app>",
+    useStrategy: "resend",
+    // code, throttle, and ui may be omitted to use the defaults documented above.
+    strategies: {
+      console: { type: "console" },
+      resend: {
+        type: "resend",
+        apiKey: "re_...",
+        from: "LingoCafe <login@auth.lingocafe.app>",
+        subject: "Your sign-in code",
+      },
+    },
+  },
+}
+```
+
+For local development, select the console strategy and keep the same strategy
+map:
+
+```ts
+{
+  type: "email",
+  config: {
+    from: "LingoCafe <login@auth.lingocafe.app>",
+    useStrategy: "console",
+    strategies: {
+      console: { type: "console" },
+      resend: {
+        type: "resend",
+        apiKey: "re_...",
+        from: "LingoCafe <login@auth.lingocafe.app>",
+        subject: "Your sign-in code",
+      },
+    },
+  },
+}
+```
+
+### 4. Configure Auth Secret
+
+Email token hashes and NextAuth JWT sessions require a stable secret.
+
+```bash
+AUTH_SECRET="long-random-secret"
+```
+
+Use `AUTH_SECRET` only in this repository.
+Do not configure a static auth URL for normal deployments. The auth route
+derives the public origin from the request host and forwarded protocol so each
+app can run on its own domain.
+
+### 5. Test the Flow
+
+1. Start the app.
+2. Open the app login page.
+3. Enter an email address.
+4. Click `Send me a magic link`.
+5. Confirm the email arrives.
+6. Sign in with either the link or code.
+7. Try using the same link or code again. It must fail because the token is
+   burned on first use.
+
+## Security Model
+
+Verification tokens are stored in `auth.verification_tokens` with:
+
+```sql
+PRIMARY KEY (app_id, identifier, token)
+```
+
+The stored token is a hash of the delivered code plus the auth secret. Raw
+codes are not stored.
+
+Token consumption requires all of:
+
+- current app ID
+- normalized email identifier
+- hashed token
+
+The consume operation deletes the token with `DELETE ... RETURNING`, so a valid
+code or link can be used only once.
+
+Expired unused tokens cannot sign in because NextAuth checks expiration.
+
+## Cleanup
+
+Used tokens are deleted immediately when consumed.
+
+Expired unused tokens can remain until a maintenance cleanup removes them. Avoid
+deleting expired tokens on every auth request because that creates needless dead
+tuples and autovacuum work. Prefer a scheduled cleanup with a grace window:
+
+```sql
+DELETE FROM auth.verification_tokens
+WHERE expires < now() - interval '24 hours';
+```
+
+## UI Behavior
+
+When both credentials and email auth are enabled, the login screen shows:
+
+1. one username/email field
+2. a primary email action, configurable with `ui.primaryActionLabel`
+3. a link-style `Continue with password` action
+
+When only email auth is enabled, the password action is hidden.
+
+When only credentials auth is enabled, the screen shows username and password
+fields.
+
+## Event Names
+
+Email auth emits event names that match the 42Go event validator:
+
+- `auth.email.requested`
+- `auth.email.resent`
+- `auth.email.code-verified`
+- `auth.email.login-failed`

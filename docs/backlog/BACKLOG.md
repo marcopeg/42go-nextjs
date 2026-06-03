@@ -44,13 +44,13 @@
 - [AK87: HeroBlock: Optional Fields (Title, Subtitle, or Actions Only)](./draft/AK87-heroblock-optional-fields-title-subtitle-or-actions-only/AK87.task.md)
 - [AL66: Validate Translation Requests Against Book Page Content](./draft/AL66-validate-translation-requests-against-book-page-content/AL66.task.md)
 - [XQ11: Choose Runtime-Friendly Remote Image Handling](./draft/XQ11-choose-runtime-friendly-remote-image-handling/XQ11.task.md)
+- [FI86: Add SMTP/Nodemailer Email Sender Strategy](./draft/FI86-add-smtp-nodemailer-email-sender-strategy/FI86.task.md)
 
 ## Refining
 
 
 ## Refined
 
-- [JD93: Enable Email-Only Login With Magic Link and Account Creation](./refined/JD93-enable-email-only-login-with-magic-link-and-account-creation/JD93.task.md) | [plan](./refined/JD93-enable-email-only-login-with-magic-link-and-account-creation/JD93.plan.md)
 
 ## Planned
 
@@ -58,6 +58,7 @@
 ## WIP
 
 - [TR02: Add Image ContentBlock](./wip/TR02-add-image-contentblock/TR02.task.md) | [plan](./wip/TR02-add-image-contentblock/TR02.plan.md) | [notes](./wip/TR02-add-image-contentblock/TR02.notes.md)
+- [JD93: Enable Email-Only Login With Magic Link and Account Creation](./wip/JD93-enable-email-only-login-with-magic-link-and-account-creation/JD93.task.md) | [plan](./wip/JD93-enable-email-only-login-with-magic-link-and-account-creation/JD93.plan.md) | [notes](./wip/JD93-enable-email-only-login-with-magic-link-and-account-creation/JD93.notes.md)
 
 ## Blocked
 

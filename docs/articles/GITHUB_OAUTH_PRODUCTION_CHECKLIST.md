@@ -31,8 +31,7 @@ Use this checklist to ensure your GitHub OAuth implementation is ready for produ
   ```bash
   GITHUB_CLIENT_ID="prod-client-id"
   GITHUB_CLIENT_SECRET="prod-client-secret"
-  NEXTAUTH_URL="https://yourdomain.com"
-  NEXTAUTH_SECRET="secure-random-production-secret"
+  AUTH_SECRET="secure-random-production-secret"
   ```
 
 - [ ] **Generate Secure NextAuth Secret**

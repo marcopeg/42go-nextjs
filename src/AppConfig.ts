@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ComponentType, ReactNode } from "react";
 // Types for composing the AppConfig
 import type { TAuthProviders } from "@/42go/auth/lib/providers/types";
+import { getEmailProviderConfig } from "@/42go/auth/lib/email/config";
 import type { TDynamicPage } from "@/42go/components/DynamicPage";
 import type { TPublicLayoutToolbar } from "@/42go/layouts/public/types";
 import type { TPWAConfig } from "@/42go/pwa/types";
@@ -152,6 +153,22 @@ export const apps = {
   lingocafe: LingoCafeApp,
   default: DefaultApp,
 } as const satisfies Record<string, TAppConfigItem>;
+
+Object.entries(apps).forEach(([appId, appConfig]) => {
+  appConfig.auth?.providers.forEach((provider, index) => {
+    if (provider.type !== "email") return;
+
+    try {
+      getEmailProviderConfig(provider.config);
+    } catch (error) {
+      throw new Error(
+        `Invalid email auth config for app "${appId}" at auth.providers[${index}]: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  });
+});
 
 // Helper derived type including optional features on each app entry
 export type AppsMap = typeof apps;

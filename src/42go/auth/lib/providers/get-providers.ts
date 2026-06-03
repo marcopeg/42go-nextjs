@@ -1,13 +1,22 @@
 import CredentialsProvider from "next-auth/providers/credentials";
+import EmailProvider from "next-auth/providers/email";
 import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
 import { getDB } from "@/42go/db";
+import type { TAppConfig, TAppID } from "@/42go/config/app-config";
 import type { AbstractHeaders } from "@/42go/config/abstract-headers";
 import {
   getAppInfo,
   resolveAppIDFromAbstractHeaders,
 } from "@/42go/config/app-config";
+import { getEmailProviderConfig } from "@/42go/auth/lib/email/config";
+import {
+  generateEmailCode,
+  normalizeEmailIdentifier,
+} from "@/42go/auth/lib/email/utils";
+import { sendEmailVerification } from "@/42go/auth/lib/email/senders";
+import { parseEmailDurationSeconds } from "@/42go/auth/lib/email/duration";
 
 type AuthRequestHeaders = Record<string, unknown> | undefined;
 
@@ -52,10 +61,8 @@ const resolveAppIdFromAuthHeaders = (
   headers: AuthRequestHeaders
 ) => resolveAppIDFromAbstractHeaders(fromAuthRequestHeaders(headers));
 
-export const getProviders = async () => {
-  const { id: appID, config } = await getAppInfo();
-
-  return (config?.auth?.providers || [])
+export const buildProviders = (appID: TAppID, config: TAppConfig) =>
+  (config?.auth?.providers || [])
     .map((provider) => {
       //   console.log(provider.type);
 
@@ -156,9 +163,36 @@ export const getProviders = async () => {
               };
             },
           });
+        case "email": {
+          const emailConfig = getEmailProviderConfig(provider.config);
+          return EmailProvider({
+            from: emailConfig.from,
+            maxAge: parseEmailDurationSeconds(
+              emailConfig.code!.duration!,
+              "auth.providers[].config.code.duration"
+            ),
+            normalizeIdentifier: normalizeEmailIdentifier,
+            generateVerificationToken: async () =>
+              generateEmailCode(emailConfig.code),
+            sendVerificationRequest: async (params) => {
+              if (!appID) {
+                throw new Error("Cannot send email sign-in without app ID.");
+              }
+              await sendEmailVerification({
+                ...params,
+                appId: appID,
+                config: emailConfig,
+              });
+            },
+          });
+        }
         default:
           return null;
       }
     })
     .filter((provider) => provider !== null);
+
+export const getProviders = async () => {
+  const { id: appID, config } = await getAppInfo();
+  return buildProviders(appID, config);
 };

@@ -4,8 +4,10 @@ import {
   CredentialsLogin,
   GitHubLogin,
   GoogleLogin,
+  IdentifierLogin,
 } from "@/42go/auth/components/login-strategies";
 import { getAppInfo } from "@/42go/config/app-config";
+import { getEmailProviderConfig } from "@/42go/auth/lib/email/config";
 import { LoginProfileStateReset } from "@/config/lingocafe/LoginProfileStateReset";
 
 const safeInternalPath = (input?: string | null): string | null => {
@@ -54,6 +56,15 @@ export default async function LoginPage() {
     .filter((_) => _ !== null);
 
   const credentialsTabIndex = providers.length + 1;
+  const hasCredentials = providers.includes("credentials");
+  const hasEmail = providers.includes("email");
+  const emailProvider = appConfig?.auth?.providers.find(
+    (provider) => provider.type === "email"
+  );
+  const emailConfig =
+    emailProvider?.type === "email"
+      ? getEmailProviderConfig(emailProvider.config)
+      : getEmailProviderConfig();
 
   return (
     <div className="login-page max-w-md mx-auto mt-8 p-6">
@@ -77,23 +88,38 @@ export default async function LoginPage() {
       )}
 
       {/* Divider */}
-      {socialLogins.length > 0 && providers.includes("credentials") && (
+      {socialLogins.length > 0 && (hasCredentials || hasEmail) && (
         <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
           </div>
           <div className="relative flex justify-center text-sm">
             <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">
-              Or continue with credentials
+              Or continue with email
             </span>
           </div>
         </div>
       )}
 
-      {/* Credentials Form */}
-      {providers.includes("credentials") && (
+      {hasEmail ? (
         <div className="w-full">
-          <CredentialsLogin tabIndex={credentialsTabIndex} callbackUrl={callbackUrl} />
+          <IdentifierLogin
+            providers={providers}
+            tabIndex={credentialsTabIndex}
+            callbackUrl={callbackUrl}
+            emailPrimaryActionLabel={
+              emailConfig.ui?.primaryActionLabel || "Send me a magic link"
+            }
+          />
+        </div>
+      ) : null}
+
+      {!hasEmail && hasCredentials && (
+        <div className="w-full">
+          <CredentialsLogin
+            tabIndex={credentialsTabIndex}
+            callbackUrl={callbackUrl}
+          />
         </div>
       )}
     </div>

@@ -134,8 +134,7 @@ environment:
   - NODE_ENV=production
   - AUTH_TRUST_HOST=true
   - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
-  - NEXTAUTH_URL=http://localhost:4000
-  - NEXTAUTH_SECRET=your-production-secret-here
+  - AUTH_SECRET=your-production-secret-here
   - PORT=3000
 ```
 
@@ -314,8 +313,8 @@ docker system df
 
 ### Pre-Deployment
 
-- [ ] Update `NEXTAUTH_SECRET` with secure production value
-- [ ] Configure production `NEXTAUTH_URL` and `NEXT_PUBLIC_APP_URL`
+- [ ] Update `AUTH_SECRET` with secure production value
+- [ ] Configure production public app URL/proxy host forwarding
 - [ ] Set up OAuth providers for production domains
 - [ ] Configure production database connection
 - [ ] Review resource limits for expected load

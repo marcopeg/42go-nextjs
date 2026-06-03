@@ -58,10 +58,9 @@ Google OAuth integration allows users to sign in with their Google accounts usin
    GOOGLE_CLIENT_SECRET="your-google-client-secret-here"
    ```
 
-2. Ensure other NextAuth.js variables are set:
+2. Ensure the auth secret is set:
    ```bash
-   NEXTAUTH_URL="http://localhost:3000"
-   NEXTAUTH_SECRET="your-secret-key-here"
+   AUTH_SECRET="your-secret-key-here"
    ```
 
 ### Step 5: Test the Integration
@@ -101,8 +100,7 @@ For security, create a separate Google Cloud project for production:
 ```bash
 GOOGLE_CLIENT_ID="your-production-google-client-id"
 GOOGLE_CLIENT_SECRET="your-production-google-client-secret"
-NEXTAUTH_URL="https://yourdomain.com"
-NEXTAUTH_SECRET="your-production-secret-key"
+AUTH_SECRET="your-production-secret-key"
 ```
 
 ## Security Considerations

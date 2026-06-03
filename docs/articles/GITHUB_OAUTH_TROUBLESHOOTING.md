@@ -19,13 +19,12 @@ This guide covers common issues and solutions when implementing GitHub OAuth aut
    ```bash
    GITHUB_CLIENT_ID="your-client-id"
    GITHUB_CLIENT_SECRET="your-client-secret"
-   NEXTAUTH_URL="http://localhost:3000"  # or your domain
-   NEXTAUTH_SECRET="your-random-secret"
+   AUTH_SECRET="your-random-secret"
    ```
 2. Restart your development server after adding variables
 3. For production, verify environment variables are set in your deployment platform
 
-### Invalid NextAuth URL
+### Invalid Callback Origin
 
 **Error**: `redirect_uri_mismatch` from GitHub
 
@@ -36,11 +35,11 @@ This guide covers common issues and solutions when implementing GitHub OAuth aut
 
 **Solution**:
 
-1. Check `NEXTAUTH_URL` matches your actual domain:
+1. Check the browser request host matches your actual domain:
    - Development: `http://localhost:3000`
    - Production: `https://yourdomain.com`
-2. Ensure no trailing slash in `NEXTAUTH_URL`
-3. Update GitHub OAuth app callback URL to match
+2. Verify your proxy forwards the original host and protocol.
+3. Update GitHub OAuth app callback URL to match.
 
 ## GitHub OAuth App Configuration
 
@@ -165,7 +164,7 @@ This guide covers common issues and solutions when implementing GitHub OAuth aut
 **Solution**:
 
 1. For development, HTTP is fine with localhost
-2. Ensure `NEXTAUTH_URL` uses `http://localhost:3000`
+2. Ensure the browser uses `http://localhost:3000`
 3. If testing with custom domains, you may need HTTPS:
    ```bash
    # Use a tool like ngrok for HTTPS tunneling
@@ -190,7 +189,7 @@ This guide covers common issues and solutions when implementing GitHub OAuth aut
      maxAge: 30 * 24 * 60 * 60, // 30 days
    }
    ```
-2. Verify `NEXTAUTH_SECRET` is set and consistent
+2. Verify `AUTH_SECRET` is set and consistent
 3. Check browser cookie settings (should allow localhost cookies)
 
 ## Production Deployment Issues
@@ -222,7 +221,7 @@ This guide covers common issues and solutions when implementing GitHub OAuth aut
 **Solution**:
 
 1. Update GitHub OAuth app with production callback URL
-2. Verify `NEXTAUTH_URL` is set to production domain
+2. Verify the production request host is the configured OAuth callback domain
 3. Ensure HTTPS is properly configured
 4. Check domain DNS and SSL certificate
 
