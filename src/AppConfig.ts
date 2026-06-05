@@ -4,7 +4,10 @@ import type { ComponentType, ReactNode } from "react";
 import type { TAuthProviders } from "@/42go/auth/lib/providers/types";
 import { getEmailProviderConfig } from "@/42go/auth/lib/email/config";
 import type { TDynamicPage } from "@/42go/components/DynamicPage";
-import type { TPublicLayoutToolbar } from "@/42go/layouts/public/types";
+import type {
+  TPublicLayoutFooter,
+  TPublicLayoutToolbar,
+} from "@/42go/layouts/public/types";
 import type { TPWAConfig } from "@/42go/pwa/types";
 import type { TAppLayoutNavItem } from "@/42go/layouts/app/types";
 import type { TAppConfigMatch } from "@/42go/lib/app-id/matchers";
@@ -53,14 +56,7 @@ export interface TAppConfigItem {
         duration?: number; // Cache duration in ms (-1 for no cache, 0 for no expiration, >0 for specific duration)
       };
     };
-    footer?: {
-      /**
-       * If true, disables the public layout footer entirely.
-       * Defaults to false. All other properties are ignored if true.
-       */
-      disabled?: boolean;
-      // ...other optional footer properties...
-    };
+    footer?: TPublicLayoutFooter;
   };
   auth?: {
     providers: TAuthProviders;

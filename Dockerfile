@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1.7
 
-# Keep the release image on the current Node LTS line. Node current releases can
-# break native Next.js build workers under linux/amd64 buildx emulation.
-ARG NODE_IMAGE=node:24-alpine
+# Keep the release image on the stable Node LTS line. Newer Node lines have
+# shown intermittent Next.js build-worker SIGSEGVs under linux/amd64 buildx
+# emulation.
+ARG NODE_IMAGE=node:22-alpine
 
 # ==========================================
 # STAGE 1: Build Dependencies

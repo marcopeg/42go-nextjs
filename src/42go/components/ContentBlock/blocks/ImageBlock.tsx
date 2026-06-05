@@ -1,7 +1,7 @@
 import fs from "fs";
 import Image from "next/image";
 import path from "path";
-import { cache, type ReactNode } from "react";
+import { cache, type CSSProperties, type ReactNode } from "react";
 import Markdown from "@/42go/components/Markdown";
 import { cn } from "@/42go/utils/utils";
 import { ScrollAnimation } from "@/components/ui/scroll-animation";
@@ -18,6 +18,18 @@ export type TImageBlockAnimation = "none" | "fade" | "scale" | "slideUp";
 export type TImageBlockAlign = "left" | "right" | "top" | "bottom";
 export type TImageBlockStyle = "default" | "transparent";
 export type TImageBlockVerticalAlign = "top" | "center" | "bottom";
+export type TImageBlockMaxWidthPreset =
+  | "xs"
+  | "sm"
+  | "md"
+  | "lg"
+  | "xl"
+  | "2xl"
+  | "3xl"
+  | "4xl";
+export type TImageBlockMaxWidth =
+  | TImageBlockMaxWidthPreset
+  | (string & {});
 
 export type TImageBlockContent = (
   | { source: string; path?: never }
@@ -38,6 +50,7 @@ export type TImageBlock = {
     sizes?: string;
     unoptimized?: boolean;
     style?: TImageBlockStyle;
+    maxWidth?: TImageBlockMaxWidth;
     align?: TImageBlockAlign;
     valign?: TImageBlockVerticalAlign;
     animation?: TImageBlockAnimation;
@@ -70,12 +83,45 @@ const imageFrameClasses: Record<TImageBlockStyle, string> = {
   transparent: "overflow-visible bg-transparent",
 };
 
+const imageMaxWidthClasses: Record<TImageBlockMaxWidthPreset, string> = {
+  xs: "max-w-xs",
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-xl",
+  "2xl": "max-w-2xl",
+  "3xl": "max-w-3xl",
+  "4xl": "max-w-4xl",
+};
+
 const getLayoutClasses = (align: TImageBlockAlign, hasContent: boolean) => {
   if (!hasContent) return "flex justify-center";
   if (align === "top" || align === "bottom") {
     return "flex flex-col gap-8 md:gap-10";
   }
   return "grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-10";
+};
+
+const resolveImageMaxWidthProps = (
+  maxWidth: TImageBlockMaxWidth | undefined,
+  hasContent: boolean
+): { className?: string; style?: CSSProperties } => {
+  if (!maxWidth) {
+    return { className: hasContent ? "max-w-2xl" : "max-w-4xl" };
+  }
+
+  const value = maxWidth.trim();
+  if (!value) {
+    return { className: hasContent ? "max-w-2xl" : "max-w-4xl" };
+  }
+
+  if (Object.prototype.hasOwnProperty.call(imageMaxWidthClasses, value)) {
+    return {
+      className: imageMaxWidthClasses[value as TImageBlockMaxWidthPreset],
+    };
+  }
+
+  return { style: { maxWidth: value } };
 };
 
 const resolveMarkdownContent = async (content: TImageBlockContent) => {
@@ -136,6 +182,7 @@ export const ImageBlock = async ({ data }: { data: TImageBlock }) => {
   const imageStyle = image.style ?? "default";
   const hasContent = Boolean(content);
   const unoptimized = image.unoptimized ?? isLoopbackImageSource(image.src);
+  const imageMaxWidthProps = resolveImageMaxWidthProps(image.maxWidth, hasContent);
   const paddingProps = resolveContentBlockPaddingProps(data.padding);
   const canVerticallyAlign = hasContent && (align === "left" || align === "right");
   const imageValign = image.valign ?? "center";
@@ -174,8 +221,9 @@ export const ImageBlock = async ({ data }: { data: TImageBlock }) => {
       className={cn(
         "w-full",
         imageFrameClasses[imageStyle],
-        hasContent ? "max-w-2xl" : "max-w-4xl"
+        imageMaxWidthProps.className
       )}
+      style={imageMaxWidthProps.style}
     >
       <Image
         src={image.src}

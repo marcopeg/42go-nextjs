@@ -54,6 +54,13 @@ export interface EmailLoginUiConfig {
   primaryActionLabel?: string;
 }
 
+export interface EmailBodyTemplates {
+  text?: string;
+  html?: string;
+}
+
+export type EmailBodyConfig = string | EmailBodyTemplates;
+
 export type EmailStrategyConfig =
   | {
       type: "console";
@@ -61,12 +68,12 @@ export type EmailStrategyConfig =
   | {
       type: "resend";
       apiKey?: string;
-      from?: string;
-      subject?: string;
     };
 
 export interface EmailProviderConfig {
   from?: string;
+  subject?: string;
+  body?: EmailBodyConfig;
   code?: EmailCodeGenerationConfig;
   throttle?: EmailThrottleConfig;
   events?: EmailEventsConfig;

@@ -25,6 +25,7 @@ const config = {
               height: 800,
               sizes: "(max-width: 768px) 100vw, 50vw",
               style: "default",
+              maxWidth: "md",
               align: "left",
               valign: "center",
               animation: "fade",
@@ -112,6 +113,38 @@ Accepted values:
 Defaults to `"default"`.
 
 Use `"transparent"` for images with transparency or images that already include their own visual boundary.
+
+### image.maxWidth
+
+Optional. Controls the maximum rendered width of the image frame.
+
+If omitted, image blocks keep their previous defaults:
+
+- `"max-w-2xl"` for image-and-content layouts.
+- `"max-w-4xl"` for image-only layouts.
+
+Preset values map to Tailwind max-width classes:
+
+```ts
+maxWidth: "xs";  // max-w-xs
+maxWidth: "sm";  // max-w-sm
+maxWidth: "md";  // max-w-md
+maxWidth: "lg";  // max-w-lg
+maxWidth: "xl";  // max-w-xl
+maxWidth: "2xl"; // max-w-2xl
+maxWidth: "3xl"; // max-w-3xl
+maxWidth: "4xl"; // max-w-4xl
+```
+
+Custom CSS values are also accepted and applied as an inline `max-width` style:
+
+```ts
+maxWidth: "320px";
+maxWidth: "20vw";
+maxWidth: "min(100%, 360px)";
+```
+
+Use presets for standard page composition. Use custom CSS values only when the layout needs a precise cap.
 
 ### image.align
 

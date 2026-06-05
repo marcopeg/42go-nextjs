@@ -1,4 +1,7 @@
-import type { EmailProviderConfig } from "@/42go/auth/lib/providers/types";
+import type {
+  EmailBodyTemplates,
+  EmailProviderConfig,
+} from "@/42go/auth/lib/providers/types";
 import { parseEmailDurationSeconds } from "@/42go/auth/lib/email/duration";
 
 export const DEFAULT_EMAIL_CODE_CONFIG = {
@@ -33,6 +36,47 @@ export const DEFAULT_EMAIL_LOGIN_UI_CONFIG = {
   primaryActionLabel: "Send me a magic link",
 } satisfies Required<NonNullable<EmailProviderConfig["ui"]>>;
 
+export const DEFAULT_EMAIL_BODY_CONFIG = {
+  text: [
+    "Your sign-in code is {{code}}.",
+    "Magic link: {{magicLink}}",
+    "Expires: {{expiresAt}}",
+  ].join("\n"),
+  html: [
+    "<p>Your sign-in code is <strong>{{code}}</strong>.</p>",
+    '<p><a href="{{magicLink}}">Sign in with this magic link</a></p>',
+    "<p>This request expires at {{expiresAt}}.</p>",
+  ].join(""),
+} satisfies Required<EmailBodyTemplates>;
+
+const resolveEmailBodyConfig = (
+  body?: EmailProviderConfig["body"]
+): EmailBodyTemplates => {
+  if (typeof body === "string") {
+    return { text: body };
+  }
+
+  if (!body) {
+    return DEFAULT_EMAIL_BODY_CONFIG;
+  }
+
+  const resolvedBody: EmailBodyTemplates = {};
+
+  if (body.text !== undefined) {
+    resolvedBody.text = body.text;
+  } else if (body.html === undefined) {
+    resolvedBody.text = DEFAULT_EMAIL_BODY_CONFIG.text;
+  }
+
+  if (body.html !== undefined) {
+    resolvedBody.html = body.html;
+  } else if (body.text === undefined) {
+    resolvedBody.html = DEFAULT_EMAIL_BODY_CONFIG.html;
+  }
+
+  return resolvedBody;
+};
+
 export const getEmailProviderConfig = (
   config?: Partial<EmailProviderConfig>
 ): EmailProviderConfig => {
@@ -57,8 +101,10 @@ export const getEmailProviderConfig = (
       console: { type: "console" },
       ...(config?.strategies || {}),
     },
-    useStrategy: config?.useStrategy || process.env.EMAIL_AUTH_SENDER || "console",
-    from: config?.from || process.env.EMAIL_AUTH_FROM || "42Go <no-reply@example.com>",
+    body: resolveEmailBodyConfig(config?.body),
+    useStrategy: config?.useStrategy || "console",
+    from: config?.from || "42Go <no-reply@example.com>",
+    subject: config?.subject || "Your sign-in code",
   };
 
   parseEmailDurationSeconds(

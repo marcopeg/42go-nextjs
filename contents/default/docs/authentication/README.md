@@ -90,6 +90,16 @@ current app if one does not already exist.
     // Example: "LingoCafe <login@auth.lingocafe.app>"
     from: "LingoCafe <login@auth.lingocafe.app>",
 
+    // Optional subject template shared by every delivery strategy.
+    // Use {{code}} to include the generated sign-in code.
+    subject: "{{code}} is your sign-in code",
+
+    // Optional body template shared by every delivery strategy.
+    // A string is sent as the plain-text body.
+    // Supported placeholders: {{code}}, {{url}}, {{magicLink}},
+    // {{expiry}}, and {{expiresAt}}.
+    body: "code: {{code}}\n\nlink: {{url}}\n\nThis code will expire at {{expiry}}.",
+
     // Controls the human-entered code that is included in the email.
     code: {
       // Number of characters in the delivered code.
@@ -140,9 +150,6 @@ current app if one does not already exist.
     // Available delivery strategies for this app.
     // useStrategy selects one of these keys.
     strategies: {
-      // Development/test strategy. Logs the code and magic link.
-      console: { type: "console" },
-
       // Production strategy using Resend.
       // The type field is required because it selects the implementation.
       resend: {
@@ -150,13 +157,6 @@ current app if one does not already exist.
 
         // Server-only Resend API key.
         apiKey: "re_...",
-
-        // Optional per-strategy override for the sender address.
-        // Falls back to config.from when omitted.
-        from: "LingoCafe <login@auth.lingocafe.app>",
-
-        // Optional email subject.
-        subject: "Your sign-in code",
       },
     },
   },
@@ -175,12 +175,35 @@ address. With `["30s", "1m", "2m", "3m", "5m", "10m"]`, the user waits
 continues through the configured sequence. The last value is reused after the
 sequence is exhausted.
 
-The default selected strategy is `console`. It prints the code and magic link to
-server logs and is useful in local development. It is allowed in production
-only when selected by configuration, but it exposes login secrets to logs.
+The default selected strategy is `console`. It prints the rendered email to
+server logs and is useful in local development. The log includes `FROM`, `TO`,
+`SUBJECT`, and `BODY`. It is allowed in production only when selected by
+configuration, but it exposes login secrets to logs.
 The example above uses inline values to show the final AppConfig shape. In a
 real app, source secrets such as `apiKey` from server-only environment
 variables or your secret manager.
+Use `{{code}}` for subject templates. Body templates support `{{code}}`,
+`{{url}}`, `{{magicLink}}`, `{{expiry}}`, and `{{expiresAt}}`. `{{url}}` and
+`{{magicLink}}` are the same value. `{{expiry}}` and `{{expiresAt}}` are the
+same ISO timestamp. The `console` strategy is always available, even when it is
+not listed in `strategies`.
+
+For rich email bodies, provide text and/or HTML templates:
+
+```ts
+body: {
+  text: [
+    "Your sign-in code is {{code}}.",
+    "Magic link: {{url}}",
+    "Expires: {{expiry}}",
+  ].join("\n"),
+  html: [
+    "<p>Your sign-in code is <strong>{{code}}</strong>.</p>",
+    '<p><a href="{{url}}">Sign in with this magic link</a></p>',
+    "<p>This request expires at {{expiry}}.</p>",
+  ].join(""),
+}
+```
 
 ## Production Email With Resend
 
@@ -222,15 +245,14 @@ server-only environment variables or your secret manager in production.
   type: "email",
   config: {
     from: "LingoCafe <login@auth.lingocafe.app>",
+    subject: "{{code}} is your sign-in code",
+    body: "code: {{code}}\n\nlink: {{url}}\n\nThis code will expire at {{expiry}}.",
     useStrategy: "resend",
     // code, throttle, and ui may be omitted to use the defaults documented above.
     strategies: {
-      console: { type: "console" },
       resend: {
         type: "resend",
         apiKey: "re_...",
-        from: "LingoCafe <login@auth.lingocafe.app>",
-        subject: "Your sign-in code",
       },
     },
   },
@@ -245,14 +267,13 @@ map:
   type: "email",
   config: {
     from: "LingoCafe <login@auth.lingocafe.app>",
+    subject: "{{code}} is your sign-in code",
+    body: "code: {{code}}\n\nlink: {{url}}\n\nThis code will expire at {{expiry}}.",
     useStrategy: "console",
     strategies: {
-      console: { type: "console" },
       resend: {
         type: "resend",
         apiKey: "re_...",
-        from: "LingoCafe <login@auth.lingocafe.app>",
-        subject: "Your sign-in code",
       },
     },
   },

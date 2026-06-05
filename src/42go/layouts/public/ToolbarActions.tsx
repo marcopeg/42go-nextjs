@@ -1,9 +1,15 @@
-import { ContentBlock } from "@/42go/components/ContentBlock/server";
+import {
+  blocksMap,
+  type ContentBlockItem,
+} from "@/42go/components/ContentBlock/server";
+import { createRenderer } from "@/42go/components/ContentBlock/render-component";
 import { type TActionItem } from "./types";
 
 interface ToolbarActionsProps {
   actions?: TActionItem[];
 }
+
+const renderToolbarAction = createRenderer(blocksMap);
 
 export function ToolbarActions({ actions }: ToolbarActionsProps) {
   if (!actions || actions.length === 0) {
@@ -12,7 +18,7 @@ export function ToolbarActions({ actions }: ToolbarActionsProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <ContentBlock items={actions} />
+      {(actions as ContentBlockItem[]).map(renderToolbarAction)}
     </div>
   );
 }

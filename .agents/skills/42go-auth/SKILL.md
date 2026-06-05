@@ -65,7 +65,8 @@ last value applies to all later resend attempts.
 
 Email delivery strategies:
 
-- `console`: default; prints magic link and code to server logs.
+- `console`: default; prints the rendered email to server logs with visible
+  `FROM`, `TO`, `SUBJECT`, and `BODY` sections.
 - `resend`: production HTTP sender. Prefer passing the API key explicitly in
   the strategy config from app-owned server-only environment variables or a
   secret manager.
@@ -73,6 +74,12 @@ Email delivery strategies:
 Strategy entries keep their own `type` discriminator because dispatch chooses
 the implementation from that field. The provider-level `useStrategy` selects a
 key from `strategies`.
+The `console` strategy is always available even when omitted from `strategies`.
+Provider-level `from`, `subject`, and `body` apply across delivery strategies;
+strategy entries should hold transport-specific configuration such as Resend's
+`apiKey`. Subjects may include `{{code}}`. Body may be a plain text template
+string or an object with `text` and/or `html`; body templates may include
+`{{code}}`, `{{url}}`, `{{magicLink}}`, `{{expiry}}`, and `{{expiresAt}}`.
 
 For Resend production setup, update `contents/default/docs/authentication/README.md`
 and `.env.example` when config changes.

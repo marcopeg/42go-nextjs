@@ -13,3 +13,11 @@ export interface TPublicLayoutToolbar {
   href?: string;
   actions?: TActionItem[]; // Now uses the restricted type
 }
+
+export interface TPublicLayoutFooter {
+  disabled?: boolean;
+  links?: Array<{
+    label: string;
+    href: string;
+  }>;
+}

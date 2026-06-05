@@ -13,28 +13,33 @@ Public operator documentation lives at `contents/default/docs/authentication/REA
   config: {
     useStrategy: "resend",
     from: "LingoCafe <login@auth.lingocafe.app>",
+    subject: "{{code}} is your sign-in code",
+    body: "code: {{code}}\n\nlink: {{url}}\n\nThis code will expire at {{expiry}}.",
     // code, throttle, and ui may be omitted to use the defaults.
     strategies: {
-      console: { type: "console" },
       resend: {
         type: "resend",
         apiKey: "re_...",
-        from: "LingoCafe <login@auth.lingocafe.app>",
       },
     },
   },
 }
 ```
 
-The selected strategy defaults to `console` only when `useStrategy` is omitted. The console strategy prints the magic link and code to server logs. It is useful for local development and test runs. Production use is allowed when selected, but it exposes sign-in secrets to logs and is operator responsibility.
+The selected strategy defaults to `console` only when `useStrategy` is omitted. The console strategy is always available, even when it is not listed in `strategies`. It prints the fully rendered email to server logs and is useful for local development and test runs. Production use is allowed when selected, but it exposes sign-in secrets to logs and is operator responsibility.
 
 The example above uses inline values to show the final AppConfig shape. In a
 real app, source secrets such as the Resend API key from server-only environment
 variables or a secret manager.
 
 Resend is available as the first external delivery strategy.
-For local development, select `useStrategy: "console"` while keeping both
-`console` and `resend` entries in `strategies`.
+For local development, select `useStrategy: "console"`.
+Provider-level subjects support `{{code}}`. Provider-level body templates can
+be a plain string or an object with `text` and/or `html`. Body templates support
+`{{code}}`, `{{url}}`, `{{magicLink}}`, `{{expiry}}`, and `{{expiresAt}}`.
+`{{url}}` and `{{magicLink}}` are aliases. `{{expiry}}` and `{{expiresAt}}`
+are aliases. Transport strategies should only hold transport-specific options,
+such as `strategies.resend.apiKey`.
 
 For production Resend delivery:
 

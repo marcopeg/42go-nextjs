@@ -24,6 +24,7 @@ Evidence:
     sizes: "(max-width: 768px) 100vw, 50vw",
     unoptimized: false,
     style: "default",
+    maxWidth: "md",
     align: "left",
     valign: "center",
     animation: "none",
@@ -45,6 +46,7 @@ Evidence:
 - `image.sizes` is optional but should be set in real examples.
 - `image.unoptimized` is optional; use it for trusted remote images that should bypass Next.js optimization. Loopback URLs such as `http://localhost:4000/...` default to unoptimized.
 - `image.style` accepts `default` or `transparent`; `transparent` removes the frame border, clipping, and muted background.
+- `image.maxWidth` is optional and controls the rendered image frame cap. Presets are `xs`, `sm`, `md`, `lg`, `xl`, `2xl`, `3xl`, and `4xl`. Custom CSS values such as `320px`, `20vw`, or `min(100%, 360px)` are also accepted.
 - `image.align` accepts `left`, `right`, `top`, or `bottom`; `left` and `right` stack like `top` on mobile.
 - `image.valign` accepts `top`, `center`, or `bottom` for left/right layouts with content; default is `center`.
 - `image.animation` accepts `none`, `fade`, `scale`, or `slideUp`; default is `none`.

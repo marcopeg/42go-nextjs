@@ -22,13 +22,37 @@ export default {
       authors: [{ name: 'LingoCafe' }],
     },
     toolbar: {
-      disabled: true,
+      title: 'Your next chapter',
+      icon: '',
+      href: '/',
+      actions: [
+        {
+          type: 'link',
+          label: 'Start Reading Now!',
+          href: '/login',
+          variant: 'default',
+          size: 'sm',
+        },
+      ],
     },
     pages: {
       HomePage,
     },
     footer: {
-      disabled: true,
+      links: [
+        {
+          label: 'Terms',
+          href: 'https://lingocafe.app/en/legal/terms-of-service/',
+        },
+        {
+          label: 'Privacy',
+          href: 'https://lingocafe.app/en/legal/privacy-policy/',
+        },
+        {
+          label: 'Data Management',
+          href: 'https://lingocafe.app/en/legal/data-management/',
+        },
+      ],
     },
     pwa: {
       name: 'LingoCafe',
@@ -50,15 +74,14 @@ export default {
       {
         type: 'email' as const,
         config: {
-          from: 'LingoCafe <no-reply@lingocafe.app>',
-          useStrategy: process.env.LC_EMAIL_AUTH_STRATEGY || 'resend',
+          from: 'LingoCafe <login@lingocafe.app>',
+          subject: '{{code}} is your LingoCafe sign-in code',
+          //body: 'code: {{code}}\n\nlink: {{url}}\n\nThis code will expire at {{expiry}}.',
+          useStrategy: process.env.LC_EMAIL_AUTH_STRATEGY || 'console',
           strategies: {
-            console: { type: 'console' },
             resend: {
               type: 'resend',
               apiKey: process.env.LC_RESEND_API_KEY,
-              from: 'LingoCafe <no-reply@lingocafe.app>',
-              subject: 'Your LingoCafe sign-in code',
             },
           },
         },

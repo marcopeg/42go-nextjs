@@ -27,6 +27,15 @@ const mapError = (code: NonNullable<PolicyResult["error"]>["code"]): number => {
 const policyArray = (p: Policy | Policy[]): Policy[] =>
   Array.isArray(p) ? p : [p];
 
+const policyNeedsSession = (policies: Policy[]) =>
+  policies.some(
+    (policy) =>
+      policy.require.session ||
+      policy.require.role ||
+      Boolean(policy.require.grants?.length) ||
+      Boolean(policy.require.anyGrant?.length)
+  );
+
 export async function evaluatePolicy({
   policy,
   appId,
@@ -37,8 +46,11 @@ export async function evaluatePolicy({
   const resolvedAppId = appId ?? (await getAppID());
   const config = await getAppConfig();
 
-  // Load session once; server authority is DB for roles/grants
-  const session = await getServerSession(await getAuthOptions());
+  // Load session only for policies that actually require auth. Feature-only
+  // checks must stay build-safe for statically prerendered public pages.
+  const session = policyNeedsSession(policies)
+    ? await getServerSession(await getAuthOptions())
+    : null;
 
   // Helper: unified features list (config.features already bridged if legacy only)
   const allFeatures = new Set<string>(config?.features || []);

@@ -11,10 +11,10 @@ export function PublicLayout({ children, config }: PublicLayoutProps) {
   const toolbarDisabled = config?.public?.toolbar?.disabled ?? false;
   const footerDisabled = config?.public?.footer?.disabled ?? false;
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col [min-height:100dvh]">
       {!toolbarDisabled && <Toolbar config={config} />}
       <main className="flex-1 w-full">{children}</main>
-      {!footerDisabled && <Footer />}
+      {!footerDisabled && <Footer config={config} />}
     </div>
   );
 }

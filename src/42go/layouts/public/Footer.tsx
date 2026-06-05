@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { TAppConfig } from "@/42go/config/app-config";
 import { cn } from "@/42go/utils/utils";
 import { ThemeToggle } from "@/42go/config/ThemeToggle";
 
@@ -20,7 +21,41 @@ function AccentColorPicker() {
   );
 }
 
-export function Footer({ className }: { className?: string }) {
+interface FooterProps {
+  className?: string;
+  config?: TAppConfig;
+}
+
+export const Footer = ({ className, config }: FooterProps) => {
+  const configuredLinks = config?.public?.footer?.links ?? [];
+
+  if (configuredLinks.length > 0) {
+    return (
+      <footer className={cn("border-t py-5", className)} tabIndex={-1}>
+        <nav
+          className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 text-xs text-muted-foreground"
+          aria-label="Footer"
+        >
+          {configuredLinks.map((link) => {
+            const isExternal = /^https?:\/\//.test(link.href);
+
+            return (
+              <Link
+                key={`${link.label}-${link.href}`}
+                href={link.href}
+                target={isExternal ? "_blank" : undefined}
+                rel={isExternal ? "noreferrer" : undefined}
+                className="font-medium transition-colors hover:text-primary"
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </footer>
+    );
+  }
+
   const currentYear = new Date().getFullYear();
 
   return (
@@ -60,4 +95,4 @@ export function Footer({ className }: { className?: string }) {
       </div>
     </footer>
   );
-}
+};

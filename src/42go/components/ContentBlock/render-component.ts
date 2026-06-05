@@ -79,7 +79,7 @@ const resolveSpacingValue = (unit: ContentBlockSpacingUnit) => {
   if (value === "px") return "1px";
   if (value === "0") return "0px";
   if (/^\d+(\.\d+)?$/.test(value)) {
-    return `calc(var(--spacing) * ${value})`;
+    return `${Number(value) * 0.25}rem`;
   }
   if (/^\[[a-zA-Z0-9\s.,/%#()+*-]+\]$/.test(value)) {
     return value.slice(1, -1).trim();
@@ -112,12 +112,18 @@ const resolveMarginProps = (margin: TContentBlockMargin | undefined) => {
     classNames.push(marginClassNames.top[breakpoint]);
     const suffix = breakpoint === "base" ? "" : `${breakpoint}-`;
     style[`--content-block-${suffix}mt`] = value;
+    if (breakpoint === "base") {
+      style.marginTop = value;
+    }
   }
 
   for (const [breakpoint, value] of entriesForSpacing(margin?.bottom)) {
     classNames.push(marginClassNames.bottom[breakpoint]);
     const suffix = breakpoint === "base" ? "" : `${breakpoint}-`;
     style[`--content-block-${suffix}mb`] = value;
+    if (breakpoint === "base") {
+      style.marginBottom = value;
+    }
   }
 
   if (classNames.length === 0) return null;
@@ -137,12 +143,18 @@ export const resolveContentBlockPaddingProps = (
     classNames.push(paddingClassNames.top[breakpoint]);
     const suffix = breakpoint === "base" ? "" : `${breakpoint}-`;
     style[`--content-block-${suffix}pt`] = value;
+    if (breakpoint === "base") {
+      style.paddingTop = value;
+    }
   }
 
   for (const [breakpoint, value] of entriesForSpacing(padding?.bottom)) {
     classNames.push(paddingClassNames.bottom[breakpoint]);
     const suffix = breakpoint === "base" ? "" : `${breakpoint}-`;
     style[`--content-block-${suffix}pb`] = value;
+    if (breakpoint === "base") {
+      style.paddingBottom = value;
+    }
   }
 
   if (classNames.length === 0) return null;
