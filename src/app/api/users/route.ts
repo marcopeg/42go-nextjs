@@ -19,7 +19,6 @@ type UserRow = {
 type UserAction =
   | "reset-profile"
   | "reset-consent"
-  | "enable-translation"
   | "update-user";
 
 type UpdateUserFields = {
@@ -111,7 +110,6 @@ const updateUser = async (req: Request) => {
   const allowedActions: UserAction[] = [
     "reset-profile",
     "reset-consent",
-    "enable-translation",
     "update-user",
   ];
 
@@ -124,9 +122,9 @@ const updateUser = async (req: Request) => {
 
   const db = getDB();
   const user = (await db("auth.users")
-    .select("id", "feature_flags")
+    .select("id")
     .where({ app_id: appId, id: userId })
-    .first()) as { id: string; feature_flags: unknown } | undefined;
+    .first()) as { id: string } | undefined;
 
   if (!user) {
     return Response.json(
@@ -145,25 +143,6 @@ const updateUser = async (req: Request) => {
     await db("auth.users")
       .where({ app_id: appId, id: userId })
       .update({ consent: null, updated_at: db.fn.now() });
-  }
-
-  if (action === "enable-translation") {
-    const currentFlags =
-      user.feature_flags &&
-      typeof user.feature_flags === "object" &&
-      !Array.isArray(user.feature_flags)
-        ? (user.feature_flags as Record<string, unknown>)
-        : {};
-
-    await db("auth.users")
-      .where({ app_id: appId, id: userId })
-      .update({
-        feature_flags: {
-          ...currentFlags,
-          translate: true,
-        },
-        updated_at: db.fn.now(),
-      });
   }
 
   if (action === "update-user") {

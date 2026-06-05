@@ -24,7 +24,7 @@ type TranslationCacheRow = {
   translation: string;
 };
 
-type TranslationInput = {
+export type TranslationInput = {
   text: string;
   from: string;
   to: string;
@@ -57,6 +57,9 @@ export class TranslationProviderError extends Error {
 const defaultMemoryCacheMb = 20;
 const memoryCache = new Map<string, MemoryEntry>();
 let memoryCacheBytes = 0;
+
+export const isTranslationEnabled = () =>
+  process.env.LC_ENABLE_TRANSLATE === "true";
 
 export const normalizeTranslationText = (text: string) =>
   text.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase();
@@ -239,37 +242,12 @@ const getGoogleTranslateProvider = (): TranslateProvider => {
   };
 };
 
-export const hasUserFeatureFlag = async ({
-  userId,
-  flag,
-  db = getDB(),
-}: {
-  userId: string;
-  flag: string;
-  db?: Knex;
-}) => {
-  const row = (await db("auth.users")
-    .select("feature_flags")
-    .where({ id: userId })
-    .first()) as { feature_flags: unknown } | undefined;
-
-  if (
-    !row?.feature_flags ||
-    typeof row.feature_flags !== "object" ||
-    Array.isArray(row.feature_flags)
-  ) {
-    return false;
-  }
-
-  return (row.feature_flags as Record<string, unknown>)[flag] === true;
-};
-
-export const translateText = async ({
+export const getCachedTranslation = async ({
   text,
   from,
   to,
   db = getDB(),
-}: TranslationInput & { db?: Knex }): Promise<TranslationResult> => {
+}: TranslationInput & { db?: Knex }): Promise<TranslationResult | null> => {
   const normalizedFrom = normalizeTranslationLanguage(from);
   const normalizedTo = normalizeTranslationLanguage(to);
   const hash = buildTranslationHash({
@@ -282,6 +260,23 @@ export const translateText = async ({
 
   const database = await getDatabaseCache({ hash, db });
   if (database) return database;
+
+  return null;
+};
+
+export const translateAndCacheText = async ({
+  text,
+  from,
+  to,
+  db = getDB(),
+}: TranslationInput & { db?: Knex }): Promise<TranslationResult> => {
+  const normalizedFrom = normalizeTranslationLanguage(from);
+  const normalizedTo = normalizeTranslationLanguage(to);
+  const hash = buildTranslationHash({
+    text,
+    from: normalizedFrom,
+    to: normalizedTo,
+  });
 
   let provider: TranslateProvider;
   try {
@@ -310,4 +305,13 @@ export const translateText = async ({
   setMemoryCache(result);
 
   return { ...result, source: "google" };
+};
+
+export const translateText = async (
+  input: TranslationInput & { db?: Knex }
+): Promise<TranslationResult> => {
+  const cached = await getCachedTranslation(input);
+  if (cached) return cached;
+
+  return translateAndCacheText(input);
 };

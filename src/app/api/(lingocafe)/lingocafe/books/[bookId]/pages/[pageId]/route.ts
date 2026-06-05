@@ -11,7 +11,7 @@ import {
   saveBookProgress,
   trackReaderEvent,
 } from "../../../../_lib/reader";
-import { hasUserFeatureFlag } from "../../../../_lib/translation";
+import { isTranslationEnabled } from "../../../../_lib/translation";
 
 const notFound = () =>
   json(
@@ -48,12 +48,7 @@ const getBookPage = async (
 
   const profile = await loadReaderProfile(userId);
   const targetLang = getReaderProfileStringValue(profile, "ownLang");
-  const canTranslate =
-    !!targetLang &&
-    (await hasUserFeatureFlag({
-      userId,
-      flag: "translate",
-    }));
+  const canTranslate = !!targetLang && isTranslationEnabled();
   const progress = await saveBookOpenProgress({ userId, bookId, pageId });
 
   await trackReaderEvent({

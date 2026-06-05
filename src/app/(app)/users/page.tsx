@@ -35,7 +35,7 @@ type UsersResponse = {
   users: AppUser[];
 };
 
-type UserAction = 'reset-profile' | 'reset-consent' | 'enable-translation';
+type UserAction = 'reset-profile' | 'reset-consent';
 
 type UserEditFields = {
   username: string;
@@ -514,11 +514,6 @@ const UsersList = ({
                             onSelect={() => onUserAction(user, 'reset-consent')}
                           >
                             Reset consent
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => onUserAction(user, 'enable-translation')}
-                          >
-                            Enable translation
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

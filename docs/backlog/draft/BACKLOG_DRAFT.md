@@ -40,6 +40,5 @@
 - [QW92: Split AppConfig Into Public and Server-Only Configuration](./QW92-split-appconfig-into-public-and-server-only-configuration/QW92.task.md)
 - [HZ45: Docker Release Quality and Hardening v2](./HZ45-docker-release-quality-and-hardening-v2/HZ45.task.md)
 - [AK87: HeroBlock: Optional Fields (Title, Subtitle, or Actions Only)](./AK87-heroblock-optional-fields-title-subtitle-or-actions-only/AK87.task.md)
-- [AL66: Validate Translation Requests Against Book Page Content](./AL66-validate-translation-requests-against-book-page-content/AL66.task.md)
-- [XQ11: Choose Runtime-Friendly Remote Image Handling](./XQ11-choose-runtime-friendly-remote-image-handling/XQ11.task.md)
 - [FI86: Add SMTP/Nodemailer Email Sender Strategy](./FI86-add-smtp-nodemailer-email-sender-strategy/FI86.task.md)
+- [XQ11: Choose Runtime-Friendly Remote Image Handling](./XQ11-choose-runtime-friendly-remote-image-handling/XQ11.task.md)

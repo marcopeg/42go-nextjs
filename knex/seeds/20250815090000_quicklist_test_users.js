@@ -45,28 +45,6 @@ const upsertUser = async (trx, user) => {
   return rows[0].id || rows[0];
 };
 
-const upsertRole = async (trx, role) => {
-  await trx("auth.roles")
-    .insert(role)
-    .onConflict("id")
-    .merge({
-      title: role.title,
-      description: role.description,
-      updated_at: role.updated_at,
-    });
-};
-
-const upsertGrant = async (trx, grant) => {
-  await trx("auth.grants")
-    .insert(grant)
-    .onConflict("id")
-    .merge({
-      title: grant.title,
-      description: grant.description,
-      updated_at: grant.updated_at,
-    });
-};
-
 exports.seed = async function seedQuicklistTestUsers(knex) {
   await knex.transaction(async (trx) => {
     const now = new Date();
@@ -96,60 +74,5 @@ exports.seed = async function seedQuicklistTestUsers(knex) {
       updated_at: now,
     });
     console.log(`Created Quicklist Jane Doe test user with ID: ${janeDoeId}`);
-
-    const lingocafeJohnDoeId = await upsertUser(trx, {
-      app_id: "lingocafe",
-      id: uuidv4(),
-      username: johnDoe.username,
-      name: johnDoe.name,
-      email: johnDoe.email,
-      password: await hashPassword(johnDoe.password),
-      image: johnDoe.image,
-      created_at: now,
-      updated_at: now,
-    });
-    console.log(
-      `Created LingoCafe John Doe test user with ID: ${lingocafeJohnDoeId}`
-    );
-
-    await upsertRole(trx, {
-      id: "backoffice",
-      title: "Backoffice",
-      description: "Administrators with backoffice access",
-      created_at: now,
-      updated_at: now,
-    });
-    console.log("Ensured backoffice role exists");
-
-    await upsertGrant(trx, {
-      id: "users:list",
-      title: "List users",
-      description: "Let see all users in the system",
-      created_at: now,
-      updated_at: now,
-    });
-    console.log("Ensured users:list grant exists");
-
-    await trx("auth.roles_users")
-      .insert({
-        app_id: "lingocafe",
-        role_id: "backoffice",
-        user_id: lingocafeJohnDoeId,
-        created_at: now,
-      })
-      .onConflict(["app_id", "user_id", "role_id"])
-      .ignore();
-    console.log("Associated LingoCafe John Doe test user with backoffice role");
-
-    await trx("auth.roles_grants")
-      .insert({
-        app_id: "lingocafe",
-        role_id: "backoffice",
-        grant_id: "users:list",
-        created_at: now,
-      })
-      .onConflict(["app_id", "role_id", "grant_id"])
-      .ignore();
-    console.log("Associated users:list grant with LingoCafe backoffice role");
   });
 };
