@@ -56,7 +56,6 @@
 
 ## WIP
 
-- [AL66: Validate Translation Requests Against Book Page Content](./wip/AL66-validate-translation-requests-against-book-page-content/AL66.task.md) | [plan](./wip/AL66-validate-translation-requests-against-book-page-content/AL66.plan.md) | [notes](./wip/AL66-validate-translation-requests-against-book-page-content/AL66.notes.md)
 
 ## Blocked
 
