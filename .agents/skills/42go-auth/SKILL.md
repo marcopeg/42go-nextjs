@@ -51,6 +51,20 @@ Do not create a parallel session system. Manual code verification must redirect
 into `/api/auth/callback/email` after validating the app-scoped token; NextAuth
 creates the cookie.
 
+Email magic-link requests use the shared static validator in
+`src/42go/auth/lib/email/validation.ts`. The validator is client/server safe and
+must stay centralized. The login UI and app-owned email auth routes should use
+the same validation policy. Invalid email responses must be generic; do not
+return account-existence details or provider-specific rejection reasons.
+
+Current validation policy rejects malformed syntax, plus-address aliases,
+consumer Gmail dotted local-parts, and known disposable/temporary domains.
+Privacy relays and forwarding services such as Apple private relay, Firefox
+Relay, DuckDuckGo Email Protection, Proton, and SimpleLogin-style aliases are
+allowed unless a specific domain is explicitly added to the disposable denylist.
+Review `DISPOSABLE_EMAIL_DOMAINS` and provider alias behavior periodically when
+working on email auth.
+
 Delivered codes are generated from config:
 
 ```ts
@@ -122,6 +136,7 @@ WHERE expires < now() - interval '24 hours';
 After auth code changes, run:
 
 ```bash
+npm run test:email-validation
 npm run qa
 ```
 

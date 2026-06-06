@@ -5,10 +5,8 @@ import { getAppInfo } from "@/42go/config/app-config";
 import { getEmailProviderConfig } from "@/42go/auth/lib/email/config";
 import { recordEmailAuthEvent } from "@/42go/auth/lib/email/events";
 import { hashEmailToken } from "@/42go/auth/lib/email/token";
-import {
-  normalizeEmailCode,
-  normalizeEmailIdentifier,
-} from "@/42go/auth/lib/email/utils";
+import { normalizeEmailCode } from "@/42go/auth/lib/email/utils";
+import { validateAuthEmail } from "@/42go/auth/lib/email/validation";
 
 const safeInternalPath = (input?: string | null): string => {
   if (!input || typeof input !== "string") return "/dashboard";
@@ -48,7 +46,16 @@ export const POST = async (req: Request) => {
 
   try {
     const form = await req.formData();
-    const identifier = normalizeEmailIdentifier(String(form.get("email") || ""));
+    const validation = validateAuthEmail(String(form.get("email") || ""));
+
+    if (!validation.ok) {
+      return NextResponse.redirect(
+        new URL("/login?error=Verification", getPublicOrigin(req)),
+        303
+      );
+    }
+
+    const identifier = validation.email;
     const code = normalizeEmailCode(String(form.get("code") || ""), emailConfig.code);
     const callbackUrl = safeInternalPath(String(form.get("callbackUrl") || ""));
     const tokenHash = hashEmailToken(code);

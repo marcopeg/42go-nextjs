@@ -2,6 +2,7 @@ import { randomInt } from "crypto";
 
 import type { EmailCodeGenerationConfig } from "@/42go/auth/lib/providers/types";
 import { DEFAULT_EMAIL_CODE_CONFIG } from "@/42go/auth/lib/email/config";
+import { normalizeAuthEmail } from "@/42go/auth/lib/email/validation";
 
 const CODE_ALPHABETS = {
   digits: "0123456789",
@@ -11,11 +12,7 @@ const CODE_ALPHABETS = {
 } satisfies Record<Required<EmailCodeGenerationConfig>["mode"], string>;
 
 export const normalizeEmailIdentifier = (identifier: string) => {
-  const email = identifier.trim().toLowerCase();
-  if (!email || email.includes(",") || !email.includes("@")) {
-    throw new Error("Invalid email address.");
-  }
-  return email;
+  return normalizeAuthEmail(identifier);
 };
 
 export const usernameFromEmail = (email: string) => {

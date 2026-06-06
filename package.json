@@ -7,6 +7,7 @@
     "build": "node scripts/generate-app-icons-registry.mjs && node scripts/generate-app-themes-registry.mjs && next build && rm -f .next/standalone/.env .next/standalone/.env.*",
     "start": "next start",
     "lint": "eslint .",
+    "test:email-validation": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/email-validation.test.mts",
     "qa": "eslint . && npm run build"
   },
   "dependencies": {

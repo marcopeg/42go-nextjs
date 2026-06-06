@@ -5,6 +5,10 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import {
+  getGenericInvalidEmailMessage,
+  validateAuthEmail,
+} from "@/42go/auth/lib/email/validation";
 
 interface IdentifierLoginProps {
   providers: string[];
@@ -14,6 +18,7 @@ interface IdentifierLoginProps {
 }
 
 type Step = "identifier" | "password" | "code";
+type MessageTone = "error" | "success";
 
 const secondaryLinkButtonClass = "w-full h-10 rounded-lg text-sm font-medium";
 
@@ -29,9 +34,17 @@ export const IdentifierLogin = ({
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<MessageTone>("error");
   const [isLoading, setIsLoading] = useState(false);
 
   const requestEmail = async (resend = false) => {
+    const validation = validateAuthEmail(identifier);
+    if (!validation.ok) {
+      setMessageTone("error");
+      setMessage(getGenericInvalidEmailMessage());
+      return;
+    }
+
     setIsLoading(true);
     setMessage(null);
 
@@ -39,30 +52,35 @@ export const IdentifierLogin = ({
       const throttle = await fetch("/api/auth/email/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: identifier, resend }),
+        body: JSON.stringify({ email: validation.email, resend }),
       });
       const throttleResult = await throttle.json();
 
       if (!throttle.ok || !throttleResult.ok) {
+        setMessageTone("error");
         setMessage(throttleResult.message || "Wait before requesting another sign-in email.");
         return;
       }
 
       const result = await signIn("email", {
-        email: identifier,
+        email: validation.email,
         callbackUrl,
         redirect: false,
       });
 
       if (result?.error) {
+        setMessageTone("error");
         setMessage("Email sign-in could not be started.");
         return;
       }
 
       setStep("code");
+      setIdentifier(validation.email);
+      setMessageTone("success");
       setMessage(resend ? "A new code was sent." : "Check your email for the code or magic link.");
     } catch (error) {
       console.error("Email request failed:", error);
+      setMessageTone("error");
       setMessage("Email sign-in could not be started.");
     } finally {
       setIsLoading(false);
@@ -99,9 +117,11 @@ export const IdentifierLogin = ({
         return;
       }
 
+      setMessageTone("error");
       setMessage("Login failed.");
     } catch (error) {
       console.error("Credentials login failed:", error);
+      setMessageTone("error");
       setMessage("Login failed.");
     } finally {
       setIsLoading(false);
@@ -125,13 +145,19 @@ export const IdentifierLogin = ({
     />
   );
 
+  const messageClassName =
+    messageTone === "error"
+      ? "text-red-600 dark:text-red-400"
+      : "text-gray-700 dark:text-gray-200";
+
   return (
     <div className="space-y-4">
-      {message ? (
-        <p className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-200">
-          {message}
-        </p>
-      ) : null}
+      <p
+        aria-live="polite"
+        className={`min-h-5 text-sm font-medium ${message ? messageClassName : "text-transparent"}`}
+      >
+        {message || " "}
+      </p>
 
       {step === "identifier" ? (
         <form

@@ -61,6 +61,47 @@ Primary Resend references:
 
 Verification tokens are stored in `auth.verification_tokens` with `app_id`, `identifier`, and hashed token as the primary key. Tokens issued for one app cannot be consumed by another app.
 
+Email identifiers pass through the shared auth-grade validator in
+`src/42go/auth/lib/email/validation.ts` before the app-owned request and manual
+code routes proceed. The validator is static/global in v1 and is safe to import
+from client and server code. Invalid input receives generic failure copy only.
+Do not expose account existence or provider-specific validation reasons.
+
+Current validation policy:
+
+- Reject malformed email syntax, quoted/IP-literal forms, missing TLDs, comma
+  separated addresses, whitespace, leading/trailing local dots, and repeated
+  dots.
+- Reject any `+` in the local-part because major providers support plus
+  subaddressing and the auth flow prefers avoiding duplicate accounts over
+  accepting every technically deliverable address.
+- Reject dotted local-parts for consumer Gmail domains (`gmail.com` and
+  `googlemail.com`) because Google documents that dots do not change the
+  mailbox for consumer Gmail.
+- Reject known disposable/temporary email domains from the vendored static
+  denylist.
+- Do not block privacy relay or forwarding domains only because they forward
+  mail. Apple private relay, Firefox Relay, DuckDuckGo Email Protection, Proton,
+  and SimpleLogin-style addresses are considered real accounts unless a domain
+  is explicitly added to the disposable denylist.
+
+Primary policy references:
+
+- Gmail dot behavior: https://support.google.com/mail/answer/7436150
+- Microsoft plus addressing: https://learn.microsoft.com/en-us/exchange/recipients-in-exchange-online/plus-addressing-in-exchange-online
+- Fastmail plus/subdomain addressing: https://www.fastmail.help/hc/en-us/articles/360060591053
+- Proton aliases: https://proton.me/support/creating-aliases
+- Yahoo disposable addresses: https://help.yahoo.com/kb/SLN36718.html
+- Maintained disposable-domain lists:
+  https://github.com/disposable/disposable-email-domains and
+  https://github.com/disposable-email-domains/disposable-email-domains
+
+Review the disposable-domain denylist and provider-alias assumptions
+periodically. Disposable providers rotate domains, and mailbox providers change
+alias behavior. A release that changes email auth should include a quick review
+of `DISPOSABLE_EMAIL_DOMAINS`, Gmail/Microsoft/Fastmail/Proton/Yahoo/iCloud
+policy notes, and any new LingoCafe abuse patterns.
+
 Manual code entry posts to `/api/auth/email/verify-code`. That route validates the app-scoped stored token and redirects the browser into the normal NextAuth email callback. Session cookies are still created by NextAuth, not by custom route code.
 
 Email auth events use lowercase dot/dash names such as `auth.email.requested`, `auth.email.resent`, `auth.email.code-verified`, and `auth.email.login-failed`.

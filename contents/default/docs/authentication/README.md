@@ -74,6 +74,12 @@ Email authentication sends both a magic link and a numeric code. The user can
 click the link or enter the code. The verified flow creates a user for the
 current app if one does not already exist.
 
+Before a magic-link request starts, 42Go validates the submitted email address
+with a shared static validator. The same validator is used by the login UI and
+the app-owned email auth API routes. If the address is not accepted, the UI and
+API return generic invalid-email copy. They do not explain whether the address
+was rejected because of syntax, alias behavior, or a temporary-email domain.
+
 ```ts
 {
   // Enables the passwordless email provider for this app.
@@ -174,6 +180,46 @@ address. With `["30s", "1m", "2m", "3m", "5m", "10m"]`, the user waits
 30 seconds before the first resend, 1 minute before the next resend, and then
 continues through the configured sequence. The last value is reused after the
 sequence is exhausted.
+
+## Email Address Acceptance Policy
+
+The email validator is intentionally strict because email magic-link login can
+create a new app-scoped user after verification.
+
+Accepted addresses must have normal mailbox syntax, a real-looking domain, and
+a normal top-level domain. The validator rejects comma-separated addresses,
+whitespace, missing TLDs, quoted local-parts, IP-literal domains, leading or
+trailing local dots, repeated dots, plus-address aliases, known disposable
+email domains, and consumer Gmail dotted variants such as
+`first.last@gmail.com`.
+
+Consumer Gmail dots are rejected because Google documents that dots do not
+change the mailbox for `gmail.com` addresses. Plus-addresses are rejected
+globally because major providers support plus addressing and the auth policy
+prioritizes avoiding duplicate accounts. Examples:
+
+- Accepted: `marco@gmail.com`
+- Rejected: `marco+demo@gmail.com`
+- Rejected: `mar.co@gmail.com`
+- Rejected: `reader@mailinator.com`
+
+Privacy forwarding services are allowed in v1. Apple private relay, Firefox
+Relay, DuckDuckGo Email Protection, Proton, and SimpleLogin-style addresses are
+treated as real accounts unless a specific domain is added to the disposable
+denylist.
+
+The disposable-domain denylist is static and must be reviewed periodically.
+Disposable email providers rotate domains often, and provider alias behavior
+can change. During authentication maintenance, review
+`src/42go/auth/lib/email/validation.ts` against current provider docs and
+maintained disposable-domain lists such as:
+
+- Google Gmail dots: https://support.google.com/mail/answer/7436150
+- Microsoft plus addressing: https://learn.microsoft.com/en-us/exchange/recipients-in-exchange-online/plus-addressing-in-exchange-online
+- Fastmail plus/subdomain addressing: https://www.fastmail.help/hc/en-us/articles/360060591053
+- Proton aliases: https://proton.me/support/creating-aliases
+- Yahoo disposable addresses: https://help.yahoo.com/kb/SLN36718.html
+- Disposable domain lists: https://github.com/disposable/disposable-email-domains and https://github.com/disposable-email-domains/disposable-email-domains
 
 The default selected strategy is `console`. It prints the rendered email to
 server logs and is useful in local development. The log includes `FROM`, `TO`,

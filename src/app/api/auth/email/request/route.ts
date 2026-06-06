@@ -4,7 +4,10 @@ import { getAppInfo } from "@/42go/config/app-config";
 import { getEmailProviderConfig } from "@/42go/auth/lib/email/config";
 import { recordEmailAuthEvent } from "@/42go/auth/lib/email/events";
 import { consumeEmailThrottle } from "@/42go/auth/lib/email/throttle";
-import { normalizeEmailIdentifier } from "@/42go/auth/lib/email/utils";
+import {
+  getGenericInvalidEmailMessage,
+  validateAuthEmail,
+} from "@/42go/auth/lib/email/validation";
 
 export const POST = async (req: Request) => {
   const { id: appId, config } = await getAppInfo();
@@ -18,7 +21,16 @@ export const POST = async (req: Request) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const identifier = normalizeEmailIdentifier(String(body.email || ""));
+    const validation = validateAuthEmail(String(body.email || ""));
+
+    if (!validation.ok) {
+      return NextResponse.json(
+        { ok: false, message: getGenericInvalidEmailMessage() },
+        { status: 400 }
+      );
+    }
+
+    const identifier = validation.email;
     const emailConfig = getEmailProviderConfig(emailProvider.config);
     const throttle = await consumeEmailThrottle({
       appId,
