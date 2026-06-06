@@ -105,7 +105,7 @@ and `.env.example` when config changes.
 - Credentials plus email: first screen shows username/email, primary email
   action, and link-style `Continue with password`.
 - Email primary text comes from `auth.providers[].config.ui.primaryActionLabel`
-  and defaults to `Send me a magic link`.
+  and defaults to `Continue with email`.
 - Use the shared strategy components; do not build one-off login forms.
 
 ## Event Rules

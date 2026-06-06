@@ -22,7 +22,8 @@ export default {
       authors: [{ name: 'LingoCafe' }],
     },
     toolbar: {
-      title: 'Your next chapter',
+      title: 'LingoCafe.app',
+      subtitle: 'easy reading books & media',
       icon: '',
       href: '/',
       actions: [

@@ -1,85 +1,72 @@
-import { Suspense } from "react";
-import { AuthError } from "@/42go/auth/components/AuthError";
+import { Suspense } from 'react';
+import { AuthError } from '@/42go/auth/components/AuthError';
 import {
   CredentialsLogin,
   GitHubLogin,
   GoogleLogin,
   IdentifierLogin,
-} from "@/42go/auth/components/login-strategies";
-import { getAppInfo } from "@/42go/config/app-config";
-import { getEmailProviderConfig } from "@/42go/auth/lib/email/config";
-import { LoginProfileStateReset } from "@/config/lingocafe/LoginProfileStateReset";
+} from '@/42go/auth/components/login-strategies';
+import { getAppInfo } from '@/42go/config/app-config';
+import { getEmailProviderConfig } from '@/42go/auth/lib/email/config';
+import { LoginProfileStateReset } from '@/config/lingocafe/LoginProfileStateReset';
+
+const emailAuthErrorCodes = ['EmailCreateAccount', 'EmailSignin', 'Verification'];
 
 const safeInternalPath = (input?: string | null): string | null => {
-  if (!input || typeof input !== "string") return null;
+  if (!input || typeof input !== 'string') return null;
   const trimmed = input.trim();
-  if (!trimmed.startsWith("/")) return null;
-  if (trimmed.includes("://") || trimmed.includes("\\")) return null;
+  if (!trimmed.startsWith('/')) return null;
+  if (trimmed.includes('://') || trimmed.includes('\\')) return null;
   // normalize duplicate slashes (except protocol which we don't allow anyway)
-  return trimmed.replace(/\/+/, "/");
+  return trimmed.replace(/\/+/, '/');
 };
 
 export default async function LoginPage() {
   const { id: appID, config: appConfig } = await getAppInfo();
-  const fallback = "/dashboard";
+  const fallback = '/dashboard';
   const configured = appConfig?.app?.default?.page ?? null;
   const callbackUrl = safeInternalPath(configured) ?? fallback;
-  const providers: string[] =
-    appConfig?.auth?.providers.map((provider) => provider.type) || [];
+  const providers: string[] = appConfig?.auth?.providers.map(provider => provider.type) || [];
 
   const socialLogins = providers
     .map((name, index) => {
       const tabIndex = index + 1;
 
-      if (name === "github") {
-        return (
-          <GitHubLogin
-            key="github"
-            tabIndex={tabIndex}
-            callbackUrl={callbackUrl}
-          />
-        );
+      if (name === 'github') {
+        return <GitHubLogin key="github" tabIndex={tabIndex} callbackUrl={callbackUrl} />;
       }
 
-      if (name === "google") {
-        return (
-          <GoogleLogin
-            key="google"
-            tabIndex={tabIndex}
-            callbackUrl={callbackUrl}
-          />
-        );
+      if (name === 'google') {
+        return <GoogleLogin key="google" tabIndex={tabIndex} callbackUrl={callbackUrl} />;
       }
 
       return null;
     })
-    .filter((_) => _ !== null);
+    .filter(_ => _ !== null);
 
   const credentialsTabIndex = providers.length + 1;
-  const hasCredentials = providers.includes("credentials");
-  const hasEmail = providers.includes("email");
-  const emailProvider = appConfig?.auth?.providers.find(
-    (provider) => provider.type === "email"
-  );
+  const hasCredentials = providers.includes('credentials');
+  const hasEmail = providers.includes('email');
+  const emailProvider = appConfig?.auth?.providers.find(provider => provider.type === 'email');
   const emailConfig =
-    emailProvider?.type === "email"
+    emailProvider?.type === 'email'
       ? getEmailProviderConfig(emailProvider.config)
       : getEmailProviderConfig();
 
   return (
     <div className="login-page max-w-md mx-auto mt-8 p-6">
-      {appID === "lingocafe" ? <LoginProfileStateReset /> : null}
+      {appID === 'lingocafe' ? <LoginProfileStateReset /> : null}
       <h1 className="text-2xl font-bold text-center mb-6">Sign In</h1>
 
       {/* Error Display */}
       <Suspense fallback={null}>
-        <AuthError />
+        <AuthError ignoredErrors={hasEmail ? emailAuthErrorCodes : []} />
       </Suspense>
 
       {/* OAuth Section */}
       {socialLogins.length > 0 && (
         <div className="mb-6 space-y-3">
-          {socialLogins.map((LoginComponent) => (
+          {socialLogins.map(LoginComponent => (
             <div key={LoginComponent.key} className="w-full">
               {LoginComponent}
             </div>
@@ -107,19 +94,14 @@ export default async function LoginPage() {
             providers={providers}
             tabIndex={credentialsTabIndex}
             callbackUrl={callbackUrl}
-            emailPrimaryActionLabel={
-              emailConfig.ui?.primaryActionLabel || "Send me a magic link"
-            }
+            emailPrimaryActionLabel={emailConfig.ui?.primaryActionLabel || 'Continue with email'}
           />
         </div>
       ) : null}
 
       {!hasEmail && hasCredentials && (
         <div className="w-full">
-          <CredentialsLogin
-            tabIndex={credentialsTabIndex}
-            callbackUrl={callbackUrl}
-          />
+          <CredentialsLogin tabIndex={credentialsTabIndex} callbackUrl={callbackUrl} />
         </div>
       )}
     </div>

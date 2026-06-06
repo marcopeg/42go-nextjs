@@ -5,14 +5,16 @@ import { useMemo } from "react";
 
 interface AuthErrorProps {
   className?: string;
+  ignoredErrors?: string[];
 }
 
-export function AuthError({ className }: AuthErrorProps) {
+export function AuthError({ className, ignoredErrors = [] }: AuthErrorProps) {
   const searchParams = useSearchParams();
 
   const error = useMemo(() => {
     const errorParam = searchParams?.get("error");
     if (!errorParam) return null;
+    if (ignoredErrors.includes(errorParam)) return null;
 
     switch (errorParam) {
       case "OAuthSignin":
@@ -36,7 +38,7 @@ export function AuthError({ className }: AuthErrorProps) {
       default:
         return "Authentication error occurred. Please try again.";
     }
-  }, [searchParams]);
+  }, [ignoredErrors, searchParams]);
 
   if (!error) return null;
 

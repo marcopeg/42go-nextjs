@@ -150,7 +150,7 @@ was rejected because of syntax, alias behavior, or a temporary-email domain.
     // Login-page copy for this provider.
     ui: {
       // Text for the primary email action.
-      primaryActionLabel: "Send me a magic link",
+      primaryActionLabel: "Continue with email",
     },
 
     // Available delivery strategies for this app.
@@ -344,7 +344,7 @@ app can run on its own domain.
 1. Start the app.
 2. Open the app login page.
 3. Enter an email address.
-4. Click `Send me a magic link`.
+4. Click `Continue with email`.
 5. Confirm the email arrives.
 6. Sign in with either the link or code.
 7. Try using the same link or code again. It must fail because the token is

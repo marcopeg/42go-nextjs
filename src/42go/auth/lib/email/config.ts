@@ -1,58 +1,53 @@
-import type {
-  EmailBodyTemplates,
-  EmailProviderConfig,
-} from "@/42go/auth/lib/providers/types";
-import { parseEmailDurationSeconds } from "@/42go/auth/lib/email/duration";
+import type { EmailBodyTemplates, EmailProviderConfig } from '@/42go/auth/lib/providers/types';
+import { parseEmailDurationSeconds } from '@/42go/auth/lib/email/duration';
 
 export const DEFAULT_EMAIL_CODE_CONFIG = {
   length: 6,
-  mode: "digits",
+  mode: 'digits',
   caseSensitive: false,
-  duration: "5m",
-} satisfies Required<NonNullable<EmailProviderConfig["code"]>>;
+  duration: '5m',
+} satisfies Required<NonNullable<EmailProviderConfig['code']>>;
 
 export const DEFAULT_EMAIL_EVENTS_CONFIG = {
   requested: true,
   resent: true,
   codeVerified: true,
   loginFailed: true,
-} satisfies Required<NonNullable<EmailProviderConfig["events"]>>;
+} satisfies Required<NonNullable<EmailProviderConfig['events']>>;
 
 export const DEFAULT_EMAIL_THROTTLE_DELAY = [
-  "30s",
-  "1m",
-  "2m",
-  "3m",
-  "5m",
-  "10m",
-] satisfies NonNullable<EmailProviderConfig["throttle"]>["delay"];
+  '30s',
+  '1m',
+  '2m',
+  '3m',
+  '5m',
+  '10m',
+] satisfies NonNullable<EmailProviderConfig['throttle']>['delay'];
 
 export const DEFAULT_EMAIL_THROTTLE_CONFIG = {
   delay: DEFAULT_EMAIL_THROTTLE_DELAY,
-  message: "Wait before requesting another sign-in email.",
-} satisfies NonNullable<EmailProviderConfig["throttle"]>;
+  message: 'Wait before requesting another sign-in email.',
+} satisfies NonNullable<EmailProviderConfig['throttle']>;
 
 export const DEFAULT_EMAIL_LOGIN_UI_CONFIG = {
-  primaryActionLabel: "Send me a magic link",
-} satisfies Required<NonNullable<EmailProviderConfig["ui"]>>;
+  primaryActionLabel: 'Continue with email',
+} satisfies Required<NonNullable<EmailProviderConfig['ui']>>;
 
 export const DEFAULT_EMAIL_BODY_CONFIG = {
   text: [
-    "Your sign-in code is {{code}}.",
-    "Magic link: {{magicLink}}",
-    "Expires: {{expiresAt}}",
-  ].join("\n"),
+    'Your sign-in code is {{code}}.',
+    'Magic link: {{magicLink}}',
+    'Expires: {{expiresAt}}',
+  ].join('\n'),
   html: [
-    "<p>Your sign-in code is <strong>{{code}}</strong>.</p>",
+    '<p>Your sign-in code is <strong>{{code}}</strong>.</p>',
     '<p><a href="{{magicLink}}">Sign in with this magic link</a></p>',
-    "<p>This request expires at {{expiresAt}}.</p>",
-  ].join(""),
+    '<p>This request expires at {{expiresAt}}.</p>',
+  ].join(''),
 } satisfies Required<EmailBodyTemplates>;
 
-const resolveEmailBodyConfig = (
-  body?: EmailProviderConfig["body"]
-): EmailBodyTemplates => {
-  if (typeof body === "string") {
+const resolveEmailBodyConfig = (body?: EmailProviderConfig['body']): EmailBodyTemplates => {
+  if (typeof body === 'string') {
     return { text: body };
   }
 
@@ -98,29 +93,24 @@ export const getEmailProviderConfig = (
       ...(config?.ui || {}),
     },
     strategies: {
-      console: { type: "console" },
+      console: { type: 'console' },
       ...(config?.strategies || {}),
     },
     body: resolveEmailBodyConfig(config?.body),
-    useStrategy: config?.useStrategy || "console",
-    from: config?.from || "42Go <no-reply@example.com>",
-    subject: config?.subject || "Your sign-in code",
+    useStrategy: config?.useStrategy || 'console',
+    from: config?.from || '42Go <no-reply@example.com>',
+    subject: config?.subject || 'Your sign-in code',
   };
 
   parseEmailDurationSeconds(
     resolvedConfig.code!.duration!,
-    "auth.providers[].config.code.duration"
+    'auth.providers[].config.code.duration'
   );
   if (resolvedConfig.throttle!.delay!.length === 0) {
-    throw new Error(
-      "auth.providers[].config.throttle.delay must contain at least one duration."
-    );
+    throw new Error('auth.providers[].config.throttle.delay must contain at least one duration.');
   }
   resolvedConfig.throttle!.delay!.forEach((delay, index) => {
-    parseEmailDurationSeconds(
-      delay,
-      `auth.providers[].config.throttle.delay[${index}]`
-    );
+    parseEmailDurationSeconds(delay, `auth.providers[].config.throttle.delay[${index}]`);
   });
 
   return resolvedConfig;

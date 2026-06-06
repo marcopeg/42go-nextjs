@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { resolveAppIDFromHeaders } from "@/42go/config/app-config";
-import { APP_ID_HEADER } from "@/42go/lib/app-id";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { resolveAppIDFromHeaders } from '@/42go/config/app-config';
+import { APP_ID_HEADER } from '@/42go/lib/app-id';
 
 export async function proxy(request: NextRequest) {
-  console.log("@@@@@ MIDDLEWARE :: START");
+  // console.log("@@@@@ MIDDLEWARE :: START");
 
   // The app id header is reserved for the proxy. Public requests may use
   // configured header matchers, but cannot choose this internal value.
@@ -33,6 +33,6 @@ export const config = {
      * - Include: API routes, pages, dynamic routes
      * - Exclude: static files, images, Next.js internals
      */
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|\\.well-known/).*)",
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|\\.well-known/).*)',
   ],
 };
