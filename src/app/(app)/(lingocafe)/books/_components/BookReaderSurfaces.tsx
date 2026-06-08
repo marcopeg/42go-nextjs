@@ -31,6 +31,7 @@ type ReaderSurfaceProps = {
   readingProgressBps: number;
   headerTitleMode: ReaderHeaderTitleMode;
   preferences: ReaderPreferences;
+  pageTurnPending: boolean;
   onOpenTableOfContents: () => void;
   onOpenPreferences: () => void;
   onNavigatePage: (href: string) => void;
@@ -46,6 +47,7 @@ type ReaderNavButtonProps = {
   direction: "previous" | "next";
   onNavigatePage: (href: string) => void;
   className?: string;
+  disabled?: boolean;
 };
 
 type ReaderHeaderActionProps = {
@@ -153,6 +155,7 @@ const ReaderNavButton = ({
   direction,
   onNavigatePage,
   className = "",
+  disabled = false,
 }: ReaderNavButtonProps) => {
   const isPrevious = direction === "previous";
   const Icon = isPrevious ? ChevronLeft : ChevronRight;
@@ -165,11 +168,16 @@ const ReaderNavButton = ({
     color: "var(--reader-fg)",
   };
 
-  if (!href) {
+  if (!href || disabled) {
     return (
       <span
-        aria-hidden="true"
-        className={`${baseClass} pointer-events-none opacity-40 ${className}`}
+        aria-hidden={!href ? "true" : undefined}
+        aria-label={href ? label : undefined}
+        aria-disabled={href ? true : undefined}
+        role={href ? "link" : undefined}
+        className={`${baseClass} pointer-events-none ${
+          href ? "opacity-60" : "opacity-40"
+        } ${className}`}
         style={baseStyle}
       >
         <Icon className="h-5 w-5" />
@@ -199,12 +207,17 @@ const BookProgress = ({
   bookPage,
   onNavigatePage,
   compact = false,
-}: PageProgressProps & { onNavigatePage: (href: string) => void }) => (
+  pageTurnPending,
+}: PageProgressProps & {
+  onNavigatePage: (href: string) => void;
+  pageTurnPending: boolean;
+}) => (
   <div className={`flex min-w-0 items-center gap-4 ${compact ? "w-full" : "w-full max-w-sm"}`}>
     <ReaderNavButton
       href={bookPage.previous?.href ?? null}
       direction="previous"
       onNavigatePage={onNavigatePage}
+      disabled={pageTurnPending}
     />
     <div className="min-w-0 flex-1 space-y-2 text-center">
       <div className="text-xs" style={{ color: "var(--reader-fg-muted)" }}>
@@ -235,6 +248,7 @@ const BookProgress = ({
       href={bookPage.next?.href ?? null}
       direction="next"
       onNavigatePage={onNavigatePage}
+      disabled={pageTurnPending}
     />
   </div>
 );
@@ -393,6 +407,7 @@ export const BookReaderDesktopSurface = ({
   readingProgressBps,
   headerTitleMode,
   preferences,
+  pageTurnPending,
   onOpenTableOfContents,
   onOpenPreferences,
   onNavigatePage,
@@ -458,6 +473,7 @@ export const BookReaderDesktopSurface = ({
                 <BookProgress
                   bookPage={bookPage}
                   onNavigatePage={onNavigatePage}
+                  pageTurnPending={pageTurnPending}
                 />
               </div>
             </>
@@ -478,6 +494,7 @@ export const BookReaderMobileSurface = ({
   readingProgressBps,
   headerTitleMode,
   preferences,
+  pageTurnPending,
   onOpenTableOfContents,
   onOpenPreferences,
   onNavigatePage,
@@ -491,6 +508,7 @@ export const BookReaderMobileSurface = ({
   const bookTitle = bookPage?.book.title || "Reading";
   const pageTitle = getReaderPageTitle(bookPage);
   const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
+    if (pageTurnPending) return;
     if (hasActiveTextSelection()) return;
 
     const touch = event.changedTouches[0];
@@ -506,6 +524,7 @@ export const BookReaderMobileSurface = ({
     touchStartRef.current = null;
 
     if (!start || !bookPage) return;
+    if (pageTurnPending) return;
     if (hasActiveTextSelection()) return;
 
     const touch = event.changedTouches[0];
@@ -573,6 +592,7 @@ export const BookReaderMobileSurface = ({
                 <BookProgress
                   bookPage={bookPage}
                   onNavigatePage={onNavigatePage}
+                  pageTurnPending={pageTurnPending}
                   compact
                 />
               </div>

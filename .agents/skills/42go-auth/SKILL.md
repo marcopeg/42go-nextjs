@@ -58,7 +58,7 @@ the same validation policy. Invalid email responses must be generic; do not
 return account-existence details or provider-specific rejection reasons.
 
 Current validation policy rejects malformed syntax, plus-address aliases,
-consumer Gmail dotted local-parts, and known disposable/temporary domains.
+and known disposable/temporary domains.
 Privacy relays and forwarding services such as Apple private relay, Firefox
 Relay, DuckDuckGo Email Protection, Proton, and SimpleLogin-style aliases are
 allowed unless a specific domain is explicitly added to the disposable denylist.

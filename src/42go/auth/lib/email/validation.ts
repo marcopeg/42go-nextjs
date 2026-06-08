@@ -1,7 +1,5 @@
 const GENERIC_INVALID_EMAIL_MESSAGE = "Enter a valid email address.";
 
-const CONSUMER_GMAIL_DOMAINS = new Set(["gmail.com", "googlemail.com"]);
-
 const PRIVACY_RELAY_DOMAINS = new Set([
   "duck.com",
   "icloud.com",
@@ -155,10 +153,6 @@ export const validateAuthEmail = (input: string): AuthEmailValidationResult => {
   }
 
   if (localPart.includes("+")) {
-    return { ok: false, message: GENERIC_INVALID_EMAIL_MESSAGE };
-  }
-
-  if (CONSUMER_GMAIL_DOMAINS.has(domain) && localPart.includes(".")) {
     return { ok: false, message: GENERIC_INVALID_EMAIL_MESSAGE };
   }
 

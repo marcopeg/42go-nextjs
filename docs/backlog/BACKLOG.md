@@ -56,6 +56,7 @@
 
 ## WIP
 
+- [CX15: Fix Reader Page Navigation Bounceback](./wip/CX15-fix-reader-page-navigation-bounceback/CX15.task.md) | [plan](./wip/CX15-fix-reader-page-navigation-bounceback/CX15.plan.md) | [notes](./wip/CX15-fix-reader-page-navigation-bounceback/CX15.notes.md)
 
 ## Blocked
 

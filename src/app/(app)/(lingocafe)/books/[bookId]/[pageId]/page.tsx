@@ -100,6 +100,11 @@ const parseReaderRouteHref = (href: string): ReaderRouteState | null => {
   }
 };
 
+const buildBookPageApiHref = (bookId: string, pageId: string) =>
+  `/api/lingocafe/books/${encodeURIComponent(bookId)}/pages/${encodeURIComponent(
+    pageId
+  )}`;
+
 const buildReaderRouteState = (
   bookId: string,
   pageId: string,
@@ -119,13 +124,22 @@ const buildReaderRouteState = (
 
   return {
     href: `${pathname}${search}`,
-    apiHref: `/api/lingocafe/books/${encodeURIComponent(
-      bookId
-    )}/pages/${encodeURIComponent(pageId)}`,
+    apiHref: buildBookPageApiHref(bookId, pageId),
     bookId,
     pageId,
     progressBps,
   };
+};
+
+const getBrowserReaderHref = () =>
+  typeof window === "undefined"
+    ? ""
+    : `${window.location.pathname}${window.location.search}`;
+
+const pushReaderHistory = (href: string) => {
+  if (typeof window === "undefined") return;
+  if (getBrowserReaderHref() === href) return;
+  window.history.pushState(null, "", href);
 };
 
 const normalizeInfo = (info: unknown): Record<string, unknown> => {
@@ -320,6 +334,9 @@ const BookReadPage = () => {
   const restoredKeyRef = useRef("");
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestProgressRef = useRef<number | null>(null);
+  const latestRouteHrefRef = useRef(routeFromUrl?.href ?? "");
+  const pendingReaderHrefRef = useRef<string | null>(null);
+  const loadSequenceRef = useRef(0);
   const lastScrollTopRef = useRef<Record<ReaderSurfaceKey, number>>({
     desktop: 0,
     mobile: 0,
@@ -330,6 +347,9 @@ const BookReadPage = () => {
   const [bookPage, setBookPage] = useState<ReaderBookPage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pendingReaderHref, setPendingReaderHref] = useState<string | null>(
+    null
+  );
   const [readingProgressBps, setReadingProgressBps] = useState(0);
   const [headerTitleMode, setHeaderTitleMode] =
     useState<ReaderHeaderTitleMode>("book");
@@ -361,6 +381,10 @@ const BookReadPage = () => {
   };
 
   const apiHref = readerRoute?.apiHref || "";
+  const loadedBookPageApiHref = bookPage
+    ? buildBookPageApiHref(bookPage.page.bookId, bookPage.page.pageId)
+    : "";
+  const pageTurnPending = pendingReaderHref !== null;
   const bookshelfHref = "/books";
   const activeBookId = bookPage?.book.id || readerRoute?.bookId || bookId;
   const activePageId = bookPage?.page.pageId || readerRoute?.pageId || pageId;
@@ -373,8 +397,14 @@ const BookReadPage = () => {
     }
   };
 
+  const updatePendingReaderHref = useCallback((href: string | null) => {
+    pendingReaderHrefRef.current = href;
+    setPendingReaderHref(href);
+  }, []);
+
   const navigateToReaderPage = useCallback(
     (href: string) => {
+      if (pendingReaderHrefRef.current) return;
       const nextRoute = parseReaderRouteHref(href);
 
       if (!nextRoute) {
@@ -384,11 +414,14 @@ const BookReadPage = () => {
 
       if (readerRoute?.href === nextRoute.href) return;
 
+      latestRouteHrefRef.current = nextRoute.href;
+      updatePendingReaderHref(nextRoute.href);
+      pushReaderHistory(nextRoute.href);
       setReaderRoute((current) =>
         current?.href === nextRoute.href ? current : nextRoute
       );
     },
-    [readerRoute?.href, router]
+    [readerRoute?.href, router, updatePendingReaderHref]
   );
 
   const getReaderSettingsEventData = () => ({
@@ -484,6 +517,11 @@ const BookReadPage = () => {
 
     queueMicrotask(() => {
       if (!active) return;
+      if (getBrowserReaderHref() !== routeFromUrl.href) return;
+      const pendingHref = pendingReaderHrefRef.current;
+      if (pendingHref && pendingHref !== routeFromUrl.href) return;
+
+      latestRouteHrefRef.current = routeFromUrl.href;
       setReaderRoute((current) =>
         current?.href === routeFromUrl.href ? current : routeFromUrl
       );
@@ -501,6 +539,8 @@ const BookReadPage = () => {
       );
       if (!nextRoute) return;
 
+      latestRouteHrefRef.current = nextRoute.href;
+      updatePendingReaderHref(null);
       setReaderRoute((current) =>
         current?.href === nextRoute.href ? current : nextRoute
       );
@@ -511,14 +551,21 @@ const BookReadPage = () => {
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, []);
+  }, [updatePendingReaderHref]);
 
   useEffect(() => {
-    if (status !== "authenticated" || !apiHref) {
+    const routeHref = readerRoute?.href || "";
+    if (status !== "authenticated" || !apiHref || !routeHref) {
       return;
     }
 
     const controller = new AbortController();
+    const loadId = loadSequenceRef.current + 1;
+    loadSequenceRef.current = loadId;
+    latestRouteHrefRef.current = routeHref;
+    const isLatestLoad = () =>
+      loadSequenceRef.current === loadId &&
+      latestRouteHrefRef.current === routeHref;
 
     const loadPage = async () => {
       setLoading(true);
@@ -544,32 +591,37 @@ const BookReadPage = () => {
           throw new Error("Could not load page.");
         }
 
+        if (!isLatestLoad()) return;
+
         setBookPage(payload);
-        const nextHref = readerRoute?.href;
-        if (
-          nextHref &&
-          typeof window !== "undefined" &&
-          `${window.location.pathname}${window.location.search}` !== nextHref
-        ) {
-          window.history.pushState(null, "", nextHref);
-        }
+        pushReaderHistory(routeHref);
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
+        if (!isLatestLoad()) return;
         setError(err instanceof Error ? err.message : "Could not load page.");
       } finally {
+        if (!isLatestLoad()) return;
         setLoading(false);
+        if (pendingReaderHrefRef.current === routeHref) {
+          updatePendingReaderHref(null);
+        }
       }
     };
 
     loadPage();
 
     return () => controller.abort();
-  }, [apiHref, readerRoute?.href, status]);
+  }, [apiHref, readerRoute?.href, status, updatePendingReaderHref]);
 
   useEffect(() => {
     if (!bookPage) return;
+    const routeProgressBps =
+      readerRoute?.bookId === bookPage.page.bookId &&
+      readerRoute.pageId === bookPage.page.pageId
+        ? readerRoute.progressBps
+        : null;
     const restoreProgressBps =
-      readerRoute?.progressBps ??
+      routeProgressBps ??
       (bookPage.progress?.pageId === bookPage.page.pageId
         ? bookPage.progress.progressBps
         : 0);
@@ -620,17 +672,18 @@ const BookReadPage = () => {
     return () => {
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [bookPage, readerRoute?.progressBps]);
+  }, [bookPage, readerRoute?.bookId, readerRoute?.pageId, readerRoute?.progressBps]);
 
   useEffect(() => {
-    if (!bookPage || !apiHref) return;
+    if (!bookPage || !loadedBookPageApiHref) return;
     const desktopElement = desktopScrollRef.current;
     const mobileElement = mobileScrollRef.current;
     const controller = new AbortController();
+    const progressApiHref = loadedBookPageApiHref;
 
     const sendProgress = async (progress: number) => {
       try {
-        await fetch(apiHref, {
+        await fetch(progressApiHref, {
           method: "POST",
           credentials: "same-origin",
           cache: "no-store",
@@ -645,7 +698,7 @@ const BookReadPage = () => {
     };
 
     const sendFinalProgress = (progress: number) => {
-      void fetch(apiHref, {
+      void fetch(progressApiHref, {
         method: "POST",
         credentials: "same-origin",
         cache: "no-store",
@@ -712,7 +765,7 @@ const BookReadPage = () => {
 
       controller.abort();
     };
-  }, [apiHref, bookPage]);
+  }, [bookPage, loadedBookPageApiHref]);
 
   return (
     <AppLayout
@@ -746,6 +799,7 @@ const BookReadPage = () => {
           readingProgressBps={readingProgressBps}
           headerTitleMode={headerTitleMode}
           preferences={readerPreferences}
+          pageTurnPending={pageTurnPending}
           onOpenTableOfContents={openTableOfContents}
           onOpenPreferences={openPreferences}
           onNavigatePage={navigateToReaderPage}
@@ -760,6 +814,7 @@ const BookReadPage = () => {
           readingProgressBps={readingProgressBps}
           headerTitleMode={headerTitleMode}
           preferences={readerPreferences}
+          pageTurnPending={pageTurnPending}
           onOpenTableOfContents={openTableOfContents}
           onOpenPreferences={openPreferences}
           onNavigatePage={navigateToReaderPage}

@@ -9,6 +9,8 @@ import {
 const validEmails = [
   ["Marco@Example.com", "marco@example.com"],
   [" marco@example.co.uk ", "marco@example.co.uk"],
+  ["marco.perloraro@gmail.com", "marco.perloraro@gmail.com"],
+  ["mar.co@googlemail.com", "mar.co@googlemail.com"],
   ["marco.rossi@outlook.com", "marco.rossi@outlook.com"],
   ["marco_rossi@proton.me", "marco_rossi@proton.me"],
   ["alias@privaterelay.appleid.com", "alias@privaterelay.appleid.com"],
@@ -30,8 +32,6 @@ const invalidEmails = [
   "marco+foo@gmail.com",
   "marco+foo@outlook.com",
   "marco+foo@example.com",
-  "mar.co@gmail.com",
-  "mar.co@googlemail.com",
   "reader@mailinator.com",
   "reader@temp-mail.org",
   "reader@sub.yopmail.com",
@@ -48,7 +48,7 @@ describe("validateAuthEmail", () => {
     }
   });
 
-  it("rejects invalid, alias, Gmail-dot, and disposable addresses", () => {
+  it("rejects invalid, alias, and disposable addresses", () => {
     for (const input of invalidEmails) {
       const result = validateAuthEmail(input);
       assert.equal(result.ok, false, input);

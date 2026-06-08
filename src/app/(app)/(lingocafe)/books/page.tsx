@@ -258,7 +258,7 @@ const BooksPage = () => {
 
   return (
     <AppLayout
-      title="Books"
+      title="Bookshelf"
       subtitle={
         showProfileIncomplete
           ? "Profile incomplete."
