@@ -21,24 +21,22 @@ Use this skill to download new core `events.events` rows into the local analytic
 
 ## Public Commands
 
-Set up local Python dependencies:
+Install or update the local CLI:
 
 ```bash
-python3 -m venv .local/42go-events/.venv
-. .local/42go-events/.venv/bin/activate
-pip install -r .agents/skills/42go-events-export/requirements.txt
+pipx install ./cli
 ```
 
 Export new events:
 
 ```bash
-python3 .agents/skills/42go-events-export/scripts/export_events.py
+42go events pull
 ```
 
-Run a weekly-active-users smoke query against local Parquet files:
+Run a high-level stats query against local Parquet files:
 
 ```bash
-python3 .agents/skills/42go-events-export/scripts/analyze_events.py wau
+42go events query stats
 ```
 
 ## Archive Layout
@@ -55,6 +53,7 @@ python3 .agents/skills/42go-events-export/scripts/analyze_events.py wau
 ## Details
 
 - Read `README.md` in this skill for the full operator workflow and decision record.
-- The export script stores JSONB `data` and `meta` payloads as JSON strings in CSV and Parquet.
+- The `42go events pull` command stores JSONB `data` and `meta` payloads as JSON strings in CSV and Parquet.
 - If an export dies before state is committed, rerunning reuses the same run ID and rewrites touched monthly files.
 - CSV exists for human inspection. Parquet exists for Python and DuckDB analysis.
+- Legacy scripts under `scripts/` are compatibility wrappers only. Keep event implementation logic in `cli/src/fortytwogo_cli/events/`.

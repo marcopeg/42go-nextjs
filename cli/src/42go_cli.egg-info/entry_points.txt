@@ -1,0 +1,2 @@
+[console_scripts]
+42go = fortytwogo_cli.cli:main

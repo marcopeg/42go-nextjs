@@ -270,10 +270,13 @@ restore:
 	node .agents/skills/42go-backup/scripts/backup.mjs restore --from "$(from)"
 
 events:
-	@if [ -x ".local/42go-events/.venv/bin/python" ]; then \
-		.local/42go-events/.venv/bin/python .agents/skills/42go-events-export/scripts/export_events.py; \
+	@if command -v 42go >/dev/null 2>&1; then \
+		42go events pull; \
+	elif [ -x ".local/42go-events/.venv/bin/42go" ]; then \
+		.local/42go-events/.venv/bin/42go events pull; \
 	else \
-		python3 .agents/skills/42go-events-export/scripts/export_events.py; \
+		echo "42go CLI not found. Install it with: pipx install ./cli"; \
+		exit 1; \
 	fi
 
 migrate.status:

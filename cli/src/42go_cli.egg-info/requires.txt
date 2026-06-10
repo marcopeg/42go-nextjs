@@ -1,0 +1,8 @@
+duckdb<2,>=1.1
+psycopg[binary]<4,>=3.2
+pyarrow<22,>=16
+pytz>=2024
+typer[all]<1,>=0.12
+
+[dev]
+pytest>=8.0

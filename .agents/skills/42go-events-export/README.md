@@ -6,12 +6,10 @@ The export is download-only. It never deletes, truncates, retains, or cleans up 
 
 ## Setup
 
-Create a local virtual environment and install the skill dependencies:
+Install or update the 42Go CLI from this repository:
 
 ```bash
-python3 -m venv .local/42go-events/.venv
-. .local/42go-events/.venv/bin/activate
-pip install -r .agents/skills/42go-events-export/requirements.txt
+pipx install ./cli
 ```
 
 Set the required source database URL:
@@ -21,7 +19,7 @@ export EVENTS_DATABASE_URL="postgres://user:pass@host:5432/db"
 ```
 
 When `EVENTS_DATABASE_URL` is unset, the exporter fails.
-The env var names live in `scripts/export_events.py` as top-level constants.
+The env var names live in `cli/src/fortytwogo_cli/events/paths.py` as top-level constants.
 
 The archive root defaults to `.local/42go-events`. Override it with:
 
@@ -34,15 +32,15 @@ export EVENTS_ANALYTICS_DIR="/path/to/archive"
 Run:
 
 ```bash
-python3 .agents/skills/42go-events-export/scripts/export_events.py
+42go events pull
 ```
 
 Useful options:
 
 ```bash
-python3 .agents/skills/42go-events-export/scripts/export_events.py --limit 5000
-python3 .agents/skills/42go-events-export/scripts/export_events.py --dry-run
-python3 .agents/skills/42go-events-export/scripts/export_events.py --archive-dir .local/42go-events
+42go events pull --limit 5000
+42go events pull --dry-run
+42go events pull --archive-dir .local/42go-events
 ```
 
 The raw export mirrors the online `events.events` table by time. It does not create app-scoped raw folders or app-filtered raw exports. Build app-specific analytics as a later ETL step from the raw monthly files.
@@ -92,13 +90,15 @@ The cursor advances only after:
 
 ## Local Analytics
 
-Weekly active users smoke query:
+High-level archive stats:
 
 ```bash
-python3 .agents/skills/42go-events-export/scripts/analyze_events.py wau
+42go events query stats
 ```
 
 The command reads local Parquet files only. It does not query PostgreSQL.
+
+Legacy scripts under `scripts/` are compatibility wrappers only. New event export and query logic belongs in `cli/src/fortytwogo_cli/events/`.
 
 ## Reading Session Assumptions
 

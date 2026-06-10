@@ -105,6 +105,57 @@ Finally, open [http://localhost:3000](http://localhost:3000) with your browser t
 
 You can start editing the App's configuration by modifying `@/AppConfig.ts`.
 
+## 42Go CLI
+
+This repository includes a Python CLI package under `cli/` that exposes the
+`42go` command. Use it for local automation such as event export and Parquet
+analytics.
+
+### Normal Install
+
+Use a normal install when you only want to run the current CLI version:
+
+```bash
+pipx install ./cli
+```
+
+Upgrade or reinstall after CLI source changes:
+
+```bash
+pipx install --force ./cli
+```
+
+### Development Install
+
+Use an editable install while working on the CLI. Source changes under
+`cli/src/` are picked up without reinstalling:
+
+```bash
+pipx install --force --editable ./cli
+```
+
+Verify the active command:
+
+```bash
+which 42go
+42go --help
+42go events query --help
+```
+
+### Uninstall
+
+Remove the global pipx-installed CLI:
+
+```bash
+pipx uninstall 42go-cli
+```
+
+The repo-local event virtualenv, when present, may also expose:
+
+```bash
+.local/42go-events/.venv/bin/42go
+```
+
 ## Learn More
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

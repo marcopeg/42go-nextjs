@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: 42go-cli
+Version: 0.1.0
+Summary: Local automation CLI for 42Go projects.
+Requires-Python: >=3.11
+Requires-Dist: duckdb<2,>=1.1
+Requires-Dist: psycopg[binary]<4,>=3.2
+Requires-Dist: pyarrow<22,>=16
+Requires-Dist: pytz>=2024
+Requires-Dist: typer[all]<1,>=0.12
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"

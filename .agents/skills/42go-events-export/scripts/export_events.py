@@ -3,77 +3,25 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import json
-import os
-from dataclasses import dataclass
-from datetime import UTC, datetime
+import sys
 from pathlib import Path
-from typing import Any, Iterable
 
-DATABASE_URL_ENV_VAR = "EVENTS_DATABASE_URL"
-ARCHIVE_DIR_ENV_VAR = "EVENTS_ANALYTICS_DIR"
-DEFAULT_ARCHIVE_DIR = Path(".local/42go-events")
-DEFAULT_LIMIT = 10000
-EVENT_COLUMNS = [
-    "created_at",
-    "id",
-    "app_id",
-    "user_id",
-    "event_at",
-    "name",
-    "data",
-    "meta",
-]
+REPO_ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(REPO_ROOT / "cli" / "src"))
 
-
-@dataclass(frozen=True)
-class Paths:
-    root: Path
-    events: Path
-    csv_dir: Path
-    parquet_dir: Path
-    state: Path
-    manifest: Path
-    inflight: Path
-
-
-def utc_now() -> datetime:
-    return datetime.now(UTC)
-
-
-def utc_stamp() -> str:
-    return utc_now().strftime("%Y%m%dT%H%M%SZ")
-
-
-def parse_utc(value: Any) -> datetime:
-    if isinstance(value, datetime):
-        if value.tzinfo is None:
-            value = value.replace(tzinfo=UTC)
-        return value.astimezone(UTC)
-    if not isinstance(value, str):
-        raise TypeError(f"Expected timestamp string or datetime, got {type(value).__name__}.")
-    normalized = value.replace("Z", "+00:00")
-    parsed = datetime.fromisoformat(normalized)
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=UTC)
-    return parsed.astimezone(UTC)
-
-
-def iso_utc(value: datetime) -> str:
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=UTC)
-    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+from fortytwogo_cli.events.paths import DEFAULT_ARCHIVE_DIR  # noqa: E402
+from fortytwogo_cli.events.pull import DEFAULT_LIMIT, PullOptions, pull_events  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Download new events.events rows into monthly CSV and Parquet files."
+        description="Compatibility wrapper for: 42go events pull"
     )
     parser.add_argument(
         "--archive-dir",
-        default=os.environ.get(ARCHIVE_DIR_ENV_VAR, str(DEFAULT_ARCHIVE_DIR)),
-        help=f"Local analytics archive root. Defaults to {DEFAULT_ARCHIVE_DIR}.",
+        default=None,
+        help=f"Local analytics archive root. Defaults to EVENTS_ANALYTICS_DIR or {DEFAULT_ARCHIVE_DIR}.",
     )
     parser.add_argument(
         "--limit",
@@ -85,11 +33,7 @@ def parse_args() -> argparse.Namespace:
         "--run-id",
         help="Optional manifest run ID. Defaults to run-<UTC timestamp>; incomplete reruns reuse inflight run ID.",
     )
-    parser.add_argument(
-        "--batch-id",
-        dest="run_id",
-        help=argparse.SUPPRESS,
-    )
+    parser.add_argument("--batch-id", dest="run_id", help=argparse.SUPPRESS)
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -98,450 +42,27 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_dotenv_value(path: Path, key: str) -> str | None:
-    if not path.exists():
-        return None
-    for raw_line in path.read_text().splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        name, value = line.split("=", 1)
-        if name.strip() != key:
-            continue
-        value = value.strip().strip('"').strip("'")
-        return value or None
-    return None
-
-
-def get_database_url() -> str:
-    value = (
-        os.environ.get(DATABASE_URL_ENV_VAR)
-        or load_dotenv_value(Path(".env"), DATABASE_URL_ENV_VAR)
-    )
-    if not value:
-        raise SystemExit(f"{DATABASE_URL_ENV_VAR} is required.")
-    return value
-
-
-def resolve_paths(root: Path) -> Paths:
-    events = root / "events"
-    return Paths(
-        root=root,
-        events=events,
-        csv_dir=events / "csv",
-        parquet_dir=events / "parquet",
-        state=events / "state.json",
-        manifest=events / "manifest.jsonl",
-        inflight=events / "inflight.json",
-    )
-
-
-def ensure_dirs(paths: Paths) -> None:
-    paths.csv_dir.mkdir(parents=True, exist_ok=True)
-    paths.parquet_dir.mkdir(parents=True, exist_ok=True)
-
-
-def read_json(path: Path) -> dict[str, Any] | None:
-    if not path.exists():
-        return None
-    return json.loads(path.read_text())
-
-
-def write_json_atomic(path: Path, data: dict[str, Any]) -> None:
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
-    tmp.replace(path)
-
-
-def json_payload(value: Any) -> str:
-    if value is None:
-        return "{}"
-    if isinstance(value, str):
-        return value
-    return json.dumps(value, sort_keys=True, separators=(",", ":"))
-
-
-def normalize_row(row: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "created_at": parse_utc(row["created_at"]),
-        "id": str(row["id"]),
-        "app_id": row["app_id"],
-        "user_id": row["user_id"],
-        "event_at": parse_utc(row["event_at"]),
-        "name": row["name"],
-        "data": json_payload(row["data"]),
-        "meta": json_payload(row["meta"]),
-    }
-
-
-def csv_row(row: dict[str, Any]) -> dict[str, Any]:
-    result = dict(row)
-    result["created_at"] = iso_utc(result["created_at"])
-    result["event_at"] = iso_utc(result["event_at"])
-    return result
-
-
-def import_psycopg():
-    try:
-        import psycopg
-        from psycopg.rows import dict_row
-    except ImportError as error:
-        raise SystemExit(
-            "Missing PostgreSQL dependency. Run: "
-            "pip install -r .agents/skills/42go-events-export/requirements.txt"
-        ) from error
-    return psycopg, dict_row
-
-
-def import_pyarrow():
-    try:
-        import pyarrow as pa
-        import pyarrow.parquet as pq
-    except ImportError as error:
-        raise SystemExit(
-            "Missing Parquet dependency. Run: "
-            "pip install -r .agents/skills/42go-events-export/requirements.txt"
-        ) from error
-    return pa, pq
-
-
-def import_duckdb():
-    try:
-        import duckdb
-    except ImportError as error:
-        raise SystemExit(
-            "Missing DuckDB dependency. Run: "
-            "pip install -r .agents/skills/42go-events-export/requirements.txt"
-        ) from error
-    return duckdb
-
-
-def load_cursor(paths: Paths) -> tuple[str | None, str | None]:
-    state = read_json(paths.state) or {}
-    return state.get("last_created_at"), state.get("last_id")
-
-
-def fetch_rows(
-    database_url: str,
-    cursor: tuple[str | None, str | None],
-    limit: int,
-) -> list[dict[str, Any]]:
-    if limit <= 0:
-        raise SystemExit("--limit must be greater than zero.")
-
-    psycopg, dict_row = import_psycopg()
-    last_created_at, last_id = cursor
-    base_sql = """
-        SELECT
-          created_at,
-          id::text AS id,
-          app_id,
-          user_id,
-          event_at,
-          name,
-          data,
-          meta
-        FROM events.events
-    """
-    params: list[Any] = []
-    where: list[str] = []
-    if last_created_at and last_id:
-        where.append("(created_at, id) > (%s::timestamptz, %s::uuid)")
-        params.extend([last_created_at, last_id])
-    if where:
-        base_sql += " WHERE " + " AND ".join(where)
-    base_sql += " ORDER BY created_at ASC, id ASC LIMIT %s"
-    params.append(limit)
-
-    with psycopg.connect(database_url, row_factory=dict_row) as connection:
-        with connection.cursor() as cursor_obj:
-            cursor_obj.execute(base_sql, params)
-            return list(cursor_obj.fetchall())
-
-
-def resolve_run_id(paths: Paths, cursor: tuple[str | None, str | None], requested: str | None) -> str:
-    if requested:
-        return requested
-
-    inflight = read_json(paths.inflight)
-    if inflight and [*cursor] == inflight.get("cursor"):
-        run_id = inflight.get("run_id") or inflight.get("batch_id")
-        if run_id:
-            return run_id
-
-    return f"run-{utc_stamp()}"
-
-
-def write_inflight(paths: Paths, run_id: str, cursor: tuple[str | None, str | None]) -> None:
-    write_json_atomic(
-        paths.inflight,
-        {
-            "run_id": run_id,
-            "cursor": [*cursor],
-            "created_at": iso_utc(utc_now()),
-        },
-    )
-
-
-def month_key(row: dict[str, Any]) -> str:
-    return row["created_at"].strftime("%Y%m")
-
-
-def month_name(month: str) -> str:
-    return f"events_{month}"
-
-
-def monthly_paths(paths: Paths, month: str) -> tuple[Path, Path]:
-    name = month_name(month)
-    return paths.csv_dir / f"{name}.csv", paths.parquet_dir / f"{name}.parquet"
-
-
-def group_rows_by_month(rows: Iterable[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
-    grouped: dict[str, list[dict[str, Any]]] = {}
-    for row in rows:
-        grouped.setdefault(month_key(row), []).append(row)
-    return grouped
-
-
-def sort_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-    return sorted(rows, key=lambda row: (row["created_at"], row["id"]))
-
-
-def dedupe_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-    by_id: dict[str, dict[str, Any]] = {}
-    for row in rows:
-        by_id[row["id"]] = row
-    return sort_rows(by_id.values())
-
-
-def read_csv_rows(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
-    with path.open(newline="") as file_obj:
-        reader = csv.DictReader(file_obj)
-        rows = []
-        for row in reader:
-            rows.append(
-                normalize_row(
-                    {
-                        "created_at": row["created_at"],
-                        "id": row["id"],
-                        "app_id": row["app_id"],
-                        "user_id": row["user_id"],
-                        "event_at": row["event_at"],
-                        "name": row["name"],
-                        "data": row["data"],
-                        "meta": row["meta"],
-                    }
-                )
-            )
-        return rows
-
-
-def read_parquet_rows(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
-    _pa, pq = import_pyarrow()
-    table = pq.read_table(path)
-    return [normalize_row(row) for row in table.to_pylist()]
-
-
-def write_csv_file(path: Path, rows: list[dict[str, Any]]) -> None:
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with tmp.open("w", newline="") as file_obj:
-        writer = csv.DictWriter(file_obj, fieldnames=EVENT_COLUMNS)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(csv_row(row))
-    tmp.replace(path)
-
-
-def write_parquet_file(path: Path, rows: list[dict[str, Any]]) -> None:
-    pa, pq = import_pyarrow()
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    schema = pa.schema(
-        [
-            ("created_at", pa.timestamp("us", tz="UTC")),
-            ("id", pa.string()),
-            ("app_id", pa.string()),
-            ("user_id", pa.string()),
-            ("event_at", pa.timestamp("us", tz="UTC")),
-            ("name", pa.string()),
-            ("data", pa.string()),
-            ("meta", pa.string()),
-        ]
-    )
-    columns = {column: [row[column] for row in rows] for column in EVENT_COLUMNS}
-    table = pa.table(columns, schema=schema)
-    pq.write_table(table, tmp, compression="zstd")
-    tmp.replace(path)
-
-
-def smoke_read_parquet(path: Path, expected_rows: int) -> None:
-    duckdb = import_duckdb()
-    with duckdb.connect(":memory:") as connection:
-        count = connection.execute("SELECT count(*) FROM read_parquet(?)", [str(path)]).fetchone()[0]
-    if count != expected_rows:
-        raise SystemExit(f"Parquet smoke read failed: expected {expected_rows} rows, read {count}.")
-
-
-def manifest_has_run(path: Path, run_id: str) -> bool:
-    if not path.exists():
-        return False
-    for line in path.read_text().splitlines():
-        if not line.strip():
-            continue
-        try:
-            item = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if item.get("run_id") == run_id or item.get("batch_id") == run_id:
-            return True
-    return False
-
-
-def append_manifest(
-    paths: Paths,
-    run_id: str,
-    rows: list[dict[str, Any]],
-    updates: list[dict[str, Any]],
-) -> None:
-    if manifest_has_run(paths.manifest, run_id):
-        return
-    first = rows[0]
-    last = rows[-1]
-    entry = {
-        "run_id": run_id,
-        "row_count": len(rows),
-        "first_created_at": iso_utc(first["created_at"]),
-        "first_id": first["id"],
-        "last_created_at": iso_utc(last["created_at"]),
-        "last_id": last["id"],
-        "months": updates,
-        "completed_at": iso_utc(utc_now()),
-    }
-    with paths.manifest.open("a") as file_obj:
-        file_obj.write(json.dumps(entry, sort_keys=True) + "\n")
-
-
-def write_state(paths: Paths, run_id: str, rows: list[dict[str, Any]]) -> None:
-    last = rows[-1]
-    write_json_atomic(
-        paths.state,
-        {
-            "version": 1,
-            "last_run_id": run_id,
-            "last_created_at": iso_utc(last["created_at"]),
-            "last_id": last["id"],
-            "row_count": len(rows),
-            "updated_at": iso_utc(utc_now()),
-        },
-    )
-
-
-def merge_month(paths: Paths, month: str, new_rows: list[dict[str, Any]]) -> dict[str, Any]:
-    csv_path, parquet_path = monthly_paths(paths, month)
-    existing_csv_rows = read_csv_rows(csv_path)
-    existing_parquet_rows = read_parquet_rows(parquet_path)
-    if csv_path.exists() and parquet_path.exists() and len(existing_csv_rows) != len(existing_parquet_rows):
-        raise SystemExit(
-            f"Existing monthly CSV/Parquet row count mismatch for {month}: "
-            f"{len(existing_csv_rows)} CSV rows, {len(existing_parquet_rows)} Parquet rows."
-        )
-
-    merged_rows = dedupe_rows([*existing_csv_rows, *existing_parquet_rows, *new_rows])
-    write_csv_file(csv_path, merged_rows)
-    write_parquet_file(parquet_path, merged_rows)
-    smoke_read_parquet(parquet_path, len(merged_rows))
-    return {
-        "month": month,
-        "csv": str(csv_path),
-        "parquet": str(parquet_path),
-        "new_rows": len(new_rows),
-        "total_rows": len(merged_rows),
-    }
-
-
-def remove_legacy_batches(paths: Paths) -> list[str]:
-    removed: list[str] = []
-    for directory, suffix in [(paths.csv_dir, ".csv"), (paths.parquet_dir, ".parquet")]:
-        for path in directory.glob(f"batch-*{suffix}"):
-            path.unlink()
-            removed.append(str(path))
-    return removed
-
-
-def export_events(args: argparse.Namespace) -> int:
-    database_url = get_database_url()
-    paths = resolve_paths(Path(args.archive_dir))
-    ensure_dirs(paths)
-    cursor = load_cursor(paths)
-    raw_rows = fetch_rows(database_url, cursor, args.limit)
-
-    if not raw_rows:
-        removed_legacy_files = remove_legacy_batches(paths)
-        if removed_legacy_files:
-            print(
-                json.dumps(
-                    {
-                        "rows": 0,
-                        "removed_legacy_files": removed_legacy_files,
-                    },
-                    indent=2,
-                )
-            )
-        else:
-            print("No new events to export.")
-        return 0
-
-    rows = [normalize_row(row) for row in raw_rows]
-    last = rows[-1]
-
-    if args.dry_run:
-        print(
-            json.dumps(
-                {
-                    "rows": len(rows),
-                    "months": sorted(group_rows_by_month(rows).keys()),
-                    "last_created_at": iso_utc(last["created_at"]),
-                    "last_id": last["id"],
-                    "would_advance_cursor": True,
-                },
-                indent=2,
-            )
-        )
-        return 0
-
-    run_id = resolve_run_id(paths, cursor, args.run_id)
-    write_inflight(paths, run_id, cursor)
-
-    updates = []
-    for month, month_rows in sorted(group_rows_by_month(rows).items()):
-        updates.append(merge_month(paths, month, month_rows))
-
-    removed_legacy_files = remove_legacy_batches(paths)
-    append_manifest(paths, run_id, rows, updates)
-    write_state(paths, run_id, rows)
-    paths.inflight.unlink(missing_ok=True)
-
-    print(
-        json.dumps(
-            {
-                "run_id": run_id,
-                "rows": len(rows),
-                "months": updates,
-                "removed_legacy_files": removed_legacy_files,
-                "last_created_at": iso_utc(last["created_at"]),
-                "last_id": last["id"],
-            },
-            indent=2,
-        )
-    )
-    return 0
-
-
 def main() -> int:
-    return export_events(parse_args())
+    args = parse_args()
+    try:
+        result = pull_events(
+            PullOptions(
+                archive_dir=Path(args.archive_dir) if args.archive_dir else None,
+                limit=args.limit,
+                run_id=args.run_id,
+                dry_run=args.dry_run,
+            )
+        )
+    except RuntimeError as error:
+        print(str(error), file=sys.stderr)
+        return 1
+
+    message = result.pop("message", None)
+    if message and result.get("rows") == 0 and not result.get("removed_legacy_files"):
+        print(message)
+        return 0
+    print(json.dumps(result, indent=2, sort_keys=True))
+    return 0
 
 
 if __name__ == "__main__":
