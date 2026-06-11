@@ -11,6 +11,36 @@ Use this reference for local analytics commands under `42go query`.
 - `--app-id`, `--user-id`, `--book-id`, and `--limit` filter visible output unless command help says otherwise.
 - `--reset` rebuilds local aggregate caches from available local data and removes legacy `events_query_*` files.
 
+## Full Refresh Shortcut
+
+```bash
+42go update
+42go update --reset
+```
+
+`42go update` runs the standard refresh pipeline:
+
+1. `42go events pull`
+2. `42go query books stats`
+3. `42go query session`
+4. `42go query users growth`
+5. `42go query reads`
+
+`--reset` is passed only to query aggregations that support it:
+
+- session
+- users growth
+- reads
+
+It is not passed to `events pull` or `books stats`.
+
+Options:
+
+- `--archive-dir`: archive root for event pull and event-backed queries.
+- `--limit`: maximum event rows to pull in one run.
+- `--database-url-env`: env or `.env` key for `query books stats`, default `DATABASE_URL`.
+- `--reset`: force supported aggregations to rebuild from local source data.
+
 ## High-Level Stats
 
 ```bash

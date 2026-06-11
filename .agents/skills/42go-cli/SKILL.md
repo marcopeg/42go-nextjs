@@ -45,22 +45,23 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
 - Event logging expectations:
   - New application events should flow through the shared core events system and be consumable by `42go events pull`.
   - Load `references/event-logging.md`.
+- Full refresh shortcut:
+  - `42go update`
+  - `42go update --reset`
+  - Load `references/query-analytics.md`.
 
 ## Common Workflows
 
 Fresh local read-engagement analytics:
 
 ```bash
-42go events pull
-42go query books stats
-42go query reads --reset
+42go update
 ```
 
 Refresh session and user-growth aggregates:
 
 ```bash
-42go query session --reset
-42go query users growth --reset --app lingocafe
+42go update --reset
 ```
 
 Create and restore a light data backup:
@@ -76,6 +77,7 @@ Agents should navigate commands with:
 
 ```bash
 42go --help
+42go update --help
 42go events --help
 42go events pull --help
 42go query --help

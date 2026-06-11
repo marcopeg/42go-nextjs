@@ -28,6 +28,7 @@ Light:
 - Requires `RESTORE_DATABASE_URL`.
 - Accepts explicit path or bare filename under `.local/42go-backups/`.
 - Prompts before running.
+- When no `--from` is provided, lists only the newest 10 backups in a table with file, readable UTC date, and readable size.
 - Redacts target database credentials.
 - Assumes migrations already created schema.
 - Strips dynamic notes data from older dumps.

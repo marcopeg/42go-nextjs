@@ -40,6 +40,8 @@ Prompt for a dump from newest to oldest:
 42go restore
 ```
 
+The interactive restore prompt shows only the newest 10 available backups. The list is rendered as a table with the file path, readable UTC timestamp, and readable file size.
+
 Makefile wrappers call the CLI:
 
 ```bash

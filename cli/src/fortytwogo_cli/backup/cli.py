@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import re
+from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 
 import typer
 
 from fortytwogo_cli.backup import core
+
+RESTORE_BACKUP_LIST_LIMIT = 10
+BACKUP_FILENAME_RE = re.compile(r"^(\d{8}T\d{6}Z)\.dump\.(?:full|light)\.sql$")
 
 
 def choose_backup_mode() -> core.BackupMode:
@@ -22,15 +27,58 @@ def choose_backup_mode() -> core.BackupMode:
     raise typer.Exit(1)
 
 
+def format_backup_date(backup_path: Path) -> str:
+    match = BACKUP_FILENAME_RE.match(backup_path.name)
+    if not match:
+        return "-"
+    value = datetime.strptime(match.group(1), "%Y%m%dT%H%M%SZ")
+    return value.strftime("%Y-%m-%d %H:%M:%SZ")
+
+
+def format_backup_size(backup_path: Path) -> str:
+    try:
+        size = backup_path.stat().st_size
+    except OSError:
+        return "-"
+
+    units = ("B", "KiB", "MiB", "GiB")
+    value = float(size)
+    for unit in units:
+        if value < 1024 or unit == units[-1]:
+            if unit == "B":
+                return f"{int(value)} B"
+            return f"{value:.1f} {unit}"
+        value /= 1024
+    return f"{size} B"
+
+
+def format_restore_backup_table(backups: list[Path]) -> list[str]:
+    rows = [
+        (str(index), str(backup_path), format_backup_date(backup_path), format_backup_size(backup_path))
+        for index, backup_path in enumerate(backups, start=1)
+    ]
+    headers = ("#", "File", "Date", "Size")
+    widths = [
+        max([len(headers[column]), *(len(row[column]) for row in rows)])
+        for column in range(len(headers))
+    ]
+    output = [
+        "  ".join(header.ljust(widths[index]) for index, header in enumerate(headers)),
+        "  ".join("-" * width for width in widths),
+    ]
+    output.extend("  ".join(value.ljust(widths[index]) for index, value in enumerate(row)) for row in rows)
+    return output
+
+
 def choose_restore_backup() -> Path:
-    backups = core.list_available_backups()
+    backups = core.list_available_backups()[:RESTORE_BACKUP_LIST_LIMIT]
     if not backups:
         typer.echo(f"No backups found in {core.DUMPS_DIR}.", err=True)
         raise typer.Exit(1)
 
     typer.echo("Choose backup to restore:")
-    for index, backup_path in enumerate(backups, start=1):
-        typer.echo(f"{index}. {backup_path}")
+    for line in format_restore_backup_table(backups):
+        typer.echo(line)
 
     value = typer.prompt("Backup", default="1")
     try:

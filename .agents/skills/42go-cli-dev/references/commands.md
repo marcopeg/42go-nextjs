@@ -8,6 +8,7 @@
 - `query_app` mounted as `42go query`
 - `backup` mounted as `42go backup`
 - `restore` mounted as `42go restore`
+- `update` mounted as `42go update`
 
 The root callback prints help when no subcommand is invoked.
 
@@ -39,6 +40,7 @@ The following must print useful help:
 
 ```bash
 42go --help
+42go update --help
 42go events --help
 42go events pull --help
 42go query --help
@@ -54,3 +56,17 @@ The following must print useful help:
 ```
 
 Tests should assert command presence and important flags.
+
+## Update Command
+
+`42go update` lives in `cli/src/fortytwogo_cli/cli.py` because it orchestrates multiple command families.
+
+Pipeline:
+
+1. `pull_events(PullOptions(...))`
+2. `pull_book_stats(...)`
+3. `load_event_sessions(..., reset=reset)`
+4. `load_users_growth(..., reset=reset)`
+5. `load_event_reads(..., reset=reset)`
+
+The `--reset` flag must only affect aggregation loaders. Do not apply it to event pull or book stats.
