@@ -7,8 +7,8 @@ from fortytwogo_cli.events.query import EventStats, format_stats
 
 def test_format_stats_includes_summary_and_months() -> None:
     stats = EventStats(
-        archive_dir=Path(".local/42go-events"),
-        parquet_dir=Path(".local/42go-events/events/parquet"),
+        archive_dir=Path(".local/42go-data"),
+        parquet_dir=Path(".local/42go-data/events"),
         parquet_files=[Path("events_202605.parquet"), Path("events_202606.parquet")],
         covered_months=2,
         total_events=981,

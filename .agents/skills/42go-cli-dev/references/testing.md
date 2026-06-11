@@ -5,15 +5,15 @@
 Run the full CLI tests:
 
 ```bash
-.local/42go-events/.venv/bin/python -m pytest cli/tests
+pytest cli/tests
 ```
 
 Focused examples:
 
 ```bash
-.local/42go-events/.venv/bin/python -m pytest cli/tests/test_cli.py
-.local/42go-events/.venv/bin/python -m pytest cli/tests/test_reads.py
-.local/42go-events/.venv/bin/python -m pytest cli/tests/test_sessions.py
+pytest cli/tests/test_cli.py
+pytest cli/tests/test_reads.py
+pytest cli/tests/test_sessions.py
 ```
 
 ## Project QA
@@ -26,21 +26,21 @@ npm run qa
 
 ## Smoke Commands
 
-Use the local venv command when available:
+Use the installed CLI:
 
 ```bash
-.local/42go-events/.venv/bin/42go --help
-.local/42go-events/.venv/bin/42go events --help
-.local/42go-events/.venv/bin/42go query --help
-.local/42go-events/.venv/bin/42go query reads --help
+42go --help
+42go pull --help
+42go query --help
+42go query reads --help
 ```
 
 Run realistic local analytics:
 
 ```bash
-.local/42go-events/.venv/bin/42go events pull --dry-run
-.local/42go-events/.venv/bin/42go query books stats
-.local/42go-events/.venv/bin/42go query reads --reset --limit 5
+42go pull events --dry-run
+42go query books
+42go query reads --reset --limit 5
 ```
 
 Database/network commands may require sandbox escalation.

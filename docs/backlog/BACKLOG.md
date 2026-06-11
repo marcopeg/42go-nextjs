@@ -56,7 +56,6 @@
 
 ## WIP
 
-- [IN30: Users List Social Logins and Last Activity](./wip/IN30-users-row-detail-panel-with-social-logins-and-last-activity/IN30.task.md) | [plan](./wip/IN30-users-row-detail-panel-with-social-logins-and-last-activity/IN30.plan.md) | [notes](./wip/IN30-users-row-detail-panel-with-social-logins-and-last-activity/IN30.notes.md)
 - [LN04: Add 42go Users Pull CLI Export](./wip/LN04-add-42go-users-pull-cli-export/LN04.task.md) | [plan](./wip/LN04-add-42go-users-pull-cli-export/LN04.plan.md) | [notes](./wip/LN04-add-42go-users-pull-cli-export/LN04.notes.md)
 
 ## Blocked

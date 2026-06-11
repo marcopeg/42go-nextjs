@@ -7,45 +7,44 @@ Use this reference for pulling core event rows into local files.
 Pull new rows:
 
 ```bash
-42go events pull
+42go pull events
 ```
 
 Inspect the next export batch without writing files:
 
 ```bash
-42go events pull --dry-run
+42go pull events --dry-run
 ```
 
 Control batch size:
 
 ```bash
-42go events pull --limit 5000
+42go pull events --limit 5000
 ```
 
-Override archive root:
+Override data root:
 
 ```bash
-42go events pull --archive-dir .local/42go-events
+42go pull events --data-dir .local/42go-data
 ```
 
 ## Environment
 
 - Source database env var: `EVENTS_DATABASE_URL`
-- Archive override env var: `EVENTS_ANALYTICS_DIR`
-- Default archive root: `.local/42go-events`
+- Data-root override env var: `FORTYTWOGO_DATA_DIR`
+- Default data root: `.local/42go-data`
 
 The CLI reads `.env` when the env var is not already exported.
 
 ## Archive Layout
 
 ```text
-.local/42go-events/
-  events/
-    csv/events_YYYYMM.csv
-    parquet/events_YYYYMM.parquet
-    state.json
-    manifest.jsonl
-    inflight.json
+.local/42go-data/
+  events/events_YYYYMM.parquet
+  _state/
+    events.json
+    events_manifest.jsonl
+    events_inflight.json
 ```
 
 ## Extraction Contract
@@ -55,10 +54,10 @@ The CLI reads `.env` when the env var is not already exported.
 - Export cursor: `created_at, id`.
 - Analytics timestamp: `event_at`.
 - `app_id` is preserved.
-- JSONB `data` and `meta` are stored as JSON strings in CSV and Parquet.
-- Monthly files are named after the event partition strategy: `events_YYYYMM.csv` and `events_YYYYMM.parquet`.
+- JSONB `data` and `meta` are stored as JSON strings in Parquet.
+- Monthly files are named after the event partition strategy: `events_YYYYMM.parquet`.
 - Existing monthly files are merged by event `id` and rewritten atomically.
-- State advances only after every touched CSV and Parquet file is written and smoke-read.
+- State advances only after every touched Parquet file is written and smoke-read.
 - Incomplete reruns reuse the inflight run ID.
 
 ## After Pulling

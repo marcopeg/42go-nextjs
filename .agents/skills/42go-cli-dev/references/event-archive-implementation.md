@@ -2,20 +2,19 @@
 
 ## Files
 
-- `events/paths.py`: archive root, env loading, path construction.
+- `events/paths.py`: raw data root, env loading, path construction.
 - `events/pull.py`: source query, merge/write, manifest/state handling.
 - `events/query.py`: high-level archive stats.
 
 ## Archive Layout
 
 ```text
-.local/42go-events/
-  events/
-    csv/events_YYYYMM.csv
-    parquet/events_YYYYMM.parquet
-    state.json
-    manifest.jsonl
-    inflight.json
+.local/42go-data/
+  events/events_YYYYMM.parquet
+  _state/
+    events.json
+    events_manifest.jsonl
+    events_inflight.json
 ```
 
 ## Export Contract
@@ -25,7 +24,7 @@
 - Analytics timestamp: `event_at`.
 - Monthly file partitioning follows `created_at` month.
 - Merge existing local rows and fetched rows by event `id`.
-- Write CSV and Parquet atomically for each touched month.
+- Write Parquet atomically for each touched month.
 - Smoke-read touched Parquet files with DuckDB before committing state.
 - Commit state only after every file write succeeds.
 - Record manifest entries for completed runs.

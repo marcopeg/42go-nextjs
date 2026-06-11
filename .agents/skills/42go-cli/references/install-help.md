@@ -16,12 +16,6 @@ Development install from this repository:
 pipx install --force --editable ./cli
 ```
 
-Editable install inside the local event venv:
-
-```bash
-.local/42go-events/.venv/bin/pip install -e cli
-```
-
 Uninstall:
 
 ```bash
@@ -34,12 +28,12 @@ pipx uninstall 42go-cli
 - `42go --help`
 - `42go --version`
 - `42go update`
-- `42go events`
+- `42go pull`
 - `42go query`
 - `42go backup`
 - `42go restore`
 
-`42go events query` is intentionally not available. Use `42go query`.
+`42go events` and `42go users` are intentionally not available. Use `42go pull` and `42go query`.
 
 ## Troubleshooting
 

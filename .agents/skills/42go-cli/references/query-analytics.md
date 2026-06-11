@@ -2,11 +2,14 @@
 
 Use this reference for local analytics commands under `42go query`.
 
+Invoking `42go query` without a subcommand opens an interactive menu. If the selected target has subcommands, that level opens its own menu; for example `42go query users` opens the user-query menu.
+
 ## Boundary
 
-- `42go events pull` extracts raw event rows into `.local/42go-events`.
-- `42go query ...` builds local aggregates from cached Parquet data.
-- Aggregates are independent by app ID under `.local/42go-stats/{app-id}/`.
+- `42go pull ...` extracts raw source rows into `.local/42go-data`.
+- Raw pulled data is never filtered by app ID.
+- `42go query ...` builds or reads local analytics from cached Parquet data.
+- Derived aggregate files are app-scoped under `.local/42go-stats/{app-id}/`.
 - Aggregate files use `query_*.parquet` names.
 - `--app-id`, `--user-id`, `--book-id`, and `--limit` filter visible output unless command help says otherwise.
 - `--reset` rebuilds local aggregate caches from available local data and removes legacy `events_query_*` files.
@@ -20,26 +23,18 @@ Use this reference for local analytics commands under `42go query`.
 
 `42go update` runs the standard refresh pipeline:
 
-1. `42go events pull`
-2. `42go query books stats`
+1. `42go pull all`
+2. `42go query books`
 3. `42go query session`
 4. `42go query users growth`
 5. `42go query reads`
 
-`--reset` is passed only to query aggregations that support it:
-
-- session
-- users growth
-- reads
-
-It is not passed to `events pull` or `books stats`.
-
 Options:
 
-- `--archive-dir`: archive root for event pull and event-backed queries.
-- `--limit`: maximum event rows to pull in one run.
-- `--database-url-env`: env or `.env` key for `query books stats`, default `DATABASE_URL`.
-- `--reset`: force supported aggregations to rebuild from local source data.
+- `--data-dir`: raw data root for pulls and event/book inputs, default `.local/42go-data`.
+- `--limit`: maximum rows to pull per progressive source query.
+- `--database-url-env`: env or `.env` key for auth and book pulls, default `DATABASE_URL`.
+- `--reset`: delete selected raw Parquet files and aggregate caches before rebuilding.
 
 ## High-Level Stats
 
@@ -120,33 +115,28 @@ Cache files:
 .local/42go-stats/{app-id}/query_users_growth_state.parquet
 ```
 
-## Book Stats
+## Books
 
 ```bash
-42go query books stats
-42go query books stats --database-url-env BACKUP_DATABASE_URL
-42go query books stats --format json
+42go pull books
+42go query books
+42go query books --format json
 ```
 
 Purpose:
 
-- Pull LingoCafe book/page facts from PostgreSQL into local Parquet.
+- Pull `lingocafe.books`, `lingocafe.books_pages`, and `lingocafe.books_progress` into raw local Parquet.
 - Provide total page counts and page positions for read-completion joins.
+- Read local files only during `42go query books`.
 
-Environment:
-
-- Default URL key: `DATABASE_URL`
-- Optional URL key: `BACKUP_DATABASE_URL` or another `.env`/environment variable.
-
-Cache files:
+Raw files:
 
 ```text
-.local/42go-stats/{app-id}/query_books_stats_books.parquet
-.local/42go-stats/{app-id}/query_books_stats_pages.parquet
-.local/42go-stats/{app-id}/query_books_stats_state.parquet
+.local/42go-data/books.parquet
+.local/42go-data/books_pages.parquet
+.local/42go-data/books_progress.parquet
+.local/42go-data/_state/books.json
 ```
-
-Run this before read completion analysis when book/page metadata may have changed.
 
 ## Reads
 
@@ -160,8 +150,8 @@ Run this before read completion analysis when book/page metadata may have change
 
 Source facts:
 
-- Events: `.local/42go-events/events/parquet/events_YYYYMM.parquet`
-- Book/page catalog: `.local/42go-stats/{app-id}/query_books_stats_pages.parquet`
+- Events: `.local/42go-data/events/events_YYYYMM.parquet`
+- Book/page catalog: `.local/42go-data/books_pages.parquet`
 
 Event fields:
 
@@ -194,7 +184,7 @@ Completion metrics:
 - Default page completion threshold: `8000` BPS.
 - User-page progress is the max `progress_bps` for `book_id`, `page_id`, and `user_id`.
 - A page is completed when max progress is greater than or equal to threshold.
-- Book completion uses completed pages divided by total pages from `query_books_stats_pages.parquet`.
+- Book completion uses completed pages divided by total pages from `books_pages.parquet`.
 - Furthest-opened ratio uses max opened page position divided by total pages.
 - Funnel buckets: `0-20%`, `20-40%`, `40-60%`, `60-80%`, `80-100%`.
 

@@ -10,10 +10,9 @@ from fortytwogo_cli.events.books import (
     DEFAULT_BOOK_STATS_APP_ID,
     book_stats_to_dict,
     format_book_stats,
-    pull_book_stats,
+    load_book_stats,
 )
-from fortytwogo_cli.events.paths import DEFAULT_ARCHIVE_DIR, resolve_paths
-from fortytwogo_cli.events.pull import DEFAULT_LIMIT, PullOptions, pull_events
+from fortytwogo_cli.events.paths import DEFAULT_DATA_DIR, resolve_paths
 from fortytwogo_cli.events.query import format_stats, load_event_stats, no_events_message
 from fortytwogo_cli.events.reads import (
     DEFAULT_COMPLETION_THRESHOLD_BPS,
@@ -39,11 +38,6 @@ from fortytwogo_cli.events.users_growth import (
 )
 
 
-events_app = typer.Typer(
-    help="Pull production events into a local archive.",
-    invoke_without_command=True,
-    no_args_is_help=False,
-)
 query_app = typer.Typer(
     help="Build local analytics aggregations from cached Parquet data.",
     invoke_without_command=True,
@@ -59,132 +53,50 @@ query_users_app = typer.Typer(
     invoke_without_command=True,
     no_args_is_help=False,
 )
-query_books_app = typer.Typer(
-    help="Pull and inspect book-related local analytics facts.",
-    invoke_without_command=True,
-    no_args_is_help=False,
-)
 query_app.add_typer(stats_app, name="stats", help="Print event archive and product statistics.")
 query_app.add_typer(query_users_app, name="users", help="Print user-related statistics.")
-query_app.add_typer(query_books_app, name="books", help="Pull and inspect book-related local analytics facts.")
 
 
-@events_app.callback()
-def events_root(ctx: typer.Context) -> None:
-    """Use --help on any events subcommand to inspect options and defaults."""
-    if ctx.invoked_subcommand is None:
-        typer.echo(ctx.get_help())
-        raise typer.Exit()
+def prompt_menu(title: str, options: list[tuple[int, str]]) -> int:
+    typer.echo(title)
+    for number, label in options:
+        typer.echo(f"{number}. {label}")
+    choice = typer.prompt("Selection", type=int)
+    valid_choices = {number for number, _label in options}
+    if choice not in valid_choices:
+        choices = ", ".join(str(number) for number, _label in options)
+        typer.echo(f"Selection must be one of: {choices}.", err=True)
+        raise typer.Exit(1)
+    return choice
 
 
-@events_app.command(help="Download new events.events rows into monthly CSV and Parquet files.")
-def pull(
-    archive_dir: Annotated[
-        Path | None,
-        typer.Option(
-            "--archive-dir",
-            help=f"Local analytics archive root. Defaults to EVENTS_ANALYTICS_DIR or {DEFAULT_ARCHIVE_DIR}.",
-        ),
-    ] = None,
-    limit: Annotated[
-        int,
-        typer.Option("--limit", min=1, help=f"Maximum rows to export in one run. Defaults to {DEFAULT_LIMIT}."),
-    ] = DEFAULT_LIMIT,
-    run_id: Annotated[
-        str | None,
-        typer.Option(
-            "--run-id",
-            help="Optional manifest run ID. Defaults to run-<UTC timestamp>; incomplete reruns reuse inflight run ID.",
-        ),
-    ] = None,
-    dry_run: Annotated[
-        bool,
-        typer.Option("--dry-run", help="Fetch and report the next rows without writing files or advancing state."),
-    ] = False,
-) -> None:
+def validate_output_format(output_format: str) -> None:
+    if output_format not in {"text", "json"}:
+        typer.echo("--format must be one of: text, json", err=True)
+        raise typer.Exit(1)
+
+
+def run_stats_query(data_dir: Path | None = None) -> None:
     try:
-        result = pull_events(PullOptions(archive_dir=archive_dir, limit=limit, run_id=run_id, dry_run=dry_run))
-    except RuntimeError as error:
-        typer.echo(str(error), err=True)
-        raise typer.Exit(1) from error
-
-    message = result.pop("message", None)
-    if message and result.get("rows") == 0 and not result.get("removed_legacy_files"):
-        typer.echo(message)
-        return
-    typer.echo(json.dumps(result, indent=2, sort_keys=True))
-
-
-@query_app.callback()
-def query_root(ctx: typer.Context) -> None:
-    """Use --help on any query subcommand to inspect options and output."""
-    if ctx.invoked_subcommand is None:
-        typer.echo(ctx.get_help())
-        raise typer.Exit()
-
-
-@stats_app.callback()
-def stats_root(
-    ctx: typer.Context,
-    archive_dir: Annotated[
-        Path | None,
-        typer.Option(
-            "--archive-dir",
-            help=f"Local analytics archive root. Defaults to EVENTS_ANALYTICS_DIR or {DEFAULT_ARCHIVE_DIR}.",
-        ),
-    ] = None,
-) -> None:
-    """Print high-level archive stats when no nested stats command is invoked."""
-    if ctx.invoked_subcommand is not None:
-        return
-    try:
-        result = load_event_stats(archive_dir)
+        result = load_event_stats(data_dir)
     except RuntimeError as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(1) from error
 
     if result is None:
-        typer.echo(no_events_message(resolve_paths(archive_dir)))
+        typer.echo(no_events_message(resolve_paths(data_dir)))
         return
     typer.echo(format_stats(result))
 
 
-@query_users_app.callback()
-def query_users_root(ctx: typer.Context) -> None:
-    """Use --help on user stats subcommands to inspect options and output."""
-    if ctx.invoked_subcommand is None:
-        typer.echo(ctx.get_help())
-        raise typer.Exit()
-
-
-@query_books_app.callback()
-def query_books_root(ctx: typer.Context) -> None:
-    """Use --help on book stats subcommands to inspect options and output."""
-    if ctx.invoked_subcommand is None:
-        typer.echo(ctx.get_help())
-        raise typer.Exit()
-
-
-@query_books_app.command(help="Pull LingoCafe book and page facts into local Parquet files for analytics joins.")
-def stats(
-    app_id: Annotated[
-        str,
-        typer.Option("--app-id", help="App ID folder to store book stats under."),
-    ] = DEFAULT_BOOK_STATS_APP_ID,
-    database_url_env: Annotated[
-        str,
-        typer.Option("--database-url-env", help="Environment variable or .env key containing the PostgreSQL connection URL."),
-    ] = "DATABASE_URL",
-    output_format: Annotated[
-        str,
-        typer.Option("--format", help="Output format: text or json."),
-    ] = "text",
+def run_books_query(
+    data_dir: Path | None = None,
+    app_id: str = DEFAULT_BOOK_STATS_APP_ID,
+    output_format: str = "text",
 ) -> None:
-    if output_format not in {"text", "json"}:
-        typer.echo("--format must be one of: text, json", err=True)
-        raise typer.Exit(1)
+    validate_output_format(output_format)
     try:
-        result = pull_book_stats(app_id=app_id, database_url_env=database_url_env)
+        result = load_book_stats(data_dir=data_dir, app_id=app_id)
     except RuntimeError as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(1) from error
@@ -194,13 +106,189 @@ def stats(
     typer.echo(format_book_stats(result))
 
 
-@query_users_app.command(help="Compute user growth, subscriptions, active users, and inactive users over time.")
-def growth(
-    archive_dir: Annotated[
+def run_users_growth_query(
+    data_dir: Path | None = None,
+    app: str | None = None,
+    reset: bool = False,
+    output_format: str = "text",
+) -> None:
+    validate_output_format(output_format)
+    try:
+        result = load_users_growth(
+            archive_dir=data_dir,
+            app_filter=parse_app_filter(app),
+            reset=reset,
+        )
+    except RuntimeError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(1) from error
+
+    if result is None:
+        typer.echo(no_users_growth_message(data_dir))
+        return
+
+    if output_format == "json":
+        typer.echo(json.dumps(users_growth_to_dict(result), indent=2, sort_keys=True))
+        return
+    typer.echo(format_users_growth(result))
+
+
+def run_session_query(
+    data_dir: Path | None = None,
+    app_id: str | None = None,
+    user_id: str | None = None,
+    limit: int = DEFAULT_SESSION_LIMIT,
+    reset: bool = False,
+    output_format: str = "text",
+) -> None:
+    validate_output_format(output_format)
+    try:
+        result = load_event_sessions(
+            archive_dir=data_dir,
+            app_id_filter=app_id,
+            user_id_filter=user_id,
+            limit=limit,
+            reset=reset,
+        )
+    except RuntimeError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(1) from error
+
+    if result is None:
+        typer.echo(no_event_sessions_message(resolve_paths(data_dir)))
+        return
+
+    if output_format == "json":
+        typer.echo(json.dumps(event_sessions_to_dict(result), indent=2, sort_keys=True))
+        return
+    typer.echo(format_event_sessions(result))
+
+
+def run_reads_query(
+    data_dir: Path | None = None,
+    app_id: str | None = None,
+    book_id: str | None = None,
+    limit: int = DEFAULT_READS_LIMIT,
+    completion_threshold_bps: int = DEFAULT_COMPLETION_THRESHOLD_BPS,
+    reset: bool = False,
+    output_format: str = "text",
+) -> None:
+    validate_output_format(output_format)
+    try:
+        result = load_event_reads(
+            archive_dir=data_dir,
+            app_id_filter=app_id,
+            book_id_filter=book_id,
+            limit=limit,
+            completion_threshold_bps=completion_threshold_bps,
+            reset=reset,
+        )
+    except RuntimeError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(1) from error
+
+    if result is None:
+        typer.echo(no_event_reads_message(resolve_paths(data_dir)))
+        return
+
+    if output_format == "json":
+        typer.echo(json.dumps(event_reads_to_dict(result), indent=2, sort_keys=True))
+        return
+    typer.echo(format_event_reads(result))
+
+
+def run_users_query_menu() -> None:
+    choice = prompt_menu(
+        "Choose users query:",
+        [
+            (1, "growth"),
+        ],
+    )
+    if choice == 1:
+        run_users_growth_query()
+
+
+def run_query_menu() -> None:
+    choice = prompt_menu(
+        "Choose query target:",
+        [
+            (1, "stats"),
+            (2, "session"),
+            (3, "users"),
+            (4, "books"),
+            (5, "reads"),
+        ],
+    )
+    if choice == 1:
+        run_stats_query()
+    elif choice == 2:
+        run_session_query()
+    elif choice == 3:
+        run_users_query_menu()
+    elif choice == 4:
+        run_books_query()
+    elif choice == 5:
+        run_reads_query()
+
+
+@query_app.callback()
+def query_root(ctx: typer.Context) -> None:
+    """Prompt for a query target when no subcommand is provided."""
+    if ctx.invoked_subcommand is None:
+        run_query_menu()
+        raise typer.Exit()
+
+
+@stats_app.callback()
+def stats_root(
+    ctx: typer.Context,
+    data_dir: Annotated[
         Path | None,
         typer.Option(
-            "--archive-dir",
-            help=f"Local analytics archive root. Defaults to EVENTS_ANALYTICS_DIR or {DEFAULT_ARCHIVE_DIR}.",
+            "--data-dir",
+            help=f"Local raw data root. Defaults to FORTYTWOGO_DATA_DIR or {DEFAULT_DATA_DIR}.",
+        ),
+    ] = None,
+) -> None:
+    """Print high-level archive stats when no nested stats command is invoked."""
+    if ctx.invoked_subcommand is not None:
+        return
+    run_stats_query(data_dir=data_dir)
+
+
+@query_users_app.callback()
+def query_users_root(ctx: typer.Context) -> None:
+    """Prompt for a user query when no subcommand is provided."""
+    if ctx.invoked_subcommand is None:
+        run_users_query_menu()
+        raise typer.Exit()
+
+
+@query_app.command(name="books", help="Inspect book-related local analytics facts.")
+def books(
+    data_dir: Annotated[
+        Path | None,
+        typer.Option("--data-dir", help=f"Local raw data root. Defaults to FORTYTWOGO_DATA_DIR or {DEFAULT_DATA_DIR}."),
+    ] = None,
+    app_id: Annotated[
+        str,
+        typer.Option("--app-id", help="App ID label to use when joining book facts into app-scoped read analytics."),
+    ] = DEFAULT_BOOK_STATS_APP_ID,
+    output_format: Annotated[
+        str,
+        typer.Option("--format", help="Output format: text or json."),
+    ] = "text",
+) -> None:
+    run_books_query(data_dir=data_dir, app_id=app_id, output_format=output_format)
+
+
+@query_users_app.command(help="Compute user growth, subscriptions, active users, and inactive users over time.")
+def growth(
+    data_dir: Annotated[
+        Path | None,
+        typer.Option(
+            "--data-dir",
+            help=f"Local raw data root. Defaults to FORTYTWOGO_DATA_DIR or {DEFAULT_DATA_DIR}.",
         ),
     ] = None,
     app: Annotated[
@@ -219,37 +307,16 @@ def growth(
         typer.Option("--format", help="Output format: text or json."),
     ] = "text",
 ) -> None:
-    if output_format not in {"text", "json"}:
-        typer.echo("--format must be one of: text, json", err=True)
-        raise typer.Exit(1)
-
-    try:
-        result = load_users_growth(
-            archive_dir=archive_dir,
-            app_filter=parse_app_filter(app),
-            reset=reset,
-        )
-    except RuntimeError as error:
-        typer.echo(str(error), err=True)
-        raise typer.Exit(1) from error
-
-    if result is None:
-        typer.echo(no_users_growth_message(archive_dir))
-        return
-
-    if output_format == "json":
-        typer.echo(json.dumps(users_growth_to_dict(result), indent=2, sort_keys=True))
-        return
-    typer.echo(format_users_growth(result))
+    run_users_growth_query(data_dir=data_dir, app=app, reset=reset, output_format=output_format)
 
 
 @query_app.command(help="Cluster local event rows into app-scoped user sessions.")
 def session(
-    archive_dir: Annotated[
+    data_dir: Annotated[
         Path | None,
         typer.Option(
-            "--archive-dir",
-            help=f"Local analytics archive root. Defaults to EVENTS_ANALYTICS_DIR or {DEFAULT_ARCHIVE_DIR}.",
+            "--data-dir",
+            help=f"Local raw data root. Defaults to FORTYTWOGO_DATA_DIR or {DEFAULT_DATA_DIR}.",
         ),
     ] = None,
     app_id: Annotated[
@@ -273,39 +340,23 @@ def session(
         typer.Option("--format", help="Output format: text or json."),
     ] = "text",
 ) -> None:
-    if output_format not in {"text", "json"}:
-        typer.echo("--format must be one of: text, json", err=True)
-        raise typer.Exit(1)
-
-    try:
-        result = load_event_sessions(
-            archive_dir=archive_dir,
-            app_id_filter=app_id,
-            user_id_filter=user_id,
-            limit=limit,
-            reset=reset,
-        )
-    except RuntimeError as error:
-        typer.echo(str(error), err=True)
-        raise typer.Exit(1) from error
-
-    if result is None:
-        typer.echo(no_event_sessions_message(resolve_paths(archive_dir)))
-        return
-
-    if output_format == "json":
-        typer.echo(json.dumps(event_sessions_to_dict(result), indent=2, sort_keys=True))
-        return
-    typer.echo(format_event_sessions(result))
+    run_session_query(
+        data_dir=data_dir,
+        app_id=app_id,
+        user_id=user_id,
+        limit=limit,
+        reset=reset,
+        output_format=output_format,
+    )
 
 
 @query_app.command(help="Compute app-scoped book reading engagement from local event rows.")
 def reads(
-    archive_dir: Annotated[
+    data_dir: Annotated[
         Path | None,
         typer.Option(
-            "--archive-dir",
-            help=f"Local analytics archive root. Defaults to EVENTS_ANALYTICS_DIR or {DEFAULT_ARCHIVE_DIR}.",
+            "--data-dir",
+            help=f"Local raw data root. Defaults to FORTYTWOGO_DATA_DIR or {DEFAULT_DATA_DIR}.",
         ),
     ] = None,
     app_id: Annotated[
@@ -338,28 +389,12 @@ def reads(
         typer.Option("--format", help="Output format: text or json."),
     ] = "text",
 ) -> None:
-    if output_format not in {"text", "json"}:
-        typer.echo("--format must be one of: text, json", err=True)
-        raise typer.Exit(1)
-
-    try:
-        result = load_event_reads(
-            archive_dir=archive_dir,
-            app_id_filter=app_id,
-            book_id_filter=book_id,
-            limit=limit,
-            completion_threshold_bps=completion_threshold_bps,
-            reset=reset,
-        )
-    except RuntimeError as error:
-        typer.echo(str(error), err=True)
-        raise typer.Exit(1) from error
-
-    if result is None:
-        typer.echo(no_event_reads_message(resolve_paths(archive_dir)))
-        return
-
-    if output_format == "json":
-        typer.echo(json.dumps(event_reads_to_dict(result), indent=2, sort_keys=True))
-        return
-    typer.echo(format_event_reads(result))
+    run_reads_query(
+        data_dir=data_dir,
+        app_id=app_id,
+        book_id=book_id,
+        limit=limit,
+        completion_threshold_bps=completion_threshold_bps,
+        reset=reset,
+        output_format=output_format,
+    )

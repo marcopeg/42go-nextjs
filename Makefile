@@ -284,11 +284,9 @@ restore:
 
 events:
 	@if command -v 42go >/dev/null 2>&1; then \
-		42go events pull; \
-	elif [ -x ".local/42go-events/.venv/bin/42go" ]; then \
-		.local/42go-events/.venv/bin/42go events pull; \
+		42go pull events; \
 	else \
-		echo "42go CLI not found. Install it with: pipx install ./cli"; \
+		echo "42go CLI not found. Install it following the README.md 42Go CLI instructions."; \
 		exit 1; \
 	fi
 

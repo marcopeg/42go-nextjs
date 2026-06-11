@@ -15,7 +15,7 @@ Declared in `cli/pyproject.toml`:
 - `typer[all]`: CLI command tree and option parsing.
 - `duckdb`: local Parquet reads and smoke checks.
 - `pyarrow`: Parquet writes.
-- `psycopg[binary]`: PostgreSQL backup/export/book-stats reads and restore helpers.
+- `psycopg[binary]`: PostgreSQL backup/export/book reads and restore helpers.
 - `pytz`: timezone-aware analytics buckets.
 - `pytest`: test dependency.
 
@@ -23,33 +23,42 @@ Declared in `cli/pyproject.toml`:
 
 ```text
 cli/src/fortytwogo_cli/
-  cli.py                         # root Typer app
+  cli.py                         # root Typer app and update orchestration
   backup/
     cli.py                       # backup/restore command functions
     core.py                      # dump/restore implementation
+  pull/
+    cli.py                       # 42go pull auth/events/books/all
+  users/
+    paths.py                     # auth pull path/env helpers
+    pull.py                      # auth.users/auth.accounts pull implementation
   events/
-    cli.py                       # events and query Typer apps
-    paths.py                     # archive path/env helpers
+    cli.py                       # 42go query command tree
+    paths.py                     # raw event data path/env helpers
     dependencies.py              # optional dependency import helpers
     pull.py                      # events pull/export implementation
     query.py                     # high-level archive stats
     sessions.py                  # query session aggregation
     users_growth.py              # query users growth aggregation
-    books.py                     # query books stats pull/cache
+    books.py                     # book raw pull helpers and query books reader
     reads.py                     # query reads engagement aggregation
 ```
 
 ## Command Boundary
 
-- `42go events pull`: talks to `EVENTS_DATABASE_URL`, writes raw local event archive.
-- `42go query ...`: reads local Parquet and builds aggregate Parquet. `query books stats` is the one query command that pulls non-event book/page facts into local Parquet.
+- `42go pull auth`: reads `auth.users` and `auth.accounts`, writes raw local Parquet without password or token secrets.
+- `42go pull events`: reads `events.events`, writes raw monthly local Parquet.
+- `42go pull books`: reads LingoCafe books, pages, and progress, writes raw local Parquet.
+- `42go pull all`: runs all raw pulls.
+- `42go pull '*'`: literal star alias for all raw pulls.
+- `42go query ...`: reads local Parquet and builds or inspects local aggregates.
 - `42go backup` / `42go restore`: data-only SQL movement.
 
 ## Environment Loading
 
-- Event archive source: `EVENTS_DATABASE_URL`, with `.env` fallback via `events.paths.load_dotenv_value`.
-- Event archive root: `EVENTS_ANALYTICS_DIR` or `.local/42go-events`.
-- Book stats source: `--database-url-env`, default `DATABASE_URL`, with `.env` fallback in `events.books.read_env_url`.
+- Raw data root: `FORTYTWOGO_DATA_DIR` or `.local/42go-data`.
+- Event source: `EVENTS_DATABASE_URL`, with `.env` fallback via `events.paths.load_dotenv_value`.
+- Auth and book source: `--database-url-env`, default `DATABASE_URL`, with `.env` fallback.
 - Backup source: `BACKUP_DATABASE_URL`.
 - Restore target: `RESTORE_DATABASE_URL`.
 

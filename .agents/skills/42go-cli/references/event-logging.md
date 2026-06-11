@@ -10,7 +10,7 @@ Use the shared core events system. Do not create app-local event tables or app-l
 
 - Server code records events through `src/42go/events/server.ts`.
 - Client code records events through `src/42go/events/client.ts` or `useEventTracker()`.
-- Durable local analytics come from `42go events pull`, not direct production reads during analysis.
+- Durable local analytics come from `42go pull events`, not direct production reads during analysis.
 
 ## Naming
 

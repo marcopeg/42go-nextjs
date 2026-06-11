@@ -7,16 +7,14 @@ import typer
 
 from fortytwogo_cli import __version__
 from fortytwogo_cli.backup.cli import backup, restore
-from fortytwogo_cli.events.cli import events_app, query_app
-from fortytwogo_cli.events.books import pull_book_stats
-from fortytwogo_cli.events.paths import DEFAULT_ARCHIVE_DIR, resolve_paths
-from fortytwogo_cli.events.pull import DEFAULT_LIMIT, PullOptions, pull_events
+from fortytwogo_cli.events.books import load_book_stats
+from fortytwogo_cli.events.cli import query_app
+from fortytwogo_cli.events.paths import DEFAULT_DATA_DIR, resolve_paths
+from fortytwogo_cli.events.pull import DEFAULT_LIMIT
 from fortytwogo_cli.events.reads import load_event_reads
 from fortytwogo_cli.events.sessions import load_event_sessions
 from fortytwogo_cli.events.users_growth import load_users_growth
-from fortytwogo_cli.users.cli import users_app
-from fortytwogo_cli.users.paths import DEFAULT_STATS_DIR
-from fortytwogo_cli.users.pull import PullUsersOptions, pull_users
+from fortytwogo_cli.pull.cli import pull_app, run_all_pulls
 
 
 app = typer.Typer(
@@ -24,20 +22,19 @@ app = typer.Typer(
     invoke_without_command=True,
     no_args_is_help=False,
 )
-app.add_typer(events_app, name="events", help="Pull raw 42Go event archives.")
-app.add_typer(users_app, name="users", help="Pull auth users and linked accounts.")
+app.add_typer(pull_app, name="pull", help="Pull raw source data.")
 app.add_typer(query_app, name="query", help="Build local analytics aggregations from cached data.")
 app.command(help="Create a data-only SQL backup.")(backup)
 app.command(help="Restore a data-only SQL backup into a migrated database.")(restore)
 
 
-@app.command(help="Pull new events and refresh all local query aggregations.")
+@app.command(help="Pull raw data and refresh all local query aggregations.")
 def update(
-    archive_dir: Annotated[
+    data_dir: Annotated[
         Path | None,
         typer.Option(
-            "--archive-dir",
-            help=f"Local analytics archive root. Defaults to EVENTS_ANALYTICS_DIR or {DEFAULT_ARCHIVE_DIR}.",
+            "--data-dir",
+            help=f"Local raw data root. Defaults to FORTYTWOGO_DATA_DIR or {DEFAULT_DATA_DIR}.",
         ),
     ] = None,
     limit: Annotated[
@@ -48,16 +45,9 @@ def update(
         str,
         typer.Option("--database-url-env", help="Environment variable or .env key for auth and book/page metadata pulls."),
     ] = "DATABASE_URL",
-    stats_dir: Annotated[
-        Path | None,
-        typer.Option(
-            "--stats-dir",
-            help=f"Local stats root for auth exports. Defaults to FORTYTWOGO_STATS_DIR or {DEFAULT_STATS_DIR}.",
-        ),
-    ] = None,
     reset: Annotated[
         bool,
-        typer.Option("--reset", help="Force query aggregations to rebuild from local source data."),
+        typer.Option("--reset", help="Delete local raw Parquet files and aggregate caches before rebuilding."),
     ] = False,
 ) -> None:
     """Run the standard local analytics refresh pipeline."""
@@ -65,69 +55,64 @@ def update(
     typer.echo("")
 
     try:
-        auth_result = pull_users(
-            PullUsersOptions(stats_dir=stats_dir, limit=limit, database_url_env=database_url_env, reset=reset)
-        )
+        pull_result = run_all_pulls(data_dir=data_dir, limit=limit, database_url_env=database_url_env, reset=reset, dry_run=False)
     except RuntimeError as error:
-        typer.echo(f"users pull failed: {error}", err=True)
+        typer.echo(f"pull failed: {error}", err=True)
         raise typer.Exit(1) from error
+    auth_result = pull_result["auth"]
+    events_result = pull_result["events"]
+    books_pull_result = pull_result["books"]
     typer.echo(
-        "users pull: "
+        "pull auth: "
         f"users={auth_result.get('users_changed', 0)}/{auth_result.get('users_total', 0)} "
         f"accounts={auth_result.get('accounts_changed', 0)}/{auth_result.get('accounts_total', 0)}"
     )
+    typer.echo(f"pull events: {events_result.get('rows', 0)} rows")
+    typer.echo(
+        "pull books: "
+        f"books={books_pull_result.get('books_changed', 0)}/{books_pull_result.get('books_total', 0)} "
+        f"pages={books_pull_result.get('pages_total', 0)} "
+        f"progress={books_pull_result.get('progress_changed', 0)}/{books_pull_result.get('progress_total', 0)}"
+    )
 
     try:
-        pull_result = pull_events(PullOptions(archive_dir=archive_dir, limit=limit))
+        book_result = load_book_stats(data_dir=data_dir)
     except RuntimeError as error:
-        typer.echo(f"events pull failed: {error}", err=True)
+        typer.echo(f"query books failed: {error}", err=True)
         raise typer.Exit(1) from error
-
-    pull_message = pull_result.get("message")
-    pull_rows = int(pull_result.get("rows", 0))
-    if pull_message and pull_rows == 0:
-        typer.echo(f"events pull: {pull_message}")
-    else:
-        typer.echo(f"events pull: {pull_rows} rows")
+    typer.echo(f"query books: books={len(book_result.books)} pages={len(book_result.pages)} progress={book_result.progress_rows}")
 
     try:
-        book_result = pull_book_stats(database_url_env=database_url_env)
-    except RuntimeError as error:
-        typer.echo(f"query books stats failed: {error}", err=True)
-        raise typer.Exit(1) from error
-    typer.echo(f"query books stats: books={len(book_result.books)} pages={len(book_result.pages)}")
-
-    try:
-        session_result = load_event_sessions(archive_dir=archive_dir, reset=reset)
+        session_result = load_event_sessions(archive_dir=data_dir, reset=reset)
     except RuntimeError as error:
         typer.echo(f"query session failed: {error}", err=True)
         raise typer.Exit(1) from error
     if session_result is None:
-        typer.echo(f"query session: no monthly Parquet files found under {resolve_paths(archive_dir).parquet_dir}")
+        typer.echo(f"query session: no monthly Parquet files found under {resolve_paths(data_dir).parquet_dir}")
     else:
         sessions_total = sum(app_result.total_sessions for app_result in session_result.apps)
         session_statuses = ",".join(sorted({app_result.cache_status for app_result in session_result.apps}))
         typer.echo(f"query session: {session_statuses or 'n/a'} sessions={sessions_total}")
 
     try:
-        users_result = load_users_growth(archive_dir=archive_dir, reset=reset)
+        users_result = load_users_growth(archive_dir=data_dir, reset=reset)
     except RuntimeError as error:
         typer.echo(f"query users growth failed: {error}", err=True)
         raise typer.Exit(1) from error
     if users_result is None:
-        typer.echo(f"query users growth: no monthly Parquet files found under {resolve_paths(archive_dir).parquet_dir}")
+        typer.echo(f"query users growth: no monthly Parquet files found under {resolve_paths(data_dir).parquet_dir}")
     else:
         users_statuses = ",".join(sorted({app_result.cache_status for app_result in users_result.apps}))
         user_rows = sum(len(app_result.rows) for app_result in users_result.apps)
         typer.echo(f"query users growth: {users_statuses or 'n/a'} rows={user_rows}")
 
     try:
-        reads_result = load_event_reads(archive_dir=archive_dir, reset=reset)
+        reads_result = load_event_reads(archive_dir=data_dir, reset=reset)
     except RuntimeError as error:
         typer.echo(f"query reads failed: {error}", err=True)
         raise typer.Exit(1) from error
     if reads_result is None:
-        typer.echo(f"query reads: no monthly Parquet files found under {resolve_paths(archive_dir).parquet_dir}")
+        typer.echo(f"query reads: no monthly Parquet files found under {resolve_paths(data_dir).parquet_dir}")
     else:
         reads_statuses = ",".join(sorted({app_result.cache_status for app_result in reads_result.apps}))
         books_total = sum(app_result.total_books for app_result in reads_result.apps)

@@ -14,11 +14,13 @@ Use this skill for implementation work on the local Python CLI under `cli/`. For
 - Console command stays `42go`.
 - Use Typer for command wiring.
 - Root command families:
-  - `42go events` for raw event extraction.
+  - `42go pull` for raw data extraction.
   - `42go query` for local analytics aggregations.
   - `42go backup` and `42go restore` for data-only SQL dump workflows.
-- Do not reintroduce `42go events query`.
+- Do not reintroduce `42go events` or `42go users`.
+- Store raw pulled data as Parquet under `.local/42go-data/`.
 - Keep command help useful and test it.
+- No-arg command groups with subcommands should open interactive menus.
 - Store generated analytics aggregates as Parquet under `.local/42go-stats/{app-id}/`.
 - Use `query_*.parquet` names for analytics outputs.
 - Update `42go-cli` operator docs when user-facing behavior changes.
@@ -41,7 +43,7 @@ Use this skill for implementation work on the local Python CLI under `cli/`. For
 5. Run CLI tests:
 
 ```bash
-.local/42go-events/.venv/bin/python -m pytest cli/tests
+pytest cli/tests
 ```
 
 6. Run project QA after code changes:
@@ -50,10 +52,10 @@ Use this skill for implementation work on the local Python CLI under `cli/`. For
 npm run qa
 ```
 
-7. Smoke-test changed commands with the local CLI path:
+7. Smoke-test changed commands with the installed CLI:
 
 ```bash
-.local/42go-events/.venv/bin/42go <command> --help
+42go <command> --help
 ```
 
 Chuck Norris does not ship a command that cannot explain itself.

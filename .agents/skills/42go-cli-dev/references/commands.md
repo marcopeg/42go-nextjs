@@ -4,25 +4,34 @@
 
 `cli/src/fortytwogo_cli/cli.py` defines the root Typer app:
 
-- `events_app` mounted as `42go events`
+- `pull_app` mounted as `42go pull`
 - `query_app` mounted as `42go query`
 - `backup` mounted as `42go backup`
 - `restore` mounted as `42go restore`
 - `update` mounted as `42go update`
 
-The root callback prints help when no subcommand is invoked.
+The root callback prints help when no subcommand is invoked. Nested command groups with subcommands should open an interactive menu when invoked without a subcommand.
 
-## Events And Query Apps
+## Pull And Query Apps
+
+`cli/src/fortytwogo_cli/pull/cli.py` defines:
+
+- `pull_app`: raw data extraction commands for auth, events, books, and all data.
 
 `cli/src/fortytwogo_cli/events/cli.py` defines:
 
-- `events_app`: raw event archive commands only.
 - `query_app`: local analytics aggregation commands.
 - `stats_app`: callback-backed `42go query stats`.
 - `query_users_app`: nested `42go query users`.
-- `query_books_app`: nested `42go query books`.
+- `42go query books`: direct command on `query_app`.
 
-Do not mount `query_app` under `events_app`. `42go events query` was removed.
+No-arg menus:
+
+- `42go pull`: menu for auth, events, books, and all.
+- `42go query`: menu for stats, session, users, books, and reads.
+- `42go query users`: menu for growth.
+
+Do not reintroduce `42go events` or `42go users`; both are absorbed by `42go pull`.
 
 ## Adding A Command
 
@@ -41,21 +50,25 @@ The following must print useful help:
 ```bash
 42go --help
 42go update --help
-42go events --help
-42go events pull --help
+42go pull --help
+42go pull auth --help
+42go pull events --help
+42go pull books --help
+42go pull all --help
+42go pull '*' --help
 42go query --help
 42go query stats --help
 42go query session --help
 42go query users --help
 42go query users growth --help
 42go query books --help
-42go query books stats --help
 42go query reads --help
 42go backup --help
 42go restore --help
 ```
 
 Tests should assert command presence and important flags.
+Tests should also assert no-arg menus dispatch the selected command.
 
 ## Update Command
 
@@ -63,10 +76,12 @@ Tests should assert command presence and important flags.
 
 Pipeline:
 
-1. `pull_events(PullOptions(...))`
-2. `pull_book_stats(...)`
+1. `run_all_pulls(...)`
+2. `load_book_stats(...)`
 3. `load_event_sessions(..., reset=reset)`
 4. `load_users_growth(..., reset=reset)`
 5. `load_event_reads(..., reset=reset)`
 
-The `--reset` flag must only affect aggregation loaders. Do not apply it to event pull or book stats.
+The `--reset` flag deletes and rebuilds the selected raw data files and aggregation caches.
+
+`42go pull all` is the documented all-data command. `42go pull '*'` is a literal star alias; quote it in shells that expand `*`.

@@ -9,6 +9,8 @@ from fortytwogo_cli.backup import core
 from fortytwogo_cli.backup.cli import format_restore_backup_table
 from fortytwogo_cli import cli as cli_module
 from fortytwogo_cli.cli import app
+from fortytwogo_cli.events import cli as events_cli_module
+from fortytwogo_cli.pull import cli as pull_cli_module
 
 
 runner = CliRunner()
@@ -21,25 +23,64 @@ def test_root_without_args_shows_help() -> None:
     assert "Local automation commands for 42Go projects." in result.output
     assert "backup" in result.output
     assert "restore" in result.output
-    assert "events" in result.output
-    assert "users" in result.output
+    assert "pull" in result.output
     assert "query" in result.output
     assert "update" in result.output
 
 
-def test_events_help_lists_commands() -> None:
+def test_events_root_is_removed() -> None:
     result = runner.invoke(app, ["events", "--help"])
 
-    assert result.exit_code == 0
-    assert "pull" in result.output
-    assert "query" not in result.output
+    assert result.exit_code != 0
 
 
-def test_users_help_lists_commands() -> None:
+def test_users_root_is_removed() -> None:
     result = runner.invoke(app, ["users", "--help"])
 
+    assert result.exit_code != 0
+
+
+def test_pull_help_lists_commands() -> None:
+    result = runner.invoke(app, ["pull", "--help"])
+
     assert result.exit_code == 0
-    assert "pull" in result.output
+    assert "auth" in result.output
+    assert "events" in result.output
+    assert "books" in result.output
+    assert "all" in result.output
+
+
+def test_pull_without_target_prompts_and_runs_selection(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def fake_run_all_pulls(*args, **kwargs):
+        calls.append("all")
+        return {"auth": {}, "events": {}, "books": {}}
+
+    monkeypatch.setattr(pull_cli_module, "run_all_pulls", fake_run_all_pulls)
+
+    result = runner.invoke(app, ["pull"], input="4\n")
+
+    assert result.exit_code == 0
+    assert calls == ["all"]
+    assert "Choose pull target" in result.output
+    assert '"auth": {}' in result.output
+
+
+def test_pull_star_alias_runs_all(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def fake_run_all_pulls(*args, **kwargs):
+        calls.append("all")
+        return {"auth": {}, "events": {}, "books": {}}
+
+    monkeypatch.setattr(pull_cli_module, "run_all_pulls", fake_run_all_pulls)
+
+    result = runner.invoke(app, ["pull", "*"])
+
+    assert result.exit_code == 0
+    assert calls == ["all"]
+    assert '"books": {}' in result.output
 
 
 def test_update_help_describes_options() -> None:
@@ -47,8 +88,7 @@ def test_update_help_describes_options() -> None:
 
     assert result.exit_code == 0
     assert "--reset" in result.output
-    assert "--archive-dir" in result.output
-    assert "--stats-dir" in result.output
+    assert "--data-dir" in result.output
     assert "--database-url-env" in result.output
 
 
@@ -59,6 +99,55 @@ def test_query_help_lists_commands() -> None:
     assert "session" in result.output
     assert "reads" in result.output
     assert "books" in result.output
+
+
+def test_query_without_target_prompts_and_runs_selection(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def fake_run_books_query(*args, **kwargs) -> None:
+        calls.append("books")
+
+    monkeypatch.setattr(events_cli_module, "run_books_query", fake_run_books_query)
+
+    result = runner.invoke(app, ["query"], input="4\n")
+
+    assert result.exit_code == 0
+    assert calls == ["books"]
+    assert "Choose query target" in result.output
+    assert "1. stats" in result.output
+    assert "4. books" in result.output
+
+
+def test_query_users_without_target_prompts_and_runs_selection(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def fake_run_users_growth_query(*args, **kwargs) -> None:
+        calls.append("growth")
+
+    monkeypatch.setattr(events_cli_module, "run_users_growth_query", fake_run_users_growth_query)
+
+    result = runner.invoke(app, ["query", "users"], input="1\n")
+
+    assert result.exit_code == 0
+    assert calls == ["growth"]
+    assert "Choose users query" in result.output
+    assert "1. growth" in result.output
+
+
+def test_query_menu_enters_nested_users_menu(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def fake_run_users_growth_query(*args, **kwargs) -> None:
+        calls.append("growth")
+
+    monkeypatch.setattr(events_cli_module, "run_users_growth_query", fake_run_users_growth_query)
+
+    result = runner.invoke(app, ["query"], input="3\n1\n")
+
+    assert result.exit_code == 0
+    assert calls == ["growth"]
+    assert "Choose query target" in result.output
+    assert "Choose users query" in result.output
 
 
 def test_backup_help_lists_mode_flags() -> None:
@@ -228,11 +317,11 @@ def test_restore_without_from_fails_when_no_backups(monkeypatch) -> None:
     assert "No backups found" in result.output
 
 
-def test_stats_help_describes_archive_dir() -> None:
+def test_stats_help_describes_data_dir() -> None:
     result = runner.invoke(app, ["query", "stats", "--help"])
 
     assert result.exit_code == 0
-    assert "--archive-dir" in result.output
+    assert "--data-dir" in result.output
 
 
 def test_users_growth_help_describes_options() -> None:
@@ -267,20 +356,20 @@ def test_reads_help_describes_options() -> None:
     assert "--format" in result.output
 
 
-def test_update_runs_users_pull_before_aggregations(monkeypatch, tmp_path: Path) -> None:
+def test_update_runs_pull_all_before_aggregations(monkeypatch, tmp_path: Path) -> None:
     calls: list[str] = []
 
-    def fake_pull_users(options) -> dict[str, int]:
-        calls.append("users")
-        return {"users_changed": 1, "users_total": 2, "accounts_changed": 3, "accounts_total": 4}
+    def fake_run_all_pulls(**kwargs):
+        calls.append("pull")
+        return {
+            "auth": {"users_changed": 1, "users_total": 2, "accounts_changed": 3, "accounts_total": 4},
+            "events": {"rows": 5},
+            "books": {"books_changed": 6, "books_total": 7, "pages_total": 8, "progress_changed": 9, "progress_total": 10},
+        }
 
-    def fake_pull_events(options) -> dict[str, int]:
-        calls.append("events")
-        return {"rows": 0}
-
-    def fake_pull_book_stats(**kwargs):
+    def fake_load_book_stats(**kwargs):
         calls.append("books")
-        return SimpleNamespace(books=[], pages=[])
+        return SimpleNamespace(books=[], pages=[], progress_rows=0)
 
     def fake_sessions(**kwargs):
         calls.append("sessions")
@@ -294,52 +383,48 @@ def test_update_runs_users_pull_before_aggregations(monkeypatch, tmp_path: Path)
         calls.append("reads")
         return None
 
-    monkeypatch.setattr(cli_module, "pull_users", fake_pull_users)
-    monkeypatch.setattr(cli_module, "pull_events", fake_pull_events)
-    monkeypatch.setattr(cli_module, "pull_book_stats", fake_pull_book_stats)
+    monkeypatch.setattr(cli_module, "run_all_pulls", fake_run_all_pulls)
+    monkeypatch.setattr(cli_module, "load_book_stats", fake_load_book_stats)
     monkeypatch.setattr(cli_module, "load_event_sessions", fake_sessions)
     monkeypatch.setattr(cli_module, "load_users_growth", fake_users_growth)
     monkeypatch.setattr(cli_module, "load_event_reads", fake_reads)
 
-    result = runner.invoke(app, ["update", "--archive-dir", str(tmp_path / "archive"), "--stats-dir", str(tmp_path / "stats")])
+    result = runner.invoke(app, ["update", "--data-dir", str(tmp_path / "data")])
 
     assert result.exit_code == 0
-    assert calls == ["users", "events", "books", "sessions", "users_growth", "reads"]
-    assert "users pull: users=1/2 accounts=3/4" in result.output
+    assert calls == ["pull", "books", "sessions", "users_growth", "reads"]
+    assert "pull auth: users=1/2 accounts=3/4" in result.output
+    assert "pull events: 5 rows" in result.output
+    assert "pull books: books=6/7 pages=8 progress=9/10" in result.output
 
 
-def test_update_stops_when_users_pull_fails(monkeypatch, tmp_path: Path) -> None:
+def test_update_stops_when_pull_all_fails(monkeypatch, tmp_path: Path) -> None:
     calls: list[str] = []
 
-    def fake_pull_users(options) -> dict[str, int]:
-        calls.append("users")
+    def fake_run_all_pulls(**kwargs):
+        calls.append("pull")
         raise RuntimeError("auth export failed")
 
-    def fake_pull_events(options) -> dict[str, int]:
-        calls.append("events")
-        return {"rows": 0}
+    monkeypatch.setattr(cli_module, "run_all_pulls", fake_run_all_pulls)
 
-    monkeypatch.setattr(cli_module, "pull_users", fake_pull_users)
-    monkeypatch.setattr(cli_module, "pull_events", fake_pull_events)
-
-    result = runner.invoke(app, ["update", "--archive-dir", str(tmp_path / "archive"), "--stats-dir", str(tmp_path / "stats")])
+    result = runner.invoke(app, ["update", "--data-dir", str(tmp_path / "data")])
 
     assert result.exit_code == 1
-    assert calls == ["users"]
-    assert "users pull failed: auth export failed" in result.output
+    assert calls == ["pull"]
+    assert "pull failed: auth export failed" in result.output
 
 
-def test_books_stats_help_describes_options() -> None:
-    result = runner.invoke(app, ["query", "books", "stats", "--help"])
+def test_books_query_help_describes_options() -> None:
+    result = runner.invoke(app, ["query", "books", "--help"])
 
     assert result.exit_code == 0
     assert "--app-id" in result.output
-    assert "--database-url-env" in result.output
+    assert "--data-dir" in result.output
     assert "--format" in result.output
 
 
-def test_events_query_alias_is_removed() -> None:
-    result = runner.invoke(app, ["events", "query", "reads", "--help"])
+def test_books_stats_subcommand_is_removed() -> None:
+    result = runner.invoke(app, ["query", "books", "stats"])
 
     assert result.exit_code != 0
 
@@ -347,17 +432,17 @@ def test_events_query_alias_is_removed() -> None:
 def test_update_runs_refresh_pipeline_and_passes_reset(monkeypatch) -> None:
     calls: list[tuple[str, object]] = []
 
-    def fake_pull_events(options) -> dict[str, object]:
-        calls.append(("pull", options.limit))
-        return {"rows": 3}
+    def fake_run_all_pulls(**kwargs) -> dict[str, object]:
+        calls.append(("pull", kwargs["reset"]))
+        return {
+            "auth": {"users_changed": 1, "users_total": 2, "accounts_changed": 1, "accounts_total": 1},
+            "events": {"rows": 3},
+            "books": {"books_changed": 2, "books_total": 2, "pages_total": 3, "progress_changed": 1, "progress_total": 1},
+        }
 
-    def fake_pull_users(options) -> dict[str, object]:
-        calls.append(("auth_users", options.reset))
-        return {"users_changed": 1, "users_total": 2, "accounts_changed": 1, "accounts_total": 1}
-
-    def fake_pull_book_stats(database_url_env: str):
-        calls.append(("books", database_url_env))
-        return SimpleNamespace(books=[object(), object()], pages=[object(), object(), object()])
+    def fake_load_book_stats(**kwargs):
+        calls.append(("books", kwargs.get("data_dir")))
+        return SimpleNamespace(books=[object(), object()], pages=[object(), object(), object()], progress_rows=1)
 
     def fake_load_event_sessions(archive_dir=None, reset=False):
         calls.append(("session", reset))
@@ -371,9 +456,8 @@ def test_update_runs_refresh_pipeline_and_passes_reset(monkeypatch) -> None:
         calls.append(("reads", reset))
         return SimpleNamespace(apps=[SimpleNamespace(total_books=5, cache_status="rebuilt")])
 
-    monkeypatch.setattr(cli_module, "pull_users", fake_pull_users)
-    monkeypatch.setattr(cli_module, "pull_events", fake_pull_events)
-    monkeypatch.setattr(cli_module, "pull_book_stats", fake_pull_book_stats)
+    monkeypatch.setattr(cli_module, "run_all_pulls", fake_run_all_pulls)
+    monkeypatch.setattr(cli_module, "load_book_stats", fake_load_book_stats)
     monkeypatch.setattr(cli_module, "load_event_sessions", fake_load_event_sessions)
     monkeypatch.setattr(cli_module, "load_users_growth", fake_load_users_growth)
     monkeypatch.setattr(cli_module, "load_event_reads", fake_load_event_reads)
@@ -382,16 +466,15 @@ def test_update_runs_refresh_pipeline_and_passes_reset(monkeypatch) -> None:
 
     assert result.exit_code == 0
     assert calls == [
-        ("auth_users", True),
-        ("pull", 7),
-        ("books", "BACKUP_DATABASE_URL"),
+        ("pull", True),
+        ("books", None),
         ("session", True),
         ("users", True),
         ("reads", True),
     ]
-    assert "events pull: 3 rows" in result.output
-    assert "users pull: users=1/2 accounts=1/1" in result.output
-    assert "query books stats: books=2 pages=3" in result.output
+    assert "pull events: 3 rows" in result.output
+    assert "pull auth: users=1/2 accounts=1/1" in result.output
+    assert "query books: books=2 pages=3 progress=1" in result.output
     assert "query session: rebuilt sessions=4" in result.output
     assert "query users growth: rebuilt rows=2" in result.output
     assert "query reads: rebuilt books=5" in result.output
@@ -403,12 +486,15 @@ def test_update_does_not_reset_by_default(monkeypatch) -> None:
 
     monkeypatch.setattr(
         cli_module,
-        "pull_users",
-        lambda options: calls.append(("auth_users", options.reset))
-        or {"users_changed": 0, "users_total": 0, "accounts_changed": 0, "accounts_total": 0},
+        "run_all_pulls",
+        lambda **kwargs: calls.append(("pull", kwargs["reset"]))
+        or {
+            "auth": {"users_changed": 0, "users_total": 0, "accounts_changed": 0, "accounts_total": 0},
+            "events": {"rows": 0, "message": "No new events to export."},
+            "books": {"books_changed": 0, "books_total": 0, "pages_total": 0, "progress_changed": 0, "progress_total": 0},
+        },
     )
-    monkeypatch.setattr(cli_module, "pull_events", lambda options: calls.append(("pull", options.limit)) or {"rows": 0, "message": "No new events to export."})
-    monkeypatch.setattr(cli_module, "pull_book_stats", lambda database_url_env: calls.append(("books", database_url_env)) or SimpleNamespace(books=[], pages=[]))
+    monkeypatch.setattr(cli_module, "load_book_stats", lambda **kwargs: calls.append(("books", kwargs.get("data_dir"))) or SimpleNamespace(books=[], pages=[], progress_rows=0))
     monkeypatch.setattr(
         cli_module,
         "load_event_sessions",
@@ -432,12 +518,11 @@ def test_update_does_not_reset_by_default(monkeypatch) -> None:
 
     assert result.exit_code == 0
     assert calls == [
-        ("auth_users", False),
-        ("pull", 10000),
-        ("books", "DATABASE_URL"),
+        ("pull", False),
+        ("books", None),
         ("session", False),
         ("users", False),
         ("reads", False),
     ]
-    assert "events pull: No new events to export." in result.output
+    assert "pull events: 0 rows" in result.output
     assert "Reset: no" in result.output

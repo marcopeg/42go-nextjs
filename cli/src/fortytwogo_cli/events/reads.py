@@ -7,9 +7,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
-from fortytwogo_cli.events.books import DEFAULT_BOOK_STATS_APP_ID, load_book_stats_pages, stats_pages_path as book_stats_pages_path
+from fortytwogo_cli.events.books import DEFAULT_BOOK_STATS_APP_ID, book_pages_path, load_book_stats_pages
 from fortytwogo_cli.events.dependencies import import_duckdb, import_pyarrow
-from fortytwogo_cli.events.paths import ArchivePaths, parquet_files, parquet_glob, resolve_paths
+from fortytwogo_cli.events.paths import ArchivePaths, DEFAULT_DATA_DIR, parquet_files, parquet_glob, resolve_paths
 from fortytwogo_cli.events.users_growth import (
     BUCKET_TIMEZONE,
     DEFAULT_STATS_ROOT,
@@ -508,10 +508,10 @@ def _empty_book_page_catalog(source: str = "unavailable") -> BookPageCatalog:
     return BookPageCatalog(pages=[], source=source, page_count=0, fingerprint=f"{source}:0")
 
 
-def load_book_page_catalog(stats_root: Path | None = None, app_id: str = DEFAULT_BOOK_STATS_APP_ID) -> BookPageCatalog:
-    page_rows = load_book_stats_pages(stats_root=stats_root, app_id=app_id)
+def load_book_page_catalog(data_dir: Path | None = None, app_id: str = DEFAULT_BOOK_STATS_APP_ID) -> BookPageCatalog:
+    page_rows = load_book_stats_pages(data_dir=data_dir, app_id=app_id)
     if not page_rows:
-        source_path = book_stats_pages_path(stats_root or DEFAULT_STATS_ROOT, app_id)
+        source_path = book_pages_path(data_dir or DEFAULT_DATA_DIR)
         return _empty_book_page_catalog(f"missing:{source_path}")
     pages = [
         BookPageMetadata(
@@ -526,7 +526,7 @@ def load_book_page_catalog(stats_root: Path | None = None, app_id: str = DEFAULT
     fingerprint = f"parquet:{len(pages)}:{sum(page.position for page in pages)}:{max_key[0]}:{max_key[1]}"
     return BookPageCatalog(
         pages=pages,
-        source=str(book_stats_pages_path(stats_root or DEFAULT_STATS_ROOT, app_id)),
+        source=str(book_pages_path(data_dir or DEFAULT_DATA_DIR)),
         page_count=len(pages),
         fingerprint=fingerprint,
     )
@@ -1002,7 +1002,7 @@ def load_event_reads(
     fingerprints = source_fingerprints(files)
     all_events = _fetch_rows(parquet_glob(paths))
     app_ids = sorted({event["app_id"] for event in all_events})
-    book_page_catalog = load_book_page_catalog(stats_root=root, app_id=DEFAULT_BOOK_STATS_APP_ID)
+    book_page_catalog = load_book_page_catalog(data_dir=paths.root, app_id=DEFAULT_BOOK_STATS_APP_ID)
     results: list[ReadsAppResult] = []
 
     for app_id in app_ids:
@@ -1160,7 +1160,7 @@ def format_event_reads(result: ReadsResult) -> str:
     lines = [
         "42Go Read Engagement",
         "",
-        f"Archive: {result.archive_dir}",
+        f"Data root: {result.archive_dir}",
         f"Stats root: {result.stats_root}",
         f"Source Parquet files: {len(result.source_files)}",
         f"Visible book limit: {result.limit}",

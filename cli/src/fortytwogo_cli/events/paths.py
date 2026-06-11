@@ -5,15 +5,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 DATABASE_URL_ENV_VAR = "EVENTS_DATABASE_URL"
-ARCHIVE_DIR_ENV_VAR = "EVENTS_ANALYTICS_DIR"
-DEFAULT_ARCHIVE_DIR = Path(".local/42go-events")
+DATA_DIR_ENV_VAR = "FORTYTWOGO_DATA_DIR"
+DEFAULT_DATA_DIR = Path(".local/42go-data")
 
 
 @dataclass(frozen=True)
 class ArchivePaths:
     root: Path
     events: Path
-    csv_dir: Path
     parquet_dir: Path
     state: Path
     manifest: Path
@@ -42,29 +41,29 @@ def get_database_url() -> str:
     return value
 
 
-def resolve_archive_dir(archive_dir: str | Path | None = None) -> Path:
-    if archive_dir:
-        return Path(archive_dir)
-    return Path(os.environ.get(ARCHIVE_DIR_ENV_VAR, str(DEFAULT_ARCHIVE_DIR)))
+def resolve_data_dir(data_dir: str | Path | None = None) -> Path:
+    if data_dir:
+        return Path(data_dir)
+    return Path(os.environ.get(DATA_DIR_ENV_VAR, str(DEFAULT_DATA_DIR)))
 
 
 def resolve_paths(root: str | Path | None = None) -> ArchivePaths:
-    archive_root = resolve_archive_dir(root)
+    archive_root = resolve_data_dir(root)
     events = archive_root / "events"
+    state_dir = archive_root / "_state"
     return ArchivePaths(
         root=archive_root,
         events=events,
-        csv_dir=events / "csv",
-        parquet_dir=events / "parquet",
-        state=events / "state.json",
-        manifest=events / "manifest.jsonl",
-        inflight=events / "inflight.json",
+        parquet_dir=events,
+        state=state_dir / "events.json",
+        manifest=state_dir / "events_manifest.jsonl",
+        inflight=state_dir / "events_inflight.json",
     )
 
 
 def ensure_dirs(paths: ArchivePaths) -> None:
-    paths.csv_dir.mkdir(parents=True, exist_ok=True)
     paths.parquet_dir.mkdir(parents=True, exist_ok=True)
+    paths.state.parent.mkdir(parents=True, exist_ok=True)
 
 
 def parquet_files(paths: ArchivePaths) -> list[Path]:

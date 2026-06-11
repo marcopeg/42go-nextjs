@@ -6,8 +6,8 @@
 
 Inputs:
 
-- Raw events: `.local/42go-events/events/parquet/events_YYYYMM.parquet`
-- Book/page facts: `.local/42go-stats/{app-id}/query_books_stats_pages.parquet`
+- Raw events: `.local/42go-data/events/events_YYYYMM.parquet`
+- Book/page facts: `.local/42go-data/books_pages.parquet`
 
 Outputs:
 
@@ -43,14 +43,6 @@ query_users_growth_metrics.parquet
 query_users_growth_state.parquet
 ```
 
-Book stats:
-
-```text
-query_books_stats_books.parquet
-query_books_stats_pages.parquet
-query_books_stats_state.parquet
-```
-
 Reads:
 
 ```text
@@ -83,13 +75,14 @@ query_reads_state.parquet
 - Buckets: day, week, month, year.
 - WAU/MAU use trailing 7/30 day windows.
 
-## Book Stats Query
+## Book Query
 
 - Module: `events/books.py`
-- Pulls `lingocafe.books` and `lingocafe.books_pages`.
-- Default URL key: `DATABASE_URL`.
-- `--database-url-env BACKUP_DATABASE_URL` can pull from production-style backup URL.
-- Cleans old `events_query_books_stats_*` files when writing new outputs.
+- Reads raw local files from `.local/42go-data`.
+- Raw source pull lives under `42go pull books`.
+- `books` and `books_progress` are progressive.
+- `books_pages` is a full catalog refresh because the table has no cursor column.
+- `42go query books` never queries PostgreSQL.
 
 ## Reads Query
 
@@ -101,7 +94,7 @@ query_reads_state.parquet
 - Completion threshold default: `8000` BPS.
 - User-page progress is max `progress_bps`.
 - Page completion means max progress is at or above threshold.
-- Book completion is completed pages divided by total pages from `query_books_stats_pages.parquet`.
+- Book completion is completed pages divided by total pages from `books_pages.parquet`.
 - Funnel buckets: `0-20%`, `20-40%`, `40-60%`, `60-80%`, `80-100%`.
 
 ## Migration History

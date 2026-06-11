@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import csv
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -25,9 +24,10 @@ EVENT_COLUMNS = [
 
 @dataclass(frozen=True)
 class PullOptions:
-    archive_dir: Path | None = None
+    data_dir: Path | None = None
     limit: int = DEFAULT_LIMIT
     run_id: str | None = None
+    reset: bool = False
     dry_run: bool = False
 
 
@@ -90,13 +90,6 @@ def normalize_row(row: dict[str, Any]) -> dict[str, Any]:
         "data": json_payload(row["data"]),
         "meta": json_payload(row["meta"]),
     }
-
-
-def csv_row(row: dict[str, Any]) -> dict[str, Any]:
-    result = dict(row)
-    result["created_at"] = iso_utc(result["created_at"])
-    result["event_at"] = iso_utc(result["event_at"])
-    return result
 
 
 def load_cursor(paths: ArchivePaths) -> tuple[str | None, str | None]:
@@ -177,9 +170,9 @@ def month_name(month: str) -> str:
     return f"events_{month}"
 
 
-def monthly_paths(paths: ArchivePaths, month: str) -> tuple[Path, Path]:
+def monthly_paths(paths: ArchivePaths, month: str) -> Path:
     name = month_name(month)
-    return paths.csv_dir / f"{name}.csv", paths.parquet_dir / f"{name}.parquet"
+    return paths.parquet_dir / f"{name}.parquet"
 
 
 def group_rows_by_month(rows: Iterable[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
@@ -200,46 +193,12 @@ def dedupe_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     return sort_rows(by_id.values())
 
 
-def read_csv_rows(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
-    with path.open(newline="") as file_obj:
-        reader = csv.DictReader(file_obj)
-        rows = []
-        for row in reader:
-            rows.append(
-                normalize_row(
-                    {
-                        "created_at": row["created_at"],
-                        "id": row["id"],
-                        "app_id": row["app_id"],
-                        "user_id": row["user_id"],
-                        "event_at": row["event_at"],
-                        "name": row["name"],
-                        "data": row["data"],
-                        "meta": row["meta"],
-                    }
-                )
-            )
-        return rows
-
-
 def read_parquet_rows(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     _pa, pq = import_pyarrow()
     table = pq.read_table(path)
     return [normalize_row(row) for row in table.to_pylist()]
-
-
-def write_csv_file(path: Path, rows: list[dict[str, Any]]) -> None:
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with tmp.open("w", newline="") as file_obj:
-        writer = csv.DictWriter(file_obj, fieldnames=EVENT_COLUMNS)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(csv_row(row))
-    tmp.replace(path)
 
 
 def write_parquet_file(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -326,22 +285,14 @@ def write_state(paths: ArchivePaths, run_id: str, rows: list[dict[str, Any]]) ->
 
 
 def merge_month(paths: ArchivePaths, month: str, new_rows: list[dict[str, Any]]) -> dict[str, Any]:
-    csv_path, parquet_path = monthly_paths(paths, month)
-    existing_csv_rows = read_csv_rows(csv_path)
+    parquet_path = monthly_paths(paths, month)
     existing_parquet_rows = read_parquet_rows(parquet_path)
-    if csv_path.exists() and parquet_path.exists() and len(existing_csv_rows) != len(existing_parquet_rows):
-        raise RuntimeError(
-            f"Existing monthly CSV/Parquet row count mismatch for {month}: "
-            f"{len(existing_csv_rows)} CSV rows, {len(existing_parquet_rows)} Parquet rows."
-        )
 
-    merged_rows = dedupe_rows([*existing_csv_rows, *existing_parquet_rows, *new_rows])
-    write_csv_file(csv_path, merged_rows)
+    merged_rows = dedupe_rows([*existing_parquet_rows, *new_rows])
     write_parquet_file(parquet_path, merged_rows)
     smoke_read_parquet(parquet_path, len(merged_rows))
     return {
         "month": month,
-        "csv": str(csv_path),
         "parquet": str(parquet_path),
         "new_rows": len(new_rows),
         "total_rows": len(merged_rows),
@@ -350,18 +301,28 @@ def merge_month(paths: ArchivePaths, month: str, new_rows: list[dict[str, Any]])
 
 def remove_legacy_batches(paths: ArchivePaths) -> list[str]:
     removed: list[str] = []
-    for directory, suffix in [(paths.csv_dir, ".csv"), (paths.parquet_dir, ".parquet")]:
-        for path in directory.glob(f"batch-*{suffix}"):
-            path.unlink()
-            removed.append(str(path))
+    for path in paths.parquet_dir.glob("batch-*.parquet"):
+        path.unlink()
+        removed.append(str(path))
     return removed
+
+
+def reset_archive(paths: ArchivePaths) -> None:
+    if paths.parquet_dir.exists():
+        for path in paths.parquet_dir.glob("*.parquet"):
+            path.unlink()
+    paths.state.unlink(missing_ok=True)
+    paths.manifest.unlink(missing_ok=True)
+    paths.inflight.unlink(missing_ok=True)
 
 
 def pull_events(options: PullOptions) -> dict[str, Any]:
     database_url = get_database_url()
-    paths = resolve_paths(options.archive_dir)
+    paths = resolve_paths(options.data_dir)
     ensure_dirs(paths)
-    cursor = load_cursor(paths)
+    if options.reset and not options.dry_run:
+        reset_archive(paths)
+    cursor = (None, None) if options.reset else load_cursor(paths)
     raw_rows = fetch_rows(database_url, cursor, options.limit)
 
     if not raw_rows:

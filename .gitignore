@@ -57,11 +57,7 @@ pnpm-lock.yaml
 /.hal
 
 # Local analytics exports
-/.local/42go-events-analytics/
-/.local/42go-events/
-/.local/42go-stats/
-/.local/lingocafe-analytics/
+/.local
 
 # Database dumps
-/.local/42go-backups/
 /knex/dumps/*.sql

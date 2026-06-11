@@ -139,7 +139,8 @@ Verify the active command:
 ```bash
 which 42go
 42go --help
-42go events query --help
+42go pull --help
+42go query --help
 ```
 
 ### Uninstall
@@ -148,12 +149,6 @@ Remove the global pipx-installed CLI:
 
 ```bash
 pipx uninstall 42go-cli
-```
-
-The repo-local event virtualenv, when present, may also expose:
-
-```bash
-.local/42go-events/.venv/bin/42go
 ```
 
 ## Learn More

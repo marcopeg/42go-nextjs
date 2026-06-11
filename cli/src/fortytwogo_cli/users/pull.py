@@ -40,7 +40,7 @@ ACCOUNT_COLUMNS = [
 
 @dataclass(frozen=True)
 class PullUsersOptions:
-    stats_dir: Path | None = None
+    data_dir: Path | None = None
     limit: int = DEFAULT_LIMIT
     database_url_env: str = "DATABASE_URL"
     reset: bool = False
@@ -169,9 +169,9 @@ def fetch_users(
     """
     params: list[Any] = []
     if cursor:
-        sql += " WHERE (updated_at, created_at, id) > (%s::timestamptz, %s::timestamptz, %s)"
+        sql += " WHERE (created_at, id) > (%s::timestamptz, %s)"
         params.extend(cursor)
-    sql += " ORDER BY updated_at ASC, created_at ASC, id ASC LIMIT %s"
+    sql += " ORDER BY created_at ASC, id ASC LIMIT %s"
     params.append(limit)
 
     try:
@@ -209,11 +209,11 @@ def fetch_accounts(
     params: list[Any] = []
     if cursor:
         sql += """
-            WHERE (updated_at, created_at, app_id, account_id, provider)
-              > (%s::timestamptz, %s::timestamptz, %s, %s, %s)
+            WHERE (created_at, app_id, account_id)
+              > (%s::timestamptz, %s, %s)
         """
         params.extend(cursor)
-    sql += " ORDER BY updated_at ASC, created_at ASC, app_id ASC, account_id ASC, provider ASC LIMIT %s"
+    sql += " ORDER BY created_at ASC, app_id ASC, account_id ASC LIMIT %s"
     params.append(limit)
 
     try:
@@ -287,11 +287,11 @@ def smoke_read_parquet(path: Path, expected_rows: int) -> None:
 
 
 def sort_users(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-    return sorted(rows, key=lambda row: (row["updated_at"], row["created_at"], row["id"]))
+    return sorted(rows, key=lambda row: (row["created_at"], row["id"]))
 
 
 def sort_accounts(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-    return sorted(rows, key=lambda row: (row["updated_at"], row["created_at"], row["app_id"], row["account_id"], row["provider"]))
+    return sorted(rows, key=lambda row: (row["created_at"], row["app_id"], row["account_id"]))
 
 
 def merge_rows(
@@ -314,17 +314,21 @@ def build_state(users: list[dict[str, Any]], accounts: list[dict[str, Any]]) -> 
         "accounts": {"row_count": len(accounts)},
     }
     if users:
-        state["users"]["cursor"] = cursor_from_row(users[-1], ["updated_at", "created_at", "id"])
+        state["users"]["cursor"] = cursor_from_row(users[-1], ["created_at", "id"])
     if accounts:
-        state["accounts"]["cursor"] = cursor_from_row(accounts[-1], ["updated_at", "created_at", "app_id", "account_id", "provider"])
+        state["accounts"]["cursor"] = cursor_from_row(accounts[-1], ["created_at", "app_id", "account_id"])
     return state
 
 
 def pull_users(options: PullUsersOptions) -> dict[str, Any]:
     database_url = get_database_url(options.database_url_env)
-    paths = resolve_paths(options.stats_dir)
+    paths = resolve_paths(options.data_dir)
     ensure_dirs(paths)
     state = load_state(paths, options.reset)
+    if options.reset and not options.dry_run:
+        paths.users_parquet.unlink(missing_ok=True)
+        paths.accounts_parquet.unlink(missing_ok=True)
+        paths.state.unlink(missing_ok=True)
     users_cursor = None if options.reset else state.get("users", {}).get("cursor")
     accounts_cursor = None if options.reset else state.get("accounts", {}).get("cursor")
 

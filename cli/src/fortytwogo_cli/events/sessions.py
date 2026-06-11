@@ -520,7 +520,7 @@ def format_event_sessions(result: SessionResult) -> str:
     lines = [
         "42Go Event Sessions",
         "",
-        f"Archive: {result.archive_dir}",
+        f"Data root: {result.archive_dir}",
         f"Stats root: {result.stats_root}",
         f"Source Parquet files: {len(result.source_files)}",
         f"Visible session limit: {result.limit}",

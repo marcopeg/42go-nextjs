@@ -502,7 +502,7 @@ def format_users_growth(result: GrowthResult) -> str:
     lines = [
         "42Go Users Growth Stats",
         "",
-        f"Archive: {result.archive_dir}",
+        f"Data root: {result.archive_dir}",
         f"Stats root: {result.stats_root}",
         f"Source Parquet files: {len(result.source_files)}",
     ]

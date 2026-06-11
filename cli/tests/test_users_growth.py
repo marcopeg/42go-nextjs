@@ -18,7 +18,7 @@ from fortytwogo_cli.events.users_growth import (
 
 
 def write_events_archive(root: Path) -> None:
-    parquet_dir = root / "events" / "parquet"
+    parquet_dir = root / "events"
     parquet_dir.mkdir(parents=True)
     rows = [
         {

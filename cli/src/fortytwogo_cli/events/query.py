@@ -82,9 +82,9 @@ def load_event_stats(archive_dir: Path | None = None) -> EventStats | None:
 
 def format_stats(stats: EventStats) -> str:
     lines = [
-        "42Go Events Archive Stats",
+        "42Go Events Data Stats",
         "",
-        f"Archive: {stats.archive_dir}",
+        f"Data root: {stats.archive_dir}",
         f"Parquet directory: {stats.parquet_dir}",
         f"Parquet files: {len(stats.parquet_files)}",
         f"Covered months: {stats.covered_months}",

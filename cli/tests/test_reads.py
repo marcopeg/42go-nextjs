@@ -21,7 +21,7 @@ from fortytwogo_cli.events.reads import (
 
 
 def write_events_archive(root: Path, rows: list[dict[str, object]]) -> None:
-    parquet_dir = root / "events" / "parquet"
+    parquet_dir = root / "events"
     parquet_dir.mkdir(parents=True, exist_ok=True)
     pq.write_table(pa.Table.from_pylist(rows), parquet_dir / "events_202606.parquet")
 

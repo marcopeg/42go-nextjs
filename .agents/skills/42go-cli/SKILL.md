@@ -11,11 +11,13 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
 
 - Keep the console command `42go`.
 - Use command help as the source of truth before running a command: `42go --help`, then subcommand `--help`.
-- `42go events` is only for raw event archive extraction.
+- `42go pull` is for raw source data extraction.
 - `42go query` is for local analytics aggregations built from cached local data.
-- Do not use `42go events query`; that alias was removed.
+- No-arg command groups such as `42go pull`, `42go query`, and `42go query users` open interactive menus.
+- Do not use `42go events` or `42go users`; those roots were removed.
+- Raw pulled data lives under `.local/42go-data/`.
 - Generated analytics cache files live under `.local/42go-stats/{app-id}/` and use `query_*.parquet` names.
-- Do not commit `.local/42go-events`, `.local/42go-stats`, or `.local/42go-backups`.
+- Do not commit `.local/42go-data`, `.local/42go-stats`, or `.local/42go-backups`.
 - If changing CLI implementation, also use the `42go-cli-dev` skill.
 
 ## Capability Index
@@ -31,19 +33,25 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
   - `42go backup --light`
   - `42go restore --from <dump>`
   - Load `references/backup-restore.md`.
-- Event archive extraction:
-  - `42go events pull`
-  - `42go events pull --dry-run`
+- Raw data extraction:
+  - `42go pull`
+  - `42go pull auth`
+  - `42go pull events`
+  - `42go pull books`
+  - `42go pull all`
+  - `42go pull '*'` as the literal star alias for all data.
   - Load `references/events-archive.md`.
 - Local analytics queries:
+  - `42go query`
   - `42go query stats`
   - `42go query session`
+  - `42go query users`
   - `42go query users growth`
-  - `42go query books stats`
+  - `42go query books`
   - `42go query reads`
   - Load `references/query-analytics.md`.
 - Event logging expectations:
-  - New application events should flow through the shared core events system and be consumable by `42go events pull`.
+  - New application events should flow through the shared core events system and be consumable by `42go pull events`.
   - Load `references/event-logging.md`.
 - Full refresh shortcut:
   - `42go update`
@@ -56,6 +64,13 @@ Fresh local read-engagement analytics:
 
 ```bash
 42go update
+```
+
+Navigate local analytics interactively:
+
+```bash
+42go query
+42go query users
 ```
 
 Refresh session and user-growth aggregates:
@@ -78,13 +93,17 @@ Agents should navigate commands with:
 ```bash
 42go --help
 42go update --help
-42go events --help
-42go events pull --help
+42go pull --help
+42go pull auth --help
+42go pull events --help
+42go pull books --help
+42go pull all --help
+42go pull '*' --help
 42go query --help
 42go query stats --help
 42go query session --help
 42go query users growth --help
-42go query books stats --help
+42go query books --help
 42go query reads --help
 42go backup --help
 42go restore --help
