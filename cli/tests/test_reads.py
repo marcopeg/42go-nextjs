@@ -140,14 +140,15 @@ def test_event_reads_metrics_and_cache(tmp_path: Path) -> None:
     assert lingocafe.summary_path == stats_summary_path(stats_root, "lingocafe")
     assert lingocafe.event_names_path == stats_event_names_path(stats_root, "lingocafe")
     assert lingocafe.state_path == stats_state_path(stats_root, "lingocafe")
-    assert lingocafe.pages_path.name == "query_reads_pages.parquet"
-    assert lingocafe.users_path.name == "query_reads_users.parquet"
-    assert lingocafe.summary_path.name == "query_reads_summary.parquet"
-    assert lingocafe.event_names_path.name == "query_reads_event_names.parquet"
-    assert lingocafe.page_completion_path.name == "query_reads_page_completion.parquet"
-    assert lingocafe.book_completion_path.name == "query_reads_book_completion.parquet"
-    assert lingocafe.completion_funnel_path.name == "query_reads_completion_funnel.parquet"
-    assert lingocafe.state_path.name == "query_reads_state.parquet"
+    assert lingocafe.cache_dir == stats_root / "lingocafe"
+    assert lingocafe.pages_path.name == "query_lingocafe_reads_pages.parquet"
+    assert lingocafe.users_path.name == "query_lingocafe_reads_users.parquet"
+    assert lingocafe.summary_path.name == "query_lingocafe_reads_summary.parquet"
+    assert lingocafe.event_names_path.name == "query_lingocafe_reads_event_names.parquet"
+    assert lingocafe.page_completion_path.name == "query_lingocafe_reads_page_completion.parquet"
+    assert lingocafe.book_completion_path.name == "query_lingocafe_reads_book_completion.parquet"
+    assert lingocafe.completion_funnel_path.name == "query_lingocafe_reads_completion_funnel.parquet"
+    assert lingocafe.state_path.name == "query_lingocafe_reads_state.parquet"
     assert lingocafe.pages_path.exists()
     assert lingocafe.users_path.exists()
     assert lingocafe.summary_path.exists()

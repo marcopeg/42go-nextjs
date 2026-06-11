@@ -110,6 +110,14 @@ def load_state(paths: AuthExportPaths, reset: bool) -> dict[str, Any]:
     return read_json(paths.state) or {}
 
 
+def legacy_auth_paths(paths: AuthExportPaths) -> list[Path]:
+    return [
+        paths.root / "auth_users.parquet",
+        paths.root / "auth_accounts.parquet",
+        paths.root / "_state" / "auth.json",
+    ]
+
+
 def normalize_user(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "app_id": row["app_id"],
@@ -329,6 +337,8 @@ def pull_users(options: PullUsersOptions) -> dict[str, Any]:
         paths.users_parquet.unlink(missing_ok=True)
         paths.accounts_parquet.unlink(missing_ok=True)
         paths.state.unlink(missing_ok=True)
+        for path in legacy_auth_paths(paths):
+            path.unlink(missing_ok=True)
     users_cursor = None if options.reset else state.get("users", {}).get("cursor")
     accounts_cursor = None if options.reset else state.get("accounts", {}).get("cursor")
 

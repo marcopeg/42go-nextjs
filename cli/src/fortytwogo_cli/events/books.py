@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timezone
 from pathlib import Path
@@ -11,6 +12,7 @@ from fortytwogo_cli.users.paths import DEFAULT_DATA_DIR, get_database_url
 
 DEFAULT_BOOK_STATS_APP_ID = "lingocafe"
 DEFAULT_LIMIT = 10000
+DEFAULT_STATS_ROOT = Path(".local/42go-stats")
 
 BOOK_COLUMNS = [
     "id",
@@ -91,24 +93,59 @@ class BookStatsPageRow:
 class BookStatsResult:
     app_id: str
     data_root: Path
+    stats_root: Path
+    cache_dir: Path
     books_path: Path
     pages_path: Path
     progress_path: Path
     state_path: Path
+    stats_books_path: Path
+    stats_pages_path: Path
+    stats_progress_path: Path
+    stats_state_path: Path
     books: list[BookStatsBookRow]
     pages: list[BookStatsPageRow]
     progress_rows: int
     database_url_env: str = "local parquet"
 
 
-def resolve_book_data_paths(data_dir: str | Path | None = None) -> BookDataPaths:
-    root = Path(data_dir) if data_dir else DEFAULT_DATA_DIR
+def safe_app_id(app_id: str) -> str:
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", app_id):
+        raise RuntimeError(f"Unsafe app id for stats cache path: {app_id}")
+    return app_id
+
+
+def stats_cache_dir(stats_root: Path, app_id: str) -> Path:
+    return stats_root / safe_app_id(app_id)
+
+
+def stats_books_path(stats_root: Path, app_id: str) -> Path:
+    return stats_cache_dir(stats_root, app_id) / "query_lingocafe_books_books.parquet"
+
+
+def stats_pages_path(stats_root: Path, app_id: str) -> Path:
+    return stats_cache_dir(stats_root, app_id) / "query_lingocafe_books_pages.parquet"
+
+
+def stats_progress_path(stats_root: Path, app_id: str) -> Path:
+    return stats_cache_dir(stats_root, app_id) / "query_lingocafe_books_progress.parquet"
+
+
+def stats_state_path(stats_root: Path, app_id: str) -> Path:
+    return stats_cache_dir(stats_root, app_id) / "query_lingocafe_books_state.parquet"
+
+
+def resolve_book_data_paths(
+    data_dir: str | Path | None = None,
+    app_id: str = DEFAULT_BOOK_STATS_APP_ID,
+) -> BookDataPaths:
+    root = (Path(data_dir) if data_dir else DEFAULT_DATA_DIR) / app_id
     return BookDataPaths(
         root=root,
         books_path=root / "books.parquet",
         pages_path=root / "books_pages.parquet",
         progress_path=root / "books_progress.parquet",
-        state_path=root / "_state" / "books.json",
+        state_path=root / "_state.json",
     )
 
 
@@ -156,6 +193,23 @@ def write_json_atomic(path: Path, data: dict[str, Any]) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
     tmp.replace(path)
+
+
+def legacy_book_state_paths(paths: BookDataPaths) -> list[Path]:
+    return [paths.root / "_state" / "books.json"]
+
+
+def read_book_state(paths: BookDataPaths, reset: bool) -> dict[str, Any]:
+    if reset:
+        return {}
+    state = read_json(paths.state_path)
+    if state is not None:
+        return state
+    for legacy_path in legacy_book_state_paths(paths):
+        state = read_json(legacy_path)
+        if state is not None:
+            return state
+    return {}
 
 
 def cursor_from_row(row: dict[str, Any], keys: list[str]) -> list[str]:
@@ -369,10 +423,10 @@ def pull_books(options: PullBooksOptions) -> dict[str, Any]:
     database_url = get_database_url(options.database_url_env)
     paths = resolve_book_data_paths(options.data_dir)
     ensure_book_dirs(paths)
-    state = {} if options.reset else read_json(paths.state_path) or {}
+    state = read_book_state(paths, options.reset)
 
     if options.reset and not options.dry_run:
-        for path in [paths.books_path, paths.pages_path, paths.progress_path, paths.state_path]:
+        for path in [paths.books_path, paths.pages_path, paths.progress_path, paths.state_path, *legacy_book_state_paths(paths)]:
             path.unlink(missing_ok=True)
 
     books_cursor = None if options.reset else state.get("books", {}).get("cursor")
@@ -430,12 +484,12 @@ def pull_books(options: PullBooksOptions) -> dict[str, Any]:
     }
 
 
-def book_pages_path(data_dir: Path | None = None) -> Path:
-    return resolve_book_data_paths(data_dir).pages_path
+def book_pages_path(data_dir: Path | None = None, app_id: str = DEFAULT_BOOK_STATS_APP_ID) -> Path:
+    return resolve_book_data_paths(data_dir, app_id=app_id).pages_path
 
 
 def load_book_stats_pages(data_dir: Path | None = None, app_id: str = DEFAULT_BOOK_STATS_APP_ID) -> list[BookStatsPageRow]:
-    paths = resolve_book_data_paths(data_dir)
+    paths = resolve_book_data_paths(data_dir, app_id=app_id)
     if not paths.pages_path.exists():
         return []
     duckdb = import_duckdb()
@@ -451,10 +505,55 @@ def load_book_stats_pages(data_dir: Path | None = None, app_id: str = DEFAULT_BO
     return [BookStatsPageRow(app_id, str(row[0]), str(row[1]), int(row[2]), str(row[3]), str(row[4])) for row in rows]
 
 
-def load_book_stats(data_dir: Path | None = None, app_id: str = DEFAULT_BOOK_STATS_APP_ID) -> BookStatsResult:
-    paths = resolve_book_data_paths(data_dir)
+def write_book_stats_outputs(result: BookStatsResult, reset: bool = False) -> None:
+    pa, pq = import_pyarrow()
+    result.cache_dir.mkdir(parents=True, exist_ok=True)
+    if reset:
+        for path in [result.stats_books_path, result.stats_pages_path, result.stats_progress_path, result.stats_state_path]:
+            path.unlink(missing_ok=True)
+    pq.write_table(pa.Table.from_pylist([asdict(row) for row in result.books]), result.stats_books_path)
+    pq.write_table(pa.Table.from_pylist([asdict(row) for row in result.pages]), result.stats_pages_path)
+    pq.write_table(
+        pa.Table.from_pylist(
+            [
+                {
+                    "app_id": result.app_id,
+                    "progress_rows": result.progress_rows,
+                    "source_path": str(result.progress_path),
+                }
+            ]
+        ),
+        result.stats_progress_path,
+    )
+    pq.write_table(
+        pa.Table.from_pylist(
+            [
+                {
+                    "app_id": result.app_id,
+                    "books": len(result.books),
+                    "pages": len(result.pages),
+                    "progress_rows": result.progress_rows,
+                    "source_books_path": str(result.books_path),
+                    "source_pages_path": str(result.pages_path),
+                    "source_progress_path": str(result.progress_path),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                }
+            ]
+        ),
+        result.stats_state_path,
+    )
+
+
+def load_book_stats(
+    data_dir: Path | None = None,
+    app_id: str = DEFAULT_BOOK_STATS_APP_ID,
+    stats_root: Path | None = None,
+    reset: bool = False,
+) -> BookStatsResult:
+    paths = resolve_book_data_paths(data_dir, app_id=app_id)
     if not paths.books_path.exists() or not paths.pages_path.exists():
         raise RuntimeError(f"Book Parquet files are missing under {paths.root}. Run `42go pull books` first.")
+    root = stats_root or DEFAULT_STATS_ROOT
     duckdb = import_duckdb()
     with duckdb.connect(":memory:") as connection:
         book_rows = connection.execute(
@@ -482,27 +581,41 @@ def load_book_stats(data_dir: Path | None = None, app_id: str = DEFAULT_BOOK_STA
         for book_id, project, lang, level, title, author, page_count in book_rows
     ]
     pages = load_book_stats_pages(data_dir=data_dir, app_id=app_id)
-    return BookStatsResult(
+    result = BookStatsResult(
         app_id=app_id,
         data_root=paths.root,
+        stats_root=root,
+        cache_dir=stats_cache_dir(root, app_id),
         books_path=paths.books_path,
         pages_path=paths.pages_path,
         progress_path=paths.progress_path,
         state_path=paths.state_path,
+        stats_books_path=stats_books_path(root, app_id),
+        stats_pages_path=stats_pages_path(root, app_id),
+        stats_progress_path=stats_progress_path(root, app_id),
+        stats_state_path=stats_state_path(root, app_id),
         books=books,
         pages=pages,
         progress_rows=progress_rows,
     )
+    write_book_stats_outputs(result, reset=reset)
+    return result
 
 
 def book_stats_to_dict(result: BookStatsResult) -> dict[str, Any]:
     return {
         "app_id": result.app_id,
         "data_root": str(result.data_root),
+        "stats_root": str(result.stats_root),
+        "cache_dir": str(result.cache_dir),
         "books_path": str(result.books_path),
         "pages_path": str(result.pages_path),
         "progress_path": str(result.progress_path),
         "state_path": str(result.state_path),
+        "stats_books_path": str(result.stats_books_path),
+        "stats_pages_path": str(result.stats_pages_path),
+        "stats_progress_path": str(result.stats_progress_path),
+        "stats_state_path": str(result.stats_state_path),
         "books": len(result.books),
         "pages": len(result.pages),
         "progress": result.progress_rows,
@@ -515,6 +628,8 @@ def format_book_stats(result: BookStatsResult) -> str:
             "42Go Books",
             "",
             f"Data root: {result.data_root}",
+            f"Stats root: {result.stats_root}",
+            f"Cache: {result.cache_dir}",
             f"Books: {len(result.books)}",
             f"Pages: {len(result.pages)}",
             f"Progress rows: {result.progress_rows}",
@@ -522,5 +637,9 @@ def format_book_stats(result: BookStatsResult) -> str:
             f"Pages Parquet: {result.pages_path}",
             f"Progress Parquet: {result.progress_path}",
             f"State: {result.state_path}",
+            f"Stats Books Parquet: {result.stats_books_path}",
+            f"Stats Pages Parquet: {result.stats_pages_path}",
+            f"Stats Progress Parquet: {result.stats_progress_path}",
+            f"Stats State Parquet: {result.stats_state_path}",
         ]
     )

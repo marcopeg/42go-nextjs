@@ -3,18 +3,17 @@
 ## Files
 
 - `events/paths.py`: raw data root, env loading, path construction.
-- `events/pull.py`: source query, merge/write, manifest/state handling.
+- `events/pull.py`: source query, merge/write, state handling.
 - `events/query.py`: high-level archive stats.
 
 ## Archive Layout
 
 ```text
 .local/42go-data/
-  events/events_YYYYMM.parquet
-  _state/
-    events.json
-    events_manifest.jsonl
-    events_inflight.json
+  events/
+    events_YYYYMM.parquet
+    _state.json
+    _inflight.json
 ```
 
 ## Export Contract
@@ -27,7 +26,7 @@
 - Write Parquet atomically for each touched month.
 - Smoke-read touched Parquet files with DuckDB before committing state.
 - Commit state only after every file write succeeds.
-- Record manifest entries for completed runs.
+- Record the progressive cursor and latest completed batch summary in `_state.json`.
 - Incomplete reruns reuse inflight run ID.
 
 ## Data Normalization

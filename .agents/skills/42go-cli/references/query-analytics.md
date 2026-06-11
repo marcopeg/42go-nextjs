@@ -10,7 +10,7 @@ Invoking `42go query` without a subcommand opens an interactive menu. If the sel
 - Raw pulled data is never filtered by app ID.
 - `42go query ...` builds or reads local analytics from cached Parquet data.
 - Derived aggregate files are app-scoped under `.local/42go-stats/{app-id}/`.
-- Aggregate files use `query_*.parquet` names.
+- LingoCafe aggregate files use filenames that mirror the command chain, such as `query_lingocafe_books_pages.parquet` and `query_lingocafe_reads_pages.parquet`.
 - `--app-id`, `--user-id`, `--book-id`, and `--limit` filter visible output unless command help says otherwise.
 - `--reset` rebuilds local aggregate caches from available local data and removes legacy `events_query_*` files.
 
@@ -24,10 +24,10 @@ Invoking `42go query` without a subcommand opens an interactive menu. If the sel
 `42go update` runs the standard refresh pipeline:
 
 1. `42go pull all`
-2. `42go query books`
+2. `42go query lingocafe books`
 3. `42go query session`
 4. `42go query users growth`
-5. `42go query reads`
+5. `42go query lingocafe reads`
 
 Options:
 
@@ -119,39 +119,48 @@ Cache files:
 
 ```bash
 42go pull books
-42go query books
-42go query books --format json
+42go query lingocafe books
+42go query lingocafe books --format json
 ```
 
 Purpose:
 
 - Pull `lingocafe.books`, `lingocafe.books_pages`, and `lingocafe.books_progress` into raw local Parquet.
 - Provide total page counts and page positions for read-completion joins.
-- Read local files only during `42go query books`.
+- Read local files only during `42go query lingocafe books`.
 
 Raw files:
 
 ```text
-.local/42go-data/books.parquet
-.local/42go-data/books_pages.parquet
-.local/42go-data/books_progress.parquet
-.local/42go-data/_state/books.json
+.local/42go-data/lingocafe/books.parquet
+.local/42go-data/lingocafe/books_pages.parquet
+.local/42go-data/lingocafe/books_progress.parquet
+.local/42go-data/lingocafe/_state.json
+```
+
+Cache files:
+
+```text
+.local/42go-stats/lingocafe/query_lingocafe_books_books.parquet
+.local/42go-stats/lingocafe/query_lingocafe_books_pages.parquet
+.local/42go-stats/lingocafe/query_lingocafe_books_progress.parquet
+.local/42go-stats/lingocafe/query_lingocafe_books_state.parquet
 ```
 
 ## Reads
 
 ```bash
-42go query reads
-42go query reads --app-id lingocafe --book-id dracula-sv-a2 --limit 100
-42go query reads --completion-threshold-bps 8000
-42go query reads --format json
-42go query reads --reset
+42go query lingocafe reads
+42go query lingocafe reads --book-id dracula-sv-a2 --limit 100
+42go query lingocafe reads --completion-threshold-bps 8000
+42go query lingocafe reads --format json
+42go query lingocafe reads --reset
 ```
 
 Source facts:
 
 - Events: `.local/42go-data/events/events_YYYYMM.parquet`
-- Book/page catalog: `.local/42go-data/books_pages.parquet`
+- Book/page catalog: `.local/42go-data/lingocafe/books_pages.parquet`
 
 Event fields:
 
@@ -191,12 +200,12 @@ Completion metrics:
 Cache files:
 
 ```text
-.local/42go-stats/{app-id}/query_reads_pages.parquet
-.local/42go-stats/{app-id}/query_reads_users.parquet
-.local/42go-stats/{app-id}/query_reads_summary.parquet
-.local/42go-stats/{app-id}/query_reads_event_names.parquet
-.local/42go-stats/{app-id}/query_reads_page_completion.parquet
-.local/42go-stats/{app-id}/query_reads_book_completion.parquet
-.local/42go-stats/{app-id}/query_reads_completion_funnel.parquet
-.local/42go-stats/{app-id}/query_reads_state.parquet
+.local/42go-stats/lingocafe/query_lingocafe_reads_pages.parquet
+.local/42go-stats/lingocafe/query_lingocafe_reads_users.parquet
+.local/42go-stats/lingocafe/query_lingocafe_reads_summary.parquet
+.local/42go-stats/lingocafe/query_lingocafe_reads_event_names.parquet
+.local/42go-stats/lingocafe/query_lingocafe_reads_page_completion.parquet
+.local/42go-stats/lingocafe/query_lingocafe_reads_book_completion.parquet
+.local/42go-stats/lingocafe/query_lingocafe_reads_completion_funnel.parquet
+.local/42go-stats/lingocafe/query_lingocafe_reads_state.parquet
 ```

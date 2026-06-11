@@ -31,7 +31,7 @@ Use the shared core events system. Do not create app-local event tables or app-l
 
 ## Query Compatibility
 
-`42go query reads` currently recognizes book context from:
+`42go query lingocafe reads` currently recognizes book context from:
 
 - `data.book_id`
 - `data.page_id`

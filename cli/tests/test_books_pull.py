@@ -91,9 +91,10 @@ def test_pull_books_writes_raw_parquet_and_query_reads_local_files(monkeypatch, 
     assert result["books_changed"] == 1
     assert result["pages_total"] == 2
     assert result["progress_changed"] == 1
-    assert paths.books_path == data_dir / "books.parquet"
-    assert paths.pages_path == data_dir / "books_pages.parquet"
-    assert paths.progress_path == data_dir / "books_progress.parquet"
+    assert paths.books_path == data_dir / "lingocafe" / "books.parquet"
+    assert paths.pages_path == data_dir / "lingocafe" / "books_pages.parquet"
+    assert paths.progress_path == data_dir / "lingocafe" / "books_progress.parquet"
+    assert paths.state_path == data_dir / "lingocafe" / "_state.json"
     assert read_parquet_rows(paths.books_path)[0]["id"] == "b1"
     assert [row["id"] for row in read_parquet_rows(paths.pages_path)] == ["p1", "p2"]
     assert read_parquet_rows(paths.progress_path)[0]["user_id"] == "u1"
@@ -103,15 +104,26 @@ def test_pull_books_writes_raw_parquet_and_query_reads_local_files(monkeypatch, 
     assert state["pages"]["mode"] == "full-refresh"
     assert state["progress"]["cursor"] == ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "u1", "b1"]
 
-    stats = load_book_stats(data_dir=data_dir)
+    stats_root = tmp_path / ".local" / "42go-stats"
+    stats = load_book_stats(data_dir=data_dir, stats_root=stats_root)
     assert len(stats.books) == 1
     assert stats.books[0].book_id == "b1"
     assert stats.books[0].page_count == 2
     assert stats.progress_rows == 1
+    assert stats.cache_dir == stats_root / "lingocafe"
+    assert stats.stats_books_path.name == "query_lingocafe_books_books.parquet"
+    assert stats.stats_pages_path.name == "query_lingocafe_books_pages.parquet"
+    assert stats.stats_progress_path.name == "query_lingocafe_books_progress.parquet"
+    assert stats.stats_state_path.name == "query_lingocafe_books_state.parquet"
+    assert stats.stats_books_path.exists()
+    assert stats.stats_pages_path.exists()
+    assert stats.stats_progress_path.exists()
+    assert stats.stats_state_path.exists()
 
 
 def test_pull_books_uses_cursors_and_reset(monkeypatch, tmp_path: Path) -> None:
     data_dir = tmp_path / ".local" / "42go-data"
+    legacy_state = data_dir / "lingocafe" / "_state" / "books.json"
     monkeypatch.setenv("DATABASE_URL", "postgres://example")
     calls: list[tuple[str, list[str] | None]] = []
 
@@ -127,6 +139,8 @@ def test_pull_books_uses_cursors_and_reset(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(books_mod, "fetch_pages", lambda database_url: [page_row("b1", "p1", 1)])
     monkeypatch.setattr(books_mod, "fetch_progress", first_progress)
     pull_books(PullBooksOptions(data_dir=data_dir))
+    legacy_state.parent.mkdir(parents=True, exist_ok=True)
+    legacy_state.write_text("{}")
 
     def second_books(database_url: str, cursor: list[str] | None, limit: int) -> list[dict[str, Any]]:
         calls.append(("books", cursor))
@@ -157,3 +171,4 @@ def test_pull_books_uses_cursors_and_reset(monkeypatch, tmp_path: Path) -> None:
     assert calls[-2] == ("books", None)
     assert calls[-1] == ("progress", None)
     assert [row["id"] for row in read_parquet_rows(paths.books_path)] == ["b3"]
+    assert not legacy_state.exists()

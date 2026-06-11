@@ -74,8 +74,9 @@ def read_parquet_rows(path: Path) -> list[dict[str, Any]]:
 def test_default_paths_use_local_data_root() -> None:
     paths = resolve_paths()
 
-    assert paths.users_parquet == Path(".local/42go-data/auth_users.parquet")
-    assert paths.accounts_parquet == Path(".local/42go-data/auth_accounts.parquet")
+    assert paths.users_parquet == Path(".local/42go-data/auth/users.parquet")
+    assert paths.accounts_parquet == Path(".local/42go-data/auth/accounts.parquet")
+    assert paths.state == Path(".local/42go-data/auth/_state.json")
 
 
 def test_pull_users_writes_allowlisted_parquet_and_state(monkeypatch, tmp_path: Path) -> None:
@@ -89,8 +90,9 @@ def test_pull_users_writes_allowlisted_parquet_and_state(monkeypatch, tmp_path: 
 
     assert result["users_changed"] == 1
     assert result["accounts_changed"] == 1
-    assert paths.users_parquet == data_dir / "auth_users.parquet"
-    assert paths.accounts_parquet == data_dir / "auth_accounts.parquet"
+    assert paths.users_parquet == data_dir / "auth" / "users.parquet"
+    assert paths.accounts_parquet == data_dir / "auth" / "accounts.parquet"
+    assert paths.state == data_dir / "auth" / "_state.json"
 
     user_rows = read_parquet_rows(paths.users_parquet)
     account_rows = read_parquet_rows(paths.accounts_parquet)
@@ -163,10 +165,17 @@ def test_pull_users_uses_cursors_and_merges_updates(monkeypatch, tmp_path: Path)
 
 def test_pull_users_reset_rebuilds_without_existing_rows(monkeypatch, tmp_path: Path) -> None:
     data_dir = tmp_path / ".local" / "42go-data"
+    legacy_users = data_dir / "auth_users.parquet"
+    legacy_accounts = data_dir / "auth_accounts.parquet"
+    legacy_state = data_dir / "_state" / "auth.json"
     monkeypatch.setenv("DATABASE_URL", "postgres://example")
     monkeypatch.setattr(users_pull, "fetch_users", lambda database_url, cursor, limit: [user_row("u1", name="John")])
     monkeypatch.setattr(users_pull, "fetch_accounts", lambda database_url, cursor, limit: [account_row("acc1", user_id="u1")])
     pull_users(PullUsersOptions(data_dir=data_dir))
+    legacy_users.write_text("legacy")
+    legacy_accounts.write_text("legacy")
+    legacy_state.parent.mkdir(parents=True, exist_ok=True)
+    legacy_state.write_text("{}")
 
     cursors: list[list[str] | None] = []
 
@@ -186,6 +195,9 @@ def test_pull_users_reset_rebuilds_without_existing_rows(monkeypatch, tmp_path: 
     assert cursors == [None, None]
     assert [row["id"] for row in read_parquet_rows(paths.users_parquet)] == ["u2"]
     assert [row["account_id"] for row in read_parquet_rows(paths.accounts_parquet)] == ["acc2"]
+    assert not legacy_users.exists()
+    assert not legacy_accounts.exists()
+    assert not legacy_state.exists()
 
 
 def test_write_failure_does_not_advance_state(monkeypatch, tmp_path: Path) -> None:

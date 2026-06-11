@@ -15,7 +15,6 @@ class ArchivePaths:
     events: Path
     parquet_dir: Path
     state: Path
-    manifest: Path
     inflight: Path
 
 
@@ -50,14 +49,12 @@ def resolve_data_dir(data_dir: str | Path | None = None) -> Path:
 def resolve_paths(root: str | Path | None = None) -> ArchivePaths:
     archive_root = resolve_data_dir(root)
     events = archive_root / "events"
-    state_dir = archive_root / "_state"
     return ArchivePaths(
         root=archive_root,
         events=events,
         parquet_dir=events,
-        state=state_dir / "events.json",
-        manifest=state_dir / "events_manifest.jsonl",
-        inflight=state_dir / "events_inflight.json",
+        state=events / "_state.json",
+        inflight=events / "_inflight.json",
     )
 
 

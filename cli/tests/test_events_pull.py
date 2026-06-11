@@ -55,13 +55,20 @@ def test_pull_events_writes_monthly_parquet_and_uses_cursor(monkeypatch, tmp_pat
     assert result["rows"] == 1
     assert calls == [(None, None)]
     assert paths.parquet_dir == data_dir / "events"
+    assert paths.state == data_dir / "events" / "_state.json"
+    assert paths.inflight == data_dir / "events" / "_inflight.json"
     assert (paths.parquet_dir / "events_202606.parquet").exists()
     assert not list(paths.parquet_dir.glob("*.csv"))
     assert read_parquet_rows(paths.parquet_dir / "events_202606.parquet")[0]["id"] == "00000000-0000-0000-0000-000000000001"
 
     state = json.loads(paths.state.read_text())
+    assert state["last_run_id"] == "run-1"
+    assert state["last_row_count"] == 1
+    assert state["first_created_at"] == "2026-06-01T10:00:00Z"
+    assert state["first_id"] == "00000000-0000-0000-0000-000000000001"
     assert state["last_created_at"] == "2026-06-01T10:00:00Z"
     assert state["last_id"] == "00000000-0000-0000-0000-000000000001"
+    assert state["months"][0]["month"] == "202606"
 
     def second_fetch(database_url: str, cursor: tuple[str | None, str | None], limit: int) -> list[dict[str, Any]]:
         calls.append(cursor)
@@ -79,9 +86,16 @@ def test_pull_events_writes_monthly_parquet_and_uses_cursor(monkeypatch, tmp_pat
 
 def test_pull_events_reset_deletes_existing_parquet(monkeypatch, tmp_path: Path) -> None:
     data_dir = tmp_path / ".local" / "42go-data"
+    legacy_state = data_dir / "_state" / "events.json"
+    legacy_manifest = data_dir / "_state" / "events_manifest.jsonl"
+    legacy_inflight = data_dir / "_state" / "events_inflight.json"
     monkeypatch.setattr(events_pull, "get_database_url", lambda: "postgres://events")
     monkeypatch.setattr(events_pull, "fetch_rows", lambda database_url, cursor, limit: [event_row("00000000-0000-0000-0000-000000000001")])
     pull_events(PullOptions(data_dir=data_dir, run_id="run-1"))
+    legacy_state.parent.mkdir(parents=True, exist_ok=True)
+    legacy_state.write_text("{}")
+    legacy_manifest.write_text("{}\n")
+    legacy_inflight.write_text("{}")
 
     cursors: list[tuple[str | None, str | None]] = []
 
@@ -98,3 +112,33 @@ def test_pull_events_reset_deletes_existing_parquet(monkeypatch, tmp_path: Path)
     assert [row["id"] for row in read_parquet_rows(paths.parquet_dir / "events_202607.parquet")] == [
         "00000000-0000-0000-0000-000000000003"
     ]
+    assert not legacy_state.exists()
+    assert not legacy_manifest.exists()
+    assert not legacy_inflight.exists()
+
+
+def test_pull_events_reads_legacy_state_once(monkeypatch, tmp_path: Path) -> None:
+    data_dir = tmp_path / ".local" / "42go-data"
+    legacy_state = data_dir / "_state" / "events.json"
+    legacy_state.parent.mkdir(parents=True, exist_ok=True)
+    legacy_state.write_text(
+        json.dumps(
+            {
+                "last_created_at": "2026-06-01T10:00:00Z",
+                "last_id": "00000000-0000-0000-0000-000000000001",
+            }
+        )
+    )
+    cursors: list[tuple[str | None, str | None]] = []
+    monkeypatch.setattr(events_pull, "get_database_url", lambda: "postgres://events")
+
+    def fetch(database_url: str, cursor: tuple[str | None, str | None], limit: int) -> list[dict[str, Any]]:
+        cursors.append(cursor)
+        return [event_row("00000000-0000-0000-0000-000000000002", created_at="2026-06-02T10:00:00Z")]
+
+    monkeypatch.setattr(events_pull, "fetch_rows", fetch)
+    pull_events(PullOptions(data_dir=data_dir, run_id="run-2"))
+    paths = resolve_paths(data_dir)
+
+    assert cursors == [("2026-06-01T10:00:00Z", "00000000-0000-0000-0000-000000000001")]
+    assert json.loads(paths.state.read_text())["last_id"] == "00000000-0000-0000-0000-000000000002"

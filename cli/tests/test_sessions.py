@@ -96,7 +96,7 @@ def test_event_sessions_cluster_and_cache(tmp_path: Path) -> None:
     legacy_dir = legacy_stats_cache_dir(stats_root, "lingocafe")
     legacy_dir.mkdir(parents=True)
     (legacy_dir / "sessions.json").write_text("{}")
-    legacy_state = stats_cache_dir(stats_root, "lingocafe") / "events_query_session_state.json"
+    legacy_state = stats_root / "lingocafe" / "events_query_session_state.json"
     legacy_state.parent.mkdir(parents=True, exist_ok=True)
     legacy_state.write_text("{}")
 

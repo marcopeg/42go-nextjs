@@ -16,7 +16,8 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
 - No-arg command groups such as `42go pull`, `42go query`, and `42go query users` open interactive menus.
 - Do not use `42go events` or `42go users`; those roots were removed.
 - Raw pulled data lives under `.local/42go-data/`.
-- Generated analytics cache files live under `.local/42go-stats/{app-id}/` and use `query_*.parquet` names.
+- Raw pulled rows that mirror a source table use `.local/42go-data/{schema}/{table}.parquet`.
+- Generated analytics cache files live under `.local/42go-stats/{app-id}/` and use filenames that mirror the `42go query ...` command chain.
 - Do not commit `.local/42go-data`, `.local/42go-stats`, or `.local/42go-backups`.
 - If changing CLI implementation, also use the `42go-cli-dev` skill.
 
@@ -47,8 +48,9 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
   - `42go query session`
   - `42go query users`
   - `42go query users growth`
-  - `42go query books`
-  - `42go query reads`
+  - `42go query lingocafe`
+  - `42go query lingocafe books`
+  - `42go query lingocafe reads`
   - Load `references/query-analytics.md`.
 - Event logging expectations:
   - New application events should flow through the shared core events system and be consumable by `42go pull events`.
@@ -103,8 +105,9 @@ Agents should navigate commands with:
 42go query stats --help
 42go query session --help
 42go query users growth --help
-42go query books --help
-42go query reads --help
+42go query lingocafe --help
+42go query lingocafe books --help
+42go query lingocafe reads --help
 42go backup --help
 42go restore --help
 ```

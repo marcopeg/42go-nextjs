@@ -93,8 +93,26 @@ def normalize_row(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def load_cursor(paths: ArchivePaths) -> tuple[str | None, str | None]:
-    state = read_json(paths.state) or {}
+    state = read_json(paths.state)
+    if state is None:
+        for legacy_path in legacy_state_paths(paths):
+            state = read_json(legacy_path)
+            if state is not None:
+                break
+    state = state or {}
     return state.get("last_created_at"), state.get("last_id")
+
+
+def legacy_state_paths(paths: ArchivePaths) -> list[Path]:
+    return [paths.root / "_state" / "events.json"]
+
+
+def legacy_manifest_paths(paths: ArchivePaths) -> list[Path]:
+    return [paths.root / "_state" / "events_manifest.jsonl"]
+
+
+def legacy_inflight_paths(paths: ArchivePaths) -> list[Path]:
+    return [paths.root / "_state" / "events_inflight.json"]
 
 
 def fetch_rows(
@@ -143,6 +161,11 @@ def resolve_run_id(paths: ArchivePaths, cursor: tuple[str | None, str | None], r
         return requested
 
     inflight = read_json(paths.inflight)
+    if inflight is None:
+        for legacy_path in legacy_inflight_paths(paths):
+            inflight = read_json(legacy_path)
+            if inflight is not None:
+                break
     if inflight and [*cursor] == inflight.get("cursor"):
         run_id = inflight.get("run_id") or inflight.get("batch_id")
         if run_id:
@@ -230,55 +253,20 @@ def smoke_read_parquet(path: Path, expected_rows: int) -> None:
         raise RuntimeError(f"Parquet smoke read failed: expected {expected_rows} rows, read {count}.")
 
 
-def manifest_has_run(path: Path, run_id: str) -> bool:
-    if not path.exists():
-        return False
-    for line in path.read_text().splitlines():
-        if not line.strip():
-            continue
-        try:
-            item = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if item.get("run_id") == run_id or item.get("batch_id") == run_id:
-            return True
-    return False
-
-
-def append_manifest(
-    paths: ArchivePaths,
-    run_id: str,
-    rows: list[dict[str, Any]],
-    updates: list[dict[str, Any]],
-) -> None:
-    if manifest_has_run(paths.manifest, run_id):
-        return
+def write_state(paths: ArchivePaths, run_id: str, rows: list[dict[str, Any]], updates: list[dict[str, Any]]) -> None:
     first = rows[0]
-    last = rows[-1]
-    entry = {
-        "run_id": run_id,
-        "row_count": len(rows),
-        "first_created_at": iso_utc(first["created_at"]),
-        "first_id": first["id"],
-        "last_created_at": iso_utc(last["created_at"]),
-        "last_id": last["id"],
-        "months": updates,
-        "completed_at": iso_utc(utc_now()),
-    }
-    with paths.manifest.open("a") as file_obj:
-        file_obj.write(json.dumps(entry, sort_keys=True) + "\n")
-
-
-def write_state(paths: ArchivePaths, run_id: str, rows: list[dict[str, Any]]) -> None:
     last = rows[-1]
     write_json_atomic(
         paths.state,
         {
             "version": 1,
             "last_run_id": run_id,
+            "last_row_count": len(rows),
+            "first_created_at": iso_utc(first["created_at"]),
+            "first_id": first["id"],
             "last_created_at": iso_utc(last["created_at"]),
             "last_id": last["id"],
-            "row_count": len(rows),
+            "months": updates,
             "updated_at": iso_utc(utc_now()),
         },
     )
@@ -311,9 +299,14 @@ def reset_archive(paths: ArchivePaths) -> None:
     if paths.parquet_dir.exists():
         for path in paths.parquet_dir.glob("*.parquet"):
             path.unlink()
-    paths.state.unlink(missing_ok=True)
-    paths.manifest.unlink(missing_ok=True)
-    paths.inflight.unlink(missing_ok=True)
+    for path in [
+        paths.state,
+        paths.inflight,
+        *legacy_state_paths(paths),
+        *legacy_manifest_paths(paths),
+        *legacy_inflight_paths(paths),
+    ]:
+        path.unlink(missing_ok=True)
 
 
 def pull_events(options: PullOptions) -> dict[str, Any]:
@@ -352,8 +345,7 @@ def pull_events(options: PullOptions) -> dict[str, Any]:
         updates.append(merge_month(paths, month, month_rows))
 
     removed_legacy_files = remove_legacy_batches(paths)
-    append_manifest(paths, run_id, rows, updates)
-    write_state(paths, run_id, rows)
+    write_state(paths, run_id, rows, updates)
     paths.inflight.unlink(missing_ok=True)
 
     return {

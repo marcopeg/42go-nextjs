@@ -40,11 +40,10 @@ The CLI reads `.env` when the env var is not already exported.
 
 ```text
 .local/42go-data/
-  events/events_YYYYMM.parquet
-  _state/
-    events.json
-    events_manifest.jsonl
-    events_inflight.json
+  events/
+    events_YYYYMM.parquet
+    _state.json
+    _inflight.json
 ```
 
 ## Extraction Contract
@@ -58,6 +57,7 @@ The CLI reads `.env` when the env var is not already exported.
 - Monthly files are named after the event partition strategy: `events_YYYYMM.parquet`.
 - Existing monthly files are merged by event `id` and rewritten atomically.
 - State advances only after every touched Parquet file is written and smoke-read.
+- `_state.json` stores the progressive cursor and latest completed batch summary.
 - Incomplete reruns reuse the inflight run ID.
 
 ## After Pulling

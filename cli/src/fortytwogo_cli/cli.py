@@ -76,11 +76,11 @@ def update(
     )
 
     try:
-        book_result = load_book_stats(data_dir=data_dir)
+        book_result = load_book_stats(data_dir=data_dir, reset=reset)
     except RuntimeError as error:
-        typer.echo(f"query books failed: {error}", err=True)
+        typer.echo(f"query lingocafe books failed: {error}", err=True)
         raise typer.Exit(1) from error
-    typer.echo(f"query books: books={len(book_result.books)} pages={len(book_result.pages)} progress={book_result.progress_rows}")
+    typer.echo(f"query lingocafe books: books={len(book_result.books)} pages={len(book_result.pages)} progress={book_result.progress_rows}")
 
     try:
         session_result = load_event_sessions(archive_dir=data_dir, reset=reset)
@@ -107,16 +107,16 @@ def update(
         typer.echo(f"query users growth: {users_statuses or 'n/a'} rows={user_rows}")
 
     try:
-        reads_result = load_event_reads(archive_dir=data_dir, reset=reset)
+        reads_result = load_event_reads(archive_dir=data_dir, app_id_filter="lingocafe", reset=reset)
     except RuntimeError as error:
-        typer.echo(f"query reads failed: {error}", err=True)
+        typer.echo(f"query lingocafe reads failed: {error}", err=True)
         raise typer.Exit(1) from error
     if reads_result is None:
-        typer.echo(f"query reads: no monthly Parquet files found under {resolve_paths(data_dir).parquet_dir}")
+        typer.echo(f"query lingocafe reads: no monthly Parquet files found under {resolve_paths(data_dir).parquet_dir}")
     else:
         reads_statuses = ",".join(sorted({app_result.cache_status for app_result in reads_result.apps}))
         books_total = sum(app_result.total_books for app_result in reads_result.apps)
-        typer.echo(f"query reads: {reads_statuses or 'n/a'} books={books_total}")
+        typer.echo(f"query lingocafe reads: {reads_statuses or 'n/a'} books={books_total}")
 
     typer.echo("")
     typer.echo(f"Reset: {'yes' if reset else 'no'}")

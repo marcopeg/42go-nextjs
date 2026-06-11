@@ -35,14 +35,13 @@ def resolve_data_dir(data_dir: str | Path | None = None) -> Path:
 
 def resolve_paths(root: str | Path | None = None) -> AuthExportPaths:
     stats_root = resolve_data_dir(root)
-    data_dir = stats_root
-    state_dir = stats_root / "_state"
+    data_dir = stats_root / "auth"
     return AuthExportPaths(
         root=stats_root,
         data_dir=data_dir,
-        users_parquet=data_dir / "auth_users.parquet",
-        accounts_parquet=data_dir / "auth_accounts.parquet",
-        state=state_dir / "auth.json",
+        users_parquet=data_dir / "users.parquet",
+        accounts_parquet=data_dir / "accounts.parquet",
+        state=data_dir / "_state.json",
     )
 
 

@@ -179,35 +179,35 @@ def stats_cache_dir(stats_root: Path, app_id: str) -> Path:
 
 
 def stats_pages_path(stats_root: Path, app_id: str) -> Path:
-    return stats_cache_dir(stats_root, app_id) / "query_reads_pages.parquet"
+    return stats_cache_dir(stats_root, app_id) / "query_lingocafe_reads_pages.parquet"
 
 
 def stats_users_path(stats_root: Path, app_id: str) -> Path:
-    return stats_cache_dir(stats_root, app_id) / "query_reads_users.parquet"
+    return stats_cache_dir(stats_root, app_id) / "query_lingocafe_reads_users.parquet"
 
 
 def stats_summary_path(stats_root: Path, app_id: str) -> Path:
-    return stats_cache_dir(stats_root, app_id) / "query_reads_summary.parquet"
+    return stats_cache_dir(stats_root, app_id) / "query_lingocafe_reads_summary.parquet"
 
 
 def stats_event_names_path(stats_root: Path, app_id: str) -> Path:
-    return stats_cache_dir(stats_root, app_id) / "query_reads_event_names.parquet"
+    return stats_cache_dir(stats_root, app_id) / "query_lingocafe_reads_event_names.parquet"
 
 
 def stats_page_completion_path(stats_root: Path, app_id: str) -> Path:
-    return stats_cache_dir(stats_root, app_id) / "query_reads_page_completion.parquet"
+    return stats_cache_dir(stats_root, app_id) / "query_lingocafe_reads_page_completion.parquet"
 
 
 def stats_book_completion_path(stats_root: Path, app_id: str) -> Path:
-    return stats_cache_dir(stats_root, app_id) / "query_reads_book_completion.parquet"
+    return stats_cache_dir(stats_root, app_id) / "query_lingocafe_reads_book_completion.parquet"
 
 
 def stats_completion_funnel_path(stats_root: Path, app_id: str) -> Path:
-    return stats_cache_dir(stats_root, app_id) / "query_reads_completion_funnel.parquet"
+    return stats_cache_dir(stats_root, app_id) / "query_lingocafe_reads_completion_funnel.parquet"
 
 
 def stats_state_path(stats_root: Path, app_id: str) -> Path:
-    return stats_cache_dir(stats_root, app_id) / "query_reads_state.parquet"
+    return stats_cache_dir(stats_root, app_id) / "query_lingocafe_reads_state.parquet"
 
 
 def legacy_stats_cache_dir(stats_root: Path, app_id: str) -> Path:
@@ -217,6 +217,14 @@ def legacy_stats_cache_dir(stats_root: Path, app_id: str) -> Path:
 def legacy_stats_parquet_paths(stats_root: Path, app_id: str) -> list[Path]:
     cache_dir = stats_cache_dir(stats_root, app_id)
     return [
+        cache_dir / "query_reads_pages.parquet",
+        cache_dir / "query_reads_users.parquet",
+        cache_dir / "query_reads_summary.parquet",
+        cache_dir / "query_reads_event_names.parquet",
+        cache_dir / "query_reads_page_completion.parquet",
+        cache_dir / "query_reads_book_completion.parquet",
+        cache_dir / "query_reads_completion_funnel.parquet",
+        cache_dir / "query_reads_state.parquet",
         cache_dir / "events_query_reads_pages.parquet",
         cache_dir / "events_query_reads_users.parquet",
         cache_dir / "events_query_reads_summary.parquet",
@@ -511,7 +519,7 @@ def _empty_book_page_catalog(source: str = "unavailable") -> BookPageCatalog:
 def load_book_page_catalog(data_dir: Path | None = None, app_id: str = DEFAULT_BOOK_STATS_APP_ID) -> BookPageCatalog:
     page_rows = load_book_stats_pages(data_dir=data_dir, app_id=app_id)
     if not page_rows:
-        source_path = book_pages_path(data_dir or DEFAULT_DATA_DIR)
+        source_path = book_pages_path(data_dir or DEFAULT_DATA_DIR, app_id=app_id)
         return _empty_book_page_catalog(f"missing:{source_path}")
     pages = [
         BookPageMetadata(
@@ -526,7 +534,7 @@ def load_book_page_catalog(data_dir: Path | None = None, app_id: str = DEFAULT_B
     fingerprint = f"parquet:{len(pages)}:{sum(page.position for page in pages)}:{max_key[0]}:{max_key[1]}"
     return BookPageCatalog(
         pages=pages,
-        source=str(book_pages_path(data_dir or DEFAULT_DATA_DIR)),
+        source=str(book_pages_path(data_dir or DEFAULT_DATA_DIR, app_id=app_id)),
         page_count=len(pages),
         fingerprint=fingerprint,
     )

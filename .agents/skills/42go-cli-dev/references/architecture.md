@@ -40,18 +40,20 @@ cli/src/fortytwogo_cli/
     query.py                     # high-level archive stats
     sessions.py                  # query session aggregation
     users_growth.py              # query users growth aggregation
-    books.py                     # book raw pull helpers and query books reader
-    reads.py                     # query reads engagement aggregation
+    books.py                     # book raw pull helpers and query lingocafe books reader
+    reads.py                     # query lingocafe reads engagement aggregation
 ```
 
 ## Command Boundary
 
-- `42go pull auth`: reads `auth.users` and `auth.accounts`, writes raw local Parquet without password or token secrets.
+- `42go pull auth`: reads `auth.users` and `auth.accounts`, writes `.local/42go-data/auth/users.parquet` and `.local/42go-data/auth/accounts.parquet` without password or token secrets.
 - `42go pull events`: reads `events.events`, writes raw monthly local Parquet.
 - `42go pull books`: reads LingoCafe books, pages, and progress, writes raw local Parquet.
 - `42go pull all`: runs all raw pulls.
 - `42go pull '*'`: literal star alias for all raw pulls.
 - `42go query ...`: reads local Parquet and builds or inspects local aggregates.
+- `42go query lingocafe books`: inspects LingoCafe book catalog facts from local raw Parquet.
+- `42go query lingocafe reads`: builds LingoCafe reading engagement aggregates.
 - `42go backup` / `42go restore`: data-only SQL movement.
 
 ## Environment Loading

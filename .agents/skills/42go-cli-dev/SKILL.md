@@ -19,10 +19,11 @@ Use this skill for implementation work on the local Python CLI under `cli/`. For
   - `42go backup` and `42go restore` for data-only SQL dump workflows.
 - Do not reintroduce `42go events` or `42go users`.
 - Store raw pulled data as Parquet under `.local/42go-data/`.
+- Raw pulled rows that mirror a source table must use `.local/42go-data/{schema}/{table}.parquet`.
 - Keep command help useful and test it.
 - No-arg command groups with subcommands should open interactive menus.
 - Store generated analytics aggregates as Parquet under `.local/42go-stats/{app-id}/`.
-- Use `query_*.parquet` names for analytics outputs.
+- Use filenames that mirror the `42go query ...` command chain, such as `query_lingocafe_reads_pages.parquet`.
 - Update `42go-cli` operator docs when user-facing behavior changes.
 
 ## Load-On-Demand References

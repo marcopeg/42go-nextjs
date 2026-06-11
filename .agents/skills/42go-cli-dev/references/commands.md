@@ -23,13 +23,16 @@ The root callback prints help when no subcommand is invoked. Nested command grou
 - `query_app`: local analytics aggregation commands.
 - `stats_app`: callback-backed `42go query stats`.
 - `query_users_app`: nested `42go query users`.
-- `42go query books`: direct command on `query_app`.
+- `query_lingocafe_app`: nested `42go query lingocafe`.
+- `42go query lingocafe books`: LingoCafe book catalog query.
+- `42go query lingocafe reads`: LingoCafe reading engagement query.
 
 No-arg menus:
 
 - `42go pull`: menu for auth, events, books, and all.
-- `42go query`: menu for stats, session, users, books, and reads.
+- `42go query`: menu for stats, session, users, and LingoCafe.
 - `42go query users`: menu for growth.
+- `42go query lingocafe`: menu for books and reads.
 
 Do not reintroduce `42go events` or `42go users`; both are absorbed by `42go pull`.
 
@@ -61,8 +64,9 @@ The following must print useful help:
 42go query session --help
 42go query users --help
 42go query users growth --help
-42go query books --help
-42go query reads --help
+42go query lingocafe --help
+42go query lingocafe books --help
+42go query lingocafe reads --help
 42go backup --help
 42go restore --help
 ```

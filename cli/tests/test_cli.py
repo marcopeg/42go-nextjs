@@ -97,11 +97,11 @@ def test_query_help_lists_commands() -> None:
 
     assert result.exit_code == 0
     assert "session" in result.output
-    assert "reads" in result.output
-    assert "books" in result.output
+    assert "users" in result.output
+    assert "lingocafe" in result.output
 
 
-def test_query_without_target_prompts_and_runs_selection(monkeypatch) -> None:
+def test_query_without_target_prompts_and_enters_lingocafe_menu(monkeypatch) -> None:
     calls: list[str] = []
 
     def fake_run_books_query(*args, **kwargs) -> None:
@@ -109,13 +109,15 @@ def test_query_without_target_prompts_and_runs_selection(monkeypatch) -> None:
 
     monkeypatch.setattr(events_cli_module, "run_books_query", fake_run_books_query)
 
-    result = runner.invoke(app, ["query"], input="4\n")
+    result = runner.invoke(app, ["query"], input="4\n1\n")
 
     assert result.exit_code == 0
     assert calls == ["books"]
     assert "Choose query target" in result.output
     assert "1. stats" in result.output
-    assert "4. books" in result.output
+    assert "4. lingocafe" in result.output
+    assert "Choose LingoCafe query" in result.output
+    assert "1. books" in result.output
 
 
 def test_query_users_without_target_prompts_and_runs_selection(monkeypatch) -> None:
@@ -148,6 +150,22 @@ def test_query_menu_enters_nested_users_menu(monkeypatch) -> None:
     assert calls == ["growth"]
     assert "Choose query target" in result.output
     assert "Choose users query" in result.output
+
+
+def test_query_lingocafe_without_target_prompts_and_runs_selection(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def fake_run_reads_query(*args, **kwargs) -> None:
+        calls.append("reads")
+
+    monkeypatch.setattr(events_cli_module, "run_reads_query", fake_run_reads_query)
+
+    result = runner.invoke(app, ["query", "lingocafe"], input="2\n")
+
+    assert result.exit_code == 0
+    assert calls == ["reads"]
+    assert "Choose LingoCafe query" in result.output
+    assert "2. reads" in result.output
 
 
 def test_backup_help_lists_mode_flags() -> None:
@@ -345,12 +363,12 @@ def test_session_help_describes_options() -> None:
 
 
 def test_reads_help_describes_options() -> None:
-    result = runner.invoke(app, ["query", "reads", "--help"])
+    result = runner.invoke(app, ["query", "lingocafe", "reads", "--help"])
 
     assert result.exit_code == 0
     assert "--reset" in result.output
     assert "--book-id" in result.output
-    assert "--app-id" in result.output
+    assert "--app-id" not in result.output
     assert "--limit" in result.output
     assert "--completion-threshol" in result.output
     assert "--format" in result.output
@@ -414,19 +432,22 @@ def test_update_stops_when_pull_all_fails(monkeypatch, tmp_path: Path) -> None:
     assert "pull failed: auth export failed" in result.output
 
 
-def test_books_query_help_describes_options() -> None:
-    result = runner.invoke(app, ["query", "books", "--help"])
+def test_lingocafe_books_query_help_describes_options() -> None:
+    result = runner.invoke(app, ["query", "lingocafe", "books", "--help"])
 
     assert result.exit_code == 0
-    assert "--app-id" in result.output
+    assert "--app-id" not in result.output
     assert "--data-dir" in result.output
+    assert "--reset" in result.output
     assert "--format" in result.output
 
 
-def test_books_stats_subcommand_is_removed() -> None:
-    result = runner.invoke(app, ["query", "books", "stats"])
+def test_top_level_books_and_reads_commands_are_removed() -> None:
+    books_result = runner.invoke(app, ["query", "books"])
+    reads_result = runner.invoke(app, ["query", "reads"])
 
-    assert result.exit_code != 0
+    assert books_result.exit_code != 0
+    assert reads_result.exit_code != 0
 
 
 def test_update_runs_refresh_pipeline_and_passes_reset(monkeypatch) -> None:
@@ -441,7 +462,7 @@ def test_update_runs_refresh_pipeline_and_passes_reset(monkeypatch) -> None:
         }
 
     def fake_load_book_stats(**kwargs):
-        calls.append(("books", kwargs.get("data_dir")))
+        calls.append(("books", kwargs.get("data_dir"), kwargs.get("reset")))
         return SimpleNamespace(books=[object(), object()], pages=[object(), object(), object()], progress_rows=1)
 
     def fake_load_event_sessions(archive_dir=None, reset=False):
@@ -452,8 +473,8 @@ def test_update_runs_refresh_pipeline_and_passes_reset(monkeypatch) -> None:
         calls.append(("users", reset))
         return SimpleNamespace(apps=[SimpleNamespace(rows=[object(), object()], cache_status="rebuilt")])
 
-    def fake_load_event_reads(archive_dir=None, reset=False):
-        calls.append(("reads", reset))
+    def fake_load_event_reads(archive_dir=None, app_id_filter=None, reset=False):
+        calls.append(("reads", reset, app_id_filter))
         return SimpleNamespace(apps=[SimpleNamespace(total_books=5, cache_status="rebuilt")])
 
     monkeypatch.setattr(cli_module, "run_all_pulls", fake_run_all_pulls)
@@ -467,17 +488,17 @@ def test_update_runs_refresh_pipeline_and_passes_reset(monkeypatch) -> None:
     assert result.exit_code == 0
     assert calls == [
         ("pull", True),
-        ("books", None),
+        ("books", None, True),
         ("session", True),
         ("users", True),
-        ("reads", True),
+        ("reads", True, "lingocafe"),
     ]
     assert "pull events: 3 rows" in result.output
     assert "pull auth: users=1/2 accounts=1/1" in result.output
-    assert "query books: books=2 pages=3 progress=1" in result.output
+    assert "query lingocafe books: books=2 pages=3 progress=1" in result.output
     assert "query session: rebuilt sessions=4" in result.output
     assert "query users growth: rebuilt rows=2" in result.output
-    assert "query reads: rebuilt books=5" in result.output
+    assert "query lingocafe reads: rebuilt books=5" in result.output
     assert "Reset: yes" in result.output
 
 
@@ -494,7 +515,11 @@ def test_update_does_not_reset_by_default(monkeypatch) -> None:
             "books": {"books_changed": 0, "books_total": 0, "pages_total": 0, "progress_changed": 0, "progress_total": 0},
         },
     )
-    monkeypatch.setattr(cli_module, "load_book_stats", lambda **kwargs: calls.append(("books", kwargs.get("data_dir"))) or SimpleNamespace(books=[], pages=[], progress_rows=0))
+    monkeypatch.setattr(
+        cli_module,
+        "load_book_stats",
+        lambda **kwargs: calls.append(("books", kwargs.get("data_dir"), kwargs.get("reset"))) or SimpleNamespace(books=[], pages=[], progress_rows=0),
+    )
     monkeypatch.setattr(
         cli_module,
         "load_event_sessions",
@@ -510,7 +535,7 @@ def test_update_does_not_reset_by_default(monkeypatch) -> None:
     monkeypatch.setattr(
         cli_module,
         "load_event_reads",
-        lambda archive_dir=None, reset=False: calls.append(("reads", reset))
+        lambda archive_dir=None, app_id_filter=None, reset=False: calls.append(("reads", reset, app_id_filter))
         or SimpleNamespace(apps=[SimpleNamespace(total_books=0, cache_status="cached")]),
     )
 
@@ -519,10 +544,10 @@ def test_update_does_not_reset_by_default(monkeypatch) -> None:
     assert result.exit_code == 0
     assert calls == [
         ("pull", False),
-        ("books", None),
+        ("books", None, False),
         ("session", False),
         ("users", False),
-        ("reads", False),
+        ("reads", False, "lingocafe"),
     ]
     assert "pull events: 0 rows" in result.output
     assert "Reset: no" in result.output

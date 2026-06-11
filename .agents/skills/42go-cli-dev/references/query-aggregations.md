@@ -7,13 +7,12 @@
 Inputs:
 
 - Raw events: `.local/42go-data/events/events_YYYYMM.parquet`
-- Book/page facts: `.local/42go-data/books_pages.parquet`
+- Book/page facts: `.local/42go-data/lingocafe/books_pages.parquet`
 
 Outputs:
 
 - App-scoped root: `.local/42go-stats/{app-id}/`
-- File naming: `query_{subcommand}_{table}.parquet`
-- State tables: `query_{subcommand}_state.parquet`
+- LingoCafe file naming mirrors the `42go query lingocafe ...` command chain.
 
 Do not use nested command folders for generated aggregates.
 
@@ -43,17 +42,26 @@ query_users_growth_metrics.parquet
 query_users_growth_state.parquet
 ```
 
+LingoCafe books:
+
+```text
+query_lingocafe_books_books.parquet
+query_lingocafe_books_pages.parquet
+query_lingocafe_books_progress.parquet
+query_lingocafe_books_state.parquet
+```
+
 Reads:
 
 ```text
-query_reads_pages.parquet
-query_reads_users.parquet
-query_reads_summary.parquet
-query_reads_event_names.parquet
-query_reads_page_completion.parquet
-query_reads_book_completion.parquet
-query_reads_completion_funnel.parquet
-query_reads_state.parquet
+query_lingocafe_reads_pages.parquet
+query_lingocafe_reads_users.parquet
+query_lingocafe_reads_summary.parquet
+query_lingocafe_reads_event_names.parquet
+query_lingocafe_reads_page_completion.parquet
+query_lingocafe_reads_book_completion.parquet
+query_lingocafe_reads_completion_funnel.parquet
+query_lingocafe_reads_state.parquet
 ```
 
 ## Session Query
@@ -78,11 +86,11 @@ query_reads_state.parquet
 ## Book Query
 
 - Module: `events/books.py`
-- Reads raw local files from `.local/42go-data`.
+- Reads raw local files from `.local/42go-data/lingocafe`.
 - Raw source pull lives under `42go pull books`.
 - `books` and `books_progress` are progressive.
 - `books_pages` is a full catalog refresh because the table has no cursor column.
-- `42go query books` never queries PostgreSQL.
+- `42go query lingocafe books` never queries PostgreSQL.
 
 ## Reads Query
 
@@ -99,4 +107,4 @@ query_reads_state.parquet
 
 ## Migration History
 
-Earlier cache names used `events_query_*`. Current commands must write `query_*`. Keep legacy cleanup code until old local worktrees have naturally reset.
+Earlier cache names used shorter `query_reads_*` and older `events_query_*` files under `.local/42go-stats/{app-id}/`. Current LingoCafe commands must write `query_lingocafe_*` files. Keep legacy cleanup code until old local worktrees have naturally reset.

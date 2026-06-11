@@ -32,15 +32,16 @@ Use the installed CLI:
 42go --help
 42go pull --help
 42go query --help
-42go query reads --help
+42go query lingocafe --help
+42go query lingocafe reads --help
 ```
 
 Run realistic local analytics:
 
 ```bash
 42go pull events --dry-run
-42go query books
-42go query reads --reset --limit 5
+42go query lingocafe books
+42go query lingocafe reads --reset --limit 5
 ```
 
 Database/network commands may require sandbox escalation.
@@ -50,7 +51,7 @@ Database/network commands may require sandbox escalation.
 Check generated files:
 
 ```bash
-find .local/42go-stats/lingocafe -maxdepth 1 -type f -name 'query_*.parquet' | sort
+find .local/42go-stats/lingocafe -maxdepth 1 -type f -name 'query_lingocafe_*.parquet' | sort
 ```
 
 Use DuckDB for row counts when validating aggregate output:

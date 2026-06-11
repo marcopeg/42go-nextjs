@@ -53,8 +53,14 @@ query_users_app = typer.Typer(
     invoke_without_command=True,
     no_args_is_help=False,
 )
+query_lingocafe_app = typer.Typer(
+    help="Build LingoCafe-specific analytics from local Parquet data.",
+    invoke_without_command=True,
+    no_args_is_help=False,
+)
 query_app.add_typer(stats_app, name="stats", help="Print event archive and product statistics.")
 query_app.add_typer(query_users_app, name="users", help="Print user-related statistics.")
+query_app.add_typer(query_lingocafe_app, name="lingocafe", help="Build LingoCafe-specific analytics.")
 
 
 def prompt_menu(title: str, options: list[tuple[int, str]]) -> int:
@@ -91,12 +97,12 @@ def run_stats_query(data_dir: Path | None = None) -> None:
 
 def run_books_query(
     data_dir: Path | None = None,
-    app_id: str = DEFAULT_BOOK_STATS_APP_ID,
+    reset: bool = False,
     output_format: str = "text",
 ) -> None:
     validate_output_format(output_format)
     try:
-        result = load_book_stats(data_dir=data_dir, app_id=app_id)
+        result = load_book_stats(data_dir=data_dir, app_id=DEFAULT_BOOK_STATS_APP_ID, reset=reset)
     except RuntimeError as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(1) from error
@@ -166,7 +172,6 @@ def run_session_query(
 
 def run_reads_query(
     data_dir: Path | None = None,
-    app_id: str | None = None,
     book_id: str | None = None,
     limit: int = DEFAULT_READS_LIMIT,
     completion_threshold_bps: int = DEFAULT_COMPLETION_THRESHOLD_BPS,
@@ -177,7 +182,7 @@ def run_reads_query(
     try:
         result = load_event_reads(
             archive_dir=data_dir,
-            app_id_filter=app_id,
+            app_id_filter=DEFAULT_BOOK_STATS_APP_ID,
             book_id_filter=book_id,
             limit=limit,
             completion_threshold_bps=completion_threshold_bps,
@@ -208,6 +213,20 @@ def run_users_query_menu() -> None:
         run_users_growth_query()
 
 
+def run_lingocafe_query_menu() -> None:
+    choice = prompt_menu(
+        "Choose LingoCafe query:",
+        [
+            (1, "books"),
+            (2, "reads"),
+        ],
+    )
+    if choice == 1:
+        run_books_query()
+    elif choice == 2:
+        run_reads_query()
+
+
 def run_query_menu() -> None:
     choice = prompt_menu(
         "Choose query target:",
@@ -215,8 +234,7 @@ def run_query_menu() -> None:
             (1, "stats"),
             (2, "session"),
             (3, "users"),
-            (4, "books"),
-            (5, "reads"),
+            (4, "lingocafe"),
         ],
     )
     if choice == 1:
@@ -226,9 +244,7 @@ def run_query_menu() -> None:
     elif choice == 3:
         run_users_query_menu()
     elif choice == 4:
-        run_books_query()
-    elif choice == 5:
-        run_reads_query()
+        run_lingocafe_query_menu()
 
 
 @query_app.callback()
@@ -264,22 +280,30 @@ def query_users_root(ctx: typer.Context) -> None:
         raise typer.Exit()
 
 
-@query_app.command(name="books", help="Inspect book-related local analytics facts.")
+@query_lingocafe_app.callback()
+def query_lingocafe_root(ctx: typer.Context) -> None:
+    """Prompt for a LingoCafe query when no subcommand is provided."""
+    if ctx.invoked_subcommand is None:
+        run_lingocafe_query_menu()
+        raise typer.Exit()
+
+
+@query_lingocafe_app.command(name="books", help="Inspect LingoCafe book-related local analytics facts.")
 def books(
     data_dir: Annotated[
         Path | None,
         typer.Option("--data-dir", help=f"Local raw data root. Defaults to FORTYTWOGO_DATA_DIR or {DEFAULT_DATA_DIR}."),
     ] = None,
-    app_id: Annotated[
-        str,
-        typer.Option("--app-id", help="App ID label to use when joining book facts into app-scoped read analytics."),
-    ] = DEFAULT_BOOK_STATS_APP_ID,
     output_format: Annotated[
         str,
         typer.Option("--format", help="Output format: text or json."),
     ] = "text",
+    reset: Annotated[
+        bool,
+        typer.Option("--reset", help="Remove LingoCafe book aggregate caches and rebuild from local raw Parquet data."),
+    ] = False,
 ) -> None:
-    run_books_query(data_dir=data_dir, app_id=app_id, output_format=output_format)
+    run_books_query(data_dir=data_dir, reset=reset, output_format=output_format)
 
 
 @query_users_app.command(help="Compute user growth, subscriptions, active users, and inactive users over time.")
@@ -350,7 +374,7 @@ def session(
     )
 
 
-@query_app.command(help="Compute app-scoped book reading engagement from local event rows.")
+@query_lingocafe_app.command(help="Compute LingoCafe book reading engagement from local event rows.")
 def reads(
     data_dir: Annotated[
         Path | None,
@@ -358,10 +382,6 @@ def reads(
             "--data-dir",
             help=f"Local raw data root. Defaults to FORTYTWOGO_DATA_DIR or {DEFAULT_DATA_DIR}.",
         ),
-    ] = None,
-    app_id: Annotated[
-        str | None,
-        typer.Option("--app-id", help="App ID to show in output. Cache processing still covers all available apps."),
     ] = None,
     book_id: Annotated[
         str | None,
@@ -391,7 +411,6 @@ def reads(
 ) -> None:
     run_reads_query(
         data_dir=data_dir,
-        app_id=app_id,
         book_id=book_id,
         limit=limit,
         completion_threshold_bps=completion_threshold_bps,
