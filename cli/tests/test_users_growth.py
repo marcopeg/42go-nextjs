@@ -8,9 +8,12 @@ import pyarrow.parquet as pq
 
 from fortytwogo_cli.events.users_growth import (
     format_users_growth,
+    legacy_stats_cache_dir,
     load_users_growth,
     parse_app_filter,
     safe_app_id,
+    stats_metrics_path,
+    stats_state_path,
 )
 
 
@@ -120,11 +123,23 @@ def test_users_growth_metrics_and_cache(tmp_path: Path) -> None:
     archive = tmp_path / "archive"
     stats_root = tmp_path / "stats"
     write_events_archive(archive)
+    legacy_dir = legacy_stats_cache_dir(stats_root, "lingocafe")
+    legacy_dir.mkdir(parents=True)
+    (legacy_dir / "metrics.parquet").write_text("legacy")
+    legacy_state = stats_root / "lingocafe" / "events_query_users_growth_state.json"
+    legacy_state.parent.mkdir(parents=True, exist_ok=True)
+    legacy_state.write_text("{}")
 
     first = load_users_growth(archive_dir=archive, stats_root=stats_root, reset=False)
     assert first is not None
     assert len(first.apps) == 1
     assert first.apps[0].cache_status == "rebuilt"
+    assert first.apps[0].metrics_path == stats_metrics_path(stats_root, "lingocafe")
+    assert first.apps[0].state_path == stats_state_path(stats_root, "lingocafe")
+    assert first.apps[0].metrics_path.name == "query_users_growth_metrics.parquet"
+    assert first.apps[0].state_path.name == "query_users_growth_state.parquet"
+    assert first.apps[0].metrics_path.exists()
+    assert first.apps[0].state_path.exists()
 
     daily_rows = [row for row in first.apps[0].rows if row.granularity == "day"]
     last_day = daily_rows[-1]
@@ -142,6 +157,8 @@ def test_users_growth_metrics_and_cache(tmp_path: Path) -> None:
     reset = load_users_growth(archive_dir=archive, stats_root=stats_root, reset=True)
     assert reset is not None
     assert reset.apps[0].cache_status == "rebuilt"
+    assert not legacy_dir.exists()
+    assert not legacy_state.exists()
 
 
 def test_users_growth_output_can_filter_apps(tmp_path: Path) -> None:

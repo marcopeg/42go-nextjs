@@ -50,7 +50,6 @@
 
 ## Refined
 
-- [GS88: Add 42go Backup and Restore CLI Commands](./refined/GS88-add-42go-backup-cli-commands/GS88.task.md) | [plan](./refined/GS88-add-42go-backup-cli-commands/GS88.plan.md)
 
 ## Planned
 
@@ -59,6 +58,7 @@
 
 - [CX15: Fix Reader Page Navigation Bounceback](./wip/CX15-fix-reader-page-navigation-bounceback/CX15.task.md) | [plan](./wip/CX15-fix-reader-page-navigation-bounceback/CX15.plan.md) | [notes](./wip/CX15-fix-reader-page-navigation-bounceback/CX15.notes.md)
 - [BW27: Stats Users Growth](./wip/BW27-stats-users-growth/BW27.task.md) | [plan](./wip/BW27-stats-users-growth/BW27.plan.md) | [notes](./wip/BW27-stats-users-growth/BW27.notes.md)
+- [JC26: 42go Events Query Session](./wip/JC26-42go-events-query-session/JC26.task.md) | [plan](./wip/JC26-42go-events-query-session/JC26.plan.md) | [notes](./wip/JC26-42go-events-query-session/JC26.notes.md)
 
 ## Blocked
 

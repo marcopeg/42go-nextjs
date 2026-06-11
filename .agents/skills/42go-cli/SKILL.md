@@ -1,115 +1,91 @@
 ---
 name: 42go-cli
-description: Use when working with the local pipx-installable `42go` Python CLI, adding commands, checking help output, or navigating event archive tooling.
+description: Use when operating the local `42go` CLI, running backups/restores, pulling event archives, building local query aggregations, checking command help, or explaining CLI capabilities.
 ---
 
 # 42Go CLI
 
-Use this skill when the task mentions the local `42go` CLI, `42go-cli`, pipx installation, command help, or event archive commands.
+Use this skill for operator-facing `42go` CLI usage. It is the consolidated manual for capabilities that used to be split across backup, events export, and events logging skills.
 
 ## Rules
 
-- Keep the CLI package under `cli/`.
-- Keep the Python distribution name `42go-cli`.
 - Keep the console command `42go`.
-- Keep commands discoverable through standard `--help`.
-- Bare `42go`, `42go events`, and `42go events query` must print useful help.
-- When adding or changing commands, update this skill in the same task.
-- Complex commands may get dedicated docs under this skill folder when the flat index becomes too dense.
+- Use command help as the source of truth before running a command: `42go --help`, then subcommand `--help`.
+- `42go events` is only for raw event archive extraction.
+- `42go query` is for local analytics aggregations built from cached local data.
+- Do not use `42go events query`; that alias was removed.
+- Generated analytics cache files live under `.local/42go-stats/{app-id}/` and use `query_*.parquet` names.
+- Do not commit `.local/42go-events`, `.local/42go-stats`, or `.local/42go-backups`.
+- If changing CLI implementation, also use the `42go-cli-dev` skill.
 
-## Install
+## Capability Index
 
-Normal install from this repository:
+- Install and help:
+  - `42go --help`
+  - `42go --version`
+  - `pipx install ./cli`
+  - `pipx install --force --editable ./cli`
+  - Load `references/install-help.md`.
+- Backup and restore:
+  - `42go backup --full`
+  - `42go backup --light`
+  - `42go restore --from <dump>`
+  - Load `references/backup-restore.md`.
+- Event archive extraction:
+  - `42go events pull`
+  - `42go events pull --dry-run`
+  - Load `references/events-archive.md`.
+- Local analytics queries:
+  - `42go query stats`
+  - `42go query session`
+  - `42go query users growth`
+  - `42go query books stats`
+  - `42go query reads`
+  - Load `references/query-analytics.md`.
+- Event logging expectations:
+  - New application events should flow through the shared core events system and be consumable by `42go events pull`.
+  - Load `references/event-logging.md`.
+
+## Common Workflows
+
+Fresh local read-engagement analytics:
 
 ```bash
-pipx install ./cli
+42go events pull
+42go query books stats
+42go query reads --reset
 ```
 
-Development install from this repository:
+Refresh session and user-growth aggregates:
 
 ```bash
-pipx install --force --editable ./cli
+42go query session --reset
+42go query users growth --reset --app lingocafe
 ```
 
-Use editable mode when changing files under `cli/src/`; it avoids reinstalling after every source edit.
-
-Uninstall the global pipx command:
+Create and restore a light data backup:
 
 ```bash
-pipx uninstall 42go-cli
+42go backup --light
+42go restore --from .local/42go-backups/<dump>.dump.light.sql
 ```
-
-For local development inside the event venv:
-
-```bash
-.local/42go-events/.venv/bin/pip install -e cli
-```
-
-## Command Index
-
-- `42go`
-  - Use to show root help and discover available command families.
-- `42go --help`
-  - Use to show root command help explicitly.
-- `42go --version`
-  - Use to show the installed CLI version.
-- `42go events`
-  - Use to show event archive command help.
-- `42go events pull`
-  - Use to download new `events.events` rows from `EVENTS_DATABASE_URL` into local monthly CSV and Parquet files.
-- `42go events pull --dry-run`
-  - Use to verify the next export batch without writing files or advancing `events/state.json`.
-- `42go events query`
-  - Use to show local event query command help.
-- `42go events query stats`
-  - Use to print human-readable high-level stats from local monthly Parquet files, including covered months, total events, distinct ids, app/user/event-name counts, timestamp ranges, and per-month counts.
-- `42go events query users`
-  - Use to show user-statistics command help.
-- `42go events query users growth`
-  - Use to compute app-scoped user growth, promotional-email subscription, weekly active user, monthly active user, and inactive user metrics from local Parquet files.
-- `42go events query users growth --app lingocafe,default`
-  - Use to filter terminal or JSON output to one or more app IDs while the aggregate cache remains app-scoped.
-- `42go events query users growth --reset`
-  - Use to remove the users-growth aggregate cache and recompute from all available local Parquet files.
-- `42go events query users growth --format json`
-  - Use to emit the users-growth result as machine-readable JSON.
-
-## Event Archive Defaults
-
-- Source database env var: `EVENTS_DATABASE_URL`
-- Archive override env var: `EVENTS_ANALYTICS_DIR`
-- Default archive root: `.local/42go-events`
-- Raw CSV files: `.local/42go-events/events/csv/events_YYYYMM.csv`
-- Raw Parquet files: `.local/42go-events/events/parquet/events_YYYYMM.parquet`
-- Users-growth stats root: `.local/42go-stats/{app-id}/users/growth/`
-- Users-growth metric cache: `.local/42go-stats/{app-id}/users/growth/metrics.parquet`
-- Users-growth state cache: `.local/42go-stats/{app-id}/users/growth/state.json`
-
-## Users Growth Metrics
-
-- `total_users`: users known at the bucket boundary, inferred from first observed user-scoped event.
-- `subscribed_users`: users whose latest `mkt` consent value is `true` at the bucket boundary.
-- `weekly_active_users`: users with `page.open`, `page.scroll`, or `page.translate` in the trailing 7-day window.
-- `monthly_active_users`: users with `page.open`, `page.scroll`, or `page.translate` in the trailing 30-day window.
-- `inactive_users`: known users minus monthly active users.
-- Bucket timezone: `Europe/Rome`.
-- Week buckets: ISO weeks starting Monday.
-- Current partial day/week/month/year buckets use the latest available event time rather than a future period end.
-- Consent source events: `user.consent.created` and `user.consent.updated`.
-- Consent payload rule: parse `data.next.mkt[]` structurally and use the latest evidence entry by `changedAt`.
 
 ## Help Contract
 
-Agents should navigate commands by calling `--help` at each level:
+Agents should navigate commands with:
 
 ```bash
 42go --help
 42go events --help
 42go events pull --help
-42go events query --help
-42go events query stats --help
-42go events query users --help
-42go events query users growth --help
+42go query --help
+42go query stats --help
+42go query session --help
+42go query users growth --help
+42go query books stats --help
+42go query reads --help
+42go backup --help
+42go restore --help
 ```
 
-If a command cannot explain its purpose, options, defaults, and relevant environment variables through help output, fix the CLI help before relying on it.
+If command help cannot explain purpose, options, defaults, and relevant environment variables, fix the CLI help and update this skill.

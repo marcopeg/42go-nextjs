@@ -3,7 +3,8 @@ from __future__ import annotations
 import typer
 
 from fortytwogo_cli import __version__
-from fortytwogo_cli.events.cli import events_app
+from fortytwogo_cli.backup.cli import backup, restore
+from fortytwogo_cli.events.cli import events_app, query_app
 
 
 app = typer.Typer(
@@ -11,7 +12,10 @@ app = typer.Typer(
     invoke_without_command=True,
     no_args_is_help=False,
 )
-app.add_typer(events_app, name="events", help="Pull and query local 42Go event archives.")
+app.add_typer(events_app, name="events", help="Pull raw 42Go event archives.")
+app.add_typer(query_app, name="query", help="Build local analytics aggregations from cached data.")
+app.command(help="Create a data-only SQL backup.")(backup)
+app.command(help="Restore a data-only SQL backup into a migrated database.")(restore)
 
 
 def version_callback(value: bool) -> None:

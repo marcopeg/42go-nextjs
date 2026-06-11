@@ -1,4 +1,0 @@
-interface:
-  display_name: "42go Events Export"
-  short_description: "Download core 42go events into local monthly CSV and Parquet files."
-  default_prompt: "Export new 42go events to the local analytics archive."

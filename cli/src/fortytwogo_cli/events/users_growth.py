@@ -91,19 +91,59 @@ def source_fingerprints(files: list[Path]) -> list[SourceFileFingerprint]:
 
 
 def stats_cache_dir(stats_root: Path, app_id: str) -> Path:
-    return stats_root / safe_app_id(app_id) / "users" / "growth"
+    return stats_root / safe_app_id(app_id)
+
+
+def stats_metrics_path(stats_root: Path, app_id: str) -> Path:
+    return stats_cache_dir(stats_root, app_id) / "query_users_growth_metrics.parquet"
+
+
+def stats_state_path(stats_root: Path, app_id: str) -> Path:
+    return stats_cache_dir(stats_root, app_id) / "query_users_growth_state.parquet"
+
+
+def legacy_stats_state_json_path(stats_root: Path, app_id: str) -> Path:
+    return stats_cache_dir(stats_root, app_id) / "events_query_users_growth_state.json"
+
+
+def legacy_stats_parquet_paths(stats_root: Path, app_id: str) -> list[Path]:
+    cache_dir = stats_cache_dir(stats_root, app_id)
+    return [
+        cache_dir / "events_query_users_growth_metrics.parquet",
+        cache_dir / "events_query_users_growth_state.parquet",
+    ]
+
+
+def legacy_stats_cache_dir(stats_root: Path, app_id: str) -> Path:
+    return stats_cache_dir(stats_root, app_id) / "users" / "growth"
 
 
 def _state_matches(state_path: Path, fingerprints: list[SourceFileFingerprint]) -> bool:
     if not state_path.exists():
         return False
-    try:
-        state = json.loads(state_path.read_text())
-    except json.JSONDecodeError:
+    duckdb = import_duckdb()
+    with duckdb.connect(":memory:") as connection:
+        rows = connection.execute(
+            """
+            SELECT metric_schema_version, source_path, source_size, source_mtime_ns
+            FROM read_parquet(?)
+            ORDER BY source_path
+            """,
+            [str(state_path)],
+        ).fetchall()
+    if not rows:
         return False
+    source_files = [
+        {
+            "path": str(row[1]),
+            "size": int(row[2]),
+            "mtime_ns": int(row[3]),
+        }
+        for row in rows
+    ]
     return (
-        state.get("metric_schema_version") == METRIC_SCHEMA_VERSION
-        and state.get("source_files") == [asdict(fingerprint) for fingerprint in fingerprints]
+        all(int(row[0]) == METRIC_SCHEMA_VERSION for row in rows)
+        and source_files == [asdict(fingerprint) for fingerprint in sorted(fingerprints, key=lambda item: item.path)]
     )
 
 
@@ -161,21 +201,45 @@ def _write_state(
     rows: list[GrowthMetricRow],
     source_event_range: tuple[datetime | None, datetime | None],
 ) -> None:
+    pa, pq = import_pyarrow()
     state_path.parent.mkdir(parents=True, exist_ok=True)
-    state = {
-        "metric_schema_version": METRIC_SCHEMA_VERSION,
-        "app_id": app_id,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "timezone": BUCKET_TIMEZONE,
-        "source_files": [asdict(fingerprint) for fingerprint in fingerprints],
-        "source_event_min": source_event_range[0].isoformat() if source_event_range[0] else None,
-        "source_event_max": source_event_range[1].isoformat() if source_event_range[1] else None,
-        "rows": len(rows),
-        "granularities": list(GRANULARITIES),
-        "reading_events": sorted(READING_EVENTS),
-        "consent_events": sorted(CONSENT_EVENTS),
-    }
-    state_path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n")
+    generated_at = datetime.now(timezone.utc).isoformat()
+    state_rows = [
+        {
+            "metric_schema_version": METRIC_SCHEMA_VERSION,
+            "app_id": app_id,
+            "generated_at": generated_at,
+            "timezone": BUCKET_TIMEZONE,
+            "source_path": fingerprint.path,
+            "source_size": fingerprint.size,
+            "source_mtime_ns": fingerprint.mtime_ns,
+            "source_event_min": source_event_range[0].isoformat() if source_event_range[0] else None,
+            "source_event_max": source_event_range[1].isoformat() if source_event_range[1] else None,
+            "rows": len(rows),
+            "granularities": ",".join(GRANULARITIES),
+            "reading_events": ",".join(sorted(READING_EVENTS)),
+            "consent_events": ",".join(sorted(CONSENT_EVENTS)),
+        }
+        for fingerprint in fingerprints
+    ]
+    schema = pa.schema(
+        [
+            ("metric_schema_version", pa.int64()),
+            ("app_id", pa.string()),
+            ("generated_at", pa.string()),
+            ("timezone", pa.string()),
+            ("source_path", pa.string()),
+            ("source_size", pa.int64()),
+            ("source_mtime_ns", pa.int64()),
+            ("source_event_min", pa.string()),
+            ("source_event_max", pa.string()),
+            ("rows", pa.int64()),
+            ("granularities", pa.string()),
+            ("reading_events", pa.string()),
+            ("consent_events", pa.string()),
+        ]
+    )
+    pq.write_table(pa.Table.from_pylist(state_rows, schema=schema), state_path)
 
 
 def parse_datetime(value: Any) -> datetime | None:
@@ -383,10 +447,15 @@ def load_users_growth(
 
     for app_id in app_ids:
         cache_dir = stats_cache_dir(root, app_id)
-        metrics_path = cache_dir / "metrics.parquet"
-        state_path = cache_dir / "state.json"
-        if reset and cache_dir.exists():
-            shutil.rmtree(cache_dir)
+        metrics_path = stats_metrics_path(root, app_id)
+        state_path = stats_state_path(root, app_id)
+        if reset:
+            metrics_path.unlink(missing_ok=True)
+            state_path.unlink(missing_ok=True)
+            legacy_stats_state_json_path(root, app_id).unlink(missing_ok=True)
+            for legacy_path in legacy_stats_parquet_paths(root, app_id):
+                legacy_path.unlink(missing_ok=True)
+            shutil.rmtree(legacy_stats_cache_dir(root, app_id), ignore_errors=True)
 
         cache_status = "rebuilt"
         if not reset and _state_matches(state_path, fingerprints) and metrics_path.exists():

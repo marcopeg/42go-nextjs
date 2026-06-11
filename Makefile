@@ -264,10 +264,23 @@ migrate.redo:
 	npx knex migrate:down && npx knex migrate:up
 
 backup:
-	node .agents/skills/42go-backup/scripts/backup.mjs backup --mode "$(mode)"
+	@if [ "$(mode)" = "full" ]; then \
+		42go backup --full; \
+	elif [ "$(mode)" = "light" ]; then \
+		42go backup --light; \
+	elif [ -z "$(mode)" ]; then \
+		42go backup; \
+	else \
+		echo "mode must be full or light"; \
+		exit 1; \
+	fi
 
 restore:
-	node .agents/skills/42go-backup/scripts/backup.mjs restore --from "$(from)"
+	@if [ -z "$(from)" ]; then \
+		42go restore; \
+	else \
+		42go restore --from "$(from)"; \
+	fi
 
 events:
 	@if command -v 42go >/dev/null 2>&1; then \

@@ -1,0 +1,47 @@
+# 42Go CLI Install And Help
+
+Use this reference when an operator needs to install, update, or discover the `42go` CLI.
+
+## Install
+
+Normal install from this repository:
+
+```bash
+pipx install ./cli
+```
+
+Development install from this repository:
+
+```bash
+pipx install --force --editable ./cli
+```
+
+Editable install inside the local event venv:
+
+```bash
+.local/42go-events/.venv/bin/pip install -e cli
+```
+
+Uninstall:
+
+```bash
+pipx uninstall 42go-cli
+```
+
+## Root Commands
+
+- `42go`
+- `42go --help`
+- `42go --version`
+- `42go events`
+- `42go query`
+- `42go backup`
+- `42go restore`
+
+`42go events query` is intentionally not available. Use `42go query`.
+
+## Troubleshooting
+
+- Missing optional runtime packages usually means the CLI is not installed from `./cli`.
+- Run command-specific `--help` before guessing flags.
+- If behavior differs from this doc, trust the command help first, then update this skill.
