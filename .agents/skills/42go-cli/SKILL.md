@@ -13,7 +13,7 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
 - Use command help as the source of truth before running a command: `42go --help`, then subcommand `--help`.
 - `42go pull` is for raw source data extraction.
 - `42go query` is for local analytics aggregations built from cached local data.
-- No-arg command groups such as `42go pull`, `42go query`, and `42go query users` open interactive menus.
+- No-arg command groups such as `42go pull`, `42go query`, `42go query users`, and `42go query lingocafe` open interactive menus.
 - Do not use `42go events` or `42go users`; those roots were removed.
 - Raw pulled data lives under `.local/42go-data/`.
 - Raw pulled rows that mirror a source table use `.local/42go-data/{schema}/{table}.parquet`.
@@ -42,6 +42,10 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
   - `42go pull all`
   - `42go pull '*'` as the literal star alias for all data.
   - Load `references/events-archive.md`.
+- Parquet data contract:
+  - Raw pull files under `.local/42go-data`.
+  - Query aggregate files under `.local/42go-stats`.
+  - Load `references/parquet-files.md`.
 - Local analytics queries:
   - `42go query`
   - `42go query stats`
@@ -104,6 +108,7 @@ Agents should navigate commands with:
 42go query --help
 42go query stats --help
 42go query session --help
+42go query users --help
 42go query users growth --help
 42go query lingocafe --help
 42go query lingocafe books --help
