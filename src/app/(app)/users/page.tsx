@@ -1,7 +1,7 @@
 'use client';
 
-import { AppLayout, type TActionItem } from '@/42go/layouts/app';
 import { Modal } from '@/42go/components/modal';
+import { AppLayout, type TActionItem } from '@/42go/layouts/app';
 import type { Policy } from '@/42go/policy';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,8 +13,37 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Check, Copy, Loader2, MoreVertical, RefreshCw } from 'lucide-react';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+  Activity,
+  AlertCircle,
+  Check,
+  CircleHelp,
+  Copy,
+  Eye,
+  ImageIcon,
+  KeyRound,
+  Loader2,
+  Mail,
+  MoreVertical,
+  Pencil,
+  RefreshCw,
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+} from 'lucide-react';
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useCallback, useEffect, useState } from 'react';
+
+type UserLoginMethod =
+  | {
+      type: 'provider';
+      provider: string;
+    }
+  | {
+      type: 'credentials';
+    }
+  | {
+      type: 'magic-link';
+    };
 
 type AppUser = {
   id: string;
@@ -25,7 +54,14 @@ type AppUser = {
   image: string | null;
   emailVerified: string | null;
   profile: Record<string, unknown> | null;
+  consent: Record<string, unknown> | null;
   featureFlags: Record<string, unknown> | null;
+  hasPassword: boolean;
+  loginMethods: UserLoginMethod[];
+  lastActivity: {
+    name: string;
+    eventAt: string;
+  } | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -55,6 +91,7 @@ type UsersListProps = {
   pendingUserAction: string | null;
   onCopy: (key: string, value: string) => Promise<void>;
   onEditUser: (user: AppUser) => void;
+  onOpenUserDetails: (user: AppUser) => void;
   onUserAction: (user: AppUser, action: UserAction) => Promise<void>;
   onRetry: () => void;
   onInitialLoad: (signal: AbortSignal) => Promise<void>;
@@ -80,6 +117,19 @@ const formatDate = (value: string | null) => {
   });
 };
 
+const formatDateTime = (value: string | null) => {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
 const getDisplayName = (user: AppUser) => user.name || user.username || user.email;
 
 const formatJson = (value: unknown) => JSON.stringify(value ?? null, null, 2);
@@ -100,6 +150,141 @@ const parseObjectJson = (value: string, label: string) => {
   return parsed as Record<string, unknown> | null;
 };
 
+const getLoginMethodLabel = (method: UserLoginMethod) => {
+  if (method.type === 'credentials') return 'Credentials login';
+  if (method.type === 'magic-link') return 'Magic link login';
+  return `${method.provider} login`;
+};
+
+const normalizeProvider = (provider: string) => provider.trim().toLowerCase();
+
+const LoginMethodIcon = ({ method }: { method: UserLoginMethod }) => {
+  const label = getLoginMethodLabel(method);
+  const baseClass =
+    'inline-flex size-7 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground';
+
+  if (method.type === 'credentials') {
+    return (
+      <span className={baseClass} title={label} aria-label={label}>
+        <KeyRound className="size-3.5" />
+      </span>
+    );
+  }
+
+  if (method.type === 'magic-link') {
+    return (
+      <span className={baseClass} title={label} aria-label={label}>
+        <Mail className="size-3.5" />
+      </span>
+    );
+  }
+
+  const provider = normalizeProvider(method.provider);
+
+  if (provider === 'github') {
+    return (
+      <span
+        className={`${baseClass} font-semibold text-foreground`}
+        title={label}
+        aria-label={label}
+      >
+        GH
+      </span>
+    );
+  }
+
+  if (provider === 'google') {
+    return (
+      <span
+        className={`${baseClass} font-semibold text-foreground`}
+        title={label}
+        aria-label={label}
+      >
+        G
+      </span>
+    );
+  }
+
+  return (
+    <span className={baseClass} title={label} aria-label={label}>
+      <CircleHelp className="size-3.5" />
+    </span>
+  );
+};
+
+const LoginMethods = ({ methods }: { methods: UserLoginMethod[] }) => (
+  <div className="flex flex-wrap items-center gap-1.5">
+    {methods.length > 0 ? (
+      methods.map((method, index) => (
+        <LoginMethodIcon
+          key={`${method.type}:${method.type === 'provider' ? method.provider : index}`}
+          method={method}
+        />
+      ))
+    ) : (
+      <span className="text-xs text-muted-foreground">None</span>
+    )}
+  </div>
+);
+
+const VerificationBadge = ({
+  value,
+  compact = false,
+}: {
+  value: string | null;
+  compact?: boolean;
+}) => {
+  const verifiedAt = formatDateTime(value);
+  const isVerified = verifiedAt !== '-';
+  const label = isVerified ? `Email verified ${verifiedAt}` : 'Email not verified';
+  const Icon = isVerified ? ShieldCheck : ShieldAlert;
+
+  const handleClick = () => {
+    if (isVerified) window.alert(label);
+  };
+
+  return (
+    <button
+      type="button"
+      className={`inline-flex items-center gap-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
+        isVerified ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+      }`}
+      title={label}
+      aria-label={label}
+      onClick={handleClick}
+    >
+      <Icon className={compact ? 'size-4' : 'size-5'} />
+      {compact ? null : (
+        <span className="text-sm font-medium">{isVerified ? 'Verified' : 'Not verified'}</span>
+      )}
+    </button>
+  );
+};
+
+const LastActivityValue = ({ user }: { user: AppUser }) => {
+  if (!user.lastActivity) {
+    return <span className="text-muted-foreground">Never</span>;
+  }
+
+  const date = formatDateTime(user.lastActivity.eventAt);
+  const label = `${user.lastActivity.name} at ${date}`;
+
+  return (
+    <button
+      type="button"
+      className="inline-flex max-w-44 flex-col items-start rounded-sm text-left text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      title={label}
+      aria-label={label}
+      onClick={event => {
+        event.stopPropagation();
+        window.alert(user.lastActivity?.name || 'Unknown event');
+      }}
+    >
+      <span className="truncate">{date}</span>
+    </button>
+  );
+};
+
 const CopyableValue = ({
   value,
   copied,
@@ -117,7 +302,10 @@ const CopyableValue = ({
     type="button"
     className={`group inline-flex max-w-full items-center gap-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${className}`}
     title={`Copy ${value}`}
-    onClick={() => onCopy(value)}
+    onClick={event => {
+      event.stopPropagation();
+      onCopy(value);
+    }}
   >
     <span className="min-w-0 truncate">{children}</span>
     {copied ? (
@@ -223,6 +411,26 @@ const ReadOnlyField = ({ label, value }: { label: string; value: string | null }
     <span className="text-xs font-medium uppercase text-muted-foreground">{label}</span>
     <span className="break-all font-mono text-xs text-muted-foreground">{value || '-'}</span>
   </div>
+);
+
+const DetailField = ({ label, children }: { label: string; children: ReactNode }) => (
+  <div className="grid gap-1">
+    <span className="text-xs font-medium uppercase text-muted-foreground">{label}</span>
+    <div className="min-h-6 text-sm">{children}</div>
+  </div>
+);
+
+const DetailSection = ({ title, children }: { title: string; children: ReactNode }) => (
+  <section className="grid gap-3">
+    <h3 className="text-sm font-semibold">{title}</h3>
+    <div className="grid gap-3 rounded-md border bg-muted/20 p-3">{children}</div>
+  </section>
+);
+
+const JsonBlock = ({ value }: { value: unknown }) => (
+  <pre className="max-h-60 overflow-auto rounded-md bg-background p-3 font-mono text-xs text-muted-foreground">
+    {formatJson(value)}
+  </pre>
 );
 
 const UserEditPanel = ({
@@ -369,6 +577,132 @@ const UserEditPanel = ({
   );
 };
 
+const UserDetailPanel = ({
+  user,
+  open,
+  onOpenChange,
+  onEditUser,
+}: {
+  user: AppUser | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onEditUser: (user: AppUser) => void;
+}) => {
+  const handleDelete = () => {
+    if (!user) return;
+    const confirmed = window.confirm(`Delete ${getDisplayName(user)}?`);
+    if (confirmed) window.alert('User deletion not yet implemented');
+  };
+
+  const handleEdit = () => {
+    if (!user) return;
+    onOpenChange(false);
+    onEditUser(user);
+  };
+
+  return (
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={user ? getDisplayName(user) : 'User details'}
+      subtitle={user?.email || undefined}
+      presentation="panel"
+      anchor="right"
+      size="lg"
+      footer={
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={handleDelete}
+            disabled={!user}
+          >
+            <Trash2 />
+            Delete
+          </Button>
+          <Button type="button" variant="outline" onClick={handleEdit} disabled={!user}>
+            <Pencil />
+            Edit
+          </Button>
+        </>
+      }
+    >
+      {user ? (
+        <div className="grid gap-5">
+          <DetailSection title="Identity">
+            <DetailField label="User ID">
+              <span className="break-all font-mono text-xs text-muted-foreground">{user.id}</span>
+            </DetailField>
+            <DetailField label="Name">{user.name || '-'}</DetailField>
+            <DetailField label="Username">{user.username ? `@${user.username}` : '-'}</DetailField>
+            <DetailField label="Email">{user.email}</DetailField>
+            <DetailField label="Email verification">
+              <VerificationBadge value={user.emailVerified} />
+            </DetailField>
+            <DetailField label="Image">
+              {user.image ? (
+                <div className="flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={user.image}
+                    alt=""
+                    className="size-10 rounded-full border object-cover"
+                  />
+                  <span className="break-all font-mono text-xs text-muted-foreground">
+                    {user.image}
+                  </span>
+                </div>
+              ) : (
+                <span className="inline-flex items-center gap-2 text-muted-foreground">
+                  <ImageIcon className="size-4" />
+                  No image
+                </span>
+              )}
+            </DetailField>
+          </DetailSection>
+
+          <DetailSection title="Login">
+            <DetailField label="Methods">
+              <LoginMethods methods={user.loginMethods} />
+            </DetailField>
+          </DetailSection>
+
+          <DetailSection title="Activity">
+            <DetailField label="Last activity">
+              {user.lastActivity ? (
+                <div className="grid gap-1">
+                  <span>{formatDateTime(user.lastActivity.eventAt)}</span>
+                  <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                    <Activity className="size-4" />
+                    {user.lastActivity.name}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-muted-foreground">Never</span>
+              )}
+            </DetailField>
+            <DetailField label="Created">{formatDateTime(user.createdAt)}</DetailField>
+            <DetailField label="Updated">{formatDateTime(user.updatedAt)}</DetailField>
+          </DetailSection>
+
+          <DetailSection title="Profile">
+            <JsonBlock value={user.profile} />
+          </DetailSection>
+
+          <DetailSection title="Consent">
+            <JsonBlock value={user.consent} />
+          </DetailSection>
+
+          <DetailSection title="Feature flags">
+            <JsonBlock value={user.featureFlags} />
+          </DetailSection>
+        </div>
+      ) : null}
+    </Modal>
+  );
+};
+
 const UsersList = ({
   users,
   isLoading,
@@ -377,6 +711,7 @@ const UsersList = ({
   pendingUserAction,
   onCopy,
   onEditUser,
+  onOpenUserDetails,
   onUserAction,
   onRetry,
   onInitialLoad,
@@ -386,6 +721,16 @@ const UsersList = ({
     onInitialLoad(controller.signal);
     return () => controller.abort();
   }, [onInitialLoad]);
+
+  const handleRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>, user: AppUser) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onOpenUserDetails(user);
+  };
+
+  const stopRowClick = (event: MouseEvent) => {
+    event.stopPropagation();
+  };
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col overflow-hidden bg-background">
@@ -412,6 +757,12 @@ const UsersList = ({
                   Email
                 </th>
                 <th className="sticky top-0 z-10 border-b bg-background/95 px-6 py-3 backdrop-blur">
+                  Login
+                </th>
+                <th className="sticky top-0 z-10 border-b bg-background/95 px-6 py-3 backdrop-blur">
+                  Last activity
+                </th>
+                <th className="sticky top-0 z-10 border-b bg-background/95 px-6 py-3 backdrop-blur">
                   Joined
                 </th>
                 <th className="sticky top-0 z-10 w-12 border-b bg-background/95 px-6 py-3 backdrop-blur">
@@ -431,6 +782,12 @@ const UsersList = ({
                       <div className="mt-1 h-3 w-72 rounded bg-muted/70" />
                     </td>
                     <td className="px-6 py-4">
+                      <div className="h-7 w-20 rounded bg-muted" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 w-36 rounded bg-muted" />
+                    </td>
+                    <td className="px-6 py-4">
                       <div className="h-4 w-24 rounded bg-muted" />
                     </td>
                     <td className="px-6 py-4">
@@ -440,25 +797,37 @@ const UsersList = ({
                 ))
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-10 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">
                     No users found.
                   </td>
                 </tr>
               ) : (
                 users.map(user => (
-                  <tr key={user.id} className="border-b last:border-0">
+                  <tr
+                    key={user.id}
+                    tabIndex={0}
+                    role="button"
+                    className="cursor-pointer border-b outline-none transition-colors last:border-0 hover:bg-muted/35 focus-visible:bg-muted/35 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
+                    onClick={() => onOpenUserDetails(user)}
+                    onKeyDown={event => handleRowKeyDown(event, user)}
+                  >
                     <td className="px-6 py-4">
-                      <div className="font-medium">{getDisplayName(user)}</div>
-                      {user.username ? (
-                        <CopyableValue
-                          value={user.username}
-                          copied={copiedKey === `${user.id}:username`}
-                          className="mt-0.5 text-xs text-muted-foreground"
-                          onCopy={value => onCopy(`${user.id}:username`, value)}
-                        >
-                          @{user.username}
-                        </CopyableValue>
-                      ) : null}
+                      <div className="flex items-start gap-2">
+                        <VerificationBadge value={user.emailVerified} compact />
+                        <div className="min-w-0">
+                          <div className="truncate font-medium">{getDisplayName(user)}</div>
+                          {user.username ? (
+                            <CopyableValue
+                              value={user.username}
+                              copied={copiedKey === `${user.id}:username`}
+                              className="mt-0.5 text-xs text-muted-foreground"
+                              onCopy={value => onCopy(`${user.id}:username`, value)}
+                            >
+                              @{user.username}
+                            </CopyableValue>
+                          ) : null}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex min-w-56 flex-col items-start gap-0.5">
@@ -480,10 +849,16 @@ const UsersList = ({
                         </CopyableValue>
                       </div>
                     </td>
+                    <td className="px-6 py-4">
+                      <LoginMethods methods={user.loginMethods} />
+                    </td>
+                    <td className="px-6 py-4">
+                      <LastActivityValue user={user} />
+                    </td>
                     <td className="px-6 py-4 text-muted-foreground">
                       {formatDate(user.createdAt)}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right" onClick={stopRowClick}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -501,7 +876,12 @@ const UsersList = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => onOpenUserDetails(user)}>
+                            <Eye />
+                            View user details
+                          </DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => onEditUser(user)}>
+                            <Pencil />
                             Edit user
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
@@ -539,6 +919,8 @@ export default function UsersPage() {
   const [editingFields, setEditingFields] = useState<UserEditFields | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSavingUser, setIsSavingUser] = useState(false);
+  const [detailUser, setDetailUser] = useState<AppUser | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   const applyUsersResponse = useCallback((body: UsersResponse) => {
     setUsers(body.users);
@@ -606,6 +988,11 @@ export default function UsersPage() {
     setIsEditOpen(true);
   }, []);
 
+  const openUserDetails = useCallback((user: AppUser) => {
+    setDetailUser(user);
+    setIsDetailOpen(true);
+  }, []);
+
   const saveEditedUser = useCallback(
     async (user: AppUser, fields: UserEditFields) => {
       setIsSavingUser(true);
@@ -661,9 +1048,20 @@ export default function UsersPage() {
         pendingUserAction={pendingUserAction}
         onCopy={copyValue}
         onEditUser={openEditUser}
+        onOpenUserDetails={openUserDetails}
         onUserAction={runUserAction}
         onRetry={loadUsers}
         onInitialLoad={loadInitialUsers}
+      />
+      <UserDetailPanel
+        key={detailUser ? detailUser.id : 'user-details'}
+        user={detailUser}
+        open={isDetailOpen}
+        onOpenChange={next => {
+          setIsDetailOpen(next);
+          if (!next) setDetailUser(null);
+        }}
+        onEditUser={openEditUser}
       />
       <UserEditPanel
         key={editingUser ? editingUser.id : 'edit-user'}

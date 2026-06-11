@@ -21,9 +21,14 @@ src/fortytwogo_cli/events/query.py
 src/fortytwogo_cli/events/reads.py
 src/fortytwogo_cli/events/sessions.py
 src/fortytwogo_cli/events/users_growth.py
+src/fortytwogo_cli/users/__init__.py
+src/fortytwogo_cli/users/cli.py
+src/fortytwogo_cli/users/paths.py
+src/fortytwogo_cli/users/pull.py
 tests/test_backup_core.py
 tests/test_cli.py
 tests/test_event_stats.py
 tests/test_reads.py
 tests/test_sessions.py
 tests/test_users_growth.py
+tests/test_users_pull.py

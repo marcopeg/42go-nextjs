@@ -14,6 +14,9 @@ from fortytwogo_cli.events.pull import DEFAULT_LIMIT, PullOptions, pull_events
 from fortytwogo_cli.events.reads import load_event_reads
 from fortytwogo_cli.events.sessions import load_event_sessions
 from fortytwogo_cli.events.users_growth import load_users_growth
+from fortytwogo_cli.users.cli import users_app
+from fortytwogo_cli.users.paths import DEFAULT_STATS_DIR
+from fortytwogo_cli.users.pull import PullUsersOptions, pull_users
 
 
 app = typer.Typer(
@@ -22,6 +25,7 @@ app = typer.Typer(
     no_args_is_help=False,
 )
 app.add_typer(events_app, name="events", help="Pull raw 42Go event archives.")
+app.add_typer(users_app, name="users", help="Pull auth users and linked accounts.")
 app.add_typer(query_app, name="query", help="Build local analytics aggregations from cached data.")
 app.command(help="Create a data-only SQL backup.")(backup)
 app.command(help="Restore a data-only SQL backup into a migrated database.")(restore)
@@ -42,8 +46,15 @@ def update(
     ] = DEFAULT_LIMIT,
     database_url_env: Annotated[
         str,
-        typer.Option("--database-url-env", help="Environment variable or .env key for book/page metadata pull."),
+        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book/page metadata pulls."),
     ] = "DATABASE_URL",
+    stats_dir: Annotated[
+        Path | None,
+        typer.Option(
+            "--stats-dir",
+            help=f"Local stats root for auth exports. Defaults to FORTYTWOGO_STATS_DIR or {DEFAULT_STATS_DIR}.",
+        ),
+    ] = None,
     reset: Annotated[
         bool,
         typer.Option("--reset", help="Force query aggregations to rebuild from local source data."),
@@ -52,6 +63,19 @@ def update(
     """Run the standard local analytics refresh pipeline."""
     typer.echo("42Go Update")
     typer.echo("")
+
+    try:
+        auth_result = pull_users(
+            PullUsersOptions(stats_dir=stats_dir, limit=limit, database_url_env=database_url_env, reset=reset)
+        )
+    except RuntimeError as error:
+        typer.echo(f"users pull failed: {error}", err=True)
+        raise typer.Exit(1) from error
+    typer.echo(
+        "users pull: "
+        f"users={auth_result.get('users_changed', 0)}/{auth_result.get('users_total', 0)} "
+        f"accounts={auth_result.get('accounts_changed', 0)}/{auth_result.get('accounts_total', 0)}"
+    )
 
     try:
         pull_result = pull_events(PullOptions(archive_dir=archive_dir, limit=limit))

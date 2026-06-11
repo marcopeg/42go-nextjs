@@ -11,9 +11,43 @@ type UserRow = {
   image: string | null;
   emailVerified: Date | null;
   profile: unknown;
+  consent: unknown;
   featureFlags: unknown;
+  hasPassword: boolean;
   createdAt: Date;
   updatedAt: Date;
+};
+
+type UserLoginMethod =
+  | {
+      type: "provider";
+      provider: string;
+    }
+  | {
+      type: "credentials";
+    }
+  | {
+      type: "magic-link";
+    };
+
+type UserProviderRow = {
+  userId: string;
+  provider: string;
+};
+
+type UserActivityRow = {
+  userId: string;
+  name: string;
+  eventAt: Date;
+};
+
+type UserResponseRow = Omit<UserRow, "hasPassword"> & {
+  hasPassword: boolean;
+  loginMethods: UserLoginMethod[];
+  lastActivity: {
+    name: string;
+    eventAt: Date;
+  } | null;
 };
 
 type UserAction =
@@ -75,7 +109,9 @@ const listUsers = async () => {
       image: "image",
       emailVerified: "email_verified",
       profile: "profile",
+      consent: "consent",
       featureFlags: "feature_flags",
+      hasPassword: db.raw("password IS NOT NULL AND password <> ''"),
       createdAt: "created_at",
       updatedAt: "updated_at",
     })
@@ -84,9 +120,68 @@ const listUsers = async () => {
     .orderByRaw("lower(coalesce(nullif(username, ''), email)) asc")
     .orderByRaw("lower(email) asc")) as UserRow[];
 
+  const userIds = users.map((user) => user.id);
+  const providersByUserId = new Map<string, string[]>();
+  const latestActivityByUserId = new Map<string, UserActivityRow>();
+
+  if (userIds.length > 0) {
+    const providerRows = (await db("auth.accounts")
+      .distinct({
+        userId: "user_id",
+        provider: "provider",
+      })
+      .where("app_id", appId)
+      .whereIn("user_id", userIds)
+      .orderBy("provider", "asc")) as UserProviderRow[];
+
+    providerRows.forEach((row) => {
+      const providers = providersByUserId.get(row.userId) || [];
+      providers.push(row.provider);
+      providersByUserId.set(row.userId, providers);
+    });
+
+    const latestActivityResult = await db.raw(
+      `
+        SELECT DISTINCT ON (user_id)
+          user_id AS "userId",
+          name,
+          event_at AS "eventAt"
+        FROM events.events
+        WHERE app_id = ?
+          AND user_id = ANY(?::text[])
+        ORDER BY user_id, event_at DESC, created_at DESC, id DESC
+      `,
+      [appId, userIds]
+    );
+
+    (latestActivityResult.rows as UserActivityRow[]).forEach((row) => {
+      latestActivityByUserId.set(row.userId, row);
+    });
+  }
+
+  const usersResponse: UserResponseRow[] = users.map((user) => {
+    const providers = providersByUserId.get(user.id) || [];
+    const loginMethods: UserLoginMethod[] =
+      providers.length > 0
+        ? providers.map((provider) => ({ type: "provider", provider }))
+        : [{ type: user.hasPassword ? "credentials" : "magic-link" }];
+    const lastActivity = latestActivityByUserId.get(user.id) || null;
+
+    return {
+      ...user,
+      loginMethods,
+      lastActivity: lastActivity
+        ? {
+            name: lastActivity.name,
+            eventAt: lastActivity.eventAt,
+          }
+        : null,
+    };
+  });
+
   return Response.json({
     appId,
-    users,
+    users: usersResponse,
   });
 };
 
