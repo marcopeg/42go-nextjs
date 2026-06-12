@@ -33,7 +33,7 @@ Options:
 
 - `--data-dir`: raw data root for pulls and event/book inputs, default `.local/42go-data`.
 - `--limit`: maximum rows to pull per progressive source query.
-- `--database-url-env`: env or `.env` key for auth and book pulls, default `DATABASE_URL`.
+- `--database-url-env`: env or `.env` key for auth and book pulls, default `BACKUP_DATABASE_URL`.
 - `--reset`: delete selected raw Parquet files and aggregate caches before rebuilding.
 
 ## High-Level Stats
@@ -94,8 +94,8 @@ Cache files:
 
 Metrics:
 
-- `total_users`: users known at bucket boundary, inferred from first observed user-scoped event.
-- `subscribed_users`: users whose latest `mkt` consent value is true at bucket boundary.
+- `total_users`: auth users known at bucket boundary from `.local/42go-data/auth/users.parquet`; falls back to first observed user-scoped event only when auth users are not available.
+- `subscribed_users`: users whose latest `mkt` consent value is true at bucket boundary, using auth consent plus consent events.
 - `weekly_active_users`: users with `page.open`, `page.scroll`, or `page.translate` in trailing 7 days.
 - `monthly_active_users`: users with reading activity in trailing 30 days.
 - `inactive_users`: known users minus monthly active users.
@@ -104,7 +104,7 @@ Rules:
 
 - Bucket timezone: `Europe/Rome`.
 - Week buckets start Monday.
-- Current partial buckets use the latest available event time.
+- Current partial buckets use the latest available auth user or event timestamp.
 - Consent events: `user.consent.created`, `user.consent.updated`.
 - Consent payload: latest `data.next.mkt[]` evidence by `changedAt`.
 

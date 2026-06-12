@@ -79,6 +79,7 @@ query_lingocafe_reads_state.parquet
 - Module: `events/users_growth.py`
 - Reading events: `page.open`, `page.scroll`, `page.translate`.
 - Consent events: `user.consent.created`, `user.consent.updated`.
+- User population: `.local/42go-data/auth/users.parquet` when available; event-inferred users are only a fallback.
 - Bucket timezone: `Europe/Rome`.
 - Buckets: day, week, month, year.
 - WAU/MAU use trailing 7/30 day windows.

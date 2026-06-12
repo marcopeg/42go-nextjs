@@ -43,8 +43,8 @@ def update(
     ] = DEFAULT_LIMIT,
     database_url_env: Annotated[
         str,
-        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book/page metadata pulls."),
-    ] = "DATABASE_URL",
+        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book/page metadata pulls. Defaults to BACKUP_DATABASE_URL."),
+    ] = "BACKUP_DATABASE_URL",
     reset: Annotated[
         bool,
         typer.Option("--reset", help="Delete local raw Parquet files and aggregate caches before rebuilding."),

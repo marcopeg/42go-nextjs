@@ -12,9 +12,10 @@ import pytz
 
 from fortytwogo_cli.events.dependencies import import_duckdb, import_pyarrow
 from fortytwogo_cli.events.paths import parquet_files, parquet_glob, resolve_paths
+from fortytwogo_cli.users.paths import resolve_paths as resolve_auth_paths
 
 
-METRIC_SCHEMA_VERSION = 1
+METRIC_SCHEMA_VERSION = 2
 DEFAULT_STATS_ROOT = Path(".local/42go-stats")
 BUCKET_TIMEZONE = "Europe/Rome"
 GRANULARITIES = ("day", "week", "month", "year")
@@ -61,6 +62,14 @@ class GrowthResult:
     stats_root: Path
     apps: list[GrowthAppResult]
     source_files: list[SourceFileFingerprint]
+
+
+@dataclass(frozen=True)
+class AuthUserRow:
+    app_id: str
+    user_id: str
+    created_at: datetime
+    consent: str | None
 
 
 def parse_app_filter(value: str | None) -> set[str] | None:
@@ -200,6 +209,7 @@ def _write_state(
     fingerprints: list[SourceFileFingerprint],
     rows: list[GrowthMetricRow],
     source_event_range: tuple[datetime | None, datetime | None],
+    source_user_range: tuple[datetime | None, datetime | None],
 ) -> None:
     pa, pq = import_pyarrow()
     state_path.parent.mkdir(parents=True, exist_ok=True)
@@ -215,6 +225,8 @@ def _write_state(
             "source_mtime_ns": fingerprint.mtime_ns,
             "source_event_min": source_event_range[0].isoformat() if source_event_range[0] else None,
             "source_event_max": source_event_range[1].isoformat() if source_event_range[1] else None,
+            "source_user_min": source_user_range[0].isoformat() if source_user_range[0] else None,
+            "source_user_max": source_user_range[1].isoformat() if source_user_range[1] else None,
             "rows": len(rows),
             "granularities": ",".join(GRANULARITIES),
             "reading_events": ",".join(sorted(READING_EVENTS)),
@@ -233,6 +245,8 @@ def _write_state(
             ("source_mtime_ns", pa.int64()),
             ("source_event_min", pa.string()),
             ("source_event_max", pa.string()),
+            ("source_user_min", pa.string()),
+            ("source_user_max", pa.string()),
             ("rows", pa.int64()),
             ("granularities", pa.string()),
             ("reading_events", pa.string()),
@@ -328,6 +342,26 @@ def _latest_mkt_choice(data: str | None, event_at: datetime) -> tuple[datetime, 
     return max(choices, key=lambda item: item[0])
 
 
+def _mkt_choices_from_user_consent(data: str | None, fallback_at: datetime) -> list[tuple[datetime, bool]]:
+    if not data:
+        return []
+    try:
+        payload = json.loads(data)
+    except json.JSONDecodeError:
+        return []
+    entries = payload.get("mkt")
+    if not isinstance(entries, list):
+        return []
+
+    choices: list[tuple[datetime, bool]] = []
+    for entry in entries:
+        if not isinstance(entry, dict) or "value" not in entry:
+            continue
+        changed_at = parse_datetime(entry.get("changedAt")) or fallback_at
+        choices.append((changed_at, bool(entry.get("value"))))
+    return choices
+
+
 def _fetch_rows(parquet_pattern: str) -> list[dict[str, Any]]:
     duckdb = import_duckdb()
     with duckdb.connect(":memory:") as connection:
@@ -359,19 +393,67 @@ def _fetch_rows(parquet_pattern: str) -> list[dict[str, Any]]:
     return rows
 
 
-def _compute_app_rows(app_id: str, events: list[dict[str, Any]]) -> tuple[list[GrowthMetricRow], tuple[datetime | None, datetime | None]]:
+def _fetch_auth_users(path: Path) -> list[AuthUserRow]:
+    if not path.exists():
+        return []
+    duckdb = import_duckdb()
+    with duckdb.connect(":memory:") as connection:
+        result = connection.execute(
+            """
+            SELECT app_id, id, created_at, consent
+            FROM read_parquet(?)
+            WHERE id IS NOT NULL
+              AND created_at IS NOT NULL
+            ORDER BY app_id, created_at, id
+            """,
+            [str(path)],
+        ).fetchall()
+
+    rows: list[AuthUserRow] = []
+    for app_id, user_id, created_at, consent in result:
+        parsed_created_at = parse_datetime(created_at)
+        if parsed_created_at is None:
+            continue
+        rows.append(
+            AuthUserRow(
+                app_id=str(app_id),
+                user_id=str(user_id),
+                created_at=parsed_created_at,
+                consent=consent if consent is None else str(consent),
+            )
+        )
+    return rows
+
+
+def _compute_app_rows(
+    app_id: str,
+    events: list[dict[str, Any]],
+    auth_users: list[AuthUserRow],
+) -> tuple[list[GrowthMetricRow], tuple[datetime | None, datetime | None], tuple[datetime | None, datetime | None]]:
     event_times = [event["event_at"] for event in events]
-    if not event_times:
-        return [], (None, None)
+    user_times = [user.created_at for user in auth_users]
+    all_times = event_times + user_times
+    if not all_times:
+        return [], (None, None), (None, None)
 
     first_seen: dict[str, datetime] = {}
     reading_events: dict[str, list[datetime]] = {}
     consent_choices: dict[str, list[tuple[datetime, bool]]] = {}
 
+    for user in auth_users:
+        first_seen[user.user_id] = min(first_seen.get(user.user_id, user.created_at), user.created_at)
+        choices = _mkt_choices_from_user_consent(user.consent, user.created_at)
+        if choices:
+            consent_choices.setdefault(user.user_id, []).extend(choices)
+
+    has_auth_users = bool(first_seen)
     for event in events:
         user_id = event["user_id"]
         event_at = event["event_at"]
-        first_seen[user_id] = min(first_seen.get(user_id, event_at), event_at)
+        if not has_auth_users:
+            first_seen[user_id] = min(first_seen.get(user_id, event_at), event_at)
+        if user_id not in first_seen:
+            continue
 
         if event["name"] in READING_EVENTS:
             reading_events.setdefault(user_id, []).append(event_at)
@@ -387,13 +469,17 @@ def _compute_app_rows(app_id: str, events: list[dict[str, Any]]) -> tuple[list[G
         timestamps.sort()
 
     rows: list[GrowthMetricRow] = []
-    min_event_at = min(event_times)
-    max_event_at = max(event_times)
+    min_event_at = min(event_times) if event_times else None
+    max_event_at = max(event_times) if event_times else None
+    min_user_at = min(user_times) if user_times else None
+    max_user_at = max(user_times) if user_times else None
+    min_bucket_at = min(all_times)
+    max_bucket_at = max(all_times)
     all_users = set(first_seen.keys())
 
     for granularity in GRANULARITIES:
-        for bucket_start, bucket_end in generate_buckets(min_event_at, max_event_at, granularity):  # type: ignore[arg-type]
-            effective_end = min(bucket_end, max_event_at + timedelta(microseconds=1))
+        for bucket_start, bucket_end in generate_buckets(min_bucket_at, max_bucket_at, granularity):  # type: ignore[arg-type]
+            effective_end = min(bucket_end, max_bucket_at + timedelta(microseconds=1))
             known_users = {user_id for user_id, seen_at in first_seen.items() if seen_at < effective_end}
             subscribed = 0
             weekly_active = 0
@@ -425,7 +511,7 @@ def _compute_app_rows(app_id: str, events: list[dict[str, Any]]) -> tuple[list[G
                 )
             )
 
-    return rows, (min_event_at, max_event_at)
+    return rows, (min_event_at, max_event_at), (min_user_at, max_user_at)
 
 
 def load_users_growth(
@@ -435,14 +521,19 @@ def load_users_growth(
     reset: bool = False,
 ) -> GrowthResult | None:
     paths = resolve_paths(archive_dir)
-    files = parquet_files(paths)
-    if not files:
+    event_files = parquet_files(paths)
+    auth_user_path = resolve_auth_paths(archive_dir).users_parquet
+    source_files = [*event_files]
+    if auth_user_path.exists():
+        source_files.append(auth_user_path)
+    if not source_files:
         return None
 
     root = stats_root or DEFAULT_STATS_ROOT
-    fingerprints = source_fingerprints(files)
-    all_events = _fetch_rows(parquet_glob(paths))
-    app_ids = sorted({event["app_id"] for event in all_events})
+    fingerprints = source_fingerprints(source_files)
+    all_events = _fetch_rows(parquet_glob(paths)) if event_files else []
+    all_auth_users = _fetch_auth_users(auth_user_path)
+    app_ids = sorted({event["app_id"] for event in all_events} | {user.app_id for user in all_auth_users})
     results: list[GrowthAppResult] = []
 
     for app_id in app_ids:
@@ -462,9 +553,13 @@ def load_users_growth(
             rows = _load_cached_rows(metrics_path)
             cache_status = "cached"
         else:
-            rows, event_range = _compute_app_rows(app_id, [event for event in all_events if event["app_id"] == app_id])
+            rows, event_range, user_range = _compute_app_rows(
+                app_id,
+                [event for event in all_events if event["app_id"] == app_id],
+                [user for user in all_auth_users if user.app_id == app_id],
+            )
             _write_rows(metrics_path, rows)
-            _write_state(state_path, app_id, fingerprints, rows, event_range)
+            _write_state(state_path, app_id, fingerprints, rows, event_range, user_range)
 
         if app_filter is None or app_id in app_filter:
             results.append(

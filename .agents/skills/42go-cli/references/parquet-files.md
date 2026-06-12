@@ -93,8 +93,8 @@ Stores bucketed user growth and activity metrics by `app_id`, `granularity`, `bu
 
 Metrics:
 
-- `total_users`: users known at bucket boundary, inferred from first observed user-scoped event.
-- `subscribed_users`: users whose latest marketing consent is true at bucket boundary.
+- `total_users`: auth users known at bucket boundary from `.local/42go-data/auth/users.parquet`; falls back to first observed user-scoped event only when auth users are not available.
+- `subscribed_users`: users whose latest marketing consent is true at bucket boundary, using auth consent plus consent events.
 - `weekly_active_users`: users with reading activity in the trailing 7 days.
 - `monthly_active_users`: users with reading activity in the trailing 30 days.
 - `inactive_users`: known users minus monthly active users.
@@ -105,7 +105,7 @@ This is the main file for management growth charts.
 
 Command: `42go query users growth`.
 
-Stores cache metadata per source event file: schema version, generated time, timezone, source path, file fingerprint, event range, row count, granularities, reading events, and consent events.
+Stores cache metadata per source auth/event file: schema version, generated time, timezone, source path, file fingerprint, event range, auth user range, row count, granularities, reading events, and consent events.
 
 Useful for cache validation and debugging. It is not a business metric table.
 

@@ -79,9 +79,21 @@ def test_default_paths_use_local_data_root() -> None:
     assert paths.state == Path(".local/42go-data/auth/_state.json")
 
 
+def test_pull_users_uses_backup_database_url_by_default(monkeypatch, tmp_path: Path) -> None:
+    data_dir = tmp_path / ".local" / "42go-data"
+    monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://backup")
+    calls: list[str] = []
+    monkeypatch.setattr(users_pull, "fetch_users", lambda database_url, cursor, limit: calls.append(database_url) or [])
+    monkeypatch.setattr(users_pull, "fetch_accounts", lambda database_url, cursor, limit: calls.append(database_url) or [])
+
+    pull_users(PullUsersOptions(data_dir=data_dir))
+
+    assert calls == ["postgres://backup", "postgres://backup"]
+
+
 def test_pull_users_writes_allowlisted_parquet_and_state(monkeypatch, tmp_path: Path) -> None:
     data_dir = tmp_path / ".local" / "42go-data"
-    monkeypatch.setenv("DATABASE_URL", "postgres://example")
+    monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://example")
     monkeypatch.setattr(users_pull, "fetch_users", lambda database_url, cursor, limit: [user_row("u1", name="John")])
     monkeypatch.setattr(users_pull, "fetch_accounts", lambda database_url, cursor, limit: [account_row("acc1", user_id="u1")])
 
@@ -122,7 +134,7 @@ def test_pull_users_writes_allowlisted_parquet_and_state(monkeypatch, tmp_path: 
 
 def test_pull_users_uses_cursors_and_merges_updates(monkeypatch, tmp_path: Path) -> None:
     data_dir = tmp_path / ".local" / "42go-data"
-    monkeypatch.setenv("DATABASE_URL", "postgres://example")
+    monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://example")
     calls: list[tuple[str, list[str] | None]] = []
 
     def first_users(database_url: str, cursor: list[str] | None, limit: int) -> list[dict[str, Any]]:
@@ -168,7 +180,7 @@ def test_pull_users_reset_rebuilds_without_existing_rows(monkeypatch, tmp_path: 
     legacy_users = data_dir / "auth_users.parquet"
     legacy_accounts = data_dir / "auth_accounts.parquet"
     legacy_state = data_dir / "_state" / "auth.json"
-    monkeypatch.setenv("DATABASE_URL", "postgres://example")
+    monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://example")
     monkeypatch.setattr(users_pull, "fetch_users", lambda database_url, cursor, limit: [user_row("u1", name="John")])
     monkeypatch.setattr(users_pull, "fetch_accounts", lambda database_url, cursor, limit: [account_row("acc1", user_id="u1")])
     pull_users(PullUsersOptions(data_dir=data_dir))
@@ -202,7 +214,7 @@ def test_pull_users_reset_rebuilds_without_existing_rows(monkeypatch, tmp_path: 
 
 def test_write_failure_does_not_advance_state(monkeypatch, tmp_path: Path) -> None:
     data_dir = tmp_path / ".local" / "42go-data"
-    monkeypatch.setenv("DATABASE_URL", "postgres://example")
+    monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://example")
     monkeypatch.setattr(users_pull, "fetch_users", lambda database_url, cursor, limit: [user_row("u1", name="John")])
     monkeypatch.setattr(users_pull, "fetch_accounts", lambda database_url, cursor, limit: [account_row("acc1", user_id="u1")])
     pull_users(PullUsersOptions(data_dir=data_dir))

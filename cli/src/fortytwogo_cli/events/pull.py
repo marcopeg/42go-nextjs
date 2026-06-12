@@ -153,7 +153,7 @@ def fetch_rows(
                 cursor_obj.execute(base_sql, params)
                 return list(cursor_obj.fetchall())
     except Exception as error:
-        raise RuntimeError(f"Failed to fetch events from EVENTS_DATABASE_URL: {error}") from error
+        raise RuntimeError(f"Failed to fetch events from BACKUP_DATABASE_URL: {error}") from error
 
 
 def resolve_run_id(paths: ArchivePaths, cursor: tuple[str | None, str | None], requested: str | None) -> str:

@@ -59,9 +59,7 @@ cli/src/fortytwogo_cli/
 ## Environment Loading
 
 - Raw data root: `FORTYTWOGO_DATA_DIR` or `.local/42go-data`.
-- Event source: `EVENTS_DATABASE_URL`, with `.env` fallback via `events.paths.load_dotenv_value`.
-- Auth and book source: `--database-url-env`, default `DATABASE_URL`, with `.env` fallback.
-- Backup source: `BACKUP_DATABASE_URL`.
+- Pull and backup source: `BACKUP_DATABASE_URL`, with `.env` fallback. Event pulls use it directly; auth and book pulls expose `--database-url-env` and default to it.
 - Restore target: `RESTORE_DATABASE_URL`.
 
 Do not print secrets. Redact connection strings in operator output.

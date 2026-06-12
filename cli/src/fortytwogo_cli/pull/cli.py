@@ -82,8 +82,8 @@ def pull_root(
     ] = DEFAULT_EVENT_LIMIT,
     database_url_env: Annotated[
         str,
-        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book pulls."),
-    ] = "DATABASE_URL",
+        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book pulls. Defaults to BACKUP_DATABASE_URL."),
+    ] = "BACKUP_DATABASE_URL",
     reset: Annotated[
         bool,
         typer.Option("--reset", help="Delete local raw Parquet files for the selected pull target before pulling."),
@@ -129,8 +129,8 @@ def auth(
     limit: Annotated[int, typer.Option("--limit", min=1, help=f"Maximum rows per table. Defaults to {DEFAULT_AUTH_LIMIT}.")] = DEFAULT_AUTH_LIMIT,
     database_url_env: Annotated[
         str,
-        typer.Option("--database-url-env", help="Environment variable or .env key containing the PostgreSQL connection URL."),
-    ] = "DATABASE_URL",
+        typer.Option("--database-url-env", help="Environment variable or .env key containing the PostgreSQL connection URL. Defaults to BACKUP_DATABASE_URL."),
+    ] = "BACKUP_DATABASE_URL",
     reset: Annotated[bool, typer.Option("--reset", help="Delete local auth Parquet files before pulling.")] = False,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Report changed rows without writing files or advancing state.")] = False,
 ) -> None:
@@ -170,8 +170,8 @@ def books(
     limit: Annotated[int, typer.Option("--limit", min=1, help=f"Maximum rows per progressive table. Defaults to {DEFAULT_BOOK_LIMIT}.")] = DEFAULT_BOOK_LIMIT,
     database_url_env: Annotated[
         str,
-        typer.Option("--database-url-env", help="Environment variable or .env key containing the PostgreSQL connection URL."),
-    ] = "DATABASE_URL",
+        typer.Option("--database-url-env", help="Environment variable or .env key containing the PostgreSQL connection URL. Defaults to BACKUP_DATABASE_URL."),
+    ] = "BACKUP_DATABASE_URL",
     reset: Annotated[bool, typer.Option("--reset", help="Delete local book Parquet files before pulling.")] = False,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Report changed rows without writing files or advancing state.")] = False,
 ) -> None:
@@ -190,8 +190,8 @@ def all_data(
     limit: Annotated[int, typer.Option("--limit", min=1, help=f"Maximum rows per progressive query. Defaults to {DEFAULT_EVENT_LIMIT}.")] = DEFAULT_EVENT_LIMIT,
     database_url_env: Annotated[
         str,
-        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book pulls."),
-    ] = "DATABASE_URL",
+        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book pulls. Defaults to BACKUP_DATABASE_URL."),
+    ] = "BACKUP_DATABASE_URL",
     reset: Annotated[bool, typer.Option("--reset", help="Delete local raw Parquet files before pulling.")] = False,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Report changed rows without writing files or advancing state.")] = False,
 ) -> None:
@@ -210,8 +210,8 @@ def star(
     limit: Annotated[int, typer.Option("--limit", min=1, help=f"Maximum rows per progressive query. Defaults to {DEFAULT_EVENT_LIMIT}.")] = DEFAULT_EVENT_LIMIT,
     database_url_env: Annotated[
         str,
-        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book pulls."),
-    ] = "DATABASE_URL",
+        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book pulls. Defaults to BACKUP_DATABASE_URL."),
+    ] = "BACKUP_DATABASE_URL",
     reset: Annotated[bool, typer.Option("--reset", help="Delete local raw Parquet files before pulling.")] = False,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Report changed rows without writing files or advancing state.")] = False,
 ) -> None:

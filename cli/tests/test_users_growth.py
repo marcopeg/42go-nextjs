@@ -104,6 +104,79 @@ def write_events_archive(root: Path) -> None:
     pq.write_table(pa.Table.from_pylist(rows), parquet_dir / "events_202606.parquet")
 
 
+def write_auth_users(root: Path) -> None:
+    auth_dir = root / "auth"
+    auth_dir.mkdir(parents=True)
+    rows = [
+        {
+            "app_id": "lingocafe",
+            "id": "u2",
+            "username": None,
+            "name": None,
+            "email": "u2@example.com",
+            "email_verified": None,
+            "image": None,
+            "profile": None,
+            "consent": None,
+            "feature_flags": None,
+            "created_at": "2026-05-20T10:00:00+00:00",
+            "updated_at": "2026-05-20T10:00:00+00:00",
+        },
+        {
+            "app_id": "lingocafe",
+            "id": "u1",
+            "username": None,
+            "name": None,
+            "email": "u1@example.com",
+            "email_verified": None,
+            "image": None,
+            "profile": None,
+            "consent": None,
+            "feature_flags": None,
+            "created_at": "2026-06-01T10:00:00+00:00",
+            "updated_at": "2026-06-01T10:00:00+00:00",
+        },
+        {
+            "app_id": "lingocafe",
+            "id": "u3",
+            "username": None,
+            "name": None,
+            "email": "u3@example.com",
+            "email_verified": None,
+            "image": None,
+            "profile": None,
+            "consent": None,
+            "feature_flags": None,
+            "created_at": "2026-06-10T11:00:00+00:00",
+            "updated_at": "2026-06-10T11:00:00+00:00",
+        },
+        {
+            "app_id": "lingocafe",
+            "id": "u4",
+            "username": None,
+            "name": None,
+            "email": "u4@example.com",
+            "email_verified": None,
+            "image": None,
+            "profile": None,
+            "consent": json.dumps(
+                {
+                    "mkt": [
+                        {
+                            "changedAt": "2026-06-11T09:00:00Z",
+                            "value": True,
+                        }
+                    ]
+                }
+            ),
+            "feature_flags": None,
+            "created_at": "2026-06-11T09:00:00+00:00",
+            "updated_at": "2026-06-11T09:00:00+00:00",
+        }
+    ]
+    pq.write_table(pa.Table.from_pylist(rows), auth_dir / "users.parquet")
+
+
 def test_parse_app_filter() -> None:
     assert parse_app_filter("lingocafe, default ,,") == {"lingocafe", "default"}
     assert parse_app_filter(None) is None
@@ -176,3 +249,47 @@ def test_users_growth_output_can_filter_apps(tmp_path: Path) -> None:
     assert result is not None
     assert result.apps == []
     assert "No matching app IDs." in format_users_growth(result)
+
+
+def test_users_growth_counts_auth_users_without_events(tmp_path: Path) -> None:
+    archive = tmp_path / "archive"
+    stats_root = tmp_path / "stats"
+    write_events_archive(archive)
+    write_auth_users(archive)
+
+    result = load_users_growth(archive_dir=archive, stats_root=stats_root, reset=False)
+
+    assert result is not None
+    daily_rows = [row for row in result.apps[0].rows if row.granularity == "day"]
+    last_day = daily_rows[-1]
+    assert last_day.bucket_label == "2026-06-11"
+    assert last_day.total_users == 4
+    assert last_day.subscribed_users == 2
+
+
+def test_users_growth_ignores_event_only_users_when_auth_users_exist(tmp_path: Path) -> None:
+    archive = tmp_path / "archive"
+    stats_root = tmp_path / "stats"
+    write_events_archive(archive)
+    write_auth_users(archive)
+
+    parquet_dir = archive / "events"
+    extra_rows = [
+        {
+            "created_at": "2026-06-11T10:00:00+00:00",
+            "id": "event-extra",
+            "app_id": "lingocafe",
+            "user_id": "event-only",
+            "event_at": "2026-06-11T10:00:00+00:00",
+            "name": "page.open",
+            "data": "{}",
+            "meta": "{}",
+        }
+    ]
+    pq.write_table(pa.Table.from_pylist(extra_rows), parquet_dir / "events_202607.parquet")
+
+    result = load_users_growth(archive_dir=archive, stats_root=stats_root, reset=False)
+
+    assert result is not None
+    daily_rows = [row for row in result.apps[0].rows if row.granularity == "day"]
+    assert daily_rows[-1].total_users == 4

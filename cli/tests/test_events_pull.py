@@ -8,7 +8,7 @@ from typing import Any
 import pyarrow.parquet as pq
 
 from fortytwogo_cli.events import pull as events_pull
-from fortytwogo_cli.events.paths import resolve_paths
+from fortytwogo_cli.events.paths import get_database_url, resolve_paths
 from fortytwogo_cli.events.pull import PullOptions, pull_events
 
 
@@ -36,6 +36,12 @@ def event_row(
 
 def read_parquet_rows(path: Path) -> list[dict[str, Any]]:
     return pq.read_table(path).to_pylist()
+
+
+def test_pull_events_uses_backup_database_url_by_default(monkeypatch) -> None:
+    monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://backup")
+
+    assert get_database_url() == "postgres://backup"
 
 
 def test_pull_events_writes_monthly_parquet_and_uses_cursor(monkeypatch, tmp_path: Path) -> None:

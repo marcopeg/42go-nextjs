@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-DATABASE_URL_ENV_VAR = "EVENTS_DATABASE_URL"
+DATABASE_URL_ENV_VAR = "BACKUP_DATABASE_URL"
 DATA_DIR_ENV_VAR = "FORTYTWOGO_DATA_DIR"
 DEFAULT_DATA_DIR = Path(".local/42go-data")
 

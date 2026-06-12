@@ -30,11 +30,11 @@ Override data root:
 
 ## Environment
 
-- Source database env var: `EVENTS_DATABASE_URL`
+- Source database env var: `BACKUP_DATABASE_URL`
 - Data-root override env var: `FORTYTWOGO_DATA_DIR`
 - Default data root: `.local/42go-data`
 
-The CLI reads `.env` when the env var is not already exported.
+The event pull uses the same source database env var as `42go backup`. The CLI reads `.env` when the env var is not already exported.
 
 ## Archive Layout
 

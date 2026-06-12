@@ -74,9 +74,22 @@ def read_parquet_rows(path: Path) -> list[dict[str, Any]]:
     return pq.read_table(path).to_pylist()
 
 
+def test_pull_books_uses_backup_database_url_by_default(monkeypatch, tmp_path: Path) -> None:
+    data_dir = tmp_path / ".local" / "42go-data"
+    monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://backup")
+    calls: list[str] = []
+    monkeypatch.setattr(books_mod, "fetch_books", lambda database_url, cursor, limit: calls.append(database_url) or [])
+    monkeypatch.setattr(books_mod, "fetch_pages", lambda database_url: calls.append(database_url) or [])
+    monkeypatch.setattr(books_mod, "fetch_progress", lambda database_url, cursor, limit: calls.append(database_url) or [])
+
+    pull_books(PullBooksOptions(data_dir=data_dir))
+
+    assert calls == ["postgres://backup", "postgres://backup", "postgres://backup"]
+
+
 def test_pull_books_writes_raw_parquet_and_query_reads_local_files(monkeypatch, tmp_path: Path) -> None:
     data_dir = tmp_path / ".local" / "42go-data"
-    monkeypatch.setenv("DATABASE_URL", "postgres://example")
+    monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://example")
     monkeypatch.setattr(books_mod, "fetch_books", lambda database_url, cursor, limit: [book_row("b1", title="Dracula")])
     monkeypatch.setattr(
         books_mod,
@@ -124,7 +137,7 @@ def test_pull_books_writes_raw_parquet_and_query_reads_local_files(monkeypatch, 
 def test_pull_books_uses_cursors_and_reset(monkeypatch, tmp_path: Path) -> None:
     data_dir = tmp_path / ".local" / "42go-data"
     legacy_state = data_dir / "lingocafe" / "_state" / "books.json"
-    monkeypatch.setenv("DATABASE_URL", "postgres://example")
+    monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://example")
     calls: list[tuple[str, list[str] | None]] = []
 
     def first_books(database_url: str, cursor: list[str] | None, limit: int) -> list[dict[str, Any]]:

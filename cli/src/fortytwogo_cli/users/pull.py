@@ -42,7 +42,7 @@ ACCOUNT_COLUMNS = [
 class PullUsersOptions:
     data_dir: Path | None = None
     limit: int = DEFAULT_LIMIT
-    database_url_env: str = "DATABASE_URL"
+    database_url_env: str = "BACKUP_DATABASE_URL"
     reset: bool = False
     dry_run: bool = False
 
