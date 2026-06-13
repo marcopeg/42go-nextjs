@@ -29,6 +29,13 @@ from fortytwogo_cli.events.sessions import (
     load_event_sessions,
     no_event_sessions_message,
 )
+from fortytwogo_cli.events.subscribers import (
+    DEFAULT_SUBSCRIBERS_LIMIT,
+    format_lingocafe_subscribers,
+    lingocafe_subscribers_to_dict,
+    load_lingocafe_subscribers,
+    no_lingocafe_subscribers_message,
+)
 from fortytwogo_cli.events.users_growth import (
     format_users_growth,
     load_users_growth,
@@ -202,6 +209,35 @@ def run_reads_query(
     typer.echo(format_event_reads(result))
 
 
+def run_subscribers_query(
+    data_dir: Path | None = None,
+    limit: int = DEFAULT_SUBSCRIBERS_LIMIT,
+    completion_threshold_bps: int = DEFAULT_COMPLETION_THRESHOLD_BPS,
+    reset: bool = False,
+    output_format: str = "text",
+) -> None:
+    validate_output_format(output_format)
+    try:
+        result = load_lingocafe_subscribers(
+            archive_dir=data_dir,
+            limit=limit,
+            completion_threshold_bps=completion_threshold_bps,
+            reset=reset,
+        )
+    except RuntimeError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(1) from error
+
+    if result is None:
+        typer.echo(no_lingocafe_subscribers_message(data_dir))
+        return
+
+    if output_format == "json":
+        typer.echo(json.dumps(lingocafe_subscribers_to_dict(result), indent=2, sort_keys=True))
+        return
+    typer.echo(format_lingocafe_subscribers(result))
+
+
 def run_users_query_menu() -> None:
     choice = prompt_menu(
         "Choose users query:",
@@ -219,12 +255,15 @@ def run_lingocafe_query_menu() -> None:
         [
             (1, "books"),
             (2, "reads"),
+            (3, "subscribers"),
         ],
     )
     if choice == 1:
         run_books_query()
     elif choice == 2:
         run_reads_query()
+    elif choice == 3:
+        run_subscribers_query()
 
 
 def run_query_menu() -> None:
@@ -412,6 +451,50 @@ def reads(
     run_reads_query(
         data_dir=data_dir,
         book_id=book_id,
+        limit=limit,
+        completion_threshold_bps=completion_threshold_bps,
+        reset=reset,
+        output_format=output_format,
+    )
+
+
+@query_lingocafe_app.command(help="List LingoCafe users whose latest marketing consent is active.")
+def subscribers(
+    data_dir: Annotated[
+        Path | None,
+        typer.Option(
+            "--data-dir",
+            help=f"Local raw data root. Defaults to FORTYTWOGO_DATA_DIR or {DEFAULT_DATA_DIR}.",
+        ),
+    ] = None,
+    limit: Annotated[
+        int,
+        typer.Option(
+            "--limit",
+            min=1,
+            help=f"Maximum visible subscribers to show. Defaults to {DEFAULT_SUBSCRIBERS_LIMIT}.",
+        ),
+    ] = DEFAULT_SUBSCRIBERS_LIMIT,
+    completion_threshold_bps: Annotated[
+        int,
+        typer.Option(
+            "--completion-threshold-bps",
+            min=0,
+            max=10000,
+            help=f"Progress BPS used by dependent read totals. Defaults to {DEFAULT_COMPLETION_THRESHOLD_BPS}.",
+        ),
+    ] = DEFAULT_COMPLETION_THRESHOLD_BPS,
+    reset: Annotated[
+        bool,
+        typer.Option("--reset", help="Remove LingoCafe subscriber aggregate caches and rebuild from local Parquet data."),
+    ] = False,
+    output_format: Annotated[
+        str,
+        typer.Option("--format", help="Output format: text or json."),
+    ] = "text",
+) -> None:
+    run_subscribers_query(
+        data_dir=data_dir,
         limit=limit,
         completion_threshold_bps=completion_threshold_bps,
         reset=reset,

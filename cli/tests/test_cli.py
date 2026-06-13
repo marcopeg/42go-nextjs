@@ -155,17 +155,37 @@ def test_query_menu_enters_nested_users_menu(monkeypatch) -> None:
 def test_query_lingocafe_without_target_prompts_and_runs_selection(monkeypatch) -> None:
     calls: list[str] = []
 
-    def fake_run_reads_query(*args, **kwargs) -> None:
-        calls.append("reads")
+    def fake_run_subscribers_query(*args, **kwargs) -> None:
+        calls.append("subscribers")
 
-    monkeypatch.setattr(events_cli_module, "run_reads_query", fake_run_reads_query)
+    monkeypatch.setattr(events_cli_module, "run_subscribers_query", fake_run_subscribers_query)
 
-    result = runner.invoke(app, ["query", "lingocafe"], input="2\n")
+    result = runner.invoke(app, ["query", "lingocafe"], input="3\n")
 
     assert result.exit_code == 0
-    assert calls == ["reads"]
+    assert calls == ["subscribers"]
     assert "Choose LingoCafe query" in result.output
     assert "2. reads" in result.output
+    assert "3. subscribers" in result.output
+
+
+def test_query_lingocafe_help_lists_subscribers() -> None:
+    result = runner.invoke(app, ["query", "lingocafe", "--help"])
+
+    assert result.exit_code == 0
+    assert "books" in result.output
+    assert "reads" in result.output
+    assert "subscribers" in result.output
+
+
+def test_query_lingocafe_subscribers_help_describes_options() -> None:
+    result = runner.invoke(app, ["query", "lingocafe", "subscribers", "--help"])
+
+    assert result.exit_code == 0
+    assert "--data-dir" in result.output
+    assert "--limit" in result.output
+    assert "--format" in result.output
+    assert "--reset" in result.output
 
 
 def test_backup_help_lists_mode_flags() -> None:

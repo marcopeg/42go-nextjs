@@ -64,6 +64,13 @@ query_lingocafe_reads_completion_funnel.parquet
 query_lingocafe_reads_state.parquet
 ```
 
+LingoCafe subscribers:
+
+```text
+query_lingocafe_subscribers_users.parquet
+query_lingocafe_subscribers_state.parquet
+```
+
 ## Session Query
 
 - Module: `events/sessions.py`
@@ -105,6 +112,16 @@ query_lingocafe_reads_state.parquet
 - Page completion means max progress is at or above threshold.
 - Book completion is completed pages divided by total pages from `books_pages.parquet`.
 - Funnel buckets: `0-20%`, `20-40%`, `40-60%`, `60-80%`, `80-100%`.
+
+## LingoCafe Subscribers Query
+
+- Module: `events/subscribers.py`
+- User population: `.local/42go-data/auth/users.parquet`.
+- App scope: `app_id = lingocafe`.
+- Subscriber filter: latest top-level `consent.mkt` value is `true`.
+- Profile fields: `ownLang`, `targetLang`, and `targetLevel`.
+- Activity fields: latest computed session from `query_session_sessions.parquet`; 7/30-day flags are relative to the newest computed session timestamp.
+- Read totals: computed from `query_lingocafe_reads_book_completion.parquet`.
 
 ## Migration History
 

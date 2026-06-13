@@ -13,6 +13,7 @@ from fortytwogo_cli.events.paths import DEFAULT_DATA_DIR, resolve_paths
 from fortytwogo_cli.events.pull import DEFAULT_LIMIT
 from fortytwogo_cli.events.reads import load_event_reads
 from fortytwogo_cli.events.sessions import load_event_sessions
+from fortytwogo_cli.events.subscribers import load_lingocafe_subscribers
 from fortytwogo_cli.events.users_growth import load_users_growth
 from fortytwogo_cli.pull.cli import pull_app, run_all_pulls
 
@@ -117,6 +118,19 @@ def update(
         reads_statuses = ",".join(sorted({app_result.cache_status for app_result in reads_result.apps}))
         books_total = sum(app_result.total_books for app_result in reads_result.apps)
         typer.echo(f"query lingocafe reads: {reads_statuses or 'n/a'} books={books_total}")
+
+    try:
+        subscribers_result = load_lingocafe_subscribers(archive_dir=data_dir, reset=reset)
+    except RuntimeError as error:
+        typer.echo(f"query lingocafe subscribers failed: {error}", err=True)
+        raise typer.Exit(1) from error
+    if subscribers_result is None:
+        typer.echo("query lingocafe subscribers: no auth users Parquet file found")
+    else:
+        typer.echo(
+            "query lingocafe subscribers: "
+            f"{subscribers_result.cache_status} subscribers={subscribers_result.total_subscribers}"
+        )
 
     typer.echo("")
     typer.echo(f"Reset: {'yes' if reset else 'no'}")

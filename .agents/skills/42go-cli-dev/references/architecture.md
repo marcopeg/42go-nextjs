@@ -54,6 +54,7 @@ cli/src/fortytwogo_cli/
 - `42go query ...`: reads local Parquet and builds or inspects local aggregates.
 - `42go query lingocafe books`: inspects LingoCafe book catalog facts from local raw Parquet.
 - `42go query lingocafe reads`: builds LingoCafe reading engagement aggregates.
+- `42go query lingocafe subscribers`: lists active marketing subscribers with profile language fields, session recency, and read totals.
 - `42go backup` / `42go restore`: data-only SQL movement.
 
 ## Environment Loading

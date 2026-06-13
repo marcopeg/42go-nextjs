@@ -20,6 +20,7 @@ src/fortytwogo_cli/events/pull.py
 src/fortytwogo_cli/events/query.py
 src/fortytwogo_cli/events/reads.py
 src/fortytwogo_cli/events/sessions.py
+src/fortytwogo_cli/events/subscribers.py
 src/fortytwogo_cli/events/users_growth.py
 src/fortytwogo_cli/pull/__init__.py
 src/fortytwogo_cli/pull/cli.py

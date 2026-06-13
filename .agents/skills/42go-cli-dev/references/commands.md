@@ -26,13 +26,14 @@ The root callback prints help when no subcommand is invoked. Nested command grou
 - `query_lingocafe_app`: nested `42go query lingocafe`.
 - `42go query lingocafe books`: LingoCafe book catalog query.
 - `42go query lingocafe reads`: LingoCafe reading engagement query.
+- `42go query lingocafe subscribers`: LingoCafe active marketing subscriber query.
 
 No-arg menus:
 
 - `42go pull`: menu for auth, events, books, and all.
 - `42go query`: menu for stats, session, users, and LingoCafe.
 - `42go query users`: menu for growth.
-- `42go query lingocafe`: menu for books and reads.
+- `42go query lingocafe`: menu for books, reads, and subscribers.
 
 Do not reintroduce `42go events` or `42go users`; both are absorbed by `42go pull`.
 
@@ -67,6 +68,7 @@ The following must print useful help:
 42go query lingocafe --help
 42go query lingocafe books --help
 42go query lingocafe reads --help
+42go query lingocafe subscribers --help
 42go backup --help
 42go restore --help
 ```
@@ -85,6 +87,7 @@ Pipeline:
 3. `load_event_sessions(..., reset=reset)`
 4. `load_users_growth(..., reset=reset)`
 5. `load_event_reads(..., reset=reset)`
+6. `load_lingocafe_subscribers(..., reset=reset)`
 
 The `--reset` flag deletes and rebuilds the selected raw data files and aggregation caches.
 

@@ -141,7 +141,19 @@ which 42go
 42go --help
 42go pull --help
 42go query --help
+42go query lingocafe subscribers --help
 ```
+
+Useful LingoCafe subscriber report:
+
+```bash
+42go query lingocafe subscribers
+```
+
+The report reads local Parquet data under `.local/42go-data`, lists
+`lingocafe` users whose latest `consent.mkt` value is `true`, and includes
+profile language fields, 7/30-day activity flags from computed sessions, last
+session details, and read totals from computed LingoCafe read aggregates.
 
 ### Uninstall
 
