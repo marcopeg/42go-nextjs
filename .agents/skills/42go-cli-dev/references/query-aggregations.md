@@ -1,8 +1,10 @@
 # Query Aggregation Design
 
+Historical design reference only. `42go query` is not mounted as a public CLI command right now.
+
 ## Boundary
 
-`42go query ...` commands produce local analytical aggregates. They read local Parquet inputs and write local Parquet outputs.
+The removed `42go query ...` commands produced local analytical aggregates. They read local Parquet inputs and wrote local Parquet outputs.
 
 Inputs:
 
@@ -12,9 +14,9 @@ Inputs:
 Outputs:
 
 - App-scoped root: `.local/42go-stats/{app-id}/`
-- LingoCafe file naming mirrors the `42go query lingocafe ...` command chain.
+- LingoCafe file naming mirrored the `42go query lingocafe ...` command chain.
 
-Do not use nested command folders for generated aggregates.
+Future aggregate implementations should revisit these choices instead of copying the old command surface blindly.
 
 ## Cache Rules
 
@@ -125,4 +127,4 @@ query_lingocafe_subscribers_state.parquet
 
 ## Migration History
 
-Earlier cache names used shorter `query_reads_*` and older `events_query_*` files under `.local/42go-stats/{app-id}/`. Current LingoCafe commands must write `query_lingocafe_*` files. Keep legacy cleanup code until old local worktrees have naturally reset.
+Earlier cache names used shorter `query_reads_*` and older `events_query_*` files under `.local/42go-stats/{app-id}/`. Later LingoCafe commands wrote `query_lingocafe_*` files.

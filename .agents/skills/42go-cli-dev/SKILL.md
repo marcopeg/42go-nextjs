@@ -1,6 +1,6 @@
 ---
 name: 42go-cli-dev
-description: Use when changing, extending, refactoring, or reviewing the Python `42go` CLI implementation, including command structure, Typer wiring, Parquet aggregation caches, event archive internals, backup/restore behavior, and tests.
+description: Use when changing, extending, refactoring, or reviewing the Python `42go` CLI implementation, including command structure, Typer wiring, raw Parquet pulls, event archive internals, backup/restore behavior, and tests.
 ---
 
 # 42Go CLI Dev
@@ -15,15 +15,13 @@ Use this skill for implementation work on the local Python CLI under `cli/`. For
 - Use Typer for command wiring.
 - Root command families:
   - `42go pull` for raw data extraction.
-  - `42go query` for local analytics aggregations.
   - `42go backup` and `42go restore` for data-only SQL dump workflows.
+- `42go query` is intentionally not mounted on the root CLI. Keep aggregation knowledge in references for a future rebuild.
 - Do not reintroduce `42go events` or `42go users`.
 - Store raw pulled data as Parquet under `.local/42go-data/`.
 - Raw pulled rows that mirror a source table must use `.local/42go-data/{schema}/{table}.parquet`.
 - Keep command help useful and test it.
 - No-arg command groups with subcommands should open interactive menus.
-- Store generated analytics aggregates as Parquet under `.local/42go-stats/{app-id}/`.
-- Use filenames that mirror the `42go query ...` command chain, such as `query_lingocafe_reads_pages.parquet`.
 - Update `42go-cli` operator docs when user-facing behavior changes.
 
 ## Load-On-Demand References
@@ -31,7 +29,7 @@ Use this skill for implementation work on the local Python CLI under `cli/`. For
 - CLI package structure and dependencies: `references/architecture.md`
 - Command wiring and help contract: `references/commands.md`
 - Event archive implementation: `references/event-archive-implementation.md`
-- Query aggregation cache design: `references/query-aggregations.md`
+- Historical query aggregation notes: `references/query-aggregations.md`
 - Backup and restore implementation: `references/backup-restore-implementation.md`
 - Testing and validation: `references/testing.md`
 

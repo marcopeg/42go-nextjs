@@ -1,6 +1,6 @@
 ---
 name: 42go-cli
-description: Use when operating the local `42go` CLI, running backups/restores, pulling event archives, building local query aggregations, checking command help, or explaining CLI capabilities.
+description: Use when operating the local `42go` CLI, running backups/restores, pulling event archives, inspecting local Parquet data, checking command help, or explaining CLI capabilities.
 ---
 
 # 42Go CLI
@@ -12,12 +12,11 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
 - Keep the console command `42go`.
 - Use command help as the source of truth before running a command: `42go --help`, then subcommand `--help`.
 - `42go pull` is for raw source data extraction.
-- `42go query` is for local analytics aggregations built from cached local data.
-- No-arg command groups such as `42go pull`, `42go query`, `42go query users`, and `42go query lingocafe` open interactive menus.
+- `42go query` is intentionally not available. Historical aggregation notes are retained in `references/query-analytics.md` for a future rebuild.
+- No-arg command groups such as `42go pull` open interactive menus.
 - Do not use `42go events` or `42go users`; those roots were removed.
 - Raw pulled data lives under `.local/42go-data/`.
 - Raw pulled rows that mirror a source table use `.local/42go-data/{schema}/{table}.parquet`.
-- Generated analytics cache files live under `.local/42go-stats/{app-id}/` and use filenames that mirror the `42go query ...` command chain.
 - Do not commit `.local/42go-data`, `.local/42go-stats`, or `.local/42go-backups`.
 - If changing CLI implementation, also use the `42go-cli-dev` skill.
 
@@ -48,17 +47,9 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
   - `42go peek auth users`
   - `42go peek .local/42go-data/auth/users.parquet`
   - Raw pull files under `.local/42go-data`.
-  - Query aggregate files under `.local/42go-stats`.
   - Load `references/parquet-files.md`.
-- Local analytics queries:
-  - `42go query`
-  - `42go query stats`
-  - `42go query session`
-  - `42go query users`
-  - `42go query users growth`
-  - `42go query lingocafe`
-  - `42go query lingocafe books`
-  - `42go query lingocafe reads`
+- Historical local analytics design:
+  - `42go query` is not currently supported.
   - Load `references/query-analytics.md`.
 - Event logging expectations:
   - New application events should flow through the shared core events system and be consumable by `42go pull events`.
@@ -66,24 +57,17 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
 - Full refresh shortcut:
   - `42go update`
   - `42go update --reset`
-  - Load `references/query-analytics.md`.
+  - Load `references/events-archive.md`.
 
 ## Common Workflows
 
-Fresh local read-engagement analytics:
+Refresh all local raw data:
 
 ```bash
 42go update
 ```
 
-Navigate local analytics interactively:
-
-```bash
-42go query
-42go query users
-```
-
-Refresh session and user-growth aggregates:
+Refresh all local raw data from scratch:
 
 ```bash
 42go update --reset
@@ -110,14 +94,6 @@ Agents should navigate commands with:
 42go pull lingocafe --help
 42go pull all --help
 42go pull '*' --help
-42go query --help
-42go query stats --help
-42go query session --help
-42go query users --help
-42go query users growth --help
-42go query lingocafe --help
-42go query lingocafe books --help
-42go query lingocafe reads --help
 42go backup --help
 42go restore --help
 ```

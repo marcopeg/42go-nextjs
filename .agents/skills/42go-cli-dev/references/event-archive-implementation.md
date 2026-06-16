@@ -4,7 +4,6 @@
 
 - `events/paths.py`: raw data root, env loading, path construction.
 - `events/pull.py`: source query, merge/write, state handling.
-- `events/query.py`: high-level archive stats.
 
 ## Archive Layout
 
@@ -48,4 +47,4 @@ JSONB fields are serialized as JSON strings for CSV and Parquet.
 
 - Treat production PostgreSQL as read-only.
 - Never delete source events.
-- Never run heavy analytics directly on production; export first, query locally.
+- Never run heavy analytics directly on production; export first and analyze local Parquet files.

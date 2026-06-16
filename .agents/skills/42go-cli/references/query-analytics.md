@@ -1,16 +1,18 @@
 # 42Go Query Analytics
 
-Use this reference for local analytics commands under `42go query`.
+Use this reference as historical design knowledge for local analytics built from pulled Parquet files.
 
-Invoking `42go query` without a subcommand opens an interactive menu. If the selected target has subcommands, that level opens its own menu; for example `42go query users` opens the user-query menu.
+`42go query` is not currently available as a public CLI command. Do not run or recommend it until the analytics command surface is rebuilt.
+
+The notes below describe the previous command shape and cache layout.
 
 ## Boundary
 
 - `42go pull ...` extracts raw source rows into `.local/42go-data`.
 - Raw pulled data is never filtered by app ID.
-- `42go query ...` builds or reads local analytics from cached Parquet data.
-- Derived aggregate files are app-scoped under `.local/42go-stats/{app-id}/`.
-- LingoCafe aggregate files use filenames that mirror the command chain, such as `query_lingocafe_books_pages.parquet` and `query_lingocafe_reads_pages.parquet`.
+- Previous `42go query ...` commands built or read local analytics from cached Parquet data.
+- Previous derived aggregate files were app-scoped under `.local/42go-stats/{app-id}/`.
+- Previous LingoCafe aggregate files used filenames that mirrored the command chain, such as `query_lingocafe_books_pages.parquet` and `query_lingocafe_reads_pages.parquet`.
 - `--app-id`, `--user-id`, `--book-id`, and `--limit` filter visible output unless command help says otherwise.
 - `--reset` rebuilds local aggregate caches from available local data and removes legacy `events_query_*` files.
 
@@ -21,7 +23,7 @@ Invoking `42go query` without a subcommand opens an interactive menu. If the sel
 42go update --reset
 ```
 
-`42go update` runs the standard refresh pipeline:
+Previously, `42go update` ran this aggregation pipeline:
 
 1. `42go pull all`
 2. `42go query lingocafe books`

@@ -9,7 +9,7 @@ from typing import Any
 import pyarrow.parquet as pq
 
 from fortytwogo_cli.events import books as books_mod
-from fortytwogo_cli.events.books import PullBooksOptions, load_book_stats, pull_books, resolve_book_data_paths
+from fortytwogo_cli.events.books import PullBooksOptions, pull_books, resolve_book_data_paths
 
 
 def dt(value: str) -> datetime:
@@ -116,7 +116,7 @@ def test_pull_books_fetches_sources_in_parallel(monkeypatch, tmp_path: Path) -> 
     assert result["would_write"] is True
 
 
-def test_pull_books_writes_raw_parquet_and_query_reads_local_files(monkeypatch, tmp_path: Path) -> None:
+def test_pull_books_writes_raw_parquet(monkeypatch, tmp_path: Path) -> None:
     data_dir = tmp_path / ".local" / "42go-data"
     monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://example")
     monkeypatch.setattr(books_mod, "fetch_books", lambda database_url, cursor, limit: [book_row("b1", title="Dracula")])
@@ -145,22 +145,6 @@ def test_pull_books_writes_raw_parquet_and_query_reads_local_files(monkeypatch, 
     assert state["books"]["cursor"] == ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "b1"]
     assert state["pages"]["mode"] == "full-refresh"
     assert state["progress"]["cursor"] == ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "u1", "b1"]
-
-    stats_root = tmp_path / ".local" / "42go-stats"
-    stats = load_book_stats(data_dir=data_dir, stats_root=stats_root)
-    assert len(stats.books) == 1
-    assert stats.books[0].book_id == "b1"
-    assert stats.books[0].page_count == 2
-    assert stats.progress_rows == 1
-    assert stats.cache_dir == stats_root / "lingocafe"
-    assert stats.stats_books_path.name == "query_lingocafe_books_books.parquet"
-    assert stats.stats_pages_path.name == "query_lingocafe_books_pages.parquet"
-    assert stats.stats_progress_path.name == "query_lingocafe_books_progress.parquet"
-    assert stats.stats_state_path.name == "query_lingocafe_books_state.parquet"
-    assert stats.stats_books_path.exists()
-    assert stats.stats_pages_path.exists()
-    assert stats.stats_progress_path.exists()
-    assert stats.stats_state_path.exists()
 
 
 def test_pull_books_uses_cursors_and_reset(monkeypatch, tmp_path: Path) -> None:

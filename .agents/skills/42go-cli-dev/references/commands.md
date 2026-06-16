@@ -5,38 +5,26 @@
 `cli/src/fortytwogo_cli/cli.py` defines the root Typer app:
 
 - `pull_app` mounted as `42go pull`
-- `query_app` mounted as `42go query`
 - `backup` mounted as `42go backup`
 - `restore` mounted as `42go restore`
 - `peek` mounted as `42go peek`
 - `update` mounted as `42go update`
 
+`query_app` is intentionally not mounted. `42go query` and its subcommands are not public CLI commands.
+
 The root callback prints help when no subcommand is invoked. Nested command groups with subcommands should open an interactive menu when invoked without a subcommand.
 
-## Pull And Query Apps
+## Pull App
 
 `cli/src/fortytwogo_cli/pull/cli.py` defines:
 
 - `pull_app`: raw data extraction commands for auth, events, LingoCafe, and all data.
 
-`cli/src/fortytwogo_cli/events/cli.py` defines:
-
-- `query_app`: local analytics aggregation commands.
-- `stats_app`: callback-backed `42go query stats`.
-- `query_users_app`: nested `42go query users`.
-- `query_lingocafe_app`: nested `42go query lingocafe`.
-- `42go query lingocafe books`: LingoCafe book catalog query.
-- `42go query lingocafe reads`: LingoCafe reading engagement query.
-- `42go query lingocafe subscribers`: LingoCafe active marketing subscriber query.
-
 No-arg menus:
 
 - `42go pull`: menu for auth, events, LingoCafe, and all.
-- `42go query`: menu for stats, session, users, and LingoCafe.
-- `42go query users`: menu for growth.
-- `42go query lingocafe`: menu for books, reads, and subscribers.
 
-Do not reintroduce `42go events` or `42go users`; both are absorbed by `42go pull`.
+Do not reintroduce `42go events`, `42go users`, or `42go query`.
 
 ## Adding A Command
 
@@ -62,15 +50,6 @@ The following must print useful help:
 42go pull lingocafe --help
 42go pull all --help
 42go pull '*' --help
-42go query --help
-42go query stats --help
-42go query session --help
-42go query users --help
-42go query users growth --help
-42go query lingocafe --help
-42go query lingocafe books --help
-42go query lingocafe reads --help
-42go query lingocafe subscribers --help
 42go backup --help
 42go restore --help
 ```
@@ -85,17 +64,8 @@ Tests should also assert no-arg menus dispatch the selected command.
 Pipeline:
 
 1. `run_all_pulls(...)`
-2. `load_book_stats(...)`
-3. `load_event_sessions(..., reset=reset)`
-4. `load_users_growth(..., reset=reset)`
-5. `load_event_reads(..., reset=reset)`
-6. `load_lingocafe_subscribers(..., reset=reset)`
 
-After the aggregation steps, the command prints the latest LingoCafe headline
-totals from the current day growth bucket plus the subscriber aggregate:
-`users`, `subscribers`, `weekly_active`, and `monthly_active`.
-
-The `--reset` flag deletes and rebuilds the selected raw data files and aggregation caches.
+The `--reset` flag deletes and rebuilds raw data through the pull commands. `42go update` must not write `.local/42go-stats` files or run aggregation loaders.
 
 `42go pull all` is the documented all-data command. It runs the auth, events, and LingoCafe pulls in parallel because each target writes to its own raw data and state path. Inside auth and LingoCafe, independent database reads run in parallel and each target writes its Parquet files and `_state.json` only after the reads complete. Event pulls fetch from one source query, then merge distinct monthly Parquet files in parallel before writing the final events state. Its terminal output is grouped by source blocks under `auth`, `events`, and `lingocafe`, with sub-blocks such as `users`, `accounts`, `events_YYYYMM`, `books`, `books_pages`, and `books_progress`. Event partition blocks are printed only when the partition changed. The human output intentionally omits raw Parquet and state paths. `42go pull '*'` is a literal star alias; quote it in shells that expand `*`.
 

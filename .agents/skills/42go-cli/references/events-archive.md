@@ -62,10 +62,9 @@ The event pull uses the same source database env var as `42go backup`. The CLI r
 
 ## After Pulling
 
-Use the query commands for local analytics:
+Inspect raw local files with `42go peek`:
 
 ```bash
-42go query stats
-42go query session --reset
-42go query users growth --reset --app lingocafe
+42go peek events
+42go peek .local/42go-data/events/events_YYYYMM.parquet
 ```

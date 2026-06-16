@@ -13,15 +13,9 @@ src/fortytwogo_cli/backup/cli.py
 src/fortytwogo_cli/backup/core.py
 src/fortytwogo_cli/events/__init__.py
 src/fortytwogo_cli/events/books.py
-src/fortytwogo_cli/events/cli.py
 src/fortytwogo_cli/events/dependencies.py
 src/fortytwogo_cli/events/paths.py
 src/fortytwogo_cli/events/pull.py
-src/fortytwogo_cli/events/query.py
-src/fortytwogo_cli/events/reads.py
-src/fortytwogo_cli/events/sessions.py
-src/fortytwogo_cli/events/subscribers.py
-src/fortytwogo_cli/events/users_growth.py
 src/fortytwogo_cli/pull/__init__.py
 src/fortytwogo_cli/pull/cli.py
 src/fortytwogo_cli/users/__init__.py
@@ -30,9 +24,5 @@ src/fortytwogo_cli/users/pull.py
 tests/test_backup_core.py
 tests/test_books_pull.py
 tests/test_cli.py
-tests/test_event_stats.py
 tests/test_events_pull.py
-tests/test_reads.py
-tests/test_sessions.py
-tests/test_users_growth.py
 tests/test_users_pull.py
