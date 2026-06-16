@@ -89,6 +89,10 @@ Pipeline:
 5. `load_event_reads(..., reset=reset)`
 6. `load_lingocafe_subscribers(..., reset=reset)`
 
+After the aggregation steps, the command prints the latest LingoCafe headline
+totals from the current day growth bucket plus the subscriber aggregate:
+`users`, `subscribers`, `weekly_active`, and `monthly_active`.
+
 The `--reset` flag deletes and rebuilds the selected raw data files and aggregation caches.
 
 `42go pull all` is the documented all-data command. `42go pull '*'` is a literal star alias; quote it in shells that expand `*`.

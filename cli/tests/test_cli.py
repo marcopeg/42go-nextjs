@@ -421,16 +421,21 @@ def test_update_runs_pull_all_before_aggregations(monkeypatch, tmp_path: Path) -
         calls.append("reads")
         return None
 
+    def fake_subscribers(**kwargs):
+        calls.append("subscribers")
+        return None
+
     monkeypatch.setattr(cli_module, "run_all_pulls", fake_run_all_pulls)
     monkeypatch.setattr(cli_module, "load_book_stats", fake_load_book_stats)
     monkeypatch.setattr(cli_module, "load_event_sessions", fake_sessions)
     monkeypatch.setattr(cli_module, "load_users_growth", fake_users_growth)
     monkeypatch.setattr(cli_module, "load_event_reads", fake_reads)
+    monkeypatch.setattr(cli_module, "load_lingocafe_subscribers", fake_subscribers)
 
     result = runner.invoke(app, ["update", "--data-dir", str(tmp_path / "data")])
 
     assert result.exit_code == 0
-    assert calls == ["pull", "books", "sessions", "users_growth", "reads"]
+    assert calls == ["pull", "books", "sessions", "users_growth", "reads", "subscribers"]
     assert "pull auth: users=1/2 accounts=3/4" in result.output
     assert "pull events: 5 rows" in result.output
     assert "pull books: books=6/7 pages=8 progress=9/10" in result.output
@@ -491,17 +496,39 @@ def test_update_runs_refresh_pipeline_and_passes_reset(monkeypatch) -> None:
 
     def fake_load_users_growth(archive_dir=None, reset=False):
         calls.append(("users", reset))
-        return SimpleNamespace(apps=[SimpleNamespace(rows=[object(), object()], cache_status="rebuilt")])
+        return SimpleNamespace(
+            apps=[
+                SimpleNamespace(
+                    app_id="lingocafe",
+                    rows=[
+                        SimpleNamespace(
+                            granularity="day",
+                            bucket_start="2026-06-13T00:00:00+02:00",
+                            total_users=55,
+                            subscribed_users=21,
+                            weekly_active_users=36,
+                            monthly_active_users=40,
+                        )
+                    ],
+                    cache_status="rebuilt",
+                )
+            ]
+        )
 
     def fake_load_event_reads(archive_dir=None, app_id_filter=None, reset=False):
         calls.append(("reads", reset, app_id_filter))
         return SimpleNamespace(apps=[SimpleNamespace(total_books=5, cache_status="rebuilt")])
+
+    def fake_load_lingocafe_subscribers(archive_dir=None, reset=False):
+        calls.append(("subscribers", reset))
+        return SimpleNamespace(total_subscribers=22, cache_status="rebuilt")
 
     monkeypatch.setattr(cli_module, "run_all_pulls", fake_run_all_pulls)
     monkeypatch.setattr(cli_module, "load_book_stats", fake_load_book_stats)
     monkeypatch.setattr(cli_module, "load_event_sessions", fake_load_event_sessions)
     monkeypatch.setattr(cli_module, "load_users_growth", fake_load_users_growth)
     monkeypatch.setattr(cli_module, "load_event_reads", fake_load_event_reads)
+    monkeypatch.setattr(cli_module, "load_lingocafe_subscribers", fake_load_lingocafe_subscribers)
 
     result = runner.invoke(app, ["update", "--reset", "--limit", "7", "--database-url-env", "BACKUP_DATABASE_URL"])
 
@@ -512,13 +539,16 @@ def test_update_runs_refresh_pipeline_and_passes_reset(monkeypatch) -> None:
         ("session", True),
         ("users", True),
         ("reads", True, "lingocafe"),
+        ("subscribers", True),
     ]
     assert "pull events: 3 rows" in result.output
     assert "pull auth: users=1/2 accounts=1/1" in result.output
     assert "query lingocafe books: books=2 pages=3 progress=1" in result.output
     assert "query session: rebuilt sessions=4" in result.output
-    assert "query users growth: rebuilt rows=2" in result.output
+    assert "query users growth: rebuilt rows=1" in result.output
     assert "query lingocafe reads: rebuilt books=5" in result.output
+    assert "query lingocafe subscribers: rebuilt subscribers=22" in result.output
+    assert "lingocafe totals: users=55 subscribers=22 weekly_active=36 monthly_active=40" in result.output
     assert "Reset: yes" in result.output
 
 
@@ -558,6 +588,12 @@ def test_update_does_not_reset_by_default(monkeypatch) -> None:
         lambda archive_dir=None, app_id_filter=None, reset=False: calls.append(("reads", reset, app_id_filter))
         or SimpleNamespace(apps=[SimpleNamespace(total_books=0, cache_status="cached")]),
     )
+    monkeypatch.setattr(
+        cli_module,
+        "load_lingocafe_subscribers",
+        lambda archive_dir=None, reset=False: calls.append(("subscribers", reset))
+        or SimpleNamespace(total_subscribers=0, cache_status="cached"),
+    )
 
     result = runner.invoke(app, ["update"])
 
@@ -568,6 +604,7 @@ def test_update_does_not_reset_by_default(monkeypatch) -> None:
         ("session", False),
         ("users", False),
         ("reads", False, "lingocafe"),
+        ("subscribers", False),
     ]
     assert "pull events: 0 rows" in result.output
     assert "Reset: no" in result.output

@@ -1,10 +1,11 @@
 {
   "name": "42go-nextjs",
-  "version": "0.0.58",
+  "version": "0.0.59",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "node scripts/generate-app-icons-registry.mjs && node scripts/generate-app-themes-registry.mjs && next build && rm -f .next/standalone/.env .next/standalone/.env.*",
+    "build:docker": "node scripts/generate-app-icons-registry.mjs && node scripts/generate-app-themes-registry.mjs && NEXT_TEST_WASM=1 next build --webpack && rm -f .next/standalone/.env .next/standalone/.env.*",
     "start": "next start",
     "lint": "eslint .",
     "test:email-validation": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/email-validation.test.mts",

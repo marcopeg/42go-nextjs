@@ -37,7 +37,7 @@ ENV NEXT_BUILD_CPUS=1
 # Build the application with standalone output. Source maps are useful when
 # uploaded to a private error tracker, but they expose readable production
 # internals in a public image; keep them out of the runtime artifact.
-RUN npm run build && \
+RUN npm run build:docker && \
     find .next/standalone .next/static -type f -name '*.map' -delete && \
     rm -f .next/standalone/.env .next/standalone/.env.*
 

@@ -10,6 +10,7 @@ from fortytwogo_cli.events.dependencies import import_duckdb, import_psycopg, im
 from fortytwogo_cli.users.paths import AuthExportPaths, ensure_dirs, get_database_url, resolve_paths
 
 DEFAULT_LIMIT = 10000
+STATE_VERSION = 2
 USER_COLUMNS = [
     "app_id",
     "id",
@@ -177,9 +178,9 @@ def fetch_users(
     """
     params: list[Any] = []
     if cursor:
-        sql += " WHERE (created_at, id) > (%s::timestamptz, %s)"
+        sql += " WHERE (updated_at, created_at, id) > (%s::timestamptz, %s::timestamptz, %s)"
         params.extend(cursor)
-    sql += " ORDER BY created_at ASC, id ASC LIMIT %s"
+    sql += " ORDER BY updated_at ASC, created_at ASC, id ASC LIMIT %s"
     params.append(limit)
 
     try:
@@ -217,11 +218,11 @@ def fetch_accounts(
     params: list[Any] = []
     if cursor:
         sql += """
-            WHERE (created_at, app_id, account_id)
-              > (%s::timestamptz, %s, %s)
+            WHERE (updated_at, created_at, app_id, account_id, provider)
+              > (%s::timestamptz, %s::timestamptz, %s, %s, %s)
         """
         params.extend(cursor)
-    sql += " ORDER BY created_at ASC, app_id ASC, account_id ASC LIMIT %s"
+    sql += " ORDER BY updated_at ASC, created_at ASC, app_id ASC, account_id ASC, provider ASC LIMIT %s"
     params.append(limit)
 
     try:
@@ -295,11 +296,11 @@ def smoke_read_parquet(path: Path, expected_rows: int) -> None:
 
 
 def sort_users(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-    return sorted(rows, key=lambda row: (row["created_at"], row["id"]))
+    return sorted(rows, key=lambda row: (row["updated_at"], row["created_at"], row["id"]))
 
 
 def sort_accounts(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-    return sorted(rows, key=lambda row: (row["created_at"], row["app_id"], row["account_id"]))
+    return sorted(rows, key=lambda row: (row["updated_at"], row["created_at"], row["app_id"], row["account_id"], row["provider"]))
 
 
 def merge_rows(
@@ -316,15 +317,15 @@ def merge_rows(
 
 def build_state(users: list[dict[str, Any]], accounts: list[dict[str, Any]]) -> dict[str, Any]:
     state: dict[str, Any] = {
-        "version": 1,
+        "version": STATE_VERSION,
         "updated_at": iso_utc(utc_now()),
         "users": {"row_count": len(users)},
         "accounts": {"row_count": len(accounts)},
     }
     if users:
-        state["users"]["cursor"] = cursor_from_row(users[-1], ["created_at", "id"])
+        state["users"]["cursor"] = cursor_from_row(users[-1], ["updated_at", "created_at", "id"])
     if accounts:
-        state["accounts"]["cursor"] = cursor_from_row(accounts[-1], ["created_at", "app_id", "account_id"])
+        state["accounts"]["cursor"] = cursor_from_row(accounts[-1], ["updated_at", "created_at", "app_id", "account_id", "provider"])
     return state
 
 
@@ -339,8 +340,9 @@ def pull_users(options: PullUsersOptions) -> dict[str, Any]:
         paths.state.unlink(missing_ok=True)
         for path in legacy_auth_paths(paths):
             path.unlink(missing_ok=True)
-    users_cursor = None if options.reset else state.get("users", {}).get("cursor")
-    accounts_cursor = None if options.reset else state.get("accounts", {}).get("cursor")
+    migrate_state = state.get("version") != STATE_VERSION
+    users_cursor = None if options.reset or migrate_state else state.get("users", {}).get("cursor")
+    accounts_cursor = None if options.reset or migrate_state else state.get("accounts", {}).get("cursor")
 
     raw_users = fetch_users(database_url, users_cursor, options.limit)
     raw_accounts = fetch_accounts(database_url, accounts_cursor, options.limit)

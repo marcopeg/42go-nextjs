@@ -29,6 +29,39 @@ app.command(help="Create a data-only SQL backup.")(backup)
 app.command(help="Restore a data-only SQL backup into a migrated database.")(restore)
 
 
+def _latest_lingocafe_growth_row(users_result: object | None) -> object | None:
+    apps = getattr(users_result, "apps", []) if users_result is not None else []
+    lingocafe_apps = [app_result for app_result in apps if getattr(app_result, "app_id", "") == "lingocafe"]
+    if not lingocafe_apps:
+        return None
+
+    day_rows = [row for row in getattr(lingocafe_apps[0], "rows", []) if getattr(row, "granularity", "") == "day"]
+    if not day_rows:
+        return None
+
+    return max(day_rows, key=lambda row: str(getattr(row, "bucket_start", "")))
+
+
+def _format_lingocafe_totals(users_result: object | None, subscribers_result: object | None) -> str | None:
+    row = _latest_lingocafe_growth_row(users_result)
+    if row is None:
+        return None
+
+    subscribers = (
+        getattr(subscribers_result, "total_subscribers")
+        if subscribers_result is not None
+        else getattr(row, "subscribed_users")
+    )
+
+    return (
+        "lingocafe totals: "
+        f"users={getattr(row, 'total_users')} "
+        f"subscribers={subscribers} "
+        f"weekly_active={getattr(row, 'weekly_active_users')} "
+        f"monthly_active={getattr(row, 'monthly_active_users')}"
+    )
+
+
 @app.command(help="Pull raw data and refresh all local query aggregations.")
 def update(
     data_dir: Annotated[
@@ -131,6 +164,10 @@ def update(
             "query lingocafe subscribers: "
             f"{subscribers_result.cache_status} subscribers={subscribers_result.total_subscribers}"
         )
+
+    totals_line = _format_lingocafe_totals(users_result, subscribers_result)
+    if totals_line:
+        typer.echo(totals_line)
 
     typer.echo("")
     typer.echo(f"Reset: {'yes' if reset else 'no'}")

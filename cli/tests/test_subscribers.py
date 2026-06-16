@@ -77,6 +77,20 @@ def write_auth_users(root: Path) -> None:
             "updated_at": "2026-06-01T09:00:00Z",
         },
         {
+            "app_id": "lingocafe",
+            "id": "u5",
+            "username": "event-opt-in",
+            "name": "Event Opt In",
+            "email": "event@example.com",
+            "email_verified": None,
+            "image": None,
+            "profile": json.dumps({"ownLang": "en", "targetLang": "sv", "targetLevel": "a2"}),
+            "consent": json.dumps({"mkt": [{"value": False, "changedAt": "2026-06-03T09:00:00Z"}]}),
+            "feature_flags": "{}",
+            "created_at": "2026-06-03T08:00:00Z",
+            "updated_at": "2026-06-03T09:00:00Z",
+        },
+        {
             "app_id": "default",
             "id": "u4",
             "username": "default-user",
@@ -128,6 +142,25 @@ def write_events_archive(root: Path) -> None:
             "data": json.dumps({"book_id": "b1", "page_id": "p1", "progress_bps": 10000}),
             "meta": "{}",
         },
+        {
+            "created_at": "2026-06-13T10:00:00Z",
+            "id": "u5-consent",
+            "app_id": "lingocafe",
+            "user_id": "u5",
+            "event_at": "2026-06-13T10:00:00Z",
+            "name": "user.consent.updated",
+            "data": json.dumps(
+                {
+                    "next": {
+                        "mkt": [
+                            {"value": False, "changedAt": "2026-06-03T09:00:00Z"},
+                            {"value": True, "changedAt": "2026-06-13T10:00:00Z"},
+                        ]
+                    }
+                }
+            ),
+            "meta": "{}",
+        },
     ]
     pq.write_table(pa.Table.from_pylist(rows), events_dir / "events_202606.parquet")
 
@@ -149,10 +182,10 @@ def test_lingocafe_subscribers_metrics_and_cache(tmp_path: Path) -> None:
     assert first.state_path.name == "query_lingocafe_subscribers_state.parquet"
     assert first.users_path.exists()
     assert first.state_path.exists()
-    assert first.total_subscribers == 2
-    assert [user.id for user in first.users] == ["u1", "u2"]
+    assert first.total_subscribers == 3
+    assert [user.id for user in first.users] == ["u5", "u1", "u2"]
 
-    u1 = first.users[0]
+    u1 = first.users[1]
     assert u1.name == "Reader One"
     assert u1.username == "reader-one"
     assert u1.mail == "one@example.com"
@@ -166,7 +199,7 @@ def test_lingocafe_subscribers_metrics_and_cache(tmp_path: Path) -> None:
     assert u1.total_read_books == 2
     assert u1.total_read_pages == 2
 
-    u2 = first.users[1]
+    u2 = first.users[2]
     assert u2.is_active_7 is False
     assert u2.is_active_30 is False
     assert u2.total_read_books == 1
@@ -175,11 +208,12 @@ def test_lingocafe_subscribers_metrics_and_cache(tmp_path: Path) -> None:
     output = format_lingocafe_subscribers(first)
     assert "42Go LingoCafe Subscribers" in output
     assert "one@example.com" in output
+    assert "event@example.com" in output
     assert "out@example.com" not in output
 
     payload = lingocafe_subscribers_to_dict(first)
-    assert payload["users"][0]["id"] == "u1"
-    assert payload["users"][0]["is_active_7"] is True
+    assert payload["users"][1]["id"] == "u1"
+    assert payload["users"][1]["is_active_7"] is True
 
     second = load_lingocafe_subscribers(archive_dir=archive, stats_root=stats_root)
     assert second is not None

@@ -128,8 +128,8 @@ def test_pull_users_writes_allowlisted_parquet_and_state(monkeypatch, tmp_path: 
     assert "refresh_token" not in account_rows[0]
 
     state = json.loads(paths.state.read_text())
-    assert state["users"]["cursor"] == ["2026-06-01T10:00:00Z", "u1"]
-    assert state["accounts"]["cursor"] == ["2026-06-01T10:00:00Z", "lingocafe", "acc1"]
+    assert state["users"]["cursor"] == ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "u1"]
+    assert state["accounts"]["cursor"] == ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "lingocafe", "acc1", "github"]
 
 
 def test_pull_users_uses_cursors_and_merges_updates(monkeypatch, tmp_path: Path) -> None:
@@ -163,8 +163,8 @@ def test_pull_users_uses_cursors_and_merges_updates(monkeypatch, tmp_path: Path)
 
     assert calls[0] == ("users", None)
     assert calls[1] == ("accounts", None)
-    assert calls[2] == ("users", ["2026-06-01T10:00:00Z", "u1"])
-    assert calls[3] == ("accounts", ["2026-06-01T10:00:00Z", "lingocafe", "acc1"])
+    assert calls[2] == ("users", ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "u1"])
+    assert calls[3] == ("accounts", ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "lingocafe", "acc1", "github"])
 
     paths = resolve_paths(data_dir)
     user_rows = read_parquet_rows(paths.users_parquet)

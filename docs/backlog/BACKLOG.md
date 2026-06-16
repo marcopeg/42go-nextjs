@@ -44,6 +44,12 @@
 - [AK87: HeroBlock: Optional Fields (Title, Subtitle, or Actions Only)](./draft/AK87-heroblock-optional-fields-title-subtitle-or-actions-only/AK87.task.md)
 - [FI86: Add SMTP/Nodemailer Email Sender Strategy](./draft/FI86-add-smtp-nodemailer-email-sender-strategy/FI86.task.md)
 - [XQ11: Choose Runtime-Friendly Remote Image Handling](./draft/XQ11-choose-runtime-friendly-remote-image-handling/XQ11.task.md)
+- [AC03: optimize: root profile guard](./draft/AC03-optimize-root-profile-guard/AC03.task.md)
+- [IJ10: optimize: reader cache split](./draft/IJ10-optimize-reader-cache-split/IJ10.task.md)
+- [CG67: optimize: api session loading](./draft/CG67-optimize-api-session-loading/CG67.task.md)
+- [DV28: optimize: public asset cache headers](./draft/DV28-optimize-public-asset-cache-headers/DV28.task.md)
+- [AT01: optimize: event partition preparation](./draft/AT01-optimize-event-partition-preparation/AT01.task.md)
+- [YQ19: optimization epic](./draft/YQ19-optimization-epic/YQ19.task.md)
 
 ## Refining
 

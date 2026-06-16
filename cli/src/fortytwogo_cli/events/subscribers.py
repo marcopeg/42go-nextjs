@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from fortytwogo_cli.events.dependencies import import_duckdb, import_pyarrow
+from fortytwogo_cli.events.paths import parquet_files, parquet_glob, resolve_paths as resolve_event_paths
 from fortytwogo_cli.events.reads import (
     DEFAULT_COMPLETION_THRESHOLD_BPS,
     load_event_reads,
@@ -14,6 +15,7 @@ from fortytwogo_cli.events.reads import (
 )
 from fortytwogo_cli.events.sessions import load_event_sessions, stats_sessions_path
 from fortytwogo_cli.events.users_growth import (
+    CONSENT_EVENTS,
     DEFAULT_STATS_ROOT,
     SourceFileFingerprint,
     parse_datetime,
@@ -23,7 +25,7 @@ from fortytwogo_cli.events.users_growth import (
 from fortytwogo_cli.users.paths import resolve_paths as resolve_auth_paths
 
 
-SUBSCRIBERS_SCHEMA_VERSION = 1
+SUBSCRIBERS_SCHEMA_VERSION = 2
 DEFAULT_SUBSCRIBERS_APP_ID = "lingocafe"
 DEFAULT_SUBSCRIBERS_LIMIT = 100
 
@@ -86,13 +88,13 @@ def _json_object(data: str | None) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
-def _latest_mkt_value(consent: str | None) -> bool:
+def _mkt_choices_from_user_consent(consent: str | None) -> list[tuple[datetime, int, bool]]:
     payload = _json_object(consent)
     value = payload.get("mkt")
     if isinstance(value, bool):
-        return value
+        return [(datetime.min.replace(tzinfo=timezone.utc), 0, value)]
     if not isinstance(value, list):
-        return False
+        return []
 
     choices: list[tuple[datetime, int, bool]] = []
     for index, entry in enumerate(value):
@@ -100,6 +102,26 @@ def _latest_mkt_value(consent: str | None) -> bool:
             continue
         changed_at = parse_datetime(entry.get("changedAt")) or datetime.fromtimestamp(index, tz=timezone.utc)
         choices.append((changed_at, index, bool(entry.get("value"))))
+    return choices
+
+
+def _mkt_choices_from_consent_event(data: str | None, event_at: str | datetime) -> list[tuple[datetime, int, bool]]:
+    payload = _json_object(data)
+    value = payload.get("next", {}).get("mkt")
+    if not isinstance(value, list):
+        return []
+
+    fallback_at = parse_datetime(event_at) or datetime.now(timezone.utc)
+    choices: list[tuple[datetime, int, bool]] = []
+    for index, entry in enumerate(value):
+        if not isinstance(entry, dict) or "value" not in entry:
+            continue
+        changed_at = parse_datetime(entry.get("changedAt")) or fallback_at
+        choices.append((changed_at, index, bool(entry.get("value"))))
+    return choices
+
+
+def _latest_mkt_value_from_choices(choices: list[tuple[datetime, int, bool]]) -> bool:
     if not choices:
         return False
     return max(choices, key=lambda item: (item[0], item[1]))[2]
@@ -284,8 +306,33 @@ def _fetch_subscriber_auth_users(path: Path, app_id: str) -> list[dict[str, Any]
             "consent": None if row[7] is None else str(row[7]),
         }
         for row in rows
-        if _latest_mkt_value(None if row[7] is None else str(row[7]))
     ]
+
+
+def _fetch_consent_event_mkt_choices(parquet_pattern: str | None, app_id: str) -> dict[str, list[tuple[datetime, int, bool]]]:
+    if parquet_pattern is None:
+        return {}
+    duckdb = import_duckdb()
+    with duckdb.connect(":memory:") as connection:
+        rows = connection.execute(
+            """
+            SELECT user_id, event_at, data
+            FROM read_parquet(?)
+            WHERE app_id = ?
+              AND user_id IS NOT NULL
+              AND event_at IS NOT NULL
+              AND name IN (?, ?)
+            ORDER BY event_at, id
+            """,
+            [parquet_pattern, app_id, *sorted(CONSENT_EVENTS)],
+        ).fetchall()
+
+    choices_by_user: dict[str, list[tuple[datetime, int, bool]]] = {}
+    for user_id, event_at, data in rows:
+        event_choices = _mkt_choices_from_consent_event(None if data is None else str(data), event_at)
+        if event_choices:
+            choices_by_user.setdefault(str(user_id), []).extend(event_choices)
+    return choices_by_user
 
 
 def _fetch_last_sessions(path: Path | None) -> dict[str, tuple[str, int]]:
@@ -341,11 +388,13 @@ def _compute_as_of(last_sessions: dict[str, tuple[str, int]]) -> datetime:
 
 def _compute_users(
     auth_user_path: Path,
+    events_parquet_pattern: str | None,
     sessions_path: Path | None,
     read_completion_path: Path | None,
     app_id: str,
 ) -> tuple[list[SubscriberUser], datetime]:
     auth_users = _fetch_subscriber_auth_users(auth_user_path, app_id)
+    event_mkt_choices = _fetch_consent_event_mkt_choices(events_parquet_pattern, app_id)
     last_sessions = _fetch_last_sessions(sessions_path)
     read_totals = _fetch_read_totals(read_completion_path)
     as_of = _compute_as_of(last_sessions)
@@ -354,6 +403,13 @@ def _compute_users(
 
     rows: list[SubscriberUser] = []
     for user in auth_users:
+        mkt_choices = [
+            *_mkt_choices_from_user_consent(user["consent"]),
+            *event_mkt_choices.get(user["id"], []),
+        ]
+        if not _latest_mkt_value_from_choices(mkt_choices):
+            continue
+
         last_session = last_sessions.get(user["id"])
         last_session_at = last_session[0] if last_session else None
         last_session_duration = last_session[1] if last_session else None
@@ -395,6 +451,9 @@ def load_lingocafe_subscribers(
     auth_user_path = resolve_auth_paths(archive_dir).users_parquet
     if not auth_user_path.exists():
         return None
+    event_paths = resolve_event_paths(archive_dir)
+    event_files = parquet_files(event_paths)
+    event_pattern = parquet_glob(event_paths) if event_files else None
 
     root = stats_root or DEFAULT_STATS_ROOT
     session_result = load_event_sessions(archive_dir=archive_dir, stats_root=root, app_id_filter=app_id, limit=1, reset=reset)
@@ -418,6 +477,7 @@ def load_lingocafe_subscribers(
     current_read_completion_path = read_completion_path if has_read_cache and read_completion_path.exists() else None
     source_paths = [
         auth_user_path,
+        *event_files,
         *[path for path in [current_session_path, current_read_completion_path] if path is not None],
     ]
     fingerprints = source_fingerprints(source_paths)
@@ -432,7 +492,7 @@ def load_lingocafe_subscribers(
         as_of = _compute_as_of(_fetch_last_sessions(current_session_path))
         cache_status = "cached"
     else:
-        users, as_of = _compute_users(auth_user_path, current_session_path, current_read_completion_path, app_id)
+        users, as_of = _compute_users(auth_user_path, event_pattern, current_session_path, current_read_completion_path, app_id)
         _write_users(users_path, users)
         _write_state(state_path, app_id, fingerprints, users, as_of, completion_threshold_bps)
 

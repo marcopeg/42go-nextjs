@@ -118,7 +118,7 @@ query_lingocafe_subscribers_state.parquet
 - Module: `events/subscribers.py`
 - User population: `.local/42go-data/auth/users.parquet`.
 - App scope: `app_id = lingocafe`.
-- Subscriber filter: latest top-level `consent.mkt` value is `true`.
+- Subscriber filter: latest `mkt` value is `true`, combining `auth.users.consent` with `user.consent.created` and `user.consent.updated` events.
 - Profile fields: `ownLang`, `targetLang`, and `targetLevel`.
 - Activity fields: latest computed session from `query_session_sessions.parquet`; 7/30-day flags are relative to the newest computed session timestamp.
 - Read totals: computed from `query_lingocafe_reads_book_completion.parquet`.

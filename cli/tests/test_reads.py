@@ -26,6 +26,46 @@ def write_events_archive(root: Path, rows: list[dict[str, object]]) -> None:
     pq.write_table(pa.Table.from_pylist(rows), parquet_dir / "events_202606.parquet")
 
 
+def write_book_pages_catalog(root: Path) -> None:
+    book_dir = root / "lingocafe"
+    book_dir.mkdir(parents=True, exist_ok=True)
+    rows = [
+        {
+            "book_id": "b1",
+            "id": "p1",
+            "position": 1,
+            "kind": "text",
+            "prefix": None,
+            "title": "Page 1",
+            "summary": None,
+            "content": "Body 1",
+        },
+        {
+            "book_id": "b1",
+            "id": "p2",
+            "position": 2,
+            "kind": "text",
+            "prefix": None,
+            "title": "Page 2",
+            "summary": None,
+            "content": "Body 2",
+        },
+    ]
+    schema = pa.schema(
+        [
+            ("book_id", pa.string()),
+            ("id", pa.string()),
+            ("position", pa.int64()),
+            ("kind", pa.string()),
+            ("prefix", pa.string()),
+            ("title", pa.string()),
+            ("summary", pa.string()),
+            ("content", pa.string()),
+        ]
+    )
+    pq.write_table(pa.Table.from_pylist(rows, schema=schema), book_dir / "books_pages.parquet")
+
+
 def base_rows() -> list[dict[str, object]]:
     return [
         {
@@ -183,6 +223,86 @@ def test_event_reads_metrics_and_cache(tmp_path: Path) -> None:
     assert reset is not None
     assert next(app for app in reset.apps if app.app_id == "lingocafe").cache_status == "rebuilt"
     assert not legacy_dir.exists()
+
+
+def test_event_reads_counts_completed_page_once_per_user_page(tmp_path: Path) -> None:
+    archive = tmp_path / "archive"
+    stats_root = tmp_path / "stats"
+    write_book_pages_catalog(archive)
+    write_events_archive(
+        archive,
+        [
+            {
+                "created_at": "2026-06-01T09:00:00+00:00",
+                "id": "open-p1",
+                "app_id": "lingocafe",
+                "user_id": "u1",
+                "event_at": "2026-06-01T09:00:00+00:00",
+                "name": "page.open",
+                "data": json.dumps({"book_id": "b1", "page_id": "p1", "progress_bps": 1000}),
+                "meta": "{}",
+            },
+            {
+                "created_at": "2026-06-01T09:01:00+00:00",
+                "id": "scroll-p1-80",
+                "app_id": "lingocafe",
+                "user_id": "u1",
+                "event_at": "2026-06-01T09:01:00+00:00",
+                "name": "page.scroll",
+                "data": json.dumps({"book_id": "b1", "page_id": "p1", "progress_bps": 8000}),
+                "meta": "{}",
+            },
+            {
+                "created_at": "2026-06-01T09:02:00+00:00",
+                "id": "scroll-p1-82",
+                "app_id": "lingocafe",
+                "user_id": "u1",
+                "event_at": "2026-06-01T09:02:00+00:00",
+                "name": "page.scroll",
+                "data": json.dumps({"book_id": "b1", "page_id": "p1", "progress_bps": 8200}),
+                "meta": "{}",
+            },
+            {
+                "created_at": "2026-06-01T09:03:00+00:00",
+                "id": "scroll-p1-70",
+                "app_id": "lingocafe",
+                "user_id": "u1",
+                "event_at": "2026-06-01T09:03:00+00:00",
+                "name": "page.scroll",
+                "data": json.dumps({"book_id": "b1", "page_id": "p1", "progress_bps": 7000}),
+                "meta": "{}",
+            },
+            {
+                "created_at": "2026-06-01T09:04:00+00:00",
+                "id": "scroll-p1-80-again",
+                "app_id": "lingocafe",
+                "user_id": "u1",
+                "event_at": "2026-06-01T09:04:00+00:00",
+                "name": "page.scroll",
+                "data": json.dumps({"book_id": "b1", "page_id": "p1", "progress_bps": 8000}),
+                "meta": "{}",
+            },
+        ],
+    )
+
+    result = load_event_reads(archive_dir=archive, stats_root=stats_root, app_id_filter="lingocafe", reset=False)
+
+    assert result is not None
+    lingocafe = result.apps[0]
+    assert len(lingocafe.page_completion_rows) == 1
+    page_completion = lingocafe.page_completion_rows[0]
+    assert page_completion.page_id == "p1"
+    assert page_completion.opened_readers == 1
+    assert page_completion.completed_readers == 1
+    assert page_completion.avg_max_progress_bps == 8200
+
+    assert len(lingocafe.book_completion_rows) == 1
+    book_completion = lingocafe.book_completion_rows[0]
+    assert book_completion.user_id == "u1"
+    assert book_completion.opened_pages == 1
+    assert book_completion.completed_pages == 1
+    assert book_completion.total_pages == 2
+    assert book_completion.completed_book_ratio == 0.5
 
 
 def test_event_reads_filters_limit_and_json(tmp_path: Path) -> None:

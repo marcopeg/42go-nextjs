@@ -28,6 +28,14 @@ Invoking `42go query` without a subcommand opens an interactive menu. If the sel
 3. `42go query session`
 4. `42go query users growth`
 5. `42go query lingocafe reads`
+6. `42go query lingocafe subscribers`
+
+The final update output includes the latest LingoCafe headline totals:
+
+- total users
+- subscribers
+- weekly active users
+- monthly active users
 
 Options:
 
