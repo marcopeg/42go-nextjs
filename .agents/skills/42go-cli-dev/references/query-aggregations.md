@@ -1,10 +1,10 @@
 # Query Aggregation Design
 
-Historical design reference only. `42go query` is not mounted as a public CLI command right now.
+`42go query` is the public CLI command family for local analytical aggregations.
 
 ## Boundary
 
-The removed `42go query ...` commands produced local analytical aggregates. They read local Parquet inputs and wrote local Parquet outputs.
+`42go query ...` commands produce local analytical aggregates. They read local Parquet inputs and write local Parquet outputs.
 
 Inputs:
 
@@ -13,10 +13,48 @@ Inputs:
 
 Outputs:
 
-- App-scoped root: `.local/42go-stats/{app-id}/`
-- LingoCafe file naming mirrored the `42go query lingocafe ...` command chain.
+- Aggregate root: `.local/42go-query/`
+- File naming mirrors the full `42go query ...` subcommand chain.
 
-Future aggregate implementations should revisit these choices instead of copying the old command surface blindly.
+## Command Structure
+
+- Implement `42go query` as nested Typer subcommands.
+- Intermediate command groups may represent domains, entities, or aggregate families, such as `42go query lingocafe reads`.
+- Leaf commands do the aggregation work and write Parquet outputs.
+- If the operator invokes a query command group without selecting a subcommand, present its subcommands as a numbered interactive menu. This applies at every level where subcommands exist.
+- Keep command help useful at every level.
+- Always provide `42go query all`.
+- `42go query all` reruns every aggregation leaf command in dependency order. If one aggregate consumes another aggregate's output, the producer must run first.
+- Avoid hidden aggregate dependencies. Document dependencies in the command module or aggregate registry used by `query all`.
+
+## Output Naming
+
+Every aggregation command writes Parquet files under `.local/42go-query/`.
+
+For a single-output leaf command, join the subcommand chain after `query` with hyphens:
+
+```text
+42go query foo bar xxx
+.local/42go-query/foo-bar-xxx.parquet
+```
+
+For a multi-output leaf command, append a meaningful output suffix after `--`:
+
+```text
+42go query foo bar xxx
+.local/42go-query/foo-bar-xxx--file1.parquet
+.local/42go-query/foo-bar-xxx--file2.parquet
+```
+
+Use real output names instead of placeholders in implementations, for example:
+
+```text
+.local/42go-query/lingocafe-reads--pages.parquet
+.local/42go-query/lingocafe-reads--users.parquet
+.local/42go-query/lingocafe-reads--summary.parquet
+```
+
+The `.local/42go-query/` directory is the canonical aggregate output root. Do not write new aggregation outputs under `.local/42go-stats/`.
 
 ## Cache Rules
 
@@ -32,45 +70,45 @@ Future aggregate implementations should revisit these choices instead of copying
 Sessions:
 
 ```text
-query_session_sessions.parquet
-query_session_events.parquet
-query_session_state.parquet
+sessions--sessions.parquet
+sessions--events.parquet
+sessions--state.parquet
 ```
 
 Users growth:
 
 ```text
-query_users_growth_metrics.parquet
-query_users_growth_state.parquet
+users-growth--metrics.parquet
+users-growth--state.parquet
 ```
 
 LingoCafe books:
 
 ```text
-query_lingocafe_books_books.parquet
-query_lingocafe_books_pages.parquet
-query_lingocafe_books_progress.parquet
-query_lingocafe_books_state.parquet
+lingocafe-books--books.parquet
+lingocafe-books--pages.parquet
+lingocafe-books--progress.parquet
+lingocafe-books--state.parquet
 ```
 
 Reads:
 
 ```text
-query_lingocafe_reads_pages.parquet
-query_lingocafe_reads_users.parquet
-query_lingocafe_reads_summary.parquet
-query_lingocafe_reads_event_names.parquet
-query_lingocafe_reads_page_completion.parquet
-query_lingocafe_reads_book_completion.parquet
-query_lingocafe_reads_completion_funnel.parquet
-query_lingocafe_reads_state.parquet
+lingocafe-reads--pages.parquet
+lingocafe-reads--users.parquet
+lingocafe-reads--summary.parquet
+lingocafe-reads--event-names.parquet
+lingocafe-reads--page-completion.parquet
+lingocafe-reads--book-completion.parquet
+lingocafe-reads--completion-funnel.parquet
+lingocafe-reads--state.parquet
 ```
 
 LingoCafe subscribers:
 
 ```text
-query_lingocafe_subscribers_users.parquet
-query_lingocafe_subscribers_state.parquet
+lingocafe-subscribers--users.parquet
+lingocafe-subscribers--state.parquet
 ```
 
 ## Session Query
@@ -122,8 +160,8 @@ query_lingocafe_subscribers_state.parquet
 - App scope: `app_id = lingocafe`.
 - Subscriber filter: latest `mkt` value is `true`, combining `auth.users.consent` with `user.consent.created` and `user.consent.updated` events.
 - Profile fields: `ownLang`, `targetLang`, and `targetLevel`.
-- Activity fields: latest computed session from `query_session_sessions.parquet`; 7/30-day flags are relative to the newest computed session timestamp.
-- Read totals: computed from `query_lingocafe_reads_book_completion.parquet`.
+- Activity fields: latest computed session from `.local/42go-query/sessions--sessions.parquet`; 7/30-day flags are relative to the newest computed session timestamp.
+- Read totals: computed from `.local/42go-query/lingocafe-reads--book-completion.parquet`.
 
 ## Migration History
 

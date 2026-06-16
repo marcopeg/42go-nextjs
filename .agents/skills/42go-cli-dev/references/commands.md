@@ -9,8 +9,7 @@
 - `restore` mounted as `42go restore`
 - `peek` mounted as `42go peek`
 - `update` mounted as `42go update`
-
-`query_app` is intentionally not mounted. `42go query` and its subcommands are not public CLI commands.
+- `query_app` mounted as `42go query`
 
 The root callback prints help when no subcommand is invoked. Nested command groups with subcommands should open an interactive menu when invoked without a subcommand.
 
@@ -24,7 +23,30 @@ No-arg menus:
 
 - `42go pull`: menu for auth, events, LingoCafe, and all.
 
-Do not reintroduce `42go events`, `42go users`, or `42go query`.
+Do not reintroduce `42go events` or `42go users`.
+
+Maintain `42go query` as the aggregation command family.
+
+## Query App
+
+`cli/src/fortytwogo_cli/query/cli.py` should define:
+
+- `query_app`: nested aggregation command tree.
+- `42go query all`: reruns all aggregation leaf commands in dependency order.
+
+No-arg menus:
+
+- `42go query`: numbered menu for top-level query subcommands, including `all`.
+- `42go query <group>`: numbered menu for that group's subcommands.
+- `42go query <group> <subgroup>`: continue the same pattern until a leaf command is selected.
+
+Output contract:
+
+- Aggregates write Parquet files under `.local/42go-query/`.
+- Single-output leaf naming: `.local/42go-query/{command-chain}.parquet`, where `command-chain` is the full subcommand path joined by hyphens.
+- Multi-output leaf naming: `.local/42go-query/{command-chain}--{meaningful-output-name}.parquet`.
+- Example: `42go query foo bar xxx` writes `.local/42go-query/foo-bar-xxx.parquet`, or `.local/42go-query/foo-bar-xxx--summary.parquet` plus sibling outputs for multi-file commands.
+- Keep aggregate output naming stable because downstream aggregates may depend on these files.
 
 ## Adding A Command
 
@@ -50,6 +72,8 @@ The following must print useful help:
 42go pull lingocafe --help
 42go pull all --help
 42go pull '*' --help
+42go query --help
+42go query all --help
 42go backup --help
 42go restore --help
 ```

@@ -30,6 +30,10 @@ cli/src/fortytwogo_cli/
     core.py                      # dump/restore implementation
   pull/
     cli.py                       # 42go pull auth/events/lingocafe/all
+  query/
+    cli.py                         # 42go query command tree and all orchestration
+    paths.py                       # .local/42go-query output helpers
+    ...                            # aggregation modules by domain/family
   users/
     paths.py                     # auth pull path/env helpers
     pull.py                      # auth.users/auth.accounts pull implementation
@@ -48,12 +52,14 @@ cli/src/fortytwogo_cli/
 - `42go pull all`: runs all raw pulls.
 - `42go pull '*'`: literal star alias for all raw pulls.
 - `42go peek [folder] [file]`: streams raw Parquet rows through `more`, with interactive folder/file choices for incomplete commands.
-- `42go query`: intentionally removed. Aggregations will be rebuilt from scratch later.
+- `42go query`: runs local analytical aggregations from `.local/42go-data` into `.local/42go-query`.
+- `42go query all`: runs every aggregate leaf command in dependency order.
 - `42go backup` / `42go restore`: data-only SQL movement.
 
 ## Environment Loading
 
 - Raw data root: `FORTYTWOGO_DATA_DIR` or `.local/42go-data`.
+- Query aggregate root: `FORTYTWOGO_QUERY_DIR` or `.local/42go-query`.
 - Pull and backup source: `BACKUP_DATABASE_URL`, with `.env` fallback. Event pulls use it directly; auth and LingoCafe pulls expose `--database-url-env` and default to it.
 - Restore target: `RESTORE_DATABASE_URL`.
 

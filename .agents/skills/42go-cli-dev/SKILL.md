@@ -15,8 +15,16 @@ Use this skill for implementation work on the local Python CLI under `cli/`. For
 - Use Typer for command wiring.
 - Root command families:
   - `42go pull` for raw data extraction.
+  - `42go query` for local analytical aggregations.
   - `42go backup` and `42go restore` for data-only SQL dump workflows.
-- `42go query` is intentionally not mounted on the root CLI. Keep aggregation knowledge in references for a future rebuild.
+- `42go query` must stay mounted on the root CLI.
+- Structure `42go query` as nested Typer subcommands. Each intermediate command group may contain more subcommands.
+- At every `42go query` command-group level, if subcommands exist but the operator does not provide one, present the available subcommands as a numbered interactive choice so the operator can navigate aggregation functionality.
+- Always maintain `42go query all`. It reruns all aggregation leaf commands in the correct dependency order. If one aggregate depends on another, the dependency runs first.
+- Aggregation commands write Parquet outputs under `.local/42go-query/`.
+- A single-output leaf command names its Parquet file from the full subcommand chain joined by hyphens. Example: `42go query foo bar xxx` writes `.local/42go-query/foo-bar-xxx.parquet`.
+- A multi-output leaf command appends a meaningful output suffix after `--`. Example: `42go query foo bar xxx` may write `.local/42go-query/foo-bar-xxx--file1.parquet` and `.local/42go-query/foo-bar-xxx--file2.parquet`.
+- Use meaningful multi-output suffixes such as `sessions`, `summary`, `users`, `pages`, or `state`; avoid generic names unless they are placeholders in documentation.
 - Do not reintroduce `42go events` or `42go users`.
 - Store raw pulled data as Parquet under `.local/42go-data/`.
 - Raw pulled rows that mirror a source table must use `.local/42go-data/{schema}/{table}.parquet`.
@@ -29,7 +37,7 @@ Use this skill for implementation work on the local Python CLI under `cli/`. For
 - CLI package structure and dependencies: `references/architecture.md`
 - Command wiring and help contract: `references/commands.md`
 - Event archive implementation: `references/event-archive-implementation.md`
-- Historical query aggregation notes: `references/query-aggregations.md`
+- Query aggregation command contract: `references/query-aggregations.md`
 - Backup and restore implementation: `references/backup-restore-implementation.md`
 - Testing and validation: `references/testing.md`
 
