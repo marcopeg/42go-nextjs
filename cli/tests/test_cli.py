@@ -71,6 +71,7 @@ def test_root_without_args_shows_help() -> None:
     assert "backup" in result.output
     assert "restore" in result.output
     assert "pull" in result.output
+    assert "peek" in result.output
     assert "query" in result.output
     assert "update" in result.output
 

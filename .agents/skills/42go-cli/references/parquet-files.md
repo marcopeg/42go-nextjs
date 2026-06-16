@@ -9,6 +9,8 @@ This reference explains the local Parquet contract used by `42go pull`, `42go qu
 - Raw rows that mirror a source table use `.local/42go-data/{schema}/{table}.parquet`.
 - LingoCafe aggregate files use filenames that mirror the command chain, such as `query_lingocafe_reads_pages.parquet`.
 
+Use `42go peek` to inspect raw Parquet files from the terminal. `42go peek` opens an interactive folder/file chooser, `42go peek auth` opens a file chooser inside `.local/42go-data/auth`, and complete commands such as `42go peek auth users` or `42go peek .local/42go-data/auth/users.parquet` stream rows through `more` as a terminal-width table. Use repeatable filters like `-f app_id=lingocafe`; `%` is a wildcard, so `-f email=%@gmail.com` matches Gmail addresses. Use `-rmc app_id,image` to hide columns from the result table.
+
 ## Raw Pull Files
 
 ### `.local/42go-data/auth/users.parquet`

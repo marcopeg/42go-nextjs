@@ -8,6 +8,7 @@
 - `query_app` mounted as `42go query`
 - `backup` mounted as `42go backup`
 - `restore` mounted as `42go restore`
+- `peek` mounted as `42go peek`
 - `update` mounted as `42go update`
 
 The root callback prints help when no subcommand is invoked. Nested command groups with subcommands should open an interactive menu when invoked without a subcommand.
@@ -53,6 +54,7 @@ The following must print useful help:
 
 ```bash
 42go --help
+42go peek --help
 42go update --help
 42go pull --help
 42go pull auth --help
@@ -96,3 +98,5 @@ totals from the current day growth bucket plus the subscriber aggregate:
 The `--reset` flag deletes and rebuilds the selected raw data files and aggregation caches.
 
 `42go pull all` is the documented all-data command. It runs the auth, events, and LingoCafe pulls in parallel because each target writes to its own raw data and state path. Inside auth and LingoCafe, independent database reads run in parallel and each target writes its Parquet files and `_state.json` only after the reads complete. Event pulls fetch from one source query, then merge distinct monthly Parquet files in parallel before writing the final events state. Its terminal output is grouped by source blocks under `auth`, `events`, and `lingocafe`, with sub-blocks such as `users`, `accounts`, `events_YYYYMM`, `books`, `books_pages`, and `books_progress`. Event partition blocks are printed only when the partition changed. The human output intentionally omits raw Parquet and state paths. `42go pull '*'` is a literal star alias; quote it in shells that expand `*`.
+
+`42go peek` streams raw local Parquet rows through `more` as a terminal-width table. With no arguments it prompts for a `.local/42go-data` subfolder, then a Parquet file. With one folder argument, such as `42go peek auth`, it prompts for a Parquet file inside that folder. Complete commands such as `42go peek auth users` and explicit file paths such as `42go peek .local/42go-data/auth/users.parquet` stream immediately. Filters are repeatable with `-f column=value`; `%` is a wildcard. `-rmc column_a,column_b` hides columns from the result table.

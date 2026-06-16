@@ -43,6 +43,10 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
   - `42go pull '*'` as the literal star alias for all data.
   - Load `references/events-archive.md`.
 - Parquet data contract:
+  - `42go peek`
+  - `42go peek auth`
+  - `42go peek auth users`
+  - `42go peek .local/42go-data/auth/users.parquet`
   - Raw pull files under `.local/42go-data`.
   - Query aggregate files under `.local/42go-stats`.
   - Load `references/parquet-files.md`.
@@ -98,6 +102,7 @@ Agents should navigate commands with:
 
 ```bash
 42go --help
+42go peek --help
 42go update --help
 42go pull --help
 42go pull auth --help

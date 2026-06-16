@@ -24,6 +24,7 @@ Declared in `cli/pyproject.toml`:
 ```text
 cli/src/fortytwogo_cli/
   cli.py                         # root Typer app and update orchestration
+  peek.py                        # 42go peek raw Parquet viewer
   backup/
     cli.py                       # backup/restore command functions
     core.py                      # dump/restore implementation
@@ -51,6 +52,7 @@ cli/src/fortytwogo_cli/
 - `42go pull lingocafe`: reads LingoCafe books, pages, and progress, writes raw local Parquet.
 - `42go pull all`: runs all raw pulls.
 - `42go pull '*'`: literal star alias for all raw pulls.
+- `42go peek [folder] [file]`: streams raw Parquet rows through `more`, with interactive folder/file choices for incomplete commands.
 - `42go query ...`: reads local Parquet and builds or inspects local aggregates.
 - `42go query lingocafe books`: inspects LingoCafe book catalog facts from local raw Parquet.
 - `42go query lingocafe reads`: builds LingoCafe reading engagement aggregates.

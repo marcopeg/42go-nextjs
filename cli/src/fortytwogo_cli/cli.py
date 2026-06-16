@@ -15,6 +15,7 @@ from fortytwogo_cli.events.reads import load_event_reads
 from fortytwogo_cli.events.sessions import load_event_sessions
 from fortytwogo_cli.events.subscribers import load_lingocafe_subscribers
 from fortytwogo_cli.events.users_growth import load_users_growth
+from fortytwogo_cli.peek import peek
 from fortytwogo_cli.pull.cli import pull_app, run_all_pulls
 
 
@@ -27,6 +28,10 @@ app.add_typer(pull_app, name="pull", help="Pull raw source data.")
 app.add_typer(query_app, name="query", help="Build local analytics aggregations from cached data.")
 app.command(help="Create a data-only SQL backup.")(backup)
 app.command(help="Restore a data-only SQL backup into a migrated database.")(restore)
+app.command(
+    help="Stream local raw Parquet data through a pager.",
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+)(peek)
 
 
 def _latest_lingocafe_growth_row(users_result: object | None) -> object | None:

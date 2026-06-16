@@ -29,6 +29,7 @@ pipx uninstall 42go-cli
 - `42go --version`
 - `42go update`
 - `42go pull`
+- `42go peek`
 - `42go query`
 - `42go backup`
 - `42go restore`
