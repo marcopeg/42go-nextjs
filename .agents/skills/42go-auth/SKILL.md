@@ -119,6 +119,13 @@ Email auth event names must use dot/dash syntax:
 
 Never log raw codes, raw tokens, OAuth tokens, or account-existence status.
 
+Successful `user.login` / `user.signup` events must use the real `auth.users.id`
+as `userId` when the account can be resolved. Email-provider login attempts
+that cannot yet be tied to an auth user must still be logged with the explicit
+pseudo identity `email:<normalized-address>`. Pre-login email-auth events use
+the same pseudo identity because no session user is guaranteed yet. Do not write
+plain email addresses into `events.events.user_id`.
+
 ## Token Cleanup
 
 Used email tokens are deleted immediately by `DELETE ... RETURNING`.

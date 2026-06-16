@@ -40,6 +40,8 @@ Source: `events.events`, partitioned by `created_at` month.
 
 Stores raw event rows with `created_at`, `id`, `app_id`, `user_id`, `event_at`, `name`, JSON-string `data`, and JSON-string `meta`.
 
+During event pull, `user_id` values shaped as a plain email address or `email:<address>` are reconciled to the matching `auth.users.id` for the same `app_id` when `.local/42go-data/auth/users.parquet` is available. If the auth users file exists and an event still cannot be tied to a real auth user, the row is skipped from this local archive for now. The source event remains in PostgreSQL.
+
 Provides the canonical local event fact table for future event-based analytics. Use the whole file group as one partitioned dataset.
 
 ### `.local/42go-data/events/_state.json`
@@ -92,7 +94,7 @@ Query aggregates are rebuilt from the raw `.local/42go-data` Parquet files and w
 
 Command: `42go query sessions`
 
-Stores one row per event session. Sessions are grouped by `app_id` and `user_id`, ordered by `event_at`, and split when the gap between adjacent events is greater than `--duration` minutes. The default duration is 20 minutes.
+Stores one row per event session. Sessions are grouped by `app_id` and `user_id`, ordered by `event_at`, and split when the gap between adjacent events is greater than `--duration` minutes. The default duration is 20 minutes. Only events whose `app_id` plus `user_id` matches `.local/42go-data/auth/users.parquet` are eligible.
 
 Columns:
 
@@ -104,3 +106,21 @@ Columns:
 - `duration_seconds`
 - `event_count`
 - `event_ids`: list of event ids in the session.
+
+### `.local/42go-query/users.parquet`
+
+Command: `42go query users`
+
+Depends on `.local/42go-query/sessions.parquet`. A row is keyed by unique `app_id` plus `user_id` from `.local/42go-data/auth/users.parquet`. Session-only identities are ignored unless they match an auth user. The output omits `password`.
+
+Activity flags are relative to the newest session `ended_at` timestamp in `sessions.parquet`.
+
+Session metric columns:
+
+- `active_1d`
+- `active_7d`
+- `active_30d`
+- `session_count`
+- `session_avg_seconds`
+- `session_min_seconds`
+- `session_max_seconds`

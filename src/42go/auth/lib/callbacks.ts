@@ -4,6 +4,7 @@ import { getUserGrants, getUserRoles } from "@/42go/policy/access";
 import { getAppID } from "@/42go/config/app-config";
 import { apps } from "@/AppConfig";
 import { recordEvent } from "@/42go/events/server";
+import { normalizeEmailIdentifier } from "@/42go/auth/lib/email/utils";
 
 const FALLBACK_APP_ID = "default";
 
@@ -47,6 +48,39 @@ const recordAuthEvent = async ({
   } catch (error) {
     console.error(`Auth event logging failed for ${name}:`, error);
   }
+};
+
+const looksLikeEmailIdentifier = (value: unknown) =>
+  typeof value === "string" && value.includes("@");
+
+// EmailProvider can pass the email address as user.id in the signIn callback.
+// Resolve it when possible; otherwise keep an explicit pseudo identity for the event log.
+const resolveEmailProviderUser = async ({
+  appId,
+  user,
+}: {
+  appId?: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  user: any;
+}) => {
+  if (!appId || !user?.email || !looksLikeEmailIdentifier(user?.id)) {
+    return user?.id || null;
+  }
+
+  const email = normalizeEmailIdentifier(user.email);
+  const existingUser = await getDB()("auth.users")
+    .where({ app_id: appId, email })
+    .first();
+
+  if (!existingUser?.id) return `email:${email}`;
+
+  user.id = existingUser.id;
+  user.appId = appId;
+  user.email = existingUser.email || email;
+  user.name = existingUser.name || user.name;
+  user.image = existingUser.image || user.image;
+
+  return String(existingUser.id);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -180,9 +214,15 @@ export const signIn = async ({ user, account }: any) => {
     }
   }
 
+  const fallbackAppId = user?.appId || appID || FALLBACK_APP_ID;
+  const userId =
+    account?.provider === "email"
+      ? await resolveEmailProviderUser({ appId: fallbackAppId, user })
+      : user?.id;
+
   await recordAuthEvent({
-    appId: user?.appId || appID || FALLBACK_APP_ID,
-    userId: user?.id,
+    appId: user?.appId || fallbackAppId,
+    userId,
     name: "user.login",
     method: account?.provider || "credentials",
   });

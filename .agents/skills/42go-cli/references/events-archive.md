@@ -53,6 +53,10 @@ The event pull uses the same source database env var as `42go backup`. The CLI r
 - Export cursor: `created_at, id`.
 - Analytics timestamp: `event_at`.
 - `app_id` is preserved.
+- `user_id` is reconciled through `.local/42go-data/auth/users.parquet` when available.
+- If `user_id` is a plain email address or `email:<address>`, the event pull replaces it with the matching `auth.users.id` for the same `app_id`.
+- When `.local/42go-data/auth/users.parquet` exists, rows that still cannot be tied to a real `app_id + auth.users.id` are skipped from this local events archive. The source database keeps those events.
+- Pull results include `source_rows`, exported `rows`, `reconciled_user_ids`, and `skipped_unresolved_user_ids`.
 - JSONB `data` and `meta` are stored as JSON strings in Parquet.
 - Monthly files are named after the event partition strategy: `events_YYYYMM.parquet`.
 - Existing monthly files are merged by event `id` and rewritten atomically.
@@ -67,4 +71,11 @@ Inspect raw local files with `42go peek`:
 ```bash
 42go peek events
 42go peek .local/42go-data/events/events_YYYYMM.parquet
+```
+
+To repair an existing local archive that already contains email-shaped or unresolved `user_id` values, rebuild auth first and reset events:
+
+```bash
+42go pull auth
+42go pull events --reset
 ```

@@ -22,6 +22,7 @@ src/fortytwogo_cli/query/__init__.py
 src/fortytwogo_cli/query/cli.py
 src/fortytwogo_cli/query/paths.py
 src/fortytwogo_cli/query/sessions.py
+src/fortytwogo_cli/query/users.py
 src/fortytwogo_cli/users/__init__.py
 src/fortytwogo_cli/users/paths.py
 src/fortytwogo_cli/users/pull.py
@@ -30,4 +31,5 @@ tests/test_books_pull.py
 tests/test_cli.py
 tests/test_events_pull.py
 tests/test_query_sessions.py
+tests/test_query_users.py
 tests/test_users_pull.py

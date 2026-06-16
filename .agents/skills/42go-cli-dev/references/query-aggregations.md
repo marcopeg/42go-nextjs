@@ -9,6 +9,7 @@
 Inputs:
 
 - Raw events: `.local/42go-data/events/events_YYYYMM.parquet`
+- Auth users: `.local/42go-data/auth/users.parquet`
 - Book/page facts: `.local/42go-data/lingocafe/books_pages.parquet`
 
 Outputs:
@@ -73,6 +74,12 @@ Sessions:
 sessions.parquet
 ```
 
+Users:
+
+```text
+users.parquet
+```
+
 Users growth:
 
 ```text
@@ -114,14 +121,31 @@ lingocafe-subscribers--state.parquet
 - Command: `42go query sessions`
 - Module: `query/sessions.py`
 - Output: `.local/42go-query/sessions.parquet`
+- Dependency: `.local/42go-data/auth/users.parquet`, produced by `42go pull auth`.
 - Gap parameter: `--duration` in minutes.
 - Default gap: `20` minutes.
 - Grouping: app, user.
 - Include all event names.
 - Ignore rows without `user_id` or `event_at`.
+- Ignore event rows whose `app_id` plus `user_id` does not match an auth user.
 - Session id is first event id.
 - Rebuild from all raw event Parquet files on every run and overwrite the sessions output file.
 - Required output columns: `session_id`, `app_id`, `user_id`, `started_at`, `ended_at`, `duration_seconds`, `event_count`, and `event_ids`.
+
+## Users Query
+
+- Command: `42go query users`
+- Module: `query/users.py`
+- Output: `.local/42go-query/users.parquet`
+- Dependency: `.local/42go-query/sessions.parquet`, produced by `42go query sessions`.
+- `42go query all` must run `sessions` before `users`.
+- Row key: unique `app_id` plus `user_id`.
+- User source: `.local/42go-data/auth/users.parquet`.
+- Do not create extra rows for session-only identities found in `sessions.parquet`.
+- Never include a `password` column.
+- Activity windows are relative to the newest `ended_at` timestamp in `sessions.parquet`.
+- Required activity columns: `active_1d`, `active_7d`, and `active_30d`.
+- Required session duration columns: `session_avg_seconds`, `session_min_seconds`, and `session_max_seconds`.
 
 ## Users Growth Query
 

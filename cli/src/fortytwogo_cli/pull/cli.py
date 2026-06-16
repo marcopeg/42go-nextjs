@@ -60,6 +60,12 @@ def format_pull_all_result(result: dict[str, Any]) -> str:
             f"    {format_count_line(events.get('rows'), None)}",
         ]
     )
+    if events.get("source_rows") is not None:
+        lines.append(f"    source rows: {events.get('source_rows')}")
+    if events.get("reconciled_user_ids") is not None:
+        lines.append(f"    reconciled user ids: {events.get('reconciled_user_ids')}")
+    if events.get("skipped_unresolved_user_ids") is not None:
+        lines.append(f"    skipped unresolved user ids: {events.get('skipped_unresolved_user_ids')}")
     if events.get("run_id"):
         lines.append(f"    run: {events.get('run_id')}")
     if events.get("last_created_at") or events.get("last_id"):
@@ -126,12 +132,12 @@ def run_books_pull(data_dir: Path | None, limit: int, database_url_env: str, res
 
 
 def run_all_pulls(data_dir: Path | None, limit: int, database_url_env: str, reset: bool, dry_run: bool) -> dict[str, Any]:
+    auth_result = run_auth_pull(data_dir, limit, database_url_env, reset, dry_run)
     pull_targets: dict[str, Callable[[], dict[str, Any]]] = {
-        "auth": lambda: run_auth_pull(data_dir, limit, database_url_env, reset, dry_run),
         "events": lambda: run_events_pull(data_dir, limit, reset, dry_run),
         "lingocafe": lambda: run_books_pull(data_dir, limit, database_url_env, reset, dry_run),
     }
-    results: dict[str, Any] = {}
+    results: dict[str, Any] = {"auth": auth_result}
     failures: dict[str, Exception] = {}
 
     with ThreadPoolExecutor(max_workers=len(pull_targets), thread_name_prefix="42go-pull") as executor:
@@ -147,7 +153,7 @@ def run_all_pulls(data_dir: Path | None, limit: int, database_url_env: str, rese
         details = "; ".join(f"{label}: {error}" for label, error in sorted(failures.items()))
         raise RuntimeError(details)
 
-    return {label: results[label] for label in pull_targets}
+    return {label: results[label] for label in ["auth", *pull_targets]}
 
 
 def handle_pull_error(label: str, error: RuntimeError) -> None:

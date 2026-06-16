@@ -7,6 +7,7 @@ from threading import Event
 from typing import Any
 
 import pyarrow.parquet as pq
+import pyarrow as pa
 
 from fortytwogo_cli.events import pull as events_pull
 from fortytwogo_cli.events.paths import get_database_url, resolve_paths
@@ -22,12 +23,14 @@ def event_row(
     *,
     created_at: str = "2026-06-01T10:00:00Z",
     name: str = "page.open",
+    app_id: str = "lingocafe",
+    user_id: str = "u1",
 ) -> dict[str, Any]:
     return {
         "created_at": dt(created_at),
         "id": event_id,
-        "app_id": "lingocafe",
-        "user_id": "u1",
+        "app_id": app_id,
+        "user_id": user_id,
         "event_at": dt(created_at),
         "name": name,
         "data": {"book_id": "b1"},
@@ -37,6 +40,29 @@ def event_row(
 
 def read_parquet_rows(path: Path) -> list[dict[str, Any]]:
     return pq.read_table(path).to_pylist()
+
+
+def write_auth_users(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pq.write_table(pa.Table.from_pylist(rows), path)
+
+
+def auth_user_row(user_id: str, email: str, *, app_id: str = "lingocafe") -> dict[str, Any]:
+    timestamp = dt("2026-06-01T09:00:00Z")
+    return {
+        "app_id": app_id,
+        "id": user_id,
+        "username": user_id,
+        "name": user_id.title(),
+        "email": email,
+        "email_verified": None,
+        "image": None,
+        "profile": "{}",
+        "consent": "{}",
+        "feature_flags": "{}",
+        "created_at": timestamp,
+        "updated_at": timestamp,
+    }
 
 
 def test_pull_events_uses_backup_database_url_by_default(monkeypatch) -> None:
@@ -104,7 +130,7 @@ def test_pull_events_merges_months_in_parallel(monkeypatch, tmp_path: Path) -> N
         ],
     )
 
-    def merge_month(paths, month: str, new_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    def merge_month(paths, month: str, new_rows: list[dict[str, Any]], identity_maps: events_pull.UserIdentityMaps) -> dict[str, Any]:
         if month == "202606":
             return {"month": month, "saw_parallel": july_started.wait(1)}
         july_started.set()
@@ -178,3 +204,96 @@ def test_pull_events_reads_legacy_state_once(monkeypatch, tmp_path: Path) -> Non
 
     assert cursors == [("2026-06-01T10:00:00Z", "00000000-0000-0000-0000-000000000001")]
     assert json.loads(paths.state.read_text())["last_id"] == "00000000-0000-0000-0000-000000000002"
+
+
+def test_pull_events_reconciles_email_user_ids_from_pulled_auth_users(monkeypatch, tmp_path: Path) -> None:
+    data_dir = tmp_path / ".local" / "42go-data"
+    write_auth_users(
+        data_dir / "auth" / "users.parquet",
+        [
+            auth_user_row("user-1", "john@example.com"),
+            auth_user_row("user-2", "jane@example.com"),
+        ],
+    )
+    monkeypatch.setattr(events_pull, "get_database_url", lambda: "postgres://events")
+    monkeypatch.setattr(
+        events_pull,
+        "fetch_rows",
+        lambda database_url, cursor, limit: [
+            event_row("00000000-0000-0000-0000-000000000011", user_id="john@example.com"),
+            event_row("00000000-0000-0000-0000-000000000012", user_id="email:jane@example.com"),
+            event_row("00000000-0000-0000-0000-000000000013", user_id="missing@example.com"),
+        ],
+    )
+
+    result = pull_events(PullOptions(data_dir=data_dir, run_id="run-1"))
+    rows = read_parquet_rows(resolve_paths(data_dir).parquet_dir / "events_202606.parquet")
+
+    assert result["rows"] == 2
+    assert result["source_rows"] == 3
+    assert result["reconciled_user_ids"] == 2
+    assert result["skipped_unresolved_user_ids"] == 1
+    assert [row["user_id"] for row in rows] == ["user-1", "user-2"]
+
+
+def test_pull_events_skips_all_unresolved_rows_but_advances_cursor(monkeypatch, tmp_path: Path) -> None:
+    data_dir = tmp_path / ".local" / "42go-data"
+    write_auth_users(
+        data_dir / "auth" / "users.parquet",
+        [
+            auth_user_row("user-1", "john@example.com"),
+        ],
+    )
+    monkeypatch.setattr(events_pull, "get_database_url", lambda: "postgres://events")
+    monkeypatch.setattr(
+        events_pull,
+        "fetch_rows",
+        lambda database_url, cursor, limit: [
+            event_row("00000000-0000-0000-0000-000000000021", user_id="missing@example.com"),
+            event_row("00000000-0000-0000-0000-000000000022", user_id="unknown-user", created_at="2026-06-02T10:00:00Z"),
+        ],
+    )
+
+    result = pull_events(PullOptions(data_dir=data_dir, run_id="run-1"))
+    paths = resolve_paths(data_dir)
+    state = json.loads(paths.state.read_text())
+
+    assert result["rows"] == 0
+    assert result["source_rows"] == 2
+    assert result["skipped_unresolved_user_ids"] == 2
+    assert result["months"] == []
+    assert not (paths.parquet_dir / "events_202606.parquet").exists()
+    assert state["last_row_count"] == 0
+    assert state["last_source_row_count"] == 2
+    assert state["last_id"] == "00000000-0000-0000-0000-000000000022"
+
+
+def test_pull_events_reconciles_existing_rows_when_month_is_touched(monkeypatch, tmp_path: Path) -> None:
+    data_dir = tmp_path / ".local" / "42go-data"
+    write_auth_users(
+        data_dir / "auth" / "users.parquet",
+        [
+            auth_user_row("user-1", "john@example.com"),
+        ],
+    )
+    monkeypatch.setattr(events_pull, "get_database_url", lambda: "postgres://events")
+    monkeypatch.setattr(
+        events_pull,
+        "fetch_rows",
+        lambda database_url, cursor, limit: [
+            event_row("00000000-0000-0000-0000-000000000011", user_id="john@example.com"),
+        ],
+    )
+    pull_events(PullOptions(data_dir=data_dir, run_id="run-1"))
+
+    monkeypatch.setattr(
+        events_pull,
+        "fetch_rows",
+        lambda database_url, cursor, limit: [
+            event_row("00000000-0000-0000-0000-000000000012", user_id="user-1", created_at="2026-06-02T10:00:00Z"),
+        ],
+    )
+    pull_events(PullOptions(data_dir=data_dir, run_id="run-2"))
+    rows = read_parquet_rows(resolve_paths(data_dir).parquet_dir / "events_202606.parquet")
+
+    assert [row["user_id"] for row in rows] == ["user-1", "user-1"]

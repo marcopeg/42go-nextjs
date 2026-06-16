@@ -9,6 +9,7 @@ from typing import Any, Iterable
 
 from fortytwogo_cli.events.dependencies import import_duckdb, import_psycopg, import_pyarrow
 from fortytwogo_cli.events.paths import ArchivePaths, ensure_dirs, get_database_url, resolve_paths
+from fortytwogo_cli.users.paths import resolve_paths as resolve_auth_paths
 
 DEFAULT_LIMIT = 10000
 EVENT_COLUMNS = [
@@ -30,6 +31,13 @@ class PullOptions:
     run_id: str | None = None
     reset: bool = False
     dry_run: bool = False
+
+
+@dataclass(frozen=True)
+class UserIdentityMaps:
+    enabled: bool
+    email_to_user_id: dict[tuple[str, str], str]
+    user_ids: set[tuple[str, str]]
 
 
 def utc_now() -> datetime:
@@ -80,12 +88,69 @@ def json_payload(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
 
-def normalize_row(row: dict[str, Any]) -> dict[str, Any]:
+def user_id_email(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    candidate = value.strip()
+    if candidate.lower().startswith("email:"):
+        candidate = candidate.split(":", 1)[1].strip()
+    if "@" not in candidate:
+        return None
+    return candidate.lower()
+
+
+def read_user_identity_maps(data_dir: Path | None) -> UserIdentityMaps:
+    users_path = resolve_auth_paths(data_dir).users_parquet
+    if not users_path.exists():
+        return UserIdentityMaps(enabled=False, email_to_user_id={}, user_ids=set())
+    _pa, pq = import_pyarrow()
+    email_user_map: dict[tuple[str, str], str] = {}
+    user_ids: set[tuple[str, str]] = set()
+    for row in pq.read_table(users_path, columns=["app_id", "id", "email"]).to_pylist():
+        if not row.get("app_id") or not row.get("id"):
+            continue
+        app_id = str(row["app_id"])
+        user_id = str(row["id"])
+        user_ids.add((app_id, user_id))
+        if row.get("email"):
+            email_user_map[(app_id, str(row["email"]).strip().lower())] = user_id
+    return UserIdentityMaps(enabled=True, email_to_user_id=email_user_map, user_ids=user_ids)
+
+
+def reconcile_user_id(app_id: Any, user_id: Any, identity_maps: UserIdentityMaps) -> tuple[Any, bool, bool]:
+    if not identity_maps.enabled:
+        return user_id, False, False
+
+    user_key = (str(app_id), str(user_id))
+    if user_key in identity_maps.user_ids:
+        return str(user_id), False, False
+
+    email = user_id_email(user_id)
+    if email is None:
+        return user_id, False, True
+    resolved_user_id = identity_maps.email_to_user_id.get((str(app_id), email))
+    if resolved_user_id is None:
+        return user_id, False, True
+    return resolved_user_id, resolved_user_id != user_id, False
+
+
+def cursor_row(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "created_at": parse_utc(row["created_at"]),
+        "id": str(row["id"]),
+    }
+
+
+def normalize_row(row: dict[str, Any], identity_maps: UserIdentityMaps | None = None) -> dict[str, Any] | None:
+    identity_maps = identity_maps or UserIdentityMaps(enabled=False, email_to_user_id={}, user_ids=set())
+    user_id, _changed, should_skip = reconcile_user_id(row["app_id"], row["user_id"], identity_maps)
+    if should_skip:
+        return None
     return {
         "created_at": parse_utc(row["created_at"]),
         "id": str(row["id"]),
         "app_id": row["app_id"],
-        "user_id": row["user_id"],
+        "user_id": user_id,
         "event_at": parse_utc(row["event_at"]),
         "name": row["name"],
         "data": json_payload(row["data"]),
@@ -217,12 +282,33 @@ def dedupe_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     return sort_rows(by_id.values())
 
 
-def read_parquet_rows(path: Path) -> list[dict[str, Any]]:
+def normalize_rows(rows: Iterable[dict[str, Any]], identity_maps: UserIdentityMaps) -> tuple[list[dict[str, Any]], int, int]:
+    normalized_rows: list[dict[str, Any]] = []
+    reconciled_user_ids = 0
+    skipped_user_ids = 0
+    for row in rows:
+        _user_id, changed, should_skip = reconcile_user_id(row["app_id"], row["user_id"], identity_maps)
+        if changed:
+            reconciled_user_ids += 1
+        if should_skip:
+            skipped_user_ids += 1
+            continue
+        normalized_row = normalize_row(row, identity_maps)
+        if normalized_row is not None:
+            normalized_rows.append(normalized_row)
+    return normalized_rows, reconciled_user_ids, skipped_user_ids
+
+
+def read_parquet_rows(path: Path, identity_maps: UserIdentityMaps | None = None) -> tuple[list[dict[str, Any]], int]:
     if not path.exists():
-        return []
+        return [], 0
     _pa, pq = import_pyarrow()
     table = pq.read_table(path)
-    return [normalize_row(row) for row in table.to_pylist()]
+    normalized_rows, _reconciled_user_ids, skipped_user_ids = normalize_rows(
+        table.to_pylist(),
+        identity_maps or UserIdentityMaps(enabled=False, email_to_user_id={}, user_ids=set()),
+    )
+    return normalized_rows, skipped_user_ids
 
 
 def write_parquet_file(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -254,15 +340,22 @@ def smoke_read_parquet(path: Path, expected_rows: int) -> None:
         raise RuntimeError(f"Parquet smoke read failed: expected {expected_rows} rows, read {count}.")
 
 
-def write_state(paths: ArchivePaths, run_id: str, rows: list[dict[str, Any]], updates: list[dict[str, Any]]) -> None:
-    first = rows[0]
-    last = rows[-1]
+def write_state(
+    paths: ArchivePaths,
+    run_id: str,
+    source_rows: list[dict[str, Any]],
+    exported_row_count: int,
+    updates: list[dict[str, Any]],
+) -> None:
+    first = cursor_row(source_rows[0])
+    last = cursor_row(source_rows[-1])
     write_json_atomic(
         paths.state,
         {
             "version": 1,
             "last_run_id": run_id,
-            "last_row_count": len(rows),
+            "last_row_count": exported_row_count,
+            "last_source_row_count": len(source_rows),
             "first_created_at": iso_utc(first["created_at"]),
             "first_id": first["id"],
             "last_created_at": iso_utc(last["created_at"]),
@@ -273,9 +366,9 @@ def write_state(paths: ArchivePaths, run_id: str, rows: list[dict[str, Any]], up
     )
 
 
-def merge_month(paths: ArchivePaths, month: str, new_rows: list[dict[str, Any]]) -> dict[str, Any]:
+def merge_month(paths: ArchivePaths, month: str, new_rows: list[dict[str, Any]], identity_maps: UserIdentityMaps) -> dict[str, Any]:
     parquet_path = monthly_paths(paths, month)
-    existing_parquet_rows = read_parquet_rows(parquet_path)
+    existing_parquet_rows, skipped_existing_rows = read_parquet_rows(parquet_path, identity_maps)
 
     merged_rows = dedupe_rows([*existing_parquet_rows, *new_rows])
     write_parquet_file(parquet_path, merged_rows)
@@ -285,6 +378,7 @@ def merge_month(paths: ArchivePaths, month: str, new_rows: list[dict[str, Any]])
         "parquet": str(parquet_path),
         "new_rows": len(new_rows),
         "total_rows": len(merged_rows),
+        "skipped_existing_user_ids": skipped_existing_rows,
     }
 
 
@@ -318,6 +412,7 @@ def pull_events(options: PullOptions) -> dict[str, Any]:
         reset_archive(paths)
     cursor = (None, None) if options.reset else load_cursor(paths)
     raw_rows = fetch_rows(database_url, cursor, options.limit)
+    identity_maps = read_user_identity_maps(options.data_dir)
 
     if not raw_rows:
         return {
@@ -326,16 +421,19 @@ def pull_events(options: PullOptions) -> dict[str, Any]:
             "message": "No new events to export.",
         }
 
-    rows = [normalize_row(row) for row in raw_rows]
-    last = rows[-1]
+    rows, reconciled_user_ids, skipped_unresolved_user_ids = normalize_rows(raw_rows, identity_maps)
+    last = cursor_row(raw_rows[-1])
 
     if options.dry_run:
         return {
             "rows": len(rows),
+            "source_rows": len(raw_rows),
             "months": sorted(group_rows_by_month(rows).keys()),
             "last_created_at": iso_utc(last["created_at"]),
             "last_id": last["id"],
             "would_advance_cursor": True,
+            "reconciled_user_ids": reconciled_user_ids,
+            "skipped_unresolved_user_ids": skipped_unresolved_user_ids,
         }
 
     run_id = resolve_run_id(paths, cursor, options.run_id)
@@ -343,25 +441,29 @@ def pull_events(options: PullOptions) -> dict[str, Any]:
 
     rows_by_month = group_rows_by_month(rows)
     updates_by_month: dict[str, dict[str, Any]] = {}
-    with ThreadPoolExecutor(max_workers=len(rows_by_month), thread_name_prefix="42go-pull-events-month") as executor:
-        futures = {
-            executor.submit(merge_month, paths, month, month_rows): month
-            for month, month_rows in rows_by_month.items()
-        }
-        for future in as_completed(futures):
-            month = futures[future]
-            updates_by_month[month] = future.result()
+    if rows_by_month:
+        with ThreadPoolExecutor(max_workers=len(rows_by_month), thread_name_prefix="42go-pull-events-month") as executor:
+            futures = {
+                executor.submit(merge_month, paths, month, month_rows, identity_maps): month
+                for month, month_rows in rows_by_month.items()
+            }
+            for future in as_completed(futures):
+                month = futures[future]
+                updates_by_month[month] = future.result()
     updates = [updates_by_month[month] for month in sorted(updates_by_month)]
 
     removed_legacy_files = remove_legacy_batches(paths)
-    write_state(paths, run_id, rows, updates)
+    write_state(paths, run_id, raw_rows, len(rows), updates)
     paths.inflight.unlink(missing_ok=True)
 
     return {
         "run_id": run_id,
         "rows": len(rows),
+        "source_rows": len(raw_rows),
         "months": updates,
         "removed_legacy_files": removed_legacy_files,
         "last_created_at": iso_utc(last["created_at"]),
         "last_id": last["id"],
+        "reconciled_user_ids": reconciled_user_ids,
+        "skipped_unresolved_user_ids": skipped_unresolved_user_ids,
     }

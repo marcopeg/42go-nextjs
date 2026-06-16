@@ -9,6 +9,7 @@ from fortytwogo_cli.events.dependencies import import_duckdb, import_pyarrow
 from fortytwogo_cli.events.paths import parquet_files, resolve_paths
 from fortytwogo_cli.events.pull import parse_utc
 from fortytwogo_cli.query.paths import query_output_path
+from fortytwogo_cli.users.paths import resolve_paths as resolve_auth_paths
 
 DEFAULT_SESSION_DURATION_MINUTES = 20
 
@@ -43,6 +44,23 @@ def read_event_rows(data_dir: Path | None) -> list[dict[str, Any]]:
                 continue
             rows.append(normalize_event(row))
     return rows
+
+
+def read_auth_user_keys(data_dir: Path | None) -> set[tuple[str, str]]:
+    users_path = resolve_auth_paths(data_dir).users_parquet
+    if not users_path.exists():
+        raise RuntimeError(f"Missing auth users: run 42go pull auth first ({users_path}).")
+    _pa, pq = import_pyarrow()
+    keys: set[tuple[str, str]] = set()
+    for row in pq.read_table(users_path, columns=["app_id", "id"]).to_pylist():
+        if not row.get("app_id") or not row.get("id"):
+            continue
+        keys.add((str(row["app_id"]), str(row["id"])))
+    return keys
+
+
+def filter_events_for_auth_users(events: Iterable[dict[str, Any]], auth_user_keys: set[tuple[str, str]]) -> list[dict[str, Any]]:
+    return [event for event in events if (event["app_id"], event["user_id"]) in auth_user_keys]
 
 
 def group_events(events: Iterable[dict[str, Any]]) -> dict[tuple[str, str], list[dict[str, Any]]]:
@@ -139,7 +157,9 @@ def smoke_read_sessions(path: Path, expected_rows: int) -> None:
 
 
 def query_sessions(options: QuerySessionsOptions) -> dict[str, Any]:
-    events = read_event_rows(options.data_dir)
+    raw_events = read_event_rows(options.data_dir)
+    auth_user_keys = read_auth_user_keys(options.data_dir)
+    events = filter_events_for_auth_users(raw_events, auth_user_keys)
     sessions = compute_sessions(events, options.duration)
     output_path = query_output_path(["sessions"], options.query_dir)
     write_sessions(output_path, sessions)
@@ -147,6 +167,7 @@ def query_sessions(options: QuerySessionsOptions) -> dict[str, Any]:
     return {
         "sessions": len(sessions),
         "events": len(events),
+        "ignored_events": len(raw_events) - len(events),
         "duration_minutes": options.duration,
         "parquet": str(output_path),
     }

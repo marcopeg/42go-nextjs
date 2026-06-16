@@ -29,6 +29,7 @@ Current query refresh:
 `42go query all` runs all available aggregate commands in dependency order. Today that means:
 
 1. `42go query sessions`
+2. `42go query users`
 
 The `42go pull all` step runs raw pull targets in parallel. State files remain target-scoped under `.local/42go-data/auth/_state.json`, `.local/42go-data/events/_state.json`, and `.local/42go-data/lingocafe/_state.json`. Auth and LingoCafe also parallelize independent database reads internally, then write target state once. Events merge distinct monthly Parquet files in parallel, then write state once.
 
@@ -75,9 +76,12 @@ Reads local monthly event Parquet files and prints archive/product stats:
 Rules:
 
 - Source: local monthly event Parquet only.
+- User dimension: `.local/42go-data/auth/users.parquet`.
+- Event pulls reconcile email-shaped `user_id` values to real auth user ids when auth users have been pulled first.
 - Grouping: `app_id`, then `user_id`.
 - Included events: every event name for the same user.
 - Ignored rows: missing `user_id` or `event_at`.
+- Ignored identities: event rows whose `app_id` plus `user_id` does not match an auth user.
 - Split rule: gap greater than `--duration` minutes starts a new session; exactly the duration stays in the session.
 - Default duration: 20 minutes.
 - Session id: first event id in the session.
@@ -100,6 +104,38 @@ Columns:
 - `duration_seconds`
 - `event_count`
 - `event_ids`
+
+## Users
+
+```bash
+42go query users
+```
+
+Rules:
+
+- Dependency: `.local/42go-query/sessions.parquet`, created by `42go query sessions`.
+- `42go query all` runs `sessions` before `users`.
+- One row per unique `app_id` plus `user_id`.
+- Rows come from `.local/42go-data/auth/users.parquet`.
+- Session-only identities are ignored; they only contribute when their `app_id` plus `user_id` matches an auth user.
+- The output never includes `password`.
+- Activity windows are relative to the newest session `ended_at` timestamp in `sessions.parquet`.
+
+Output file:
+
+```text
+.local/42go-query/users.parquet
+```
+
+Session metric columns:
+
+- `active_1d`
+- `active_7d`
+- `active_30d`
+- `session_count`
+- `session_avg_seconds`
+- `session_min_seconds`
+- `session_max_seconds`
 
 ## Users Growth
 

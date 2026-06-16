@@ -53,6 +53,7 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
   - `42go query`
   - `42go query sessions`
   - `42go query sessions --duration 20`
+  - `42go query users`
   - `42go query all`
   - Load `references/query-analytics.md`.
 - Event logging expectations:
@@ -100,6 +101,7 @@ Agents should navigate commands with:
 42go pull '*' --help
 42go query --help
 42go query sessions --help
+42go query users --help
 42go query all --help
 42go backup --help
 42go restore --help

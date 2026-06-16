@@ -8,6 +8,13 @@ type BookCardProps = {
   book: ReaderBook;
 };
 
+const levelPattern = /(?:^|[-_])(a1|a2|b1|b2|c1|c2)(?:$|[-_])/i;
+
+const getBookLevelLabel = (book: ReaderBook) => {
+  const level = book.level.trim() || book.id.match(levelPattern)?.[1] || "";
+  return level ? level.toUpperCase() : null;
+};
+
 // const MorePlaceholder = () => (
 //   <span
 //     aria-hidden="true"
@@ -28,6 +35,7 @@ type BookCardProps = {
 
 export const BookCard = ({ book }: BookCardProps) => {
   const coverTags = book.tags.slice(0, 3);
+  const levelLabel = getBookLevelLabel(book);
   const author = book.author.trim();
   const readingHref = book.readingAction.href;
   const isReading =
@@ -43,7 +51,7 @@ export const BookCard = ({ book }: BookCardProps) => {
     <article className="group min-w-0 overflow-hidden rounded-lg shadow-sm transition-transform duration-200 hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-ring/60">
       <Link
         href={href}
-        className="relative block min-w-0 outline-none"
+        className="relative block min-w-0 overflow-hidden rounded-lg outline-none"
         aria-label={ariaLabel}
       >
         <BookCover
@@ -78,16 +86,26 @@ export const BookCard = ({ book }: BookCardProps) => {
           ) : null}
         </div>
 
-        {coverTags.length > 0 && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap gap-1.5 p-3 sm:gap-2 sm:p-4">
-            {coverTags.map((tag) => (
-              <span
-                key={tag}
-                className="max-w-full truncate rounded-md bg-black/45 px-2 py-1 text-[0.65rem] font-medium leading-none text-amber-50 shadow-sm backdrop-blur-sm sm:text-xs"
-              >
-                {tag}
+        {(coverTags.length > 0 || levelLabel) && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0">
+            {coverTags.length > 0 ? (
+              <div className="flex min-w-0 flex-wrap gap-1.5 p-3 pr-12 sm:gap-2 sm:p-4 sm:pr-14">
+                {coverTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="max-w-full truncate rounded-md bg-black/45 px-2 py-1 text-[0.65rem] font-medium leading-none text-amber-50 shadow-sm backdrop-blur-sm sm:text-xs"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            {levelLabel ? (
+              <span className="absolute right-0 bottom-0 grid size-9 place-items-center rounded-tl-md bg-white text-sm font-extrabold leading-none text-black shadow-md ring-1 ring-black/10 sm:size-10 sm:text-base">
+                {levelLabel}
               </span>
-            ))}
+            ) : null}
           </div>
         )}
       </Link>

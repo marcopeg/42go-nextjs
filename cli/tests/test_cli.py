@@ -91,6 +91,7 @@ def test_query_help_lists_commands() -> None:
 
     assert result.exit_code == 0
     assert "sessions" in result.output
+    assert "users" in result.output
     assert "all" in result.output
 
 
@@ -104,10 +105,10 @@ def test_query_sessions_help_describes_duration() -> None:
 
 
 def test_query_without_target_prompts_and_runs_selection(monkeypatch) -> None:
-    calls: list[tuple[Path | None, Path | None, int]] = []
+    calls: list[tuple[str, Path | None, Path | None, int | None]] = []
 
     def fake_run_sessions_query(data_dir: Path | None, query_dir: Path | None, duration: int) -> dict[str, object]:
-        calls.append((data_dir, query_dir, duration))
+        calls.append(("sessions", data_dir, query_dir, duration))
         return {"sessions": 2}
 
     monkeypatch.setattr(query_cli_module, "run_sessions_query", fake_run_sessions_query)
@@ -115,25 +116,31 @@ def test_query_without_target_prompts_and_runs_selection(monkeypatch) -> None:
     result = runner.invoke(app, ["query", "--duration", "9"], input="1\n")
 
     assert result.exit_code == 0
-    assert calls == [(None, None, 9)]
+    assert calls == [("sessions", None, None, 9)]
     assert "Choose query target" in result.output
     assert '"sessions": 2' in result.output
 
 
-def test_query_all_dispatches_sessions(monkeypatch) -> None:
-    calls: list[tuple[Path | None, Path | None, int]] = []
+def test_query_all_dispatches_sessions_then_users(monkeypatch) -> None:
+    calls: list[str] = []
 
     def fake_run_sessions_query(data_dir: Path | None, query_dir: Path | None, duration: int) -> dict[str, object]:
-        calls.append((data_dir, query_dir, duration))
+        calls.append(f"sessions:{duration}")
         return {"sessions": 3}
 
+    def fake_run_users_query(data_dir: Path | None, query_dir: Path | None) -> dict[str, object]:
+        calls.append("users")
+        return {"users": 2}
+
     monkeypatch.setattr(query_cli_module, "run_sessions_query", fake_run_sessions_query)
+    monkeypatch.setattr(query_cli_module, "run_users_query", fake_run_users_query)
 
     result = runner.invoke(app, ["query", "all", "--duration", "12"])
 
     assert result.exit_code == 0
-    assert calls == [(None, None, 12)]
+    assert calls == ["sessions:12", "users"]
     assert '"sessions": 3' in result.output
+    assert '"users": 2' in result.output
 
 
 def test_pull_help_lists_commands() -> None:
@@ -235,20 +242,24 @@ def test_pull_all_formats_source_table_blocks(monkeypatch) -> None:
     assert '"auth"' not in result.output
 
 
-def test_run_all_pulls_runs_targets_in_parallel(monkeypatch) -> None:
+def test_run_all_pulls_runs_auth_before_parallel_dependent_targets(monkeypatch) -> None:
+    auth_completed = Event()
     events_started = Event()
     lingocafe_started = Event()
 
     def fake_auth_pull(*args, **kwargs):
-        return {"saw_parallel": events_started.wait(1) and lingocafe_started.wait(1)}
+        auth_completed.set()
+        return {"users_changed": 1}
 
     def fake_events_pull(*args, **kwargs):
+        assert auth_completed.is_set()
         events_started.set()
-        return {"rows": 1}
+        return {"saw_parallel": lingocafe_started.wait(1)}
 
     def fake_books_pull(*args, **kwargs):
+        assert auth_completed.is_set()
         lingocafe_started.set()
-        return {"books_changed": 1}
+        return {"saw_parallel": events_started.wait(1)}
 
     monkeypatch.setattr(pull_cli_module, "run_auth_pull", fake_auth_pull)
     monkeypatch.setattr(pull_cli_module, "run_events_pull", fake_events_pull)
@@ -257,9 +268,9 @@ def test_run_all_pulls_runs_targets_in_parallel(monkeypatch) -> None:
     result = pull_cli_module.run_all_pulls(data_dir=None, limit=10, database_url_env="DB_URL", reset=False, dry_run=False)
 
     assert result == {
-        "auth": {"saw_parallel": True},
-        "events": {"rows": 1},
-        "lingocafe": {"books_changed": 1},
+        "auth": {"users_changed": 1},
+        "events": {"saw_parallel": True},
+        "lingocafe": {"saw_parallel": True},
     }
 
 
