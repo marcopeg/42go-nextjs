@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from threading import Event
 from typing import Any
 
 import pyarrow.parquet as pq
@@ -88,7 +89,28 @@ def test_pull_users_uses_backup_database_url_by_default(monkeypatch, tmp_path: P
 
     pull_users(PullUsersOptions(data_dir=data_dir))
 
-    assert calls == ["postgres://backup", "postgres://backup"]
+    assert calls.count("postgres://backup") == 2
+
+
+def test_pull_users_fetches_users_and_accounts_in_parallel(monkeypatch, tmp_path: Path) -> None:
+    data_dir = tmp_path / ".local" / "42go-data"
+    monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://example")
+    accounts_started = Event()
+
+    def fetch_users(database_url: str, cursor: list[str] | None, limit: int) -> list[dict[str, Any]]:
+        assert accounts_started.wait(1)
+        return []
+
+    def fetch_accounts(database_url: str, cursor: list[str] | None, limit: int) -> list[dict[str, Any]]:
+        accounts_started.set()
+        return []
+
+    monkeypatch.setattr(users_pull, "fetch_users", fetch_users)
+    monkeypatch.setattr(users_pull, "fetch_accounts", fetch_accounts)
+
+    result = pull_users(PullUsersOptions(data_dir=data_dir, dry_run=True))
+
+    assert result["would_write"] is False
 
 
 def test_pull_users_writes_allowlisted_parquet_and_state(monkeypatch, tmp_path: Path) -> None:
@@ -161,10 +183,10 @@ def test_pull_users_uses_cursors_and_merges_updates(monkeypatch, tmp_path: Path)
     monkeypatch.setattr(users_pull, "fetch_accounts", second_accounts)
     pull_users(PullUsersOptions(data_dir=data_dir))
 
-    assert calls[0] == ("users", None)
-    assert calls[1] == ("accounts", None)
-    assert calls[2] == ("users", ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "u1"])
-    assert calls[3] == ("accounts", ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "lingocafe", "acc1", "github"])
+    assert ("users", None) in calls[:2]
+    assert ("accounts", None) in calls[:2]
+    assert ("users", ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "u1"]) in calls[2:4]
+    assert ("accounts", ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "lingocafe", "acc1", "github"]) in calls[2:4]
 
     paths = resolve_paths(data_dir)
     user_rows = read_parquet_rows(paths.users_parquet)

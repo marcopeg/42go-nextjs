@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from threading import Event
 from typing import Any
 
 import pyarrow.parquet as pq
@@ -87,6 +88,35 @@ def test_pull_events_writes_monthly_parquet_and_uses_cursor(monkeypatch, tmp_pat
     assert [row["id"] for row in read_parquet_rows(paths.parquet_dir / "events_202606.parquet")] == [
         "00000000-0000-0000-0000-000000000001",
         "00000000-0000-0000-0000-000000000002",
+    ]
+
+
+def test_pull_events_merges_months_in_parallel(monkeypatch, tmp_path: Path) -> None:
+    data_dir = tmp_path / ".local" / "42go-data"
+    july_started = Event()
+    monkeypatch.setattr(events_pull, "get_database_url", lambda: "postgres://events")
+    monkeypatch.setattr(
+        events_pull,
+        "fetch_rows",
+        lambda database_url, cursor, limit: [
+            event_row("00000000-0000-0000-0000-000000000001", created_at="2026-06-01T10:00:00Z"),
+            event_row("00000000-0000-0000-0000-000000000002", created_at="2026-07-01T10:00:00Z"),
+        ],
+    )
+
+    def merge_month(paths, month: str, new_rows: list[dict[str, Any]]) -> dict[str, Any]:
+        if month == "202606":
+            return {"month": month, "saw_parallel": july_started.wait(1)}
+        july_started.set()
+        return {"month": month, "saw_parallel": True}
+
+    monkeypatch.setattr(events_pull, "merge_month", merge_month)
+
+    result = pull_events(PullOptions(data_dir=data_dir, run_id="run-1"))
+
+    assert result["months"] == [
+        {"month": "202606", "saw_parallel": True},
+        {"month": "202607", "saw_parallel": True},
     ]
 
 

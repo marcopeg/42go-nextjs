@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -340,9 +341,17 @@ def pull_events(options: PullOptions) -> dict[str, Any]:
     run_id = resolve_run_id(paths, cursor, options.run_id)
     write_inflight(paths, run_id, cursor)
 
-    updates = []
-    for month, month_rows in sorted(group_rows_by_month(rows).items()):
-        updates.append(merge_month(paths, month, month_rows))
+    rows_by_month = group_rows_by_month(rows)
+    updates_by_month: dict[str, dict[str, Any]] = {}
+    with ThreadPoolExecutor(max_workers=len(rows_by_month), thread_name_prefix="42go-pull-events-month") as executor:
+        futures = {
+            executor.submit(merge_month, paths, month, month_rows): month
+            for month, month_rows in rows_by_month.items()
+        }
+        for future in as_completed(futures):
+            month = futures[future]
+            updates_by_month[month] = future.result()
+    updates = [updates_by_month[month] for month in sorted(updates_by_month)]
 
     removed_legacy_files = remove_legacy_batches(paths)
     write_state(paths, run_id, rows, updates)

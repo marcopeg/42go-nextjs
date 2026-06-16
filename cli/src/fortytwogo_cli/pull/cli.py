@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Callable
 
 import typer
 
@@ -23,6 +24,77 @@ pull_app = typer.Typer(
 
 def print_json(result: dict[str, Any]) -> None:
     typer.echo(json.dumps(result, indent=2, sort_keys=True))
+
+
+def format_count_line(changed: Any | None, total: Any | None) -> str:
+    if changed is None and total is None:
+        return "n/a"
+    if changed is None:
+        return f"total: {total}"
+    if total is None:
+        return f"changed: {changed}"
+    return f"changed: {changed} | total: {total}"
+
+
+def format_pull_all_result(result: dict[str, Any]) -> str:
+    auth = result.get("auth", {})
+    events = result.get("events", {})
+    lingocafe = result.get("lingocafe", {})
+    event_months = [
+        month
+        for month in events.get("months") or []
+        if int(month.get("new_rows") or 0) > 0
+    ]
+
+    lines = ["42Go Pull All", ""]
+    lines.extend(
+        [
+            "auth",
+            "  users",
+            f"    {format_count_line(auth.get('users_changed'), auth.get('users_total'))}",
+            "  accounts",
+            f"    {format_count_line(auth.get('accounts_changed'), auth.get('accounts_total'))}",
+            "",
+            "events",
+            "  events",
+            f"    {format_count_line(events.get('rows'), None)}",
+        ]
+    )
+    if events.get("run_id"):
+        lines.append(f"    run: {events.get('run_id')}")
+    if events.get("last_created_at") or events.get("last_id"):
+        lines.append(f"    last: {events.get('last_created_at', 'n/a')} | {events.get('last_id', 'n/a')}")
+    for month in event_months:
+        lines.extend(
+            [
+                f"  events_{month.get('month', 'unknown')}",
+                f"    {format_count_line(month.get('new_rows'), month.get('total_rows'))}",
+            ]
+        )
+    removed = events.get("removed_legacy_files")
+    if removed is not None:
+        lines.append(f"  legacy files removed: {len(removed)}")
+    message = events.get("message")
+    if message:
+        lines.append(f"  message: {message}")
+    lines.extend(
+        [
+            "",
+            "lingocafe",
+            "  books",
+            f"    {format_count_line(lingocafe.get('books_changed'), lingocafe.get('books_total'))}",
+            "  books_pages",
+            f"    {format_count_line(None, lingocafe.get('pages_total'))}",
+            "  books_progress",
+            f"    {format_count_line(lingocafe.get('progress_changed'), lingocafe.get('progress_total'))}",
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+def print_pull_all(result: dict[str, Any]) -> None:
+    typer.echo(format_pull_all_result(result))
 
 
 def run_auth_pull(data_dir: Path | None, limit: int, database_url_env: str, reset: bool, dry_run: bool) -> dict[str, Any]:
@@ -54,11 +126,28 @@ def run_books_pull(data_dir: Path | None, limit: int, database_url_env: str, res
 
 
 def run_all_pulls(data_dir: Path | None, limit: int, database_url_env: str, reset: bool, dry_run: bool) -> dict[str, Any]:
-    return {
-        "auth": run_auth_pull(data_dir, limit, database_url_env, reset, dry_run),
-        "events": run_events_pull(data_dir, limit, reset, dry_run),
-        "books": run_books_pull(data_dir, limit, database_url_env, reset, dry_run),
+    pull_targets: dict[str, Callable[[], dict[str, Any]]] = {
+        "auth": lambda: run_auth_pull(data_dir, limit, database_url_env, reset, dry_run),
+        "events": lambda: run_events_pull(data_dir, limit, reset, dry_run),
+        "lingocafe": lambda: run_books_pull(data_dir, limit, database_url_env, reset, dry_run),
     }
+    results: dict[str, Any] = {}
+    failures: dict[str, Exception] = {}
+
+    with ThreadPoolExecutor(max_workers=len(pull_targets), thread_name_prefix="42go-pull") as executor:
+        futures = {executor.submit(run_target): label for label, run_target in pull_targets.items()}
+        for future in as_completed(futures):
+            label = futures[future]
+            try:
+                results[label] = future.result()
+            except Exception as error:
+                failures[label] = error
+
+    if failures:
+        details = "; ".join(f"{label}: {error}" for label, error in sorted(failures.items()))
+        raise RuntimeError(details)
+
+    return {label: results[label] for label in pull_targets}
 
 
 def handle_pull_error(label: str, error: RuntimeError) -> None:
@@ -82,7 +171,7 @@ def pull_root(
     ] = DEFAULT_EVENT_LIMIT,
     database_url_env: Annotated[
         str,
-        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book pulls. Defaults to BACKUP_DATABASE_URL."),
+        typer.Option("--database-url-env", help="Environment variable or .env key for auth and LingoCafe pulls. Defaults to BACKUP_DATABASE_URL."),
     ] = "BACKUP_DATABASE_URL",
     reset: Annotated[
         bool,
@@ -100,7 +189,7 @@ def pull_root(
     typer.echo("Choose pull target:")
     typer.echo("1. auth")
     typer.echo("2. events")
-    typer.echo("3. books")
+    typer.echo("3. lingocafe")
     typer.echo("4. all")
     choice = typer.prompt("Selection", type=int)
     try:
@@ -111,7 +200,7 @@ def pull_root(
         elif choice == 3:
             print_json(run_books_pull(data_dir, limit, database_url_env, reset, dry_run))
         elif choice == 4:
-            print_json(run_all_pulls(data_dir, limit, database_url_env, reset, dry_run))
+            print_pull_all(run_all_pulls(data_dir, limit, database_url_env, reset, dry_run))
         else:
             typer.echo("Selection must be 1, 2, 3, or 4.", err=True)
             raise typer.Exit(1)
@@ -162,7 +251,7 @@ def events(
 
 
 @pull_app.command(help="Pull LingoCafe books, pages, and progress into local Parquet files.")
-def books(
+def lingocafe(
     data_dir: Annotated[
         Path | None,
         typer.Option("--data-dir", help=f"Local raw data root. Defaults to FORTYTWOGO_DATA_DIR or {DEFAULT_DATA_DIR}."),
@@ -172,13 +261,13 @@ def books(
         str,
         typer.Option("--database-url-env", help="Environment variable or .env key containing the PostgreSQL connection URL. Defaults to BACKUP_DATABASE_URL."),
     ] = "BACKUP_DATABASE_URL",
-    reset: Annotated[bool, typer.Option("--reset", help="Delete local book Parquet files before pulling.")] = False,
+    reset: Annotated[bool, typer.Option("--reset", help="Delete local LingoCafe Parquet files before pulling.")] = False,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Report changed rows without writing files or advancing state.")] = False,
 ) -> None:
     try:
         print_json(run_books_pull(data_dir, limit, database_url_env, reset, dry_run))
     except RuntimeError as error:
-        handle_pull_error("books", error)
+        handle_pull_error("lingocafe", error)
 
 
 @pull_app.command(name="all", help="Pull all raw data sources.")
@@ -190,13 +279,13 @@ def all_data(
     limit: Annotated[int, typer.Option("--limit", min=1, help=f"Maximum rows per progressive query. Defaults to {DEFAULT_EVENT_LIMIT}.")] = DEFAULT_EVENT_LIMIT,
     database_url_env: Annotated[
         str,
-        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book pulls. Defaults to BACKUP_DATABASE_URL."),
+        typer.Option("--database-url-env", help="Environment variable or .env key for auth and LingoCafe pulls. Defaults to BACKUP_DATABASE_URL."),
     ] = "BACKUP_DATABASE_URL",
     reset: Annotated[bool, typer.Option("--reset", help="Delete local raw Parquet files before pulling.")] = False,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Report changed rows without writing files or advancing state.")] = False,
 ) -> None:
     try:
-        print_json(run_all_pulls(data_dir, limit, database_url_env, reset, dry_run))
+        print_pull_all(run_all_pulls(data_dir, limit, database_url_env, reset, dry_run))
     except RuntimeError as error:
         handle_pull_error("all", error)
 
@@ -210,7 +299,7 @@ def star(
     limit: Annotated[int, typer.Option("--limit", min=1, help=f"Maximum rows per progressive query. Defaults to {DEFAULT_EVENT_LIMIT}.")] = DEFAULT_EVENT_LIMIT,
     database_url_env: Annotated[
         str,
-        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book pulls. Defaults to BACKUP_DATABASE_URL."),
+        typer.Option("--database-url-env", help="Environment variable or .env key for auth and LingoCafe pulls. Defaults to BACKUP_DATABASE_URL."),
     ] = "BACKUP_DATABASE_URL",
     reset: Annotated[bool, typer.Option("--reset", help="Delete local raw Parquet files before pulling.")] = False,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Report changed rows without writing files or advancing state.")] = False,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -344,8 +345,11 @@ def pull_users(options: PullUsersOptions) -> dict[str, Any]:
     users_cursor = None if options.reset or migrate_state else state.get("users", {}).get("cursor")
     accounts_cursor = None if options.reset or migrate_state else state.get("accounts", {}).get("cursor")
 
-    raw_users = fetch_users(database_url, users_cursor, options.limit)
-    raw_accounts = fetch_accounts(database_url, accounts_cursor, options.limit)
+    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="42go-pull-auth") as executor:
+        users_future = executor.submit(fetch_users, database_url, users_cursor, options.limit)
+        accounts_future = executor.submit(fetch_accounts, database_url, accounts_cursor, options.limit)
+        raw_users = users_future.result()
+        raw_accounts = accounts_future.result()
     changed_users = [normalize_user(row) for row in raw_users]
     changed_accounts = [normalize_account(row) for row in raw_accounts]
 

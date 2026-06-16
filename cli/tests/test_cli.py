@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from threading import Event
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -14,6 +15,52 @@ from fortytwogo_cli.pull import cli as pull_cli_module
 
 
 runner = CliRunner()
+
+
+def sample_pull_all_result() -> dict[str, object]:
+    return {
+        "auth": {
+            "users_changed": 0,
+            "users_total": 121,
+            "users_parquet": ".local/42go-data/auth/users.parquet",
+            "accounts_changed": 0,
+            "accounts_total": 80,
+            "accounts_parquet": ".local/42go-data/auth/accounts.parquet",
+            "state": ".local/42go-data/auth/_state.json",
+        },
+        "events": {
+            "rows": 6,
+            "run_id": "run-20260616T115310Z",
+            "last_created_at": "2026-06-16T11:53:04.332140Z",
+            "last_id": "516569d3-3fad-400f-ace0-e94530b7ed84",
+            "removed_legacy_files": [],
+            "months": [
+                {
+                    "month": "202606",
+                    "new_rows": 6,
+                    "total_rows": 2702,
+                    "parquet": ".local/42go-data/events/events_202606.parquet",
+                },
+                {
+                    "month": "202605",
+                    "new_rows": 0,
+                    "total_rows": 42,
+                    "parquet": ".local/42go-data/events/events_202605.parquet",
+                }
+            ],
+        },
+        "lingocafe": {
+            "books_changed": 0,
+            "books_total": 39,
+            "books_parquet": ".local/42go-data/lingocafe/books.parquet",
+            "pages_total": 1272,
+            "pages_parquet": ".local/42go-data/lingocafe/books_pages.parquet",
+            "progress_changed": 2,
+            "progress_total": 109,
+            "progress_parquet": ".local/42go-data/lingocafe/books_progress.parquet",
+            "state": ".local/42go-data/lingocafe/_state.json",
+        },
+    }
 
 
 def test_root_without_args_shows_help() -> None:
@@ -46,8 +93,36 @@ def test_pull_help_lists_commands() -> None:
     assert result.exit_code == 0
     assert "auth" in result.output
     assert "events" in result.output
-    assert "books" in result.output
+    assert "lingocafe" in result.output
     assert "all" in result.output
+
+
+def test_pull_books_command_is_removed() -> None:
+    result = runner.invoke(app, ["pull", "books", "--help"])
+
+    assert result.exit_code != 0
+
+
+def test_pull_lingocafe_dispatches_book_pull(monkeypatch) -> None:
+    calls: list[tuple[Path | None, int, str, bool, bool]] = []
+
+    def fake_run_books_pull(
+        data_dir: Path | None,
+        limit: int,
+        database_url_env: str,
+        reset: bool,
+        dry_run: bool,
+    ) -> dict[str, int]:
+        calls.append((data_dir, limit, database_url_env, reset, dry_run))
+        return {"books_changed": 1, "books_total": 2}
+
+    monkeypatch.setattr(pull_cli_module, "run_books_pull", fake_run_books_pull)
+
+    result = runner.invoke(app, ["pull", "lingocafe", "--limit", "9", "--database-url-env", "DB_URL", "--reset", "--dry-run"])
+
+    assert result.exit_code == 0
+    assert calls == [(None, 9, "DB_URL", True, True)]
+    assert '"books_changed": 1' in result.output
 
 
 def test_pull_without_target_prompts_and_runs_selection(monkeypatch) -> None:
@@ -55,7 +130,7 @@ def test_pull_without_target_prompts_and_runs_selection(monkeypatch) -> None:
 
     def fake_run_all_pulls(*args, **kwargs):
         calls.append("all")
-        return {"auth": {}, "events": {}, "books": {}}
+        return sample_pull_all_result()
 
     monkeypatch.setattr(pull_cli_module, "run_all_pulls", fake_run_all_pulls)
 
@@ -64,7 +139,8 @@ def test_pull_without_target_prompts_and_runs_selection(monkeypatch) -> None:
     assert result.exit_code == 0
     assert calls == ["all"]
     assert "Choose pull target" in result.output
-    assert '"auth": {}' in result.output
+    assert "42Go Pull All" in result.output
+    assert "  users" in result.output
 
 
 def test_pull_star_alias_runs_all(monkeypatch) -> None:
@@ -72,7 +148,7 @@ def test_pull_star_alias_runs_all(monkeypatch) -> None:
 
     def fake_run_all_pulls(*args, **kwargs):
         calls.append("all")
-        return {"auth": {}, "events": {}, "books": {}}
+        return sample_pull_all_result()
 
     monkeypatch.setattr(pull_cli_module, "run_all_pulls", fake_run_all_pulls)
 
@@ -80,7 +156,75 @@ def test_pull_star_alias_runs_all(monkeypatch) -> None:
 
     assert result.exit_code == 0
     assert calls == ["all"]
-    assert '"books": {}' in result.output
+    assert "books_progress" in result.output
+
+
+def test_pull_all_formats_source_table_blocks(monkeypatch) -> None:
+    monkeypatch.setattr(pull_cli_module, "run_all_pulls", lambda *args, **kwargs: sample_pull_all_result())
+
+    result = runner.invoke(app, ["pull", "all"])
+
+    assert result.exit_code == 0
+    assert "42Go Pull All" in result.output
+    assert "auth" in result.output
+    assert "  users" in result.output
+    assert "changed: 0 | total: 121" in result.output
+    assert "  accounts" in result.output
+    assert "events" in result.output
+    assert "  events" in result.output
+    assert "events_202606" in result.output
+    assert "events_202605" not in result.output
+    assert "lingocafe" in result.output
+    assert "  books" in result.output
+    assert "books_pages" in result.output
+    assert "total: 1272" in result.output
+    assert "books_progress" in result.output
+    assert "changed: 2 | total: 109" in result.output
+    assert "_state" not in result.output
+    assert "parquet:" not in result.output
+    assert ".local/42go-data" not in result.output
+    assert '"auth"' not in result.output
+
+
+def test_run_all_pulls_runs_targets_in_parallel(monkeypatch) -> None:
+    events_started = Event()
+    lingocafe_started = Event()
+
+    def fake_auth_pull(*args, **kwargs):
+        return {"saw_parallel": events_started.wait(1) and lingocafe_started.wait(1)}
+
+    def fake_events_pull(*args, **kwargs):
+        events_started.set()
+        return {"rows": 1}
+
+    def fake_books_pull(*args, **kwargs):
+        lingocafe_started.set()
+        return {"books_changed": 1}
+
+    monkeypatch.setattr(pull_cli_module, "run_auth_pull", fake_auth_pull)
+    monkeypatch.setattr(pull_cli_module, "run_events_pull", fake_events_pull)
+    monkeypatch.setattr(pull_cli_module, "run_books_pull", fake_books_pull)
+
+    result = pull_cli_module.run_all_pulls(data_dir=None, limit=10, database_url_env="DB_URL", reset=False, dry_run=False)
+
+    assert result == {
+        "auth": {"saw_parallel": True},
+        "events": {"rows": 1},
+        "lingocafe": {"books_changed": 1},
+    }
+
+
+def test_run_all_pulls_reports_target_failures(monkeypatch) -> None:
+    monkeypatch.setattr(pull_cli_module, "run_auth_pull", lambda *args, **kwargs: {"users_changed": 0})
+    monkeypatch.setattr(pull_cli_module, "run_events_pull", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("database down")))
+    monkeypatch.setattr(pull_cli_module, "run_books_pull", lambda *args, **kwargs: {"books_changed": 0})
+
+    try:
+        pull_cli_module.run_all_pulls(data_dir=None, limit=10, database_url_env="DB_URL", reset=False, dry_run=False)
+    except RuntimeError as error:
+        assert "events: database down" in str(error)
+    else:
+        raise AssertionError("run_all_pulls should raise when a target fails.")
 
 
 def test_update_help_describes_options() -> None:
@@ -402,7 +546,7 @@ def test_update_runs_pull_all_before_aggregations(monkeypatch, tmp_path: Path) -
         return {
             "auth": {"users_changed": 1, "users_total": 2, "accounts_changed": 3, "accounts_total": 4},
             "events": {"rows": 5},
-            "books": {"books_changed": 6, "books_total": 7, "pages_total": 8, "progress_changed": 9, "progress_total": 10},
+            "lingocafe": {"books_changed": 6, "books_total": 7, "pages_total": 8, "progress_changed": 9, "progress_total": 10},
         }
 
     def fake_load_book_stats(**kwargs):
@@ -438,7 +582,7 @@ def test_update_runs_pull_all_before_aggregations(monkeypatch, tmp_path: Path) -
     assert calls == ["pull", "books", "sessions", "users_growth", "reads", "subscribers"]
     assert "pull auth: users=1/2 accounts=3/4" in result.output
     assert "pull events: 5 rows" in result.output
-    assert "pull books: books=6/7 pages=8 progress=9/10" in result.output
+    assert "pull lingocafe: books=6/7 pages=8 progress=9/10" in result.output
 
 
 def test_update_stops_when_pull_all_fails(monkeypatch, tmp_path: Path) -> None:
@@ -483,7 +627,7 @@ def test_update_runs_refresh_pipeline_and_passes_reset(monkeypatch) -> None:
         return {
             "auth": {"users_changed": 1, "users_total": 2, "accounts_changed": 1, "accounts_total": 1},
             "events": {"rows": 3},
-            "books": {"books_changed": 2, "books_total": 2, "pages_total": 3, "progress_changed": 1, "progress_total": 1},
+            "lingocafe": {"books_changed": 2, "books_total": 2, "pages_total": 3, "progress_changed": 1, "progress_total": 1},
         }
 
     def fake_load_book_stats(**kwargs):
@@ -562,7 +706,7 @@ def test_update_does_not_reset_by_default(monkeypatch) -> None:
         or {
             "auth": {"users_changed": 0, "users_total": 0, "accounts_changed": 0, "accounts_total": 0},
             "events": {"rows": 0, "message": "No new events to export."},
-            "books": {"books_changed": 0, "books_total": 0, "pages_total": 0, "progress_changed": 0, "progress_total": 0},
+            "lingocafe": {"books_changed": 0, "books_total": 0, "pages_total": 0, "progress_changed": 0, "progress_total": 0},
         },
     )
     monkeypatch.setattr(

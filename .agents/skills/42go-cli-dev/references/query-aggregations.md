@@ -95,7 +95,7 @@ query_lingocafe_subscribers_state.parquet
 
 - Module: `events/books.py`
 - Reads raw local files from `.local/42go-data/lingocafe`.
-- Raw source pull lives under `42go pull books`.
+- Raw source pull lives under `42go pull lingocafe`.
 - `books` and `books_progress` are progressive.
 - `books_pages` is a full catalog refresh because the table has no cursor column.
 - `42go query lingocafe books` never queries PostgreSQL.

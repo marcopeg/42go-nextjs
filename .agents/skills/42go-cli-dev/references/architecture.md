@@ -28,7 +28,7 @@ cli/src/fortytwogo_cli/
     cli.py                       # backup/restore command functions
     core.py                      # dump/restore implementation
   pull/
-    cli.py                       # 42go pull auth/events/books/all
+    cli.py                       # 42go pull auth/events/lingocafe/all
   users/
     paths.py                     # auth pull path/env helpers
     pull.py                      # auth.users/auth.accounts pull implementation
@@ -48,7 +48,7 @@ cli/src/fortytwogo_cli/
 
 - `42go pull auth`: reads `auth.users` and `auth.accounts`, writes `.local/42go-data/auth/users.parquet` and `.local/42go-data/auth/accounts.parquet` without password or token secrets.
 - `42go pull events`: reads `events.events`, writes raw monthly local Parquet.
-- `42go pull books`: reads LingoCafe books, pages, and progress, writes raw local Parquet.
+- `42go pull lingocafe`: reads LingoCafe books, pages, and progress, writes raw local Parquet.
 - `42go pull all`: runs all raw pulls.
 - `42go pull '*'`: literal star alias for all raw pulls.
 - `42go query ...`: reads local Parquet and builds or inspects local aggregates.
@@ -60,7 +60,7 @@ cli/src/fortytwogo_cli/
 ## Environment Loading
 
 - Raw data root: `FORTYTWOGO_DATA_DIR` or `.local/42go-data`.
-- Pull and backup source: `BACKUP_DATABASE_URL`, with `.env` fallback. Event pulls use it directly; auth and book pulls expose `--database-url-env` and default to it.
+- Pull and backup source: `BACKUP_DATABASE_URL`, with `.env` fallback. Event pulls use it directly; auth and LingoCafe pulls expose `--database-url-env` and default to it.
 - Restore target: `RESTORE_DATABASE_URL`.
 
 Do not print secrets. Redact connection strings in operator output.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from threading import Event
 from typing import Any
 
 import pyarrow.parquet as pq
@@ -84,7 +85,35 @@ def test_pull_books_uses_backup_database_url_by_default(monkeypatch, tmp_path: P
 
     pull_books(PullBooksOptions(data_dir=data_dir))
 
-    assert calls == ["postgres://backup", "postgres://backup", "postgres://backup"]
+    assert calls.count("postgres://backup") == 3
+
+
+def test_pull_books_fetches_sources_in_parallel(monkeypatch, tmp_path: Path) -> None:
+    data_dir = tmp_path / ".local" / "42go-data"
+    monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://example")
+    pages_started = Event()
+    progress_started = Event()
+
+    def fetch_books(database_url: str, cursor: list[str] | None, limit: int) -> list[dict[str, Any]]:
+        assert pages_started.wait(1)
+        assert progress_started.wait(1)
+        return []
+
+    def fetch_pages(database_url: str) -> list[dict[str, Any]]:
+        pages_started.set()
+        return []
+
+    def fetch_progress(database_url: str, cursor: list[str] | None, limit: int) -> list[dict[str, Any]]:
+        progress_started.set()
+        return []
+
+    monkeypatch.setattr(books_mod, "fetch_books", fetch_books)
+    monkeypatch.setattr(books_mod, "fetch_pages", fetch_pages)
+    monkeypatch.setattr(books_mod, "fetch_progress", fetch_progress)
+
+    result = pull_books(PullBooksOptions(data_dir=data_dir, dry_run=True))
+
+    assert result["would_write"] is True
 
 
 def test_pull_books_writes_raw_parquet_and_query_reads_local_files(monkeypatch, tmp_path: Path) -> None:
@@ -168,10 +197,10 @@ def test_pull_books_uses_cursors_and_reset(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(books_mod, "fetch_progress", second_progress)
     pull_books(PullBooksOptions(data_dir=data_dir))
 
-    assert calls[0] == ("books", None)
-    assert calls[1] == ("progress", None)
-    assert calls[2] == ("books", ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "b1"])
-    assert calls[3] == ("progress", ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "u1", "b1"])
+    assert ("books", None) in calls[:2]
+    assert ("progress", None) in calls[:2]
+    assert ("books", ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "b1"]) in calls[2:4]
+    assert ("progress", ["2026-06-01T10:00:00Z", "2026-06-01T10:00:00Z", "u1", "b1"]) in calls[2:4]
 
     paths = resolve_book_data_paths(data_dir)
     assert [row["id"] for row in read_parquet_rows(paths.books_path)] == ["b1", "b2"]
@@ -181,7 +210,7 @@ def test_pull_books_uses_cursors_and_reset(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(books_mod, "fetch_progress", lambda database_url, cursor, limit: calls.append(("progress", cursor)) or [])
     pull_books(PullBooksOptions(data_dir=data_dir, reset=True))
 
-    assert calls[-2] == ("books", None)
-    assert calls[-1] == ("progress", None)
+    assert ("books", None) in calls[-2:]
+    assert ("progress", None) in calls[-2:]
     assert [row["id"] for row in read_parquet_rows(paths.books_path)] == ["b3"]
     assert not legacy_state.exists()

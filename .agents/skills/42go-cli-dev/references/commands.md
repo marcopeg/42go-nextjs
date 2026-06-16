@@ -16,7 +16,7 @@ The root callback prints help when no subcommand is invoked. Nested command grou
 
 `cli/src/fortytwogo_cli/pull/cli.py` defines:
 
-- `pull_app`: raw data extraction commands for auth, events, books, and all data.
+- `pull_app`: raw data extraction commands for auth, events, LingoCafe, and all data.
 
 `cli/src/fortytwogo_cli/events/cli.py` defines:
 
@@ -30,7 +30,7 @@ The root callback prints help when no subcommand is invoked. Nested command grou
 
 No-arg menus:
 
-- `42go pull`: menu for auth, events, books, and all.
+- `42go pull`: menu for auth, events, LingoCafe, and all.
 - `42go query`: menu for stats, session, users, and LingoCafe.
 - `42go query users`: menu for growth.
 - `42go query lingocafe`: menu for books, reads, and subscribers.
@@ -57,7 +57,7 @@ The following must print useful help:
 42go pull --help
 42go pull auth --help
 42go pull events --help
-42go pull books --help
+42go pull lingocafe --help
 42go pull all --help
 42go pull '*' --help
 42go query --help
@@ -95,4 +95,4 @@ totals from the current day growth bucket plus the subscriber aggregate:
 
 The `--reset` flag deletes and rebuilds the selected raw data files and aggregation caches.
 
-`42go pull all` is the documented all-data command. `42go pull '*'` is a literal star alias; quote it in shells that expand `*`.
+`42go pull all` is the documented all-data command. It runs the auth, events, and LingoCafe pulls in parallel because each target writes to its own raw data and state path. Inside auth and LingoCafe, independent database reads run in parallel and each target writes its Parquet files and `_state.json` only after the reads complete. Event pulls fetch from one source query, then merge distinct monthly Parquet files in parallel before writing the final events state. Its terminal output is grouped by source blocks under `auth`, `events`, and `lingocafe`, with sub-blocks such as `users`, `accounts`, `events_YYYYMM`, `books`, `books_pages`, and `books_progress`. Event partition blocks are printed only when the partition changed. The human output intentionally omits raw Parquet and state paths. `42go pull '*'` is a literal star alias; quote it in shells that expand `*`.

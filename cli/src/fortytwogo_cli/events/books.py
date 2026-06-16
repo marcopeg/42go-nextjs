@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import json
 import re
 from dataclasses import asdict, dataclass
@@ -432,9 +433,13 @@ def pull_books(options: PullBooksOptions) -> dict[str, Any]:
     books_cursor = None if options.reset else state.get("books", {}).get("cursor")
     progress_cursor = None if options.reset else state.get("progress", {}).get("cursor")
     try:
-        changed_books = [normalize_book(row) for row in fetch_books(database_url, books_cursor, options.limit)]
-        pages = [normalize_page(row) for row in fetch_pages(database_url)]
-        changed_progress = [normalize_progress(row) for row in fetch_progress(database_url, progress_cursor, options.limit)]
+        with ThreadPoolExecutor(max_workers=3, thread_name_prefix="42go-pull-lingocafe") as executor:
+            books_future = executor.submit(fetch_books, database_url, books_cursor, options.limit)
+            pages_future = executor.submit(fetch_pages, database_url)
+            progress_future = executor.submit(fetch_progress, database_url, progress_cursor, options.limit)
+            changed_books = [normalize_book(row) for row in books_future.result()]
+            pages = [normalize_page(row) for row in pages_future.result()]
+            changed_progress = [normalize_progress(row) for row in progress_future.result()]
     except Exception as error:
         raise RuntimeError(f"Failed to pull LingoCafe book data from configured database: {error}") from error
 
@@ -552,7 +557,7 @@ def load_book_stats(
 ) -> BookStatsResult:
     paths = resolve_book_data_paths(data_dir, app_id=app_id)
     if not paths.books_path.exists() or not paths.pages_path.exists():
-        raise RuntimeError(f"Book Parquet files are missing under {paths.root}. Run `42go pull books` first.")
+        raise RuntimeError(f"Book Parquet files are missing under {paths.root}. Run `42go pull lingocafe` first.")
     root = stats_root or DEFAULT_STATS_ROOT
     duckdb = import_duckdb()
     with duckdb.connect(":memory:") as connection:

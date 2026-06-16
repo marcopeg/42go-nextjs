@@ -38,7 +38,7 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
   - `42go pull`
   - `42go pull auth`
   - `42go pull events`
-  - `42go pull books`
+  - `42go pull lingocafe`
   - `42go pull all`
   - `42go pull '*'` as the literal star alias for all data.
   - Load `references/events-archive.md`.
@@ -102,7 +102,7 @@ Agents should navigate commands with:
 42go pull --help
 42go pull auth --help
 42go pull events --help
-42go pull books --help
+42go pull lingocafe --help
 42go pull all --help
 42go pull '*' --help
 42go query --help

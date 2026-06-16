@@ -77,7 +77,7 @@ def update(
     ] = DEFAULT_LIMIT,
     database_url_env: Annotated[
         str,
-        typer.Option("--database-url-env", help="Environment variable or .env key for auth and book/page metadata pulls. Defaults to BACKUP_DATABASE_URL."),
+        typer.Option("--database-url-env", help="Environment variable or .env key for auth and LingoCafe metadata pulls. Defaults to BACKUP_DATABASE_URL."),
     ] = "BACKUP_DATABASE_URL",
     reset: Annotated[
         bool,
@@ -95,7 +95,7 @@ def update(
         raise typer.Exit(1) from error
     auth_result = pull_result["auth"]
     events_result = pull_result["events"]
-    books_pull_result = pull_result["books"]
+    lingocafe_pull_result = pull_result["lingocafe"]
     typer.echo(
         "pull auth: "
         f"users={auth_result.get('users_changed', 0)}/{auth_result.get('users_total', 0)} "
@@ -103,10 +103,10 @@ def update(
     )
     typer.echo(f"pull events: {events_result.get('rows', 0)} rows")
     typer.echo(
-        "pull books: "
-        f"books={books_pull_result.get('books_changed', 0)}/{books_pull_result.get('books_total', 0)} "
-        f"pages={books_pull_result.get('pages_total', 0)} "
-        f"progress={books_pull_result.get('progress_changed', 0)}/{books_pull_result.get('progress_total', 0)}"
+        "pull lingocafe: "
+        f"books={lingocafe_pull_result.get('books_changed', 0)}/{lingocafe_pull_result.get('books_total', 0)} "
+        f"pages={lingocafe_pull_result.get('pages_total', 0)} "
+        f"progress={lingocafe_pull_result.get('progress_changed', 0)}/{lingocafe_pull_result.get('progress_total', 0)}"
     )
 
     try:

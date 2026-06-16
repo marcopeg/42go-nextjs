@@ -30,6 +30,10 @@ Invoking `42go query` without a subcommand opens an interactive menu. If the sel
 5. `42go query lingocafe reads`
 6. `42go query lingocafe subscribers`
 
+The `42go pull all` step runs raw pull targets in parallel. State files remain target-scoped under `.local/42go-data/auth/_state.json`, `.local/42go-data/events/_state.json`, and `.local/42go-data/lingocafe/_state.json`. Auth and LingoCafe also parallelize independent database reads internally, then write target state once. Events merge distinct monthly Parquet files in parallel, then write state once.
+
+`42go pull all` prints a readable source summary instead of raw JSON. The blocks are grouped under `auth`, `events`, and `lingocafe`; sub-blocks use table names such as `users`, `accounts`, changed `events_YYYYMM` partitions, `books`, `books_pages`, and `books_progress`. It omits raw Parquet and state paths.
+
 The final update output includes the latest LingoCafe headline totals:
 
 - total users
@@ -41,7 +45,7 @@ Options:
 
 - `--data-dir`: raw data root for pulls and event/book inputs, default `.local/42go-data`.
 - `--limit`: maximum rows to pull per progressive source query.
-- `--database-url-env`: env or `.env` key for auth and book pulls, default `BACKUP_DATABASE_URL`.
+- `--database-url-env`: env or `.env` key for auth and LingoCafe pulls, default `BACKUP_DATABASE_URL`.
 - `--reset`: delete selected raw Parquet files and aggregate caches before rebuilding.
 
 ## High-Level Stats
@@ -126,7 +130,7 @@ Cache files:
 ## Books
 
 ```bash
-42go pull books
+42go pull lingocafe
 42go query lingocafe books
 42go query lingocafe books --format json
 ```
