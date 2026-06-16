@@ -1,11 +1,12 @@
 # 42Go Parquet Files
 
-This reference explains the local Parquet contract used by `42go pull`, `42go peek`, and `42go update`.
+This reference explains the local Parquet contract used by `42go pull`, `42go query`, `42go peek`, and `42go update`.
 
 ## Roots
 
 - Raw pulled data: `.local/42go-data/`
 - Raw rows that mirror a source table use `.local/42go-data/{schema}/{table}.parquet`.
+- Query aggregates: `.local/42go-query/`
 
 Use `42go peek` to inspect raw Parquet files from the terminal. `42go peek` opens an interactive folder/file chooser, `42go peek auth` opens a file chooser inside `.local/42go-data/auth`, and complete commands such as `42go peek auth users` or `42go peek .local/42go-data/auth/users.parquet` stream rows through `more` as a terminal-width table. Use repeatable filters like `-f app_id=lingocafe`; `%` is a wildcard, so `-f email=%@gmail.com` matches Gmail addresses. Use `-rmc app_id,image` to hide columns from the result table.
 
@@ -83,6 +84,23 @@ Stores progressive cursors for LingoCafe book and progress pulls, plus row count
 
 Useful for the CLI pull process. Visualization usually reads the three LingoCafe raw Parquet files instead.
 
-## Historical Aggregates
+## Query Aggregates
 
-The old `.local/42go-stats` aggregation files and `42go query` command implementation were removed. Future aggregations should be rebuilt from the raw `.local/42go-data` Parquet files.
+Query aggregates are rebuilt from the raw `.local/42go-data` Parquet files and written under `.local/42go-query/`.
+
+### `.local/42go-query/sessions.parquet`
+
+Command: `42go query sessions`
+
+Stores one row per event session. Sessions are grouped by `app_id` and `user_id`, ordered by `event_at`, and split when the gap between adjacent events is greater than `--duration` minutes. The default duration is 20 minutes.
+
+Columns:
+
+- `session_id`: first event id in the session.
+- `app_id`
+- `user_id`
+- `started_at`
+- `ended_at`
+- `duration_seconds`
+- `event_count`
+- `event_ids`: list of event ids in the session.

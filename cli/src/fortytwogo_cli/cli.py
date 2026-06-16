@@ -11,6 +11,7 @@ from fortytwogo_cli.events.paths import DEFAULT_DATA_DIR
 from fortytwogo_cli.events.pull import DEFAULT_LIMIT
 from fortytwogo_cli.peek import peek
 from fortytwogo_cli.pull.cli import pull_app, run_all_pulls
+from fortytwogo_cli.query.cli import query_app
 
 
 app = typer.Typer(
@@ -19,6 +20,7 @@ app = typer.Typer(
     no_args_is_help=False,
 )
 app.add_typer(pull_app, name="pull", help="Pull raw source data.")
+app.add_typer(query_app, name="query", help="Run local analytical aggregations.")
 app.command(help="Create a data-only SQL backup.")(backup)
 app.command(help="Restore a data-only SQL backup into a migrated database.")(restore)
 app.command(

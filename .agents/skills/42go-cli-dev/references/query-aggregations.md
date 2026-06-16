@@ -70,9 +70,7 @@ The `.local/42go-query/` directory is the canonical aggregate output root. Do no
 Sessions:
 
 ```text
-sessions--sessions.parquet
-sessions--events.parquet
-sessions--state.parquet
+sessions.parquet
 ```
 
 Users growth:
@@ -113,13 +111,17 @@ lingocafe-subscribers--state.parquet
 
 ## Session Query
 
-- Module: `events/sessions.py`
-- Schema version: `SESSION_SCHEMA_VERSION`
-- Gap: `SESSION_GAP_SECONDS = 3600`
+- Command: `42go query sessions`
+- Module: `query/sessions.py`
+- Output: `.local/42go-query/sessions.parquet`
+- Gap parameter: `--duration` in minutes.
+- Default gap: `20` minutes.
 - Grouping: app, user.
 - Include all event names.
 - Ignore rows without `user_id` or `event_at`.
 - Session id is first event id.
+- Rebuild from all raw event Parquet files on every run and overwrite the sessions output file.
+- Required output columns: `session_id`, `app_id`, `user_id`, `started_at`, `ended_at`, `duration_seconds`, `event_count`, and `event_ids`.
 
 ## Users Growth Query
 
@@ -160,7 +162,7 @@ lingocafe-subscribers--state.parquet
 - App scope: `app_id = lingocafe`.
 - Subscriber filter: latest `mkt` value is `true`, combining `auth.users.consent` with `user.consent.created` and `user.consent.updated` events.
 - Profile fields: `ownLang`, `targetLang`, and `targetLevel`.
-- Activity fields: latest computed session from `.local/42go-query/sessions--sessions.parquet`; 7/30-day flags are relative to the newest computed session timestamp.
+- Activity fields: latest computed session from `.local/42go-query/sessions.parquet`; 7/30-day flags are relative to the newest computed session timestamp.
 - Read totals: computed from `.local/42go-query/lingocafe-reads--book-completion.parquet`.
 
 ## Migration History

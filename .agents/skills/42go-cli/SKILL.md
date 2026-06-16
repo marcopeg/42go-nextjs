@@ -12,12 +12,13 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
 - Keep the console command `42go`.
 - Use command help as the source of truth before running a command: `42go --help`, then subcommand `--help`.
 - `42go pull` is for raw source data extraction.
-- `42go query` is intentionally not available. Historical aggregation notes are retained in `references/query-analytics.md` for a future rebuild.
+- `42go query` is for local analytical aggregations from pulled Parquet files.
 - No-arg command groups such as `42go pull` open interactive menus.
 - Do not use `42go events` or `42go users`; those roots were removed.
 - Raw pulled data lives under `.local/42go-data/`.
 - Raw pulled rows that mirror a source table use `.local/42go-data/{schema}/{table}.parquet`.
-- Do not commit `.local/42go-data`, `.local/42go-stats`, or `.local/42go-backups`.
+- Query aggregate data lives under `.local/42go-query/`.
+- Do not commit `.local/42go-data`, `.local/42go-query`, `.local/42go-stats`, or `.local/42go-backups`.
 - If changing CLI implementation, also use the `42go-cli-dev` skill.
 
 ## Capability Index
@@ -48,8 +49,11 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
   - `42go peek .local/42go-data/auth/users.parquet`
   - Raw pull files under `.local/42go-data`.
   - Load `references/parquet-files.md`.
-- Historical local analytics design:
-  - `42go query` is not currently supported.
+- Local analytics:
+  - `42go query`
+  - `42go query sessions`
+  - `42go query sessions --duration 20`
+  - `42go query all`
   - Load `references/query-analytics.md`.
 - Event logging expectations:
   - New application events should flow through the shared core events system and be consumable by `42go pull events`.
@@ -94,6 +98,9 @@ Agents should navigate commands with:
 42go pull lingocafe --help
 42go pull all --help
 42go pull '*' --help
+42go query --help
+42go query sessions --help
+42go query all --help
 42go backup --help
 42go restore --help
 ```

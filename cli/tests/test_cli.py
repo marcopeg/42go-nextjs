@@ -10,6 +10,7 @@ from fortytwogo_cli.backup.cli import format_restore_backup_table
 from fortytwogo_cli import cli as cli_module
 from fortytwogo_cli.cli import app
 from fortytwogo_cli.pull import cli as pull_cli_module
+from fortytwogo_cli.query import cli as query_cli_module
 
 
 runner = CliRunner()
@@ -85,10 +86,54 @@ def test_users_root_is_removed() -> None:
     assert result.exit_code != 0
 
 
-def test_query_root_is_removed() -> None:
+def test_query_help_lists_commands() -> None:
     result = runner.invoke(app, ["query", "--help"])
 
-    assert result.exit_code != 0
+    assert result.exit_code == 0
+    assert "sessions" in result.output
+    assert "all" in result.output
+
+
+def test_query_sessions_help_describes_duration() -> None:
+    result = runner.invoke(app, ["query", "sessions", "--help"])
+
+    assert result.exit_code == 0
+    assert "--duration" in result.output
+    assert "--data-dir" in result.output
+    assert "--query-dir" in result.output
+
+
+def test_query_without_target_prompts_and_runs_selection(monkeypatch) -> None:
+    calls: list[tuple[Path | None, Path | None, int]] = []
+
+    def fake_run_sessions_query(data_dir: Path | None, query_dir: Path | None, duration: int) -> dict[str, object]:
+        calls.append((data_dir, query_dir, duration))
+        return {"sessions": 2}
+
+    monkeypatch.setattr(query_cli_module, "run_sessions_query", fake_run_sessions_query)
+
+    result = runner.invoke(app, ["query", "--duration", "9"], input="1\n")
+
+    assert result.exit_code == 0
+    assert calls == [(None, None, 9)]
+    assert "Choose query target" in result.output
+    assert '"sessions": 2' in result.output
+
+
+def test_query_all_dispatches_sessions(monkeypatch) -> None:
+    calls: list[tuple[Path | None, Path | None, int]] = []
+
+    def fake_run_sessions_query(data_dir: Path | None, query_dir: Path | None, duration: int) -> dict[str, object]:
+        calls.append((data_dir, query_dir, duration))
+        return {"sessions": 3}
+
+    monkeypatch.setattr(query_cli_module, "run_sessions_query", fake_run_sessions_query)
+
+    result = runner.invoke(app, ["query", "all", "--duration", "12"])
+
+    assert result.exit_code == 0
+    assert calls == [(None, None, 12)]
+    assert '"sessions": 3' in result.output
 
 
 def test_pull_help_lists_commands() -> None:

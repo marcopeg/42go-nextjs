@@ -29,11 +29,12 @@ pipx uninstall 42go-cli
 - `42go --version`
 - `42go update`
 - `42go pull`
+- `42go query`
 - `42go peek`
 - `42go backup`
 - `42go restore`
 
-`42go events`, `42go users`, and `42go query` are intentionally not available.
+`42go events` and `42go users` are intentionally not available.
 
 ## Troubleshooting
 

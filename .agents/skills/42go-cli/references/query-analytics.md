@@ -1,20 +1,17 @@
 # 42Go Query Analytics
 
-Use this reference as historical design knowledge for local analytics built from pulled Parquet files.
+Use this reference for local analytics built from pulled Parquet files.
 
-`42go query` is not currently available as a public CLI command. Do not run or recommend it until the analytics command surface is rebuilt.
-
-The notes below describe the previous command shape and cache layout.
+`42go query` is available as the public CLI command family for local aggregate Parquet files. Some sections below still describe planned or historical aggregates, but the sessions command is active.
 
 ## Boundary
 
 - `42go pull ...` extracts raw source rows into `.local/42go-data`.
 - Raw pulled data is never filtered by app ID.
-- Previous `42go query ...` commands built or read local analytics from cached Parquet data.
-- Previous derived aggregate files were app-scoped under `.local/42go-stats/{app-id}/`.
-- Previous LingoCafe aggregate files used filenames that mirrored the command chain, such as `query_lingocafe_books_pages.parquet` and `query_lingocafe_reads_pages.parquet`.
-- `--app-id`, `--user-id`, `--book-id`, and `--limit` filter visible output unless command help says otherwise.
-- `--reset` rebuilds local aggregate caches from available local data and removes legacy `events_query_*` files.
+- `42go query ...` commands build local analytics from cached Parquet data.
+- Derived aggregate files live under `.local/42go-query/`.
+- Aggregate filenames mirror the command chain. Example: `42go query sessions` writes `.local/42go-query/sessions.parquet`.
+- Multi-output aggregate filenames append a meaningful suffix after `--`.
 
 ## Full Refresh Shortcut
 
@@ -23,14 +20,15 @@ The notes below describe the previous command shape and cache layout.
 42go update --reset
 ```
 
-Previously, `42go update` ran this aggregation pipeline:
+Current query refresh:
 
-1. `42go pull all`
-2. `42go query lingocafe books`
-3. `42go query session`
-4. `42go query users growth`
-5. `42go query lingocafe reads`
-6. `42go query lingocafe subscribers`
+```bash
+42go query all
+```
+
+`42go query all` runs all available aggregate commands in dependency order. Today that means:
+
+1. `42go query sessions`
 
 The `42go pull all` step runs raw pull targets in parallel. State files remain target-scoped under `.local/42go-data/auth/_state.json`, `.local/42go-data/events/_state.json`, and `.local/42go-data/lingocafe/_state.json`. Auth and LingoCafe also parallelize independent database reads internally, then write target state once. Events merge distinct monthly Parquet files in parallel, then write state once.
 
@@ -70,10 +68,8 @@ Reads local monthly event Parquet files and prints archive/product stats:
 ## Sessions
 
 ```bash
-42go query session
-42go query session --app-id lingocafe --user-id <id> --limit 100
-42go query session --format json
-42go query session --reset
+42go query sessions
+42go query sessions --duration 20
 ```
 
 Rules:
@@ -82,20 +78,28 @@ Rules:
 - Grouping: `app_id`, then `user_id`.
 - Included events: every event name for the same user.
 - Ignored rows: missing `user_id` or `event_at`.
-- Split rule: gap greater than one hour starts a new session; exactly one hour stays in the session.
+- Split rule: gap greater than `--duration` minutes starts a new session; exactly the duration stays in the session.
+- Default duration: 20 minutes.
 - Session id: first event id in the session.
-- Duration: seconds in JSON, human-readable in text output.
-- Text output: summaries only, newest sessions first.
-- JSON output: returned sessions include full `events[]`.
-- Default visible limit: 20 sessions per app.
+- Duration column: `duration_seconds`.
+- Every run rebuilds the whole sessions output from raw event Parquet and overwrites the previous output file.
 
-Cache files:
+Output file:
 
 ```text
-.local/42go-stats/{app-id}/query_session_sessions.parquet
-.local/42go-stats/{app-id}/query_session_events.parquet
-.local/42go-stats/{app-id}/query_session_state.parquet
+.local/42go-query/sessions.parquet
 ```
+
+Columns:
+
+- `session_id`
+- `app_id`
+- `user_id`
+- `started_at`
+- `ended_at`
+- `duration_seconds`
+- `event_count`
+- `event_ids`
 
 ## Users Growth
 
