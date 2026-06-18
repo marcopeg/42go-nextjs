@@ -74,6 +74,11 @@ The following must print useful help:
 42go pull '*' --help
 42go query --help
 42go query users --help
+42go query lingocafe --help
+42go query lingocafe users --help
+42go query lingocafe growth --help
+42go query lingocafe reads --help
+42go query lingocafe all --help
 42go query all --help
 42go backup --help
 42go restore --help

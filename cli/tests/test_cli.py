@@ -92,6 +92,7 @@ def test_query_help_lists_commands() -> None:
     assert result.exit_code == 0
     assert "sessions" in result.output
     assert "users" in result.output
+    assert "lingocafe" in result.output
     assert "all" in result.output
 
 
@@ -110,6 +111,49 @@ def test_query_users_help_describes_active_session_thresholds() -> None:
     assert result.exit_code == 0
     assert "--min-session-length" in result.output
     assert "--min-session-events" in result.output
+    assert "--data-dir" in result.output
+    assert "--query-dir" in result.output
+
+
+def test_query_lingocafe_help_lists_subcommands() -> None:
+    result = runner.invoke(app, ["query", "lingocafe", "--help"])
+
+    assert result.exit_code == 0
+    assert "users" in result.output
+    assert "growth" in result.output
+    assert "reads" in result.output
+    assert "all" in result.output
+
+
+def test_query_lingocafe_users_help_describes_output_root() -> None:
+    result = runner.invoke(app, ["query", "lingocafe", "users", "--help"])
+
+    assert result.exit_code == 0
+    assert "--query-dir" in result.output
+
+
+def test_query_lingocafe_growth_help_describes_data_roots() -> None:
+    result = runner.invoke(app, ["query", "lingocafe", "growth", "--help"])
+
+    assert result.exit_code == 0
+    assert "--data-dir" in result.output
+    assert "--query-dir" in result.output
+
+
+def test_query_lingocafe_reads_help_describes_bps_and_data_roots() -> None:
+    result = runner.invoke(app, ["query", "lingocafe", "reads", "--help"])
+
+    assert result.exit_code == 0
+    assert "--bps" in result.output
+    assert "--data-dir" in result.output
+    assert "--query-dir" in result.output
+
+
+def test_query_lingocafe_all_help_describes_data_roots() -> None:
+    result = runner.invoke(app, ["query", "lingocafe", "all", "--help"])
+
+    assert result.exit_code == 0
+    assert "--bps" in result.output
     assert "--data-dir" in result.output
     assert "--query-dir" in result.output
 
@@ -147,8 +191,23 @@ def test_query_all_dispatches_sessions_then_users(monkeypatch) -> None:
         calls.append(f"users:{min_session_length}:{min_session_events}")
         return {"users": 2}
 
+    def fake_run_lingocafe_users_query(query_dir: Path | None) -> dict[str, object]:
+        calls.append("lingocafe-users")
+        return {"users": 1}
+
+    def fake_run_lingocafe_growth_query(data_dir: Path | None, query_dir: Path | None) -> dict[str, object]:
+        calls.append("lingocafe-growth")
+        return {"rows": 4}
+
+    def fake_run_lingocafe_reads_query(data_dir: Path | None, query_dir: Path | None, bps: int) -> dict[str, object]:
+        calls.append(f"lingocafe-reads:{bps}")
+        return {"rows": 6}
+
     monkeypatch.setattr(query_cli_module, "run_sessions_query", fake_run_sessions_query)
     monkeypatch.setattr(query_cli_module, "run_users_query", fake_run_users_query)
+    monkeypatch.setattr(query_cli_module, "run_lingocafe_users_query", fake_run_lingocafe_users_query)
+    monkeypatch.setattr(query_cli_module, "run_lingocafe_growth_query", fake_run_lingocafe_growth_query)
+    monkeypatch.setattr(query_cli_module, "run_lingocafe_reads_query", fake_run_lingocafe_reads_query)
 
     result = runner.invoke(
         app,
@@ -161,13 +220,111 @@ def test_query_all_dispatches_sessions_then_users(monkeypatch) -> None:
             "75",
             "--min-session-events",
             "5",
+            "--bps",
+            "9000",
         ],
     )
 
     assert result.exit_code == 0
-    assert calls == ["sessions:12", "users:75:5"]
+    assert calls == ["sessions:12", "users:75:5", "lingocafe-users", "lingocafe-growth", "lingocafe-reads:9000"]
     assert '"sessions": 3' in result.output
     assert '"users": 2' in result.output
+    assert '"lingocafe"' in result.output
+
+
+def test_query_lingocafe_without_target_prompts_and_runs_selection(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def fake_run_lingocafe_users_query(query_dir: Path | None) -> dict[str, object]:
+        calls.append("users")
+        return {"users": 1}
+
+    monkeypatch.setattr(query_cli_module, "run_lingocafe_users_query", fake_run_lingocafe_users_query)
+
+    result = runner.invoke(app, ["query", "lingocafe"], input="1\n")
+
+    assert result.exit_code == 0
+    assert calls == ["users"]
+    assert "Choose LingoCafe query target" in result.output
+    assert '"users": 1' in result.output
+
+
+def test_query_lingocafe_prompt_runs_growth_selection(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def fake_run_lingocafe_growth_query(data_dir: Path | None, query_dir: Path | None) -> dict[str, object]:
+        calls.append("growth")
+        return {"rows": 5}
+
+    monkeypatch.setattr(query_cli_module, "run_lingocafe_growth_query", fake_run_lingocafe_growth_query)
+
+    result = runner.invoke(app, ["query", "lingocafe"], input="2\n")
+
+    assert result.exit_code == 0
+    assert calls == ["growth"]
+    assert "Choose LingoCafe query target" in result.output
+    assert '"rows": 5' in result.output
+
+
+def test_query_lingocafe_prompt_runs_reads_selection(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def fake_run_lingocafe_reads_query(data_dir: Path | None, query_dir: Path | None, bps: int) -> dict[str, object]:
+        calls.append(f"reads:{bps}")
+        return {"rows": 6}
+
+    monkeypatch.setattr(query_cli_module, "run_lingocafe_reads_query", fake_run_lingocafe_reads_query)
+
+    result = runner.invoke(app, ["query", "lingocafe", "--bps", "9001"], input="3\n")
+
+    assert result.exit_code == 0
+    assert calls == ["reads:9001"]
+    assert "Choose LingoCafe query target" in result.output
+    assert '"rows": 6' in result.output
+
+
+def test_query_lingocafe_all_dispatches_users_then_growth_then_reads(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def fake_run_lingocafe_users_query(query_dir: Path | None) -> dict[str, object]:
+        calls.append("users")
+        return {"users": 1}
+
+    def fake_run_lingocafe_growth_query(data_dir: Path | None, query_dir: Path | None) -> dict[str, object]:
+        calls.append("growth")
+        return {"rows": 5}
+
+    def fake_run_lingocafe_reads_query(data_dir: Path | None, query_dir: Path | None, bps: int) -> dict[str, object]:
+        calls.append(f"reads:{bps}")
+        return {"rows": 6}
+
+    monkeypatch.setattr(query_cli_module, "run_lingocafe_users_query", fake_run_lingocafe_users_query)
+    monkeypatch.setattr(query_cli_module, "run_lingocafe_growth_query", fake_run_lingocafe_growth_query)
+    monkeypatch.setattr(query_cli_module, "run_lingocafe_reads_query", fake_run_lingocafe_reads_query)
+
+    result = runner.invoke(app, ["query", "lingocafe", "all", "--bps", "9002"])
+
+    assert result.exit_code == 0
+    assert calls == ["users", "growth", "reads:9002"]
+    assert '"users": 1' in result.output
+    assert '"rows": 5' in result.output
+
+
+def test_query_lingocafe_prompt_runs_all_selection(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def fake_run_lingocafe_all_queries(data_dir: Path | None, query_dir: Path | None, bps: int) -> dict[str, object]:
+        calls.append(f"all:{bps}")
+        return {"users": {"users": 1}, "growth": {"rows": 5}, "reads": {"rows": 6}}
+
+    monkeypatch.setattr(query_cli_module, "run_lingocafe_all_queries", fake_run_lingocafe_all_queries)
+
+    result = runner.invoke(app, ["query", "lingocafe", "--bps", "9003"], input="4\n")
+
+    assert result.exit_code == 0
+    assert calls == ["all:9003"]
+    assert "Choose LingoCafe query target" in result.output
+    assert '"growth"' in result.output
 
 
 def test_pull_help_lists_commands() -> None:

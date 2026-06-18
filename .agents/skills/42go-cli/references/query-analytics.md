@@ -30,6 +30,9 @@ Current query refresh:
 
 1. `42go query sessions`
 2. `42go query users`
+3. `42go query lingocafe users`
+4. `42go query lingocafe growth`
+5. `42go query lingocafe reads`
 
 The `42go pull all` step runs raw pull targets in parallel. State files remain target-scoped under `.local/42go-data/auth/_state.json`, `.local/42go-data/events/_state.json`, and `.local/42go-data/lingocafe/_state.json`. Auth and LingoCafe also parallelize independent database reads internally, then write target state once. Events merge distinct monthly Parquet files in parallel, then write state once.
 
@@ -142,6 +145,120 @@ Session metric columns:
 - `session_min_seconds`
 - `session_max_seconds`
 
+## LingoCafe Users
+
+```bash
+42go query lingocafe users
+42go query lingocafe all
+```
+
+Rules:
+
+- Dependencies:
+  - `.local/42go-query/users.parquet`, created by `42go query users`.
+  - `.local/42go-query/sessions.parquet`, created by `42go query sessions`.
+- `42go query all` runs `sessions`, then general `users`, then `lingocafe users`, then `lingocafe growth`, then `lingocafe reads`.
+- `42go query lingocafe all` runs `lingocafe users`, then `lingocafe growth`, then `lingocafe reads`.
+- Reads the general users aggregate and keeps `app_id = lingocafe`.
+- Reads sessions for LingoCafe activity and session-length totals.
+- `is_subscriber` comes from `consent.mkt`, using the `value` from the latest evidence entry sorted by `changedAt`.
+- `own_lang`, `target_lang`, and `target_level` come from the user profile JSON.
+- Activity windows are relative to the newest LingoCafe session `ended_at` timestamp in `sessions.parquet`.
+- `session_length_avg` is calculated from the user's sessions inside the latest 30-day window.
+
+Output file:
+
+```text
+.local/42go-query/lingocafe-users.parquet
+```
+
+Columns:
+
+- `user_id`
+- `email`
+- `own_lang`
+- `target_lang`
+- `target_level`
+- `is_subscriber`
+- `is_active_7d`
+- `is_active_30d`
+- `last_session_at`
+- `total_sessions`
+- `session_length_total`
+- `session_length_avg`
+- `created_at`
+
+## LingoCafe Growth
+
+```bash
+42go query lingocafe growth
+42go query lingocafe all
+```
+
+Rules:
+
+- Dependencies:
+  - `.local/42go-query/users.parquet`, created by `42go query users`.
+  - `.local/42go-query/sessions.parquet`, created by `42go query sessions`.
+  - `.local/42go-data/events/events_YYYYMM.parquet`, created by `42go pull events`.
+- `42go query all` runs `sessions`, general `users`, `lingocafe users`, then `lingocafe growth`, then `lingocafe reads`.
+- `42go query lingocafe all` runs `lingocafe users`, then `lingocafe growth`, then `lingocafe reads`.
+- Output is one long table with `day + target_lang`.
+- `target_lang = all` is the all-language rollup row.
+- `target_lang = unknown` keeps missing profile evidence visible.
+- Days use `Europe/Rome` boundaries.
+- `total_users` counts LingoCafe users with `created_at <= day`.
+- `total_subscribers` reconstructs subscriber state from `user.consent.created` and `user.consent.updated` events. It reads `data.next.mkt[]`, sorts evidence by `changedAt`, and uses the latest `value` for the day.
+- Target-language state reconstructs from `user.profile.created` and `user.profile.updated` events using `data.next.targetLang`.
+- Active users are distinct users with sessions ending in the relevant window: same day, trailing 7 days, or trailing 30 days.
+
+Output file:
+
+```text
+.local/42go-query/lingocafe-growth.parquet
+```
+
+Columns:
+
+- `day`
+- `target_lang`
+- `total_users`
+- `total_subscribers`
+- `active_users_1d`
+- `active_users_7d`
+- `active_users_30d`
+
+## LingoCafe Reads
+
+```bash
+42go query lingocafe reads
+42go query lingocafe reads --bps 9876
+42go query lingocafe all
+```
+
+Rules:
+
+- Source: raw LingoCafe events named `page.open` and `page.scroll`.
+- Payload fields: `book_id`, `page_id`, and `progress_bps`.
+- `--bps` is the page-completion threshold on the 0-10000 scroll scale. Default: `8000`.
+- A user/page is `user_id + book_id + page_id`.
+- `user_pages_started` counts the first historical `page.open` or `page.scroll` for each user/page.
+- `user_pages_completed` counts the first historical event for each user/page whose `progress_bps` is at or above `--bps`.
+- Re-reading the same page later does not create a new started or completed count.
+- Days use `Europe/Rome` boundaries.
+
+Output file:
+
+```text
+.local/42go-query/lingocafe-reads.parquet
+```
+
+Columns:
+
+- `day`
+- `user_pages_started`
+- `user_pages_completed`
+
 ## Users Growth
 
 ```bash
@@ -204,67 +321,4 @@ Cache files:
 .local/42go-stats/lingocafe/query_lingocafe_books_pages.parquet
 .local/42go-stats/lingocafe/query_lingocafe_books_progress.parquet
 .local/42go-stats/lingocafe/query_lingocafe_books_state.parquet
-```
-
-## Reads
-
-```bash
-42go query lingocafe reads
-42go query lingocafe reads --book-id dracula-sv-a2 --limit 100
-42go query lingocafe reads --completion-threshold-bps 8000
-42go query lingocafe reads --format json
-42go query lingocafe reads --reset
-```
-
-Source facts:
-
-- Events: `.local/42go-data/events/events_YYYYMM.parquet`
-- Book/page catalog: `.local/42go-data/lingocafe/books_pages.parquet`
-
-Event fields:
-
-- Book identity: `data.book_id`
-- Page identity: `data.page_id`
-- Progress: `data.progress_bps`
-
-Book-related events:
-
-- `page.open`
-- `page.scroll`
-- `page.translate`
-- `book.info`
-- `read.settings.changed`
-- `read.settings.opened`
-- any row with `data.book_id`, `data.page_id`, or an event name containing `book`
-
-Page metrics:
-
-- Count `page.open` rows with `book_id` and `page_id`.
-- Granularities: all-time, day, week, month.
-
-Reader metrics:
-
-- Count distinct users from `page.open`, `page.scroll`, and `page.translate`.
-- Granularities: all-time, week, month, year.
-
-Completion metrics:
-
-- Default page completion threshold: `8000` BPS.
-- User-page progress is the max `progress_bps` for `book_id`, `page_id`, and `user_id`.
-- A page is completed when max progress is greater than or equal to threshold.
-- Book completion uses completed pages divided by total pages from `books_pages.parquet`.
-- Furthest-opened ratio uses max opened page position divided by total pages.
-- Funnel buckets: `0-20%`, `20-40%`, `40-60%`, `60-80%`, `80-100%`.
-
-Cache files:
-
-```text
-.local/42go-stats/lingocafe/query_lingocafe_reads_pages.parquet
-.local/42go-stats/lingocafe/query_lingocafe_reads_users.parquet
-.local/42go-stats/lingocafe/query_lingocafe_reads_summary.parquet
-.local/42go-stats/lingocafe/query_lingocafe_reads_event_names.parquet
-.local/42go-stats/lingocafe/query_lingocafe_reads_page_completion.parquet
-.local/42go-stats/lingocafe/query_lingocafe_reads_book_completion.parquet
-.local/42go-stats/lingocafe/query_lingocafe_reads_completion_funnel.parquet
-.local/42go-stats/lingocafe/query_lingocafe_reads_state.parquet
 ```

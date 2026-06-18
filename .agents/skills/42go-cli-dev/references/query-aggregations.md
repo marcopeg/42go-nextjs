@@ -80,6 +80,24 @@ Users:
 users.parquet
 ```
 
+LingoCafe users:
+
+```text
+lingocafe-users.parquet
+```
+
+LingoCafe growth:
+
+```text
+lingocafe-growth.parquet
+```
+
+LingoCafe reads:
+
+```text
+lingocafe-reads.parquet
+```
+
 Users growth:
 
 ```text
@@ -96,7 +114,7 @@ lingocafe-books--progress.parquet
 lingocafe-books--state.parquet
 ```
 
-Reads:
+Historical reads cache names:
 
 ```text
 lingocafe-reads--pages.parquet
@@ -151,6 +169,64 @@ lingocafe-subscribers--state.parquet
 - Required activity columns: `active_1d`, `active_7d`, and `active_30d`.
 - Required session duration columns: `session_avg_seconds`, `session_min_seconds`, and `session_max_seconds`.
 
+## LingoCafe Users Query
+
+- Command: `42go query lingocafe users`
+- Module: `query/lingocafe_users.py`
+- Output: `.local/42go-query/lingocafe-users.parquet`
+- Dependencies:
+  - `.local/42go-query/users.parquet`, produced by `42go query users`.
+  - `.local/42go-query/sessions.parquet`, produced by `42go query sessions`.
+- `42go query all` must run `sessions`, then `users`, then `lingocafe users`, then `lingocafe growth`, then `lingocafe reads`.
+- `42go query lingocafe all` must run `lingocafe users`, then `lingocafe growth`, then `lingocafe reads`.
+- User source: general users aggregate filtered to `app_id = lingocafe`.
+- Session source: sessions aggregate filtered to `app_id = lingocafe`.
+- Consent source: `consent.mkt`; pick the `value` from the latest evidence row sorted by `changedAt`.
+- Profile source fields: `profile.ownLang`, `profile.targetLang`, and `profile.targetLevel`.
+- Required output columns: `user_id`, `email`, `own_lang`, `target_lang`, `target_level`, `is_subscriber`, `is_active_7d`, `is_active_30d`, `last_session_at`, `total_sessions`, `session_length_total`, `session_length_avg`, and `created_at`.
+- `last_session_at`, active flags, and session length metrics come from `sessions.parquet`.
+- `session_length_avg` is the average session duration for the user over sessions in the latest 30-day window.
+
+## LingoCafe Growth Query
+
+- Command: `42go query lingocafe growth`
+- Module: `query/lingocafe_growth.py`
+- Output: `.local/42go-query/lingocafe-growth.parquet`
+- Dependencies:
+  - `.local/42go-query/users.parquet`, produced by `42go query users`.
+  - `.local/42go-query/sessions.parquet`, produced by `42go query sessions`.
+  - `.local/42go-data/events/events_YYYYMM.parquet`, produced by `42go pull events`.
+- `42go query all` must run `sessions`, then `users`, then `lingocafe users`, then `lingocafe growth`, then `lingocafe reads`.
+- `42go query lingocafe all` must run `lingocafe users`, then `lingocafe growth`, then `lingocafe reads`.
+- Table shape is one row per `day + target_lang`.
+- Use `target_lang = all` for all-language rows.
+- Use `target_lang = unknown` when no target-language evidence exists for the user on that day.
+- Bucket timezone: `Europe/Rome`.
+- User population is based on LingoCafe users from the general users aggregate and `created_at <= day`.
+- Subscriber state is rebuilt historically from `user.consent.created` and `user.consent.updated` event payloads by reading `data.next.mkt[]`, sorting evidence by `changedAt`, and taking the latest `value` at each day. Current `auth.users.consent` evidence may provide the same historical entries as a fallback.
+- Target-language state is rebuilt historically from `user.profile.created` and `user.profile.updated` event payloads by reading `data.next.targetLang` and applying the latest profile event at each day.
+- Active users are counted from `sessions.parquet` by session `ended_at` day. `active_users_1d` is the day itself, `active_users_7d` is the inclusive trailing 7-day window, and `active_users_30d` is the inclusive trailing 30-day window.
+- Required output columns: `day`, `target_lang`, `total_users`, `total_subscribers`, `active_users_1d`, `active_users_7d`, and `active_users_30d`.
+
+## LingoCafe Reads Query
+
+- Command: `42go query lingocafe reads`
+- Module: `query/lingocafe_reads.py`
+- Output: `.local/42go-query/lingocafe-reads.parquet`
+- Dependencies:
+  - `.local/42go-data/events/events_YYYYMM.parquet`, produced by `42go pull events`.
+- `42go query all` must run `sessions`, then `users`, then `lingocafe users`, then `lingocafe growth`, then `lingocafe reads`.
+- `42go query lingocafe all` must run `lingocafe users`, then `lingocafe growth`, then `lingocafe reads`.
+- Event source: LingoCafe raw events named `page.open` and `page.scroll`.
+- Payload fields: `data.book_id`, `data.page_id`, and `data.progress_bps`.
+- Bucket timezone: `Europe/Rome`.
+- `--bps` controls the completion threshold in the 0-10000 scroll-progress scale. Default: `8000`.
+- A user/page key is `user_id + book_id + page_id`.
+- `user_pages_started` counts the first historical `page.open` or `page.scroll` seen for each user/page key.
+- `user_pages_completed` counts the first historical event for each user/page key where `progress_bps` is at or above `--bps`.
+- Re-reads do not create new started or completed counts after the first historical start/completion for that user/page key.
+- Required output columns: `day`, `user_pages_started`, and `user_pages_completed`.
+
 ## Users Growth Query
 
 - Module: `events/users_growth.py`
@@ -191,7 +267,7 @@ lingocafe-subscribers--state.parquet
 - Subscriber filter: latest `mkt` value is `true`, combining `auth.users.consent` with `user.consent.created` and `user.consent.updated` events.
 - Profile fields: `ownLang`, `targetLang`, and `targetLevel`.
 - Activity fields: latest computed session from `.local/42go-query/sessions.parquet`; 7/30-day flags are relative to the newest computed session timestamp.
-- Read totals: computed from `.local/42go-query/lingocafe-reads--book-completion.parquet`.
+- Read totals: future subscriber read metrics should consume `.local/42go-query/lingocafe-reads.parquet` unless a later reads command intentionally adds documented multi-output files.
 
 ## Migration History
 

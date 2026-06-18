@@ -124,3 +124,55 @@ Session metric columns:
 - `session_avg_seconds`
 - `session_min_seconds`
 - `session_max_seconds`
+
+### `.local/42go-query/lingocafe-users.parquet`
+
+Command: `42go query lingocafe users`
+
+Depends on `.local/42go-query/users.parquet` and `.local/42go-query/sessions.parquet`. The output reads the general users aggregate, filters to `app_id = lingocafe`, extracts LingoCafe profile and marketing consent fields, and joins session activity from the sessions aggregate.
+
+Columns:
+
+- `user_id`
+- `email`
+- `own_lang`
+- `target_lang`
+- `target_level`
+- `is_subscriber`
+- `is_active_7d`
+- `is_active_30d`
+- `last_session_at`
+- `total_sessions`
+- `session_length_total`
+- `session_length_avg`
+- `created_at`
+
+### `.local/42go-query/lingocafe-growth.parquet`
+
+Command: `42go query lingocafe growth`
+
+Depends on `.local/42go-query/users.parquet`, `.local/42go-query/sessions.parquet`, and raw event files under `.local/42go-data/events/`. Stores one row per `day + target_lang` for line charts. `target_lang = all` is the all-language rollup. Subscriber state is rebuilt day by day from `user.consent.created` and `user.consent.updated` event evidence in `data.next.mkt[]`, using the latest `value` by `changedAt`. Target-language state is rebuilt from `user.profile.created` and `user.profile.updated` event payloads.
+
+Columns:
+
+- `day`
+- `target_lang`
+- `total_users`
+- `total_subscribers`
+- `active_users_1d`
+- `active_users_7d`
+- `active_users_30d`
+
+### `.local/42go-query/lingocafe-reads.parquet`
+
+Command: `42go query lingocafe reads`
+
+Depends on raw event files under `.local/42go-data/events/`. Stores one row per day for LingoCafe page-reading charts. It reads `page.open` and `page.scroll` events, using `data.book_id`, `data.page_id`, and `data.progress_bps`.
+
+The `--bps` option controls the completion threshold on the 0-10000 scroll-progress scale. Default: `8000`. A user/page is keyed by `user_id + book_id + page_id`. Starts and completions count only the first historical start or completion for that key, so re-reading does not inflate the series.
+
+Columns:
+
+- `day`
+- `user_pages_started`
+- `user_pages_completed`

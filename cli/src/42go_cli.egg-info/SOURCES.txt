@@ -20,6 +20,9 @@ src/fortytwogo_cli/pull/__init__.py
 src/fortytwogo_cli/pull/cli.py
 src/fortytwogo_cli/query/__init__.py
 src/fortytwogo_cli/query/cli.py
+src/fortytwogo_cli/query/lingocafe_growth.py
+src/fortytwogo_cli/query/lingocafe_reads.py
+src/fortytwogo_cli/query/lingocafe_users.py
 src/fortytwogo_cli/query/paths.py
 src/fortytwogo_cli/query/sessions.py
 src/fortytwogo_cli/query/users.py
@@ -30,6 +33,9 @@ tests/test_backup_core.py
 tests/test_books_pull.py
 tests/test_cli.py
 tests/test_events_pull.py
+tests/test_query_lingocafe_growth.py
+tests/test_query_lingocafe_reads.py
+tests/test_query_lingocafe_users.py
 tests/test_query_sessions.py
 tests/test_query_users.py
 tests/test_users_pull.py
