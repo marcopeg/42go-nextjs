@@ -113,7 +113,7 @@ Command: `42go query users`
 
 Depends on `.local/42go-query/sessions.parquet`. A row is keyed by unique `app_id` plus `user_id` from `.local/42go-data/auth/users.parquet`. Session-only identities are ignored unless they match an auth user. The output omits `password`.
 
-Activity flags are relative to the newest session `ended_at` timestamp in `sessions.parquet`.
+Activity flags are relative to the newest session `ended_at` timestamp in `sessions.parquet`. By default, active flags only count sessions with at least 60 seconds of duration and at least 4 events. Override with `42go query users --min-session-length <seconds> --min-session-events <count>`. Session duration metric columns still use all connected sessions.
 
 Session metric columns:
 

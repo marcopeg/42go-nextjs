@@ -9,7 +9,12 @@ import typer
 from fortytwogo_cli.events.paths import DEFAULT_DATA_DIR
 from fortytwogo_cli.query.paths import DEFAULT_QUERY_DIR
 from fortytwogo_cli.query.sessions import DEFAULT_SESSION_DURATION_MINUTES, QuerySessionsOptions, query_sessions
-from fortytwogo_cli.query.users import QueryUsersOptions, query_users
+from fortytwogo_cli.query.users import (
+    DEFAULT_MIN_SESSION_EVENTS,
+    DEFAULT_MIN_SESSION_LENGTH_SECONDS,
+    QueryUsersOptions,
+    query_users,
+)
 
 query_app = typer.Typer(
     help="Run local analytical aggregations.",
@@ -26,15 +31,33 @@ def run_sessions_query(data_dir: Path | None, query_dir: Path | None, duration: 
     return query_sessions(QuerySessionsOptions(data_dir=data_dir, query_dir=query_dir, duration=duration))
 
 
-def run_users_query(data_dir: Path | None, query_dir: Path | None) -> dict[str, Any]:
-    return query_users(QueryUsersOptions(data_dir=data_dir, query_dir=query_dir))
+def run_users_query(
+    data_dir: Path | None,
+    query_dir: Path | None,
+    min_session_length: int,
+    min_session_events: int,
+) -> dict[str, Any]:
+    return query_users(
+        QueryUsersOptions(
+            data_dir=data_dir,
+            query_dir=query_dir,
+            min_session_length=min_session_length,
+            min_session_events=min_session_events,
+        )
+    )
 
 
-def run_all_queries(data_dir: Path | None, query_dir: Path | None, duration: int) -> dict[str, Any]:
+def run_all_queries(
+    data_dir: Path | None,
+    query_dir: Path | None,
+    duration: int,
+    min_session_length: int,
+    min_session_events: int,
+) -> dict[str, Any]:
     sessions_result = run_sessions_query(data_dir, query_dir, duration)
     return {
         "sessions": sessions_result,
-        "users": run_users_query(data_dir, query_dir),
+        "users": run_users_query(data_dir, query_dir, min_session_length, min_session_events),
     }
 
 
@@ -64,6 +87,22 @@ def query_root(
         int,
         typer.Option("--duration", min=1, help=f"Session gap duration in minutes. Defaults to {DEFAULT_SESSION_DURATION_MINUTES}."),
     ] = DEFAULT_SESSION_DURATION_MINUTES,
+    min_session_length: Annotated[
+        int,
+        typer.Option(
+            "--min-session-length",
+            min=0,
+            help=f"Minimum session duration in seconds for active user flags. Defaults to {DEFAULT_MIN_SESSION_LENGTH_SECONDS}.",
+        ),
+    ] = DEFAULT_MIN_SESSION_LENGTH_SECONDS,
+    min_session_events: Annotated[
+        int,
+        typer.Option(
+            "--min-session-events",
+            min=1,
+            help=f"Minimum event count for active user flags. Defaults to {DEFAULT_MIN_SESSION_EVENTS}.",
+        ),
+    ] = DEFAULT_MIN_SESSION_EVENTS,
 ) -> None:
     """Prompt for a query target when no subcommand is provided."""
     if ctx.invoked_subcommand is not None:
@@ -78,9 +117,9 @@ def query_root(
         if choice == 1:
             print_json(run_sessions_query(data_dir, query_dir, duration))
         elif choice == 2:
-            print_json(run_users_query(data_dir, query_dir))
+            print_json(run_users_query(data_dir, query_dir, min_session_length, min_session_events))
         elif choice == 3:
-            print_json(run_all_queries(data_dir, query_dir, duration))
+            print_json(run_all_queries(data_dir, query_dir, duration, min_session_length, min_session_events))
         else:
             typer.echo("Selection must be 1, 2, or 3.", err=True)
             raise typer.Exit(1)
@@ -120,9 +159,25 @@ def users(
         Path | None,
         typer.Option("--query-dir", help=f"Local aggregate output root. Defaults to FORTYTWOGO_QUERY_DIR or {DEFAULT_QUERY_DIR}."),
     ] = None,
+    min_session_length: Annotated[
+        int,
+        typer.Option(
+            "--min-session-length",
+            min=0,
+            help=f"Minimum session duration in seconds for active user flags. Defaults to {DEFAULT_MIN_SESSION_LENGTH_SECONDS}.",
+        ),
+    ] = DEFAULT_MIN_SESSION_LENGTH_SECONDS,
+    min_session_events: Annotated[
+        int,
+        typer.Option(
+            "--min-session-events",
+            min=1,
+            help=f"Minimum event count for active user flags. Defaults to {DEFAULT_MIN_SESSION_EVENTS}.",
+        ),
+    ] = DEFAULT_MIN_SESSION_EVENTS,
 ) -> None:
     try:
-        print_json(run_users_query(data_dir, query_dir))
+        print_json(run_users_query(data_dir, query_dir, min_session_length, min_session_events))
     except RuntimeError as error:
         handle_query_error("users", error)
 
@@ -141,8 +196,24 @@ def all_queries(
         int,
         typer.Option("--duration", min=1, help=f"Session gap duration in minutes. Defaults to {DEFAULT_SESSION_DURATION_MINUTES}."),
     ] = DEFAULT_SESSION_DURATION_MINUTES,
+    min_session_length: Annotated[
+        int,
+        typer.Option(
+            "--min-session-length",
+            min=0,
+            help=f"Minimum session duration in seconds for active user flags. Defaults to {DEFAULT_MIN_SESSION_LENGTH_SECONDS}.",
+        ),
+    ] = DEFAULT_MIN_SESSION_LENGTH_SECONDS,
+    min_session_events: Annotated[
+        int,
+        typer.Option(
+            "--min-session-events",
+            min=1,
+            help=f"Minimum event count for active user flags. Defaults to {DEFAULT_MIN_SESSION_EVENTS}.",
+        ),
+    ] = DEFAULT_MIN_SESSION_EVENTS,
 ) -> None:
     try:
-        print_json(run_all_queries(data_dir, query_dir, duration))
+        print_json(run_all_queries(data_dir, query_dir, duration, min_session_length, min_session_events))
     except RuntimeError as error:
         handle_query_error("all", error)

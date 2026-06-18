@@ -104,6 +104,16 @@ def test_query_sessions_help_describes_duration() -> None:
     assert "--query-dir" in result.output
 
 
+def test_query_users_help_describes_active_session_thresholds() -> None:
+    result = runner.invoke(app, ["query", "users", "--help"])
+
+    assert result.exit_code == 0
+    assert "--min-session-length" in result.output
+    assert "--min-session-events" in result.output
+    assert "--data-dir" in result.output
+    assert "--query-dir" in result.output
+
+
 def test_query_without_target_prompts_and_runs_selection(monkeypatch) -> None:
     calls: list[tuple[str, Path | None, Path | None, int | None]] = []
 
@@ -128,17 +138,34 @@ def test_query_all_dispatches_sessions_then_users(monkeypatch) -> None:
         calls.append(f"sessions:{duration}")
         return {"sessions": 3}
 
-    def fake_run_users_query(data_dir: Path | None, query_dir: Path | None) -> dict[str, object]:
-        calls.append("users")
+    def fake_run_users_query(
+        data_dir: Path | None,
+        query_dir: Path | None,
+        min_session_length: int,
+        min_session_events: int,
+    ) -> dict[str, object]:
+        calls.append(f"users:{min_session_length}:{min_session_events}")
         return {"users": 2}
 
     monkeypatch.setattr(query_cli_module, "run_sessions_query", fake_run_sessions_query)
     monkeypatch.setattr(query_cli_module, "run_users_query", fake_run_users_query)
 
-    result = runner.invoke(app, ["query", "all", "--duration", "12"])
+    result = runner.invoke(
+        app,
+        [
+            "query",
+            "all",
+            "--duration",
+            "12",
+            "--min-session-length",
+            "75",
+            "--min-session-events",
+            "5",
+        ],
+    )
 
     assert result.exit_code == 0
-    assert calls == ["sessions:12", "users"]
+    assert calls == ["sessions:12", "users:75:5"]
     assert '"sessions": 3' in result.output
     assert '"users": 2' in result.output
 

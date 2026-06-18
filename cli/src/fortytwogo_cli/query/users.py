@@ -33,11 +33,16 @@ USER_OUTPUT_COLUMNS = [
     "session_max_seconds",
 ]
 
+DEFAULT_MIN_SESSION_LENGTH_SECONDS = 60
+DEFAULT_MIN_SESSION_EVENTS = 4
+
 
 @dataclass(frozen=True)
 class QueryUsersOptions:
     data_dir: Path | None = None
     query_dir: Path | None = None
+    min_session_length: int = DEFAULT_MIN_SESSION_LENGTH_SECONDS
+    min_session_events: int = DEFAULT_MIN_SESSION_EVENTS
 
 
 def normalize_auth_user(row: dict[str, Any]) -> dict[str, Any]:
@@ -72,6 +77,7 @@ def normalize_session(row: dict[str, Any]) -> dict[str, Any]:
         "user_id": str(row["user_id"]),
         "ended_at": parse_utc(row["ended_at"]),
         "duration_seconds": int(row["duration_seconds"]),
+        "event_count": int(row["event_count"]),
     }
 
 
@@ -90,7 +96,12 @@ def group_sessions(sessions: Iterable[dict[str, Any]]) -> dict[tuple[str, str], 
     return grouped
 
 
-def build_activity_metrics(sessions: list[dict[str, Any]], anchor: datetime | None) -> dict[str, Any]:
+def build_activity_metrics(
+    sessions: list[dict[str, Any]],
+    anchor: datetime | None,
+    min_session_length: int,
+    min_session_events: int,
+) -> dict[str, Any]:
     if not sessions or anchor is None:
         return {
             "active_1d": False,
@@ -103,10 +114,16 @@ def build_activity_metrics(sessions: list[dict[str, Any]], anchor: datetime | No
         }
 
     durations = [int(session["duration_seconds"]) for session in sessions]
+    active_sessions = [
+        session
+        for session in sessions
+        if int(session["duration_seconds"]) >= min_session_length
+        and int(session["event_count"]) >= min_session_events
+    ]
     return {
-        "active_1d": any(session["ended_at"] >= anchor - timedelta(days=1) for session in sessions),
-        "active_7d": any(session["ended_at"] >= anchor - timedelta(days=7) for session in sessions),
-        "active_30d": any(session["ended_at"] >= anchor - timedelta(days=30) for session in sessions),
+        "active_1d": any(session["ended_at"] >= anchor - timedelta(days=1) for session in active_sessions),
+        "active_7d": any(session["ended_at"] >= anchor - timedelta(days=7) for session in active_sessions),
+        "active_30d": any(session["ended_at"] >= anchor - timedelta(days=30) for session in active_sessions),
         "session_count": len(sessions),
         "session_avg_seconds": sum(durations) / len(durations),
         "session_min_seconds": min(durations),
@@ -114,7 +131,12 @@ def build_activity_metrics(sessions: list[dict[str, Any]], anchor: datetime | No
     }
 
 
-def merge_users_and_sessions(users: list[dict[str, Any]], sessions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def merge_users_and_sessions(
+    users: list[dict[str, Any]],
+    sessions: list[dict[str, Any]],
+    min_session_length: int,
+    min_session_events: int,
+) -> list[dict[str, Any]]:
     sessions_by_user = group_sessions(sessions)
     users_by_key = {(user["app_id"], user["user_id"]): user for user in users}
     anchor = max((session["ended_at"] for session in sessions), default=None)
@@ -122,7 +144,14 @@ def merge_users_and_sessions(users: list[dict[str, Any]], sessions: list[dict[st
     rows: list[dict[str, Any]] = []
     for app_id, user_id in sorted(users_by_key):
         base = users_by_key[(app_id, user_id)].copy()
-        base.update(build_activity_metrics(sessions_by_user.get((app_id, user_id), []), anchor))
+        base.update(
+            build_activity_metrics(
+                sessions_by_user.get((app_id, user_id), []),
+                anchor,
+                min_session_length,
+                min_session_events,
+            )
+        )
         rows.append(base)
     return rows
 
@@ -171,7 +200,12 @@ def smoke_read_users(path: Path, expected_rows: int) -> None:
 def query_users(options: QueryUsersOptions) -> dict[str, Any]:
     users = read_auth_users(options.data_dir)
     sessions = read_sessions(options.query_dir)
-    rows = merge_users_and_sessions(users, sessions)
+    rows = merge_users_and_sessions(
+        users,
+        sessions,
+        options.min_session_length,
+        options.min_session_events,
+    )
     output_path = query_output_path(["users"], options.query_dir)
     write_users(output_path, rows)
     smoke_read_users(output_path, len(rows))
@@ -179,5 +213,7 @@ def query_users(options: QueryUsersOptions) -> dict[str, Any]:
         "users": len(rows),
         "auth_users": len(users),
         "sessions": len(sessions),
+        "min_session_length": options.min_session_length,
+        "min_session_events": options.min_session_events,
         "parquet": str(output_path),
     }

@@ -48,6 +48,7 @@ def session_row(
     user_id: str = "u1",
     ended_at: str,
     duration_seconds: int,
+    event_count: int = 4,
 ) -> dict[str, Any]:
     end = dt(ended_at)
     return {
@@ -57,7 +58,7 @@ def session_row(
         "started_at": end,
         "ended_at": end,
         "duration_seconds": duration_seconds,
-        "event_count": 1,
+        "event_count": event_count,
         "event_ids": [session_id],
     }
 
@@ -90,6 +91,8 @@ def test_query_users_joins_auth_users_with_sessions_and_omits_password(tmp_path:
         "users": 2,
         "auth_users": 2,
         "sessions": 3,
+        "min_session_length": 60,
+        "min_session_events": 4,
         "parquet": str(query_dir / "users.parquet"),
     }
     assert "password" not in rows[0]
@@ -130,6 +133,91 @@ def test_query_users_ignores_session_only_users(tmp_path: Path) -> None:
     assert rows[0]["app_id"] == "lingocafe"
     assert rows[0]["user_id"] == "u1"
     assert rows[0]["session_count"] == 1
+
+
+def test_query_users_filters_active_flags_by_session_length_and_event_count(tmp_path: Path) -> None:
+    data_dir = tmp_path / "42go-data"
+    query_dir = tmp_path / "42go-query"
+    write_parquet(
+        data_dir / "auth" / "users.parquet",
+        [
+            user_row("u1"),
+        ],
+    )
+    write_parquet(
+        query_dir / "sessions.parquet",
+        [
+            session_row(
+                "short",
+                user_id="u1",
+                ended_at="2026-06-16T12:00:00Z",
+                duration_seconds=59,
+                event_count=10,
+            ),
+            session_row(
+                "too-few-events",
+                user_id="u1",
+                ended_at="2026-06-16T11:00:00Z",
+                duration_seconds=120,
+                event_count=3,
+            ),
+            session_row(
+                "qualified",
+                user_id="u1",
+                ended_at="2026-06-08T12:00:00Z",
+                duration_seconds=120,
+                event_count=4,
+            ),
+        ],
+    )
+
+    result = query_users(QueryUsersOptions(data_dir=data_dir, query_dir=query_dir))
+    rows = read_rows(query_dir / "users.parquet")
+    user = rows[0]
+
+    assert result["min_session_length"] == 60
+    assert result["min_session_events"] == 4
+    assert user["active_1d"] is False
+    assert user["active_7d"] is False
+    assert user["active_30d"] is True
+    assert user["session_count"] == 3
+    assert user["session_min_seconds"] == 59
+    assert user["session_max_seconds"] == 120
+
+
+def test_query_users_accepts_custom_active_session_thresholds(tmp_path: Path) -> None:
+    data_dir = tmp_path / "42go-data"
+    query_dir = tmp_path / "42go-query"
+    write_parquet(
+        data_dir / "auth" / "users.parquet",
+        [
+            user_row("u1"),
+        ],
+    )
+    write_parquet(
+        query_dir / "sessions.parquet",
+        [
+            session_row(
+                "short",
+                user_id="u1",
+                ended_at="2026-06-16T12:00:00Z",
+                duration_seconds=30,
+                event_count=2,
+            ),
+        ],
+    )
+
+    query_users(
+        QueryUsersOptions(
+            data_dir=data_dir,
+            query_dir=query_dir,
+            min_session_length=30,
+            min_session_events=2,
+        )
+    )
+    rows = read_rows(query_dir / "users.parquet")
+
+    assert rows[0]["active_1d"] is True
 
 
 def test_query_users_requires_sessions_parquet(tmp_path: Path) -> None:

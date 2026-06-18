@@ -144,6 +144,10 @@ lingocafe-subscribers--state.parquet
 - Do not create extra rows for session-only identities found in `sessions.parquet`.
 - Never include a `password` column.
 - Activity windows are relative to the newest `ended_at` timestamp in `sessions.parquet`.
+- Active flags only consider sessions that meet both thresholds:
+  - `--min-session-length` duration in seconds, default `60`.
+  - `--min-session-events` event count, default `4`.
+- The active-session thresholds do not filter the session duration summary columns; those metrics use all connected sessions.
 - Required activity columns: `active_1d`, `active_7d`, and `active_30d`.
 - Required session duration columns: `session_avg_seconds`, `session_min_seconds`, and `session_max_seconds`.
 

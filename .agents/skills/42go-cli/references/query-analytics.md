@@ -109,6 +109,7 @@ Columns:
 
 ```bash
 42go query users
+42go query users --min-session-length 60 --min-session-events 4
 ```
 
 Rules:
@@ -120,6 +121,10 @@ Rules:
 - Session-only identities are ignored; they only contribute when their `app_id` plus `user_id` matches an auth user.
 - The output never includes `password`.
 - Activity windows are relative to the newest session `ended_at` timestamp in `sessions.parquet`.
+- Active flags only consider sessions that meet both thresholds:
+  - `--min-session-length`: minimum session duration in seconds, default `60`.
+  - `--min-session-events`: minimum event count in the session, default `4`.
+- Session duration metrics still use all connected sessions.
 
 Output file:
 
