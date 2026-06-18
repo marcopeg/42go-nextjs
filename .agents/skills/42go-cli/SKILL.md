@@ -13,11 +13,13 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
 - Use command help as the source of truth before running a command: `42go --help`, then subcommand `--help`.
 - `42go pull` is for raw source data extraction.
 - `42go query` is for local analytical aggregations from pulled Parquet files.
+- `42go email` is for local email automations that operate from pulled/query Parquet files.
 - No-arg command groups such as `42go pull` open interactive menus.
 - Do not use `42go events` or `42go users`; those roots were removed.
 - Raw pulled data lives under `.local/42go-data/`.
 - Raw pulled rows that mirror a source table use `.local/42go-data/{schema}/{table}.parquet`.
 - Query aggregate data lives under `.local/42go-query/`.
+- Email automation logs and local whitelists live under `.local/42go-data/<automation>/`.
 - Do not commit `.local/42go-data`, `.local/42go-query`, `.local/42go-stats`, or `.local/42go-backups`.
 - If changing CLI implementation, also use the `42go-cli-dev` skill.
 
@@ -60,6 +62,20 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
   - `42go query lingocafe all`
   - `42go query all`
   - Load `references/query-analytics.md`.
+- Email automations:
+  - `42go email`
+  - `42go email lingocafe`
+  - `42go email lingocafe read-tip`
+  - Dry-run is the default; `--dry` makes it explicit.
+  - `--send` sends real email through LingoCafe's Resend setup and requires `LC_RESEND_API_KEY`.
+  - `--reset` ignores the sent-email cooldown for a test run; it does not delete logs.
+  - `--max <n>` caps selected contacts; default is `1`.
+  - `42go email lingocafe read-tip --dry` previews planned emails without sending.
+  - `42go email lingocafe read-tip` refreshes data with `pull all` and `query all` unless `--skip-refresh` is passed.
+  - It writes sent-email history to `.local/42go-data/lingocafe_daily_email/sent_emails.parquet`.
+  - It uses `.local/42go-data/lingocafe_daily_email/whitelist.txt`; exact one-line `send to all` disables the whitelist gate.
+  - Reader links default to `https://read.lingocafe.app`.
+  - Send mode defaults to sender `LingoCafe <marco@lingocafe.app>`.
 - Event logging expectations:
   - New application events should flow through the shared core events system and be consumable by `42go pull events`.
   - Load `references/event-logging.md`.
@@ -112,6 +128,9 @@ Agents should navigate commands with:
 42go query lingocafe reads --help
 42go query lingocafe all --help
 42go query all --help
+42go email --help
+42go email lingocafe --help
+42go email lingocafe read-tip --help
 42go backup --help
 42go restore --help
 ```

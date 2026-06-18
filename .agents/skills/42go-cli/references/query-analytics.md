@@ -26,6 +26,8 @@ Current query refresh:
 42go query all
 ```
 
+`42go update` runs `42go pull all` first, then rebuilds every query aggregate with the same dependency order as `42go query all`.
+
 `42go query all` runs all available aggregate commands in dependency order. Today that means:
 
 1. `42go query sessions`
@@ -38,19 +40,19 @@ The `42go pull all` step runs raw pull targets in parallel. State files remain t
 
 `42go pull all` prints a readable source summary instead of raw JSON. The blocks are grouped under `auth`, `events`, and `lingocafe`; sub-blocks use table names such as `users`, `accounts`, changed `events_YYYYMM` partitions, `books`, `books_pages`, and `books_progress`. It omits raw Parquet and state paths.
 
-The final update output includes the latest LingoCafe headline totals:
-
-- total users
-- subscribers
-- weekly active users
-- monthly active users
+The final update output includes pull counts plus query summaries for sessions, users, LingoCafe growth, and LingoCafe reads.
 
 Options:
 
 - `--data-dir`: raw data root for pulls and event/book inputs, default `.local/42go-data`.
+- `--query-dir`: aggregate output root, default `.local/42go-query`.
 - `--limit`: maximum rows to pull per progressive source query.
 - `--database-url-env`: env or `.env` key for auth and LingoCafe pulls, default `BACKUP_DATABASE_URL`.
-- `--reset`: delete selected raw Parquet files and aggregate caches before rebuilding.
+- `--duration`: session gap duration in minutes for the sessions aggregate, default `20`.
+- `--min-session-length`: minimum session duration in seconds for active user flags, default `60`.
+- `--min-session-events`: minimum session event count for active user flags, default `4`.
+- `--bps`: LingoCafe reads completion threshold, default `8000`.
+- `--reset`: delete selected raw Parquet files before pulling; query aggregates are then rebuilt.
 
 ## High-Level Stats
 

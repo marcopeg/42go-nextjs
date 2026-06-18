@@ -9,6 +9,7 @@ from fortytwogo_cli.backup import core
 from fortytwogo_cli.backup.cli import format_restore_backup_table
 from fortytwogo_cli import cli as cli_module
 from fortytwogo_cli.cli import app
+from fortytwogo_cli.email import cli as email_cli_module
 from fortytwogo_cli.pull import cli as pull_cli_module
 from fortytwogo_cli.query import cli as query_cli_module
 
@@ -72,6 +73,7 @@ def test_root_without_args_shows_help() -> None:
     assert "pull" in result.output
     assert "peek" in result.output
     assert "update" in result.output
+    assert "email" in result.output
 
 
 def test_events_root_is_removed() -> None:
@@ -84,6 +86,55 @@ def test_users_root_is_removed() -> None:
     result = runner.invoke(app, ["users", "--help"])
 
     assert result.exit_code != 0
+
+
+def test_email_help_lists_lingocafe() -> None:
+    result = runner.invoke(app, ["email", "--help"])
+
+    assert result.exit_code == 0
+    assert "lingocafe" in result.output
+
+
+def test_email_lingocafe_help_lists_read_tip() -> None:
+    result = runner.invoke(app, ["email", "lingocafe", "--help"])
+
+    assert result.exit_code == 0
+    assert "read-tip" in result.output
+
+
+def test_email_lingocafe_read_tip_help_describes_safety_flags() -> None:
+    result = runner.invoke(app, ["email", "lingocafe", "read-tip", "--help"])
+
+    assert result.exit_code == 0
+    assert "--dry" in result.output
+    assert "--send" in result.output
+    assert "--reset" in result.output
+    assert "--max" in result.output
+    assert "--skip-refresh" in result.output
+    assert "--whitelist-path" in result.output
+
+
+def test_email_lingocafe_read_tip_dispatches_skip_refresh(monkeypatch) -> None:
+    class FakeResult:
+        mode = "dry-run"
+        whitelist_mode = "explicit"
+        decisions = []
+        sent_records = []
+        sent_log_path = Path(".local/42go-data/lingocafe_daily_email/sent_emails.parquet")
+
+    calls: list[str] = []
+
+    def fake_run_read_tip(options):
+        calls.append(f"send:{options.send}")
+        return FakeResult()
+
+    monkeypatch.setattr(email_cli_module, "run_read_tip", fake_run_read_tip)
+
+    result = runner.invoke(app, ["email", "lingocafe", "read-tip", "--skip-refresh"])
+
+    assert result.exit_code == 0
+    assert calls == ["send:False"]
+    assert "mode: dry-run" in result.output
 
 
 def test_query_help_lists_commands() -> None:
@@ -477,7 +528,12 @@ def test_update_help_describes_options() -> None:
     assert result.exit_code == 0
     assert "--reset" in result.output
     assert "--data-dir" in result.output
+    assert "--query-dir" in result.output
     assert "--database-url-env" in result.output
+    assert "--duration" in result.output
+    assert "--min-session-length" in result.output
+    assert "--min-session-events" in result.output
+    assert "--bps" in result.output
 
 
 def test_backup_help_lists_mode_flags() -> None:
@@ -647,7 +703,19 @@ def test_restore_without_from_fails_when_no_backups(monkeypatch) -> None:
     assert "No backups found" in result.output
 
 
-def test_update_runs_pull_all(monkeypatch, tmp_path: Path) -> None:
+def sample_query_all_result() -> dict[str, object]:
+    return {
+        "sessions": {"sessions": 11, "events": 22},
+        "users": {"users": 33, "sessions": 11},
+        "lingocafe": {
+            "users": {"users": 44},
+            "growth": {"rows": 55},
+            "reads": {"rows": 66},
+        },
+    }
+
+
+def test_update_runs_pull_all_then_query_all(monkeypatch, tmp_path: Path) -> None:
     calls: list[str] = []
 
     def fake_run_all_pulls(**kwargs):
@@ -658,15 +726,25 @@ def test_update_runs_pull_all(monkeypatch, tmp_path: Path) -> None:
             "lingocafe": {"books_changed": 6, "books_total": 7, "pages_total": 8, "progress_changed": 9, "progress_total": 10},
         }
 
-    monkeypatch.setattr(cli_module, "run_all_pulls", fake_run_all_pulls)
+    def fake_run_all_queries(**kwargs):
+        calls.append("query")
+        assert kwargs["data_dir"] == tmp_path / "data"
+        assert kwargs["query_dir"] == tmp_path / "query"
+        return sample_query_all_result()
 
-    result = runner.invoke(app, ["update", "--data-dir", str(tmp_path / "data")])
+    monkeypatch.setattr(cli_module, "run_all_pulls", fake_run_all_pulls)
+    monkeypatch.setattr(cli_module, "run_all_queries", fake_run_all_queries)
+
+    result = runner.invoke(app, ["update", "--data-dir", str(tmp_path / "data"), "--query-dir", str(tmp_path / "query")])
 
     assert result.exit_code == 0
-    assert calls == ["pull"]
+    assert calls == ["pull", "query"]
     assert "pull auth: users=1/2 accounts=3/4" in result.output
     assert "pull events: 5 rows" in result.output
     assert "pull lingocafe: books=6/7 pages=8 progress=9/10" in result.output
+    assert "query sessions: 11 sessions from 22 events" in result.output
+    assert "query users: 33 users from 11 sessions" in result.output
+    assert "query lingocafe: users=44 growth_rows=55 reads_rows=66" in result.output
 
 
 def test_update_stops_when_pull_all_fails(monkeypatch, tmp_path: Path) -> None:
@@ -677,12 +755,35 @@ def test_update_stops_when_pull_all_fails(monkeypatch, tmp_path: Path) -> None:
         raise RuntimeError("auth export failed")
 
     monkeypatch.setattr(cli_module, "run_all_pulls", fake_run_all_pulls)
+    monkeypatch.setattr(cli_module, "run_all_queries", lambda **kwargs: calls.append("query") or sample_query_all_result())
 
     result = runner.invoke(app, ["update", "--data-dir", str(tmp_path / "data")])
 
     assert result.exit_code == 1
     assert calls == ["pull"]
     assert "pull failed: auth export failed" in result.output
+
+
+def test_update_stops_when_query_all_fails_after_pull(monkeypatch, tmp_path: Path) -> None:
+    calls: list[str] = []
+
+    def fake_run_all_pulls(**kwargs):
+        calls.append("pull")
+        return sample_pull_all_result()
+
+    def fake_run_all_queries(**kwargs):
+        calls.append("query")
+        raise RuntimeError("sessions missing")
+
+    monkeypatch.setattr(cli_module, "run_all_pulls", fake_run_all_pulls)
+    monkeypatch.setattr(cli_module, "run_all_queries", fake_run_all_queries)
+
+    result = runner.invoke(app, ["update", "--data-dir", str(tmp_path / "data")])
+
+    assert result.exit_code == 1
+    assert calls == ["pull", "query"]
+    assert "pull events: 6 rows" in result.output
+    assert "query failed: sessions missing" in result.output
 
 
 def test_update_passes_reset_to_pull_all(monkeypatch) -> None:
@@ -697,6 +798,7 @@ def test_update_passes_reset_to_pull_all(monkeypatch) -> None:
         }
 
     monkeypatch.setattr(cli_module, "run_all_pulls", fake_run_all_pulls)
+    monkeypatch.setattr(cli_module, "run_all_queries", lambda **kwargs: sample_query_all_result())
 
     result = runner.invoke(app, ["update", "--reset", "--limit", "7", "--database-url-env", "BACKUP_DATABASE_URL"])
 
@@ -720,6 +822,7 @@ def test_update_does_not_reset_by_default(monkeypatch) -> None:
             "lingocafe": {"books_changed": 0, "books_total": 0, "pages_total": 0, "progress_changed": 0, "progress_total": 0},
         },
     )
+    monkeypatch.setattr(cli_module, "run_all_queries", lambda **kwargs: sample_query_all_result())
 
     result = runner.invoke(app, ["update"])
 
@@ -727,3 +830,46 @@ def test_update_does_not_reset_by_default(monkeypatch) -> None:
     assert calls == [("pull", False)]
     assert "pull events: 0 rows" in result.output
     assert "Reset: no" in result.output
+
+
+def test_update_passes_query_options_to_query_all(monkeypatch, tmp_path: Path) -> None:
+    calls: list[dict[str, object]] = []
+
+    monkeypatch.setattr(cli_module, "run_all_pulls", lambda **kwargs: sample_pull_all_result())
+
+    def fake_run_all_queries(**kwargs):
+        calls.append(kwargs)
+        return sample_query_all_result()
+
+    monkeypatch.setattr(cli_module, "run_all_queries", fake_run_all_queries)
+
+    result = runner.invoke(
+        app,
+        [
+            "update",
+            "--data-dir",
+            str(tmp_path / "data"),
+            "--query-dir",
+            str(tmp_path / "query"),
+            "--duration",
+            "12",
+            "--min-session-length",
+            "75",
+            "--min-session-events",
+            "5",
+            "--bps",
+            "9000",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert calls == [
+        {
+            "data_dir": tmp_path / "data",
+            "query_dir": tmp_path / "query",
+            "duration": 12,
+            "min_session_length": 75,
+            "min_session_events": 5,
+            "bps": 9000,
+        }
+    ]

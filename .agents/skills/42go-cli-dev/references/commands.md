@@ -10,6 +10,7 @@
 - `peek` mounted as `42go peek`
 - `update` mounted as `42go update`
 - `query_app` mounted as `42go query`
+- `email_app` mounted as `42go email`
 
 The root callback prints help when no subcommand is invoked. Nested command groups with subcommands should open an interactive menu when invoked without a subcommand.
 
@@ -48,6 +49,32 @@ Output contract:
 - Example: `42go query foo bar xxx` writes `.local/42go-query/foo-bar-xxx.parquet`, or `.local/42go-query/foo-bar-xxx--summary.parquet` plus sibling outputs for multi-file commands.
 - Keep aggregate output naming stable because downstream aggregates may depend on these files.
 
+## Email App
+
+`cli/src/fortytwogo_cli/email/cli.py` defines:
+
+- `email_app`: local email automation commands.
+- `42go email lingocafe read-tip`: refreshes raw/query data by default, computes LingoCafe reading reminders from Parquet files, dry-runs by default, supports explicit `--dry`, and sends real email only with `--send`.
+
+No-arg menus:
+
+- `42go email`: prints the email command help.
+- `42go email lingocafe`: prints the LingoCafe email command help.
+
+Output and local file contract:
+
+- LingoCafe read-tip sent history lives at `.local/42go-data/lingocafe_daily_email/sent_emails.parquet` by default.
+- The recipient whitelist lives at `.local/42go-data/lingocafe_daily_email/whitelist.txt` by default.
+- If the whitelist file is missing, the command creates it with `marco.pegoraro@gmail.com`.
+- If the whitelist file contains exactly one line, `send to all`, the whitelist gate allows all otherwise eligible LingoCafe users.
+- Eligibility skips users with `books_progress.updated_at` in the last 24 hours and users emailed in the last 72 hours.
+- `--reset` ignores the 72-hour sent-email cooldown for the current run; it does not delete sent-email history.
+- `--max <n>` caps selected contacts after eligibility and recommendation decisions; the default is `1`.
+- Dry-run output lists selected recipient emails, latest `books_progress.updated_at` timestamp, subject, and body.
+- Reader links default to `https://read.lingocafe.app`.
+- Send mode defaults to sender `LingoCafe <marco@lingocafe.app>`.
+- `--send` uses the existing LingoCafe Resend API setup from `.env` via `LC_RESEND_API_KEY`; secrets must never be printed or written to Parquet.
+
 ## Adding A Command
 
 1. Add business logic in a focused module.
@@ -80,6 +107,9 @@ The following must print useful help:
 42go query lingocafe reads --help
 42go query lingocafe all --help
 42go query all --help
+42go email --help
+42go email lingocafe --help
+42go email lingocafe read-tip --help
 42go backup --help
 42go restore --help
 ```
@@ -94,8 +124,9 @@ Tests should also assert no-arg menus dispatch the selected command.
 Pipeline:
 
 1. `run_all_pulls(...)`
+2. `run_all_queries(...)`
 
-The `--reset` flag deletes and rebuilds raw data through the pull commands. `42go update` must not write `.local/42go-stats` files or run aggregation loaders.
+The `--reset` flag deletes and rebuilds raw data through the pull commands. Query aggregates are always rebuilt after the pull phase using `42go query all` dependency order. `42go update` must not write `.local/42go-stats` files.
 
 `42go pull all` is the documented all-data command. It runs auth first so event pulls can reconcile email-shaped event `user_id` values against `.local/42go-data/auth/users.parquet`, then runs events and LingoCafe in parallel. Inside auth and LingoCafe, independent database reads run in parallel and each target writes its Parquet files and `_state.json` only after the reads complete. Event pulls fetch from one source query, reconcile plain email or `email:<address>` user ids to matching `auth.users.id` for the same `app_id`, then merge distinct monthly Parquet files in parallel before writing the final events state. Its terminal output is grouped by source blocks under `auth`, `events`, and `lingocafe`, with sub-blocks such as `users`, `accounts`, `events_YYYYMM`, `books`, `books_pages`, and `books_progress`. Event partition blocks are printed only when the partition changed. The human output intentionally omits raw Parquet and state paths. `42go pull '*'` is a literal star alias; quote it in shells that expand `*`.
 

@@ -12,6 +12,7 @@ Focused examples:
 
 ```bash
 pytest cli/tests/test_cli.py
+pytest cli/tests/test_email_lingocafe_read_tip.py
 pytest cli/tests/test_events_pull.py
 pytest cli/tests/test_peek.py
 ```
@@ -41,6 +42,8 @@ Run realistic local raw-data checks:
 42go pull events --dry-run
 42go pull all --dry-run
 42go peek auth users --pager cat
+42go email lingocafe read-tip --help
+42go email lingocafe read-tip --dry --reset --skip-refresh
 ```
 
 Database/network commands may require sandbox escalation.
@@ -58,5 +61,6 @@ con.execute("select count(*) from read_parquet(?)", [path]).fetchone()
 ## Test Expectations
 
 - Help tests belong in `cli/tests/test_cli.py`.
+- Email automation behavior tests belong in focused `cli/tests/test_email_*.py` files and should mock real HTTP sends.
 - Pull tests should use temporary Parquet archives, not production data.
 - Reset tests should verify raw data cleanup where applicable.
