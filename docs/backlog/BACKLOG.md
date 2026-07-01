@@ -56,7 +56,6 @@
 
 ## Refined
 
-- [DG12: Show App QR Code in Mobile Landscape](./refined/DG12-show-app-qr-code-in-mobile-landscape/DG12.task.md) | [plan](./refined/DG12-show-app-qr-code-in-mobile-landscape/DG12.plan.md)
 - [XJ94: Add Backoffice Account Erasure](./refined/XJ94-add-backoffice-account-erasure/XJ94.task.md) | [plan](./refined/XJ94-add-backoffice-account-erasure/XJ94.plan.md)
 
 ## Planned

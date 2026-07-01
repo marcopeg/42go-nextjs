@@ -28,9 +28,27 @@ import LingoCafeApp from "./config/lingocafe/config";
 // This should be moved into 42go somewhere
 export type ThemeValue = "light" | "dark" | "system";
 
+export interface TAppQrConfig {
+  active?: boolean;
+  url?: string;
+  pageURL?: readonly string[];
+  title?: {
+    text?: string;
+    position?: "top" | "bottom" | "left" | "right";
+    alignment?: "left" | "center" | "right";
+    icon?: {
+      src?: string;
+      alt?: string;
+      position?: "top" | "bottom" | "left" | "right";
+      alignment?: "left" | "center" | "right";
+    };
+  };
+}
+
 export interface TAppConfigItem {
   name: string;
   icons?: TAppIconsConfig;
+  qr?: TAppQrConfig;
   // meta moved to public.meta
   theme?: {
     default?: ThemeValue;

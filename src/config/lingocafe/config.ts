@@ -10,6 +10,21 @@ export default {
   match: {
     url: ['^read.lingocafe.app+$', '^lc42go.ngrok.app+$'],
   },
+  qr: {
+    active: true,
+    pageURL: ['\\/books\\/[^/?#]+/?(?:[?#].*)?$'],
+    title: {
+      text: 'LingoCafe.app',
+      position: 'left',
+      alignment: 'center',
+      icon: {
+        src: '/app-icons/lingocafe/ui.png',
+        alt: 'LingoCafe',
+        position: 'top',
+        alignment: 'center',
+      },
+    },
+  },
   features: ['page:books', 'page:users', 'api:lingocafe', 'api:events', 'api:profile', 'api:users'],
   theme: {
     default: 'system',

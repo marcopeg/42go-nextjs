@@ -3,6 +3,7 @@
 import { SessionProvider, useSession } from "next-auth/react";
 import { AppConfigProvider } from "@/42go/config/use-app-config";
 import { ThemeProvider } from "@/42go/config/ThemeProvider";
+import { AppQrOverlay } from "@/42go/components/AppQrOverlay";
 import type { TAppID, ThemeValue } from "@/AppConfig";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -81,7 +82,10 @@ export function Providers({
       <SessionProvider>
         <SessionUserBridge />
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme={defaultTheme}>{children}</ThemeProvider>
+          <ThemeProvider defaultTheme={defaultTheme}>
+            {children}
+            <AppQrOverlay />
+          </ThemeProvider>
         </QueryClientProvider>
       </SessionProvider>
     </AppConfigProvider>

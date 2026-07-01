@@ -7,6 +7,9 @@ export default {
   match: {
     url: ['^quicklist.42go.dev+$', '^ql42go.ngrok.app+$'],
   },
+  qr: {
+    active: true,
+  },
   features: ['api:waitlist', 'api:quicklists', 'api:profile', 'page:quicklists'],
   auth: {
     providers: [
