@@ -74,6 +74,7 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
   - `42go email lingocafe read-tip` refreshes data with `pull all` and `query all` unless `--skip-refresh` is passed.
   - It writes sent-email history to `.local/42go-data/lingocafe_daily_email/sent_emails.parquet`.
   - It uses `.local/42go-data/lingocafe_daily_email/whitelist.txt`; exact one-line `send to all` disables the whitelist gate.
+  - If the whitelist file starts with exact first line `send to all but skip`, remaining lines are treated as blacklisted emails and skipped before `--max` recipient selection.
   - Reader links default to `https://read.lingocafe.app`.
   - Send mode defaults to sender `LingoCafe <marco@lingocafe.app>`.
 - Event logging expectations:

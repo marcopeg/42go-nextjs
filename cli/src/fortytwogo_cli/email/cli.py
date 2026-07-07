@@ -55,7 +55,14 @@ def read_tip(
     ] = None,
     whitelist_path: Annotated[
         Path | None,
-        typer.Option("--whitelist-path", help="Recipient whitelist file. Defaults to .local/42go-data/lingocafe_daily_email/whitelist.txt."),
+        typer.Option(
+            "--whitelist-path",
+            help=(
+                "Recipient whitelist file. Exact one-line 'send to all' allows all eligible users; first line "
+                "'send to all but skip' treats following lines as blacklisted emails. Defaults to "
+                ".local/42go-data/lingocafe_daily_email/whitelist.txt."
+            ),
+        ),
     ] = None,
     sent_emails_path: Annotated[
         Path | None,

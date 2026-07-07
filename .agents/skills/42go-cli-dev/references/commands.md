@@ -67,6 +67,7 @@ Output and local file contract:
 - The recipient whitelist lives at `.local/42go-data/lingocafe_daily_email/whitelist.txt` by default.
 - If the whitelist file is missing, the command creates it with `marco.pegoraro@gmail.com`.
 - If the whitelist file contains exactly one line, `send to all`, the whitelist gate allows all otherwise eligible LingoCafe users.
+- If the whitelist file starts with exact first line `send to all but skip`, the remaining lines are treated as blacklisted emails and skipped before recommendation and `--max` recipient selection.
 - Eligibility skips users with `books_progress.updated_at` in the last 24 hours and users emailed in the last 72 hours.
 - `--reset` ignores the 72-hour sent-email cooldown for the current run; it does not delete sent-email history.
 - `--max <n>` caps selected contacts after eligibility and recommendation decisions; the default is `1`.

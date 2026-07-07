@@ -272,6 +272,16 @@ def test_whitelist_send_to_all_is_exact(tmp_path: Path) -> None:
     assert read_whitelist(whitelist) == ("explicit", {"send to all", "extra@example.com"})
 
 
+def test_whitelist_send_to_all_but_skip_reads_blacklist(tmp_path: Path) -> None:
+    whitelist = tmp_path / "whitelist.txt"
+    whitelist.write_text("send to all but skip\nMarco@example.com\njane@example.com\n")
+
+    assert read_whitelist(whitelist) == ("send_to_all_but_skip", {"marco@example.com", "jane@example.com"})
+
+    whitelist.write_text(" send to all but skip \nmarco@example.com\n")
+    assert read_whitelist(whitelist) == ("send_to_all_but_skip", {"marco@example.com"})
+
+
 def test_recent_read_is_skipped(tmp_path: Path) -> None:
     result = run_with_dataset(
         tmp_path,
@@ -439,3 +449,29 @@ def test_max_recipients_caps_selected_users(tmp_path: Path) -> None:
     skipped = [decision for decision in result.decisions if decision.reason == "max_recipients_reached"]
     assert len(selected) == 1
     assert len(skipped) == 1
+
+
+def test_blacklist_does_not_consume_max_recipients(tmp_path: Path) -> None:
+    data_dir, query_dir, whitelist_path = write_dataset(
+        tmp_path,
+        whitelist="send to all but skip\njohn@example.com\n",
+        extra_users=[("u2", "jane@example.com"), ("u3", "mark@example.com")],
+    )
+
+    result = run_read_tip(
+        ReadTipOptions(
+            data_dir=data_dir,
+            query_dir=query_dir,
+            whitelist_path=whitelist_path,
+            now=NOW,
+            base_url="https://example.test",
+            max_recipients=1,
+        )
+    )
+
+    selected = [decision for decision in result.decisions if decision.status == "selected"]
+    blacklisted = [decision for decision in result.decisions if decision.reason == "blacklisted"]
+    capped = [decision for decision in result.decisions if decision.reason == "max_recipients_reached"]
+    assert [decision.email for decision in blacklisted] == ["john@example.com"]
+    assert [decision.email for decision in selected] == ["jane@example.com"]
+    assert [decision.email for decision in capped] == ["mark@example.com"]

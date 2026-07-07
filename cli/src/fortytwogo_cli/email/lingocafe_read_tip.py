@@ -19,6 +19,7 @@ from fortytwogo_cli.users.paths import load_dotenv_value
 LINGOCAFE_APP_ID = "lingocafe"
 DEFAULT_WHITELIST_EMAIL = "marco.pegoraro@gmail.com"
 SEND_TO_ALL_SENTINEL = "send to all"
+SEND_TO_ALL_BUT_SKIP_SENTINEL = "send to all but skip"
 READ_RECENCY_HOURS = 24
 EMAIL_COOLDOWN_HOURS = 72
 NEXT_PAGE_THRESHOLD_BPS = 9000
@@ -157,6 +158,8 @@ def read_whitelist(path: Path) -> tuple[str, set[str]]:
     lines = [line.strip() for line in path.read_text().splitlines() if line.strip()]
     if len(lines) == 1 and lines[0] == SEND_TO_ALL_SENTINEL:
         return ("send_to_all", set())
+    if lines and lines[0] == SEND_TO_ALL_BUT_SKIP_SENTINEL:
+        return ("send_to_all_but_skip", {line.lower() for line in lines[1:]})
     return ("explicit", {line.lower() for line in lines})
 
 
@@ -389,7 +392,10 @@ def build_decisions(
         if not normalized_email:
             decisions.append(Decision(user_id=user_id, email=None, status="skipped", reason="missing_email"))
             continue
-        if whitelist_mode != "send_to_all" and normalized_email not in whitelist:
+        if whitelist_mode == "send_to_all_but_skip" and normalized_email in whitelist:
+            decisions.append(Decision(user_id=user_id, email=email, status="skipped", reason="blacklisted"))
+            continue
+        if whitelist_mode == "explicit" and normalized_email not in whitelist:
             decisions.append(Decision(user_id=user_id, email=email, status="skipped", reason="not_whitelisted"))
             continue
         user_progress = progress_by_user.get(user_id, [])
