@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useSession } from 'next-auth/react';
 import {
   Activity,
   AlertCircle,
@@ -89,9 +90,12 @@ type UsersListProps = {
   error: string | null;
   copiedKey: string | null;
   pendingUserAction: string | null;
+  canDeleteUsers: boolean;
+  currentUserId: string | null;
   onCopy: (key: string, value: string) => Promise<void>;
   onEditUser: (user: AppUser) => void;
   onOpenUserDetails: (user: AppUser) => void;
+  onOpenDeleteUser: (user: AppUser) => void;
   onUserAction: (user: AppUser, action: UserAction) => Promise<void>;
   onRetry: () => void;
   onInitialLoad: (signal: AbortSignal) => Promise<void>;
@@ -383,6 +387,29 @@ const saveUserData = async (userId: string, fields: UserEditFields) => {
   }
 };
 
+const deleteUserData = async (user: AppUser, confirmationEmail: string) => {
+  const res = await fetch('/api/users', {
+    method: 'DELETE',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      userId: user.id,
+      confirmationEmail,
+      finalConfirmation: true,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as {
+      message?: string;
+      error?: string;
+    } | null;
+    throw new Error(body?.message || body?.error || 'Unable to delete user');
+  }
+};
+
 const createEditFields = (user: AppUser): UserEditFields => ({
   username: user.username || '',
   name: user.name || '',
@@ -480,7 +507,7 @@ const UserEditPanel = ({
         <>
           <Button
             type="button"
-            variant="outline"
+            variant="neutralLink"
             onClick={() => onOpenChange(false)}
             disabled={saving}
           >
@@ -580,25 +607,28 @@ const UserEditPanel = ({
 const UserDetailPanel = ({
   user,
   open,
+  canDeleteUsers,
+  currentUserId,
   onOpenChange,
   onEditUser,
+  onOpenDeleteUser,
 }: {
   user: AppUser | null;
   open: boolean;
+  canDeleteUsers: boolean;
+  currentUserId: string | null;
   onOpenChange: (open: boolean) => void;
   onEditUser: (user: AppUser) => void;
+  onOpenDeleteUser: (user: AppUser) => void;
 }) => {
-  const handleDelete = () => {
-    if (!user) return;
-    const confirmed = window.confirm(`Delete ${getDisplayName(user)}?`);
-    if (confirmed) window.alert('User deletion not yet implemented');
-  };
-
   const handleEdit = () => {
     if (!user) return;
     onOpenChange(false);
     onEditUser(user);
   };
+
+  const isSelf = Boolean(user && currentUserId === user.id);
+  const deleteDisabled = !user || !canDeleteUsers || isSelf;
 
   return (
     <Modal
@@ -613,13 +643,21 @@ const UserDetailPanel = ({
         <>
           <Button
             type="button"
-            variant="ghost"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={handleDelete}
-            disabled={!user}
+            variant="destructiveGhost"
+            onClick={() => {
+              if (user) onOpenDeleteUser(user);
+            }}
+            disabled={deleteDisabled}
+            title={
+              isSelf
+                ? 'You cannot delete your own account'
+                : canDeleteUsers
+                  ? undefined
+                  : 'Missing users:delete grant'
+            }
           >
             <Trash2 />
-            Delete
+            Delete account
           </Button>
           <Button type="button" variant="outline" onClick={handleEdit} disabled={!user}>
             <Pencil />
@@ -703,15 +741,171 @@ const UserDetailPanel = ({
   );
 };
 
+const UserDeleteModal = ({
+  user,
+  open,
+  deleting,
+  onOpenChange,
+  onDelete,
+}: {
+  user: AppUser | null;
+  open: boolean;
+  deleting: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDelete: (user: AppUser, confirmationEmail: string) => Promise<void>;
+}) => {
+  const [confirmationEmail, setConfirmationEmail] = useState('');
+  const [finalOpen, setFinalOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const emailMatches = Boolean(user && confirmationEmail === user.email);
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      setConfirmationEmail('');
+      setFinalOpen(false);
+      setError(null);
+    }
+    onOpenChange(next);
+  };
+
+  const handleDelete = async () => {
+    if (!user || !emailMatches) return;
+    setError(null);
+
+    try {
+      await onDelete(user, confirmationEmail);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to delete user');
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Delete account"
+      presentation="modal"
+      size="sm"
+      closeOnOverlayClick={!deleting}
+      className="mx-3 my-auto min-h-0 max-h-[calc(100vh-1.5rem)] w-[calc(100vw-1.5rem)] self-center rounded-lg border md:mx-0 md:w-[calc(100vw-2rem)]"
+      bodyClassName="px-4 py-4"
+      footerClassName="px-4 py-3"
+      footer={
+        <>
+          <Button
+            type="button"
+            variant="neutralLink"
+            onClick={() => handleOpenChange(false)}
+            disabled={deleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => setFinalOpen(true)}
+            disabled={!emailMatches || deleting}
+          >
+            Continue
+          </Button>
+        </>
+      }
+    >
+      {user ? (
+        <div className="grid gap-3">
+          {error ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm leading-5 text-destructive">
+            This permanently deletes the account and app-owned user data. Events stay untouched.
+          </div>
+
+          <ReadOnlyField label="User ID" value={user.id} />
+
+          <FieldGroup label="Type the exact email to continue">
+            <Input
+              value={confirmationEmail}
+              onChange={event => setConfirmationEmail(event.target.value)}
+              placeholder={user.email}
+              autoComplete="off"
+              disabled={deleting}
+            />
+          </FieldGroup>
+
+          <Modal
+            open={finalOpen}
+            onOpenChange={next => {
+              if (deleting) return;
+              if (next) {
+                setFinalOpen(true);
+                return;
+              }
+              handleOpenChange(false);
+            }}
+            title="Final confirmation"
+            presentation="modal"
+            size="sm"
+            closeOnOverlayClick={!deleting}
+            showClose={!deleting}
+            className="mx-3 my-auto min-h-0 max-h-[calc(100vh-1.5rem)] w-[calc(100vw-1.5rem)] self-center rounded-lg border md:mx-0 md:w-[calc(100vw-2rem)]"
+            bodyClassName="px-4 py-4"
+            footerClassName="px-4 py-3"
+            footer={
+              <>
+                <Button
+                  type="button"
+                  variant="neutralLink"
+                  onClick={() => handleOpenChange(false)}
+                  disabled={deleting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={!emailMatches || deleting}
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="animate-spin" />
+                      Deleting
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 />
+                      Delete account
+                    </>
+                  )}
+                </Button>
+              </>
+            }
+          >
+            <p className="text-sm leading-5 text-muted-foreground">
+              Last check. This deletes the target account and cannot be undone.
+            </p>
+          </Modal>
+        </div>
+      ) : null}
+    </Modal>
+  );
+};
+
 const UsersList = ({
   users,
   isLoading,
   error,
   copiedKey,
   pendingUserAction,
+  canDeleteUsers,
+  currentUserId,
   onCopy,
   onEditUser,
   onOpenUserDetails,
+  onOpenDeleteUser,
   onUserAction,
   onRetry,
   onInitialLoad,
@@ -895,6 +1089,19 @@ const UsersList = ({
                           >
                             Reset consent
                           </DropdownMenuItem>
+                          {canDeleteUsers ? (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                disabled={currentUserId === user.id}
+                                onSelect={() => onOpenDeleteUser(user)}
+                              >
+                                <Trash2 />
+                                Delete account
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -910,6 +1117,7 @@ const UsersList = ({
 };
 
 export default function UsersPage() {
+  const { data: session } = useSession();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -921,6 +1129,11 @@ export default function UsersPage() {
   const [isSavingUser, setIsSavingUser] = useState(false);
   const [detailUser, setDetailUser] = useState<AppUser | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<AppUser | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const currentUserId = session?.user?.id || null;
+  const canDeleteUsers = Boolean(session?.user?.grants?.includes('users:delete'));
 
   const applyUsersResponse = useCallback((body: UsersResponse) => {
     setUsers(body.users);
@@ -993,6 +1206,11 @@ export default function UsersPage() {
     setIsDetailOpen(true);
   }, []);
 
+  const openDeleteUser = useCallback((user: AppUser) => {
+    setDeletingUser(user);
+    setIsDeleteOpen(true);
+  }, []);
+
   const saveEditedUser = useCallback(
     async (user: AppUser, fields: UserEditFields) => {
       setIsSavingUser(true);
@@ -1006,6 +1224,34 @@ export default function UsersPage() {
         setEditingFields(null);
       } finally {
         setIsSavingUser(false);
+      }
+    },
+    [applyUsersResponse]
+  );
+
+  const deleteUser = useCallback(
+    async (user: AppUser, confirmationEmail: string) => {
+      setIsDeletingUser(true);
+      setError(null);
+
+      try {
+        await deleteUserData(user, confirmationEmail);
+        setIsDeleteOpen(false);
+        setDeletingUser(null);
+        setIsDetailOpen(false);
+
+        window.setTimeout(() => {
+          setDetailUser(current => (current?.id === user.id ? null : current));
+        }, 250);
+
+        try {
+          const body = await fetchUsersData();
+          applyUsersResponse(body);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Unable to refresh users');
+        }
+      } finally {
+        setIsDeletingUser(false);
       }
     },
     [applyUsersResponse]
@@ -1046,25 +1292,30 @@ export default function UsersPage() {
         error={error}
         copiedKey={copiedKey}
         pendingUserAction={pendingUserAction}
+        canDeleteUsers={canDeleteUsers}
+        currentUserId={currentUserId}
         onCopy={copyValue}
         onEditUser={openEditUser}
         onOpenUserDetails={openUserDetails}
+        onOpenDeleteUser={openDeleteUser}
         onUserAction={runUserAction}
         onRetry={loadUsers}
         onInitialLoad={loadInitialUsers}
       />
       <UserDetailPanel
-        key={detailUser ? detailUser.id : 'user-details'}
+        key={detailUser ? `details:${detailUser.id}` : 'details:user'}
         user={detailUser}
         open={isDetailOpen}
         onOpenChange={next => {
           setIsDetailOpen(next);
-          if (!next) setDetailUser(null);
         }}
+        canDeleteUsers={canDeleteUsers}
+        currentUserId={currentUserId}
         onEditUser={openEditUser}
+        onOpenDeleteUser={openDeleteUser}
       />
       <UserEditPanel
-        key={editingUser ? editingUser.id : 'edit-user'}
+        key={editingUser ? `edit:${editingUser.id}` : 'edit:user'}
         user={editingUser}
         fields={editingFields}
         open={isEditOpen}
@@ -1078,6 +1329,16 @@ export default function UsersPage() {
           }
         }}
         onSave={saveEditedUser}
+      />
+      <UserDeleteModal
+        key={deletingUser ? `delete:${deletingUser.id}` : 'delete:user'}
+        user={deletingUser}
+        open={isDeleteOpen}
+        deleting={isDeletingUser}
+        onOpenChange={next => {
+          setIsDeleteOpen(next);
+        }}
+        onDelete={deleteUser}
       />
     </AppLayout>
   );

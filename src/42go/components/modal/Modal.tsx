@@ -209,7 +209,7 @@ export const Modal = ({
                         <DialogClose asChild>
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="neutralGhost"
                             size="icon"
                             aria-label={closeLabel}
                           >

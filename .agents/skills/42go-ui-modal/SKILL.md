@@ -22,6 +22,14 @@ Keep app-specific content outside the shared modal component. The shared layer o
 
 Sibling modals are acceptable for unrelated independent page actions. For true modal-in-modal, panel-in-panel, or panel-then-confirmation flows, prefer JSX nesting so the shared stack context can do its job. Chuck Norris stacks panels. The panels say thank you.
 
+## Action Button Semantics
+
+Modal footer buttons must preserve the meaning of the action across normal, hover, focus, and disabled states.
+
+- Use `variant="neutralLink"` for Cancel/dismiss actions. Cancel must stay neutral; it must not use `outline`, `ghost`, or `link` because those variants are primary-colored in app themes.
+- Use `variant="destructive"`, `variant="destructiveGhost"`, or `variant="destructiveOutline"` for destructive actions. A destructive action must stay destructive on hover; never pair `variant="ghost"` or `variant="outline"` with ad hoc destructive text classes.
+- Use `variant="neutralGhost"` for close icon buttons and other neutral dismiss icons.
+
 ## Import
 
 ```tsx

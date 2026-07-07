@@ -13,12 +13,20 @@ const buttonVariants = cva(
           "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
         destructive:
           "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        destructiveOutline:
+          "border border-destructive bg-background text-destructive shadow-xs hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive/20 dark:border-destructive dark:bg-background dark:text-destructive dark:hover:bg-destructive/20 dark:focus-visible:ring-destructive/40",
+        destructiveGhost:
+          "bg-transparent text-destructive shadow-none hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive/20 dark:hover:bg-destructive/20 dark:focus-visible:ring-destructive/40",
         outline:
           "border border-primary text-primary bg-background shadow-xs hover:bg-primary/10 hover:text-primary dark:border-primary dark:text-primary dark:bg-background dark:hover:bg-primary/20",
         secondary:
           "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
         ghost:
           "hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 dark:hover:text-primary",
+        neutralGhost:
+          "bg-transparent text-foreground shadow-none hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/40 dark:hover:text-foreground",
+        neutralLink:
+          "bg-transparent text-foreground shadow-none hover:bg-transparent hover:text-foreground hover:underline dark:text-foreground dark:hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

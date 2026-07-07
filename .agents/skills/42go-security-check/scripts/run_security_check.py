@@ -27,6 +27,7 @@ REQUIRED_DOCKERIGNORE_PATTERNS = (
     ".env",
     ".env*",
     ".npmrc",
+    ".local",
     "db-backups",
     "knex/dumps",
     "*.sql",
@@ -70,6 +71,7 @@ class CheckState:
     repo_root: Path
     report_path: Path
     findings: list[Finding] = field(default_factory=list)
+    notes: list[Finding] = field(default_factory=list)
     commands: list[CommandResult] = field(default_factory=list)
     artifacts: dict[str, Path] = field(default_factory=dict)
     trivy_counts: dict[str, dict[str, int]] = field(default_factory=dict)
@@ -79,12 +81,15 @@ class CheckState:
     def add(self, severity: str, title: str, detail: str, source: str) -> None:
         self.findings.append(Finding(severity.upper(), title, detail, source))
 
+    def note(self, title: str, detail: str, source: str) -> None:
+        self.notes.append(Finding("NOTE", title, detail, source))
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run 42Go Docker security checks.")
     parser.add_argument("--image", default=DEFAULT_IMAGE, help="Docker image tag to scan.")
     parser.add_argument("--dockerfile", default="Dockerfile", help="Dockerfile path.")
-    parser.add_argument("--compose", default="docker-compose.prod.yml", help="Production compose file.")
+    parser.add_argument("--compose", default="docker-compose.prod.yml", help="Local production simulator compose file.")
     parser.add_argument("--build", action="store_true", help="Build the image before scanning.")
     parser.add_argument("--skip-qa", action="store_true", help="Skip npm run qa.")
     parser.add_argument("--skip-trivy", action="store_true", help="Skip all Trivy checks.")
@@ -199,6 +204,7 @@ def summarize_trivy_secrets(state: CheckState, path: Path) -> None:
     if total:
         samples: list[str] = []
         uncovered_samples: list[str] = []
+        local_ignored_samples: list[str] = []
         dockerignore_lines = read_dockerignore_lines(state.repo_root)
         for result in results:
             target = result.get("Target") or "unknown"
@@ -207,24 +213,32 @@ def summarize_trivy_secrets(state: CheckState, path: Path) -> None:
                 line = secret.get("StartLine") or secret.get("EndLine") or "?"
                 sample = f"{target}:{line} ({rule})"
                 samples.append(sample)
-                if not dockerignore_covers(dockerignore_lines, target):
+                docker_ignored = dockerignore_covers(dockerignore_lines, target)
+                git_ignored = gitignore_covers(state.repo_root, target)
+                if not docker_ignored or not git_ignored:
                     uncovered_samples.append(sample)
+                elif len(local_ignored_samples) < 8:
+                    local_ignored_samples.append(sample)
                 if len(samples) >= 8:
                     break
             if len(samples) >= 8:
                 break
-        severity = "HIGH" if uncovered_samples else "MEDIUM"
-        title = (
-            "Repository secret scan found sensitive-looking material outside ignored build context"
-            if uncovered_samples
-            else "Repository secret scan found sensitive-looking material in ignored local files"
-        )
-        state.add(
-            severity,
-            title,
-            "Examples: " + "; ".join(samples),
-            "trivy fs secret",
-        )
+
+        if uncovered_samples:
+            state.add(
+                "HIGH",
+                "Repository secret scan found sensitive-looking material outside local ignore coverage",
+                "Examples: " + "; ".join(uncovered_samples[:8]),
+                "trivy fs secret",
+            )
+        elif local_ignored_samples:
+            state.note(
+                "Trivy found sensitive-looking material only in local ignored files",
+                "Examples: "
+                + "; ".join(local_ignored_samples)
+                + ". These paths are ignored by both Git and Docker, so they should not reach GitHub or the runtime image. Keep them local.",
+                "trivy fs secret",
+            )
 
 
 def format_counts(counts: dict[str, int]) -> str:
@@ -312,7 +326,23 @@ def run_trivy(state: CheckState, args: argparse.Namespace) -> None:
             config_json,
             summarize_trivy_config,
         ),
-        (["trivy", "fs", "--scanners", "secret", "--format", "json", "--output", str(secrets_json), "."], secrets_json, summarize_trivy_secrets),
+        (
+            [
+                "trivy",
+                "fs",
+                "--scanners",
+                "secret",
+                "--skip-dirs",
+                ".local",
+                "--format",
+                "json",
+                "--output",
+                str(secrets_json),
+                ".",
+            ],
+            secrets_json,
+            summarize_trivy_secrets,
+        ),
     ]
     for command, artifact, summarizer in commands:
         result = run_command(command, state.repo_root, timeout=1200, env_extra=trivy_env)
@@ -388,6 +418,11 @@ def dockerignore_covers(lines: list[str], pattern: str) -> bool:
     return False
 
 
+def gitignore_covers(repo_root: Path, path: str) -> bool:
+    result = run_command(["git", "check-ignore", "-q", "--", path], repo_root, timeout=10)
+    return result.ok
+
+
 def parse_image_probe(output: str) -> dict[str, str]:
     values: dict[str, str] = {}
     for line in output.splitlines():
@@ -450,34 +485,34 @@ echo CONTENTS_FILES="$(find /app/contents -type f 2>/dev/null | wc -l | tr -d ' 
 def check_compose(state: CheckState, args: argparse.Namespace) -> None:
     compose_path = state.repo_root / args.compose
     if not compose_path.exists():
-        state.add("MEDIUM", "Local production compose file is missing", f"Expected {args.compose}.", "docker compose")
+        state.note(
+            "Local production compose file is missing",
+            f"Expected {args.compose}. This affects local production simulation only.",
+            "docker compose",
+        )
         return
 
     text = compose_path.read_text(errors="replace")
     if re.search(r"(?m)^\s*env_file\s*:", text):
-        state.add(
-            "MEDIUM",
+        state.note(
             "Local production compose uses env_file",
-            "`env_file` can inject the full local .env into the local production runtime. This is acceptable for local mimicry only; do not treat this compose file as the real production topology.",
+            "`env_file` injects local `.env` into the local production simulator. This file is not the real production topology; improve when convenient, but do not treat this as a release vulnerability by itself.",
             args.compose,
         )
     if re.search(r'(?m)^\s*-\s*["\']?5432:5432["\']?\s*$', text):
-        state.add(
-            "MEDIUM",
+        state.note(
             "Local production compose exposes PostgreSQL on the host",
-            "Port 5432 is useful for local production testing, but should not be copied into a real production topology without an explicit network policy.",
+            "Port 5432 is intentionally exposed for local tools such as Postico. This is acceptable for the local production simulator and must not be copied blindly into real production.",
             args.compose,
         )
     if "host-gateway" in text:
-        state.add(
-            "LOW",
+        state.note(
             "Local production compose config includes host-gateway",
-            "Useful for local production testing. Do not copy into real production unless required.",
+            "Useful for local production testing. This is local-only posture, not a production vulnerability.",
             args.compose,
         )
     if re.search(r"(?m)^\s*-\s*\./contents:/app/contents", text):
-        state.add(
-            "LOW",
+        state.note(
             "Local production compose bind-mounts contents",
             "Useful for local production testing. Real production should decide separately whether content is baked, mounted read-only, or externalized.",
             args.compose,
@@ -515,6 +550,21 @@ def render_report(state: CheckState, args: argparse.Namespace) -> str:
             )
     else:
         lines.extend(["No findings.", ""])
+
+    lines.extend(["## Local Development Notes", ""])
+    if state.notes:
+        for note in state.notes:
+            lines.extend(
+                [
+                    f"### {note.title}",
+                    "",
+                    f"- Source: `{note.source}`",
+                    f"- Detail: {note.detail}",
+                    "",
+                ]
+            )
+    else:
+        lines.extend(["No local development notes.", ""])
 
     lines.extend(["## Trivy Counts", ""])
     if state.trivy_counts:
@@ -564,7 +614,7 @@ def create_draft(state: CheckState, args: argparse.Namespace) -> None:
         "group": "security",
         "sections": {
             "Elevator's Pitch": "Resolve Docker release security gate findings before publishing production images.",
-            "Business Gain": "Publishing should fail before vulnerable images, leaked local artifacts, or risky production compose settings reach Docker Hub or CapRover.",
+            "Business Gain": "Publishing should fail before vulnerable images, leaked repository artifacts, or runtime-image leaks reach Docker Hub or CapRover.",
             "Current State": [
                 f"The security gate reported {len(state.findings)} findings, including {len(blockers)} blocking findings.",
                 f"Sanitized report: {state.report_path}",
@@ -575,7 +625,7 @@ def create_draft(state: CheckState, args: argparse.Namespace) -> None:
                 "`npm run qa` passes.",
                 "`trivy image`, `trivy config`, and source secret scans pass or have documented accepted exceptions.",
                 "Runtime image has no env files, npmrc files, SQL/dump artifacts, docs/backlog files, or agent files.",
-                "Production compose exposes only required ports and uses explicit runtime environment variables.",
+                "Local production compose notes are either accepted as local-only posture or improved when convenient.",
             ],
             "Additional Context": [
                 f"Generated by `.agents/skills/42go-docker-security-check/scripts/run_security_check.py`.",

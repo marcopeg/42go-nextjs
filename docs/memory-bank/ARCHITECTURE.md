@@ -104,6 +104,15 @@ Complex components may have multiple internal Presentation Components or Custom 
 
 This structure is intended to be recursive: A very complex component can be simplified into a structure of sub-components that follow the same pattern.
 
+### UI Action Button Semantics
+
+Button variants must preserve action meaning across hover and focus states, especially in app themes where `primary` can be green or brand-specific.
+
+- Cancel and dismiss actions use `variant="neutralLink"` or equivalent neutral text-link styling. They must not use primary-colored `outline`, `ghost`, or `link` styles.
+- Destructive secondary actions use `variant="destructiveGhost"` or `variant="destructiveOutline"`. They must keep red/destructive hover states and must not borrow primary hover styling.
+- Destructive primary confirmations use `variant="destructive"`.
+- Neutral icon dismiss controls use `variant="neutralGhost"`.
+
 ## Environment
 
 - documentation example in `.env.example`

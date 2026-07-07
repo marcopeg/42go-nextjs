@@ -82,7 +82,7 @@ export const MobileListEditPanel = ({
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 px-4 py-3 rounded-md border"
+              className="flex-1 rounded-md bg-transparent px-4 py-3 text-foreground underline-offset-4 hover:bg-transparent hover:underline"
             >
               Cancel
             </button>

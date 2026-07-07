@@ -1,6 +1,11 @@
 import { getAppID } from "@/42go/config/app-config";
 import { getDB } from "@/42go/db";
+import { getSessionUserId } from "@/42go/policy/access";
 import { protectRoute } from "@/42go/policy";
+import {
+  AccountErasureError,
+  runAccountErasure,
+} from "@/42go/users/account-erasure";
 
 type UserRow = {
   id: string;
@@ -63,6 +68,12 @@ type UpdateUserFields = {
   emailVerified?: unknown;
   profile?: unknown;
   featureFlags?: unknown;
+};
+
+type DeleteUserBody = {
+  userId?: unknown;
+  confirmationEmail?: unknown;
+  finalConfirmation?: unknown;
 };
 
 const isPlainJsonObject = (value: unknown): value is Record<string, unknown> =>
@@ -281,6 +292,68 @@ const updateUser = async (req: Request) => {
   return Response.json({ ok: true });
 };
 
+const deleteUser = async (req: Request) => {
+  const appId = await getAppID();
+
+  if (!appId) {
+    return Response.json(
+      { error: "app_not_found", message: "Unable to resolve app context" },
+      { status: 404 }
+    );
+  }
+
+  const actorUserId = await getSessionUserId();
+  if (!actorUserId) {
+    return Response.json(
+      { error: "session", message: "login required" },
+      { status: 401 }
+    );
+  }
+
+  const body = (await req.json().catch(() => null)) as DeleteUserBody | null;
+  const userId = typeof body?.userId === "string" ? body.userId : "";
+  const confirmationEmail =
+    typeof body?.confirmationEmail === "string" ? body.confirmationEmail : "";
+  const finalConfirmation = body?.finalConfirmation === true;
+
+  if (!userId || !confirmationEmail || !finalConfirmation) {
+    return Response.json(
+      {
+        error: "invalid_request",
+        message: "Invalid account erasure request.",
+      },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const result = await runAccountErasure({
+      appId,
+      targetUserId: userId,
+      actorUserId,
+      confirmationEmail,
+    });
+
+    return Response.json(result);
+  } catch (error) {
+    if (error instanceof AccountErasureError) {
+      return Response.json(
+        { error: error.code, message: error.message },
+        { status: error.status }
+      );
+    }
+
+    console.error("[users] account erasure failed", error);
+    return Response.json(
+      {
+        error: "account_erasure_failed",
+        message: "Unable to erase account.",
+      },
+      { status: 500 }
+    );
+  }
+};
+
 export const GET = protectRoute(listUsers, {
   require: {
     feature: "api:users",
@@ -296,5 +369,14 @@ export const PATCH = protectRoute(updateUser, {
     session: true,
     role: "backoffice",
     grants: ["users:list"],
+  },
+});
+
+export const DELETE = protectRoute(deleteUser, {
+  require: {
+    feature: "api:users",
+    session: true,
+    role: "backoffice",
+    grants: ["users:delete"],
   },
 });

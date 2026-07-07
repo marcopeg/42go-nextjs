@@ -29,6 +29,17 @@ const upsertUser = async (trx, user) => {
   return rows[0].id || rows[0];
 };
 
+const upsertGrant = async (trx, grant) => {
+  await trx("auth.grants")
+    .insert(grant)
+    .onConflict("id")
+    .merge({
+      title: grant.title,
+      description: grant.description,
+      updated_at: grant.updated_at,
+    });
+};
+
 exports.seed = async function seedDefaultTestUsers(knex) {
   await knex.transaction(async (trx) => {
     const now = new Date();
@@ -72,6 +83,22 @@ exports.seed = async function seedDefaultTestUsers(knex) {
     });
     console.log(`Created default Jane Doe test user with ID: ${janeDoeId}`);
 
+    await upsertGrant(trx, {
+      id: "users:list",
+      title: "List users",
+      description: "Let see all users in the system",
+      created_at: now,
+      updated_at: now,
+    });
+
+    await upsertGrant(trx, {
+      id: "users:delete",
+      title: "Delete user",
+      description: "Let erase a user account",
+      created_at: now,
+      updated_at: now,
+    });
+
     await trx("auth.roles_users")
       .insert([
         {
@@ -90,5 +117,24 @@ exports.seed = async function seedDefaultTestUsers(knex) {
       .onConflict(["app_id", "user_id", "role_id"])
       .ignore();
     console.log("Associated default admin test user with roles");
+
+    await trx("auth.roles_grants")
+      .insert([
+        {
+          role_id: "backoffice",
+          grant_id: "users:list",
+          app_id: "default",
+          created_at: now,
+        },
+        {
+          role_id: "backoffice",
+          grant_id: "users:delete",
+          app_id: "default",
+          created_at: now,
+        },
+      ])
+      .onConflict(["app_id", "role_id", "grant_id"])
+      .ignore();
+    console.log("Associated default backoffice role with users grants");
   });
 };

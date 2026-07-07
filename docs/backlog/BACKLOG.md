@@ -56,7 +56,6 @@
 
 ## Refined
 
-- [XJ94: Add Backoffice Account Erasure](./refined/XJ94-add-backoffice-account-erasure/XJ94.task.md) | [plan](./refined/XJ94-add-backoffice-account-erasure/XJ94.plan.md)
 
 ## Planned
 

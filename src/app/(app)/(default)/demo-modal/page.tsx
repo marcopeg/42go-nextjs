@@ -503,7 +503,7 @@ export default function DemoModalPage() {
                 <>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="neutralLink"
                     onClick={() => setPanelStackConfirmOpen(false)}
                   >
                     Cancel

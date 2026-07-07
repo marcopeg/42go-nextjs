@@ -548,8 +548,8 @@ export default function QuicklistInfoPage() {
               <section className="pt-4">
                 <Button
                   type="button"
-                  variant="outline"
-                  className="w-full border-red-500 text-red-600 hover:bg-red-50 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-500/10"
+                  variant="destructiveOutline"
+                  className="w-full"
                   onClick={leaveProject}
                   disabled={leaving || !session?.user?.id}
                 >

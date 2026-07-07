@@ -88,6 +88,16 @@ exports.seed = async function (knex) {
     });
     console.log(`Created backoffice grant with ID: ${usersEditGrantId}`);
 
+    const usersDeleteGrantId = "users:delete";
+    await trx("auth.grants").insert({
+      id: usersDeleteGrantId,
+      title: "Delete user",
+      description: "Let erase a user account",
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    console.log(`Created backoffice grant with ID: ${usersDeleteGrantId}`);
+
     // Associate the users list to the backoffice role
     await trx("auth.roles_grants").insert({
       role_id: backofficeRoleId,
@@ -96,6 +106,14 @@ exports.seed = async function (knex) {
       created_at: new Date(),
     });
     console.log(`Associated backoffice grant with backoffice role`);
+
+    await trx("auth.roles_grants").insert({
+      role_id: backofficeRoleId,
+      grant_id: usersDeleteGrantId,
+      app_id: "default",
+      created_at: new Date(),
+    });
+    console.log(`Associated delete user grant with backoffice role`);
   });
 
   console.log("Seed completed successfully!");

@@ -270,7 +270,7 @@ export const IdentifierLogin = ({
         </form>
       ) : null}
 
-      <Button asChild variant="link" className={secondaryLinkButtonClass}>
+      <Button asChild variant="neutralLink" className={secondaryLinkButtonClass}>
         <Link href="/">Cancel</Link>
       </Button>
     </div>

@@ -99,7 +99,7 @@ export function CredentialsLogin({
       </Button>
       <Button
         asChild
-        variant="ghost"
+        variant="neutralLink"
         className="w-full h-12 rounded-lg text-lg font-medium"
       >
         <Link href="/">Cancel</Link>

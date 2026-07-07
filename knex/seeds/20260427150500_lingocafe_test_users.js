@@ -112,6 +112,15 @@ exports.seed = async function seedLingocafeTestUsers(knex) {
     });
     console.log("Ensured users:list grant exists");
 
+    await upsertGrant(trx, {
+      id: "users:delete",
+      title: "Delete user",
+      description: "Let erase a user account",
+      created_at: now,
+      updated_at: now,
+    });
+    console.log("Ensured users:delete grant exists");
+
     await trx("auth.roles_users")
       .where({
         app_id: "lingocafe",
@@ -142,5 +151,16 @@ exports.seed = async function seedLingocafeTestUsers(knex) {
       .onConflict(["app_id", "role_id", "grant_id"])
       .ignore();
     console.log("Associated users:list grant with LingoCafe backoffice role");
+
+    await trx("auth.roles_grants")
+      .insert({
+        app_id: "lingocafe",
+        role_id: "backoffice",
+        grant_id: "users:delete",
+        created_at: now,
+      })
+      .onConflict(["app_id", "role_id", "grant_id"])
+      .ignore();
+    console.log("Associated users:delete grant with LingoCafe backoffice role");
   });
 };
