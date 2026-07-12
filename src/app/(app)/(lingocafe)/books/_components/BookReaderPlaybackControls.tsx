@@ -23,7 +23,7 @@ export const BookReaderPlaybackControls = ({
     position: "fixed",
     left: "0.75rem",
     right: "0.75rem",
-    bottom: "calc(env(safe-area-inset-bottom) + 0.5rem)",
+    bottom: "max(2rem, calc(env(safe-area-inset-bottom) + 1rem))",
     zIndex: 1000,
   };
 
