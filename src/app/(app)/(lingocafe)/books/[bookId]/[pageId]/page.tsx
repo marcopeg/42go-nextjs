@@ -16,6 +16,7 @@ import {
 } from "@/app/(app)/(lingocafe)/books/_components/BookReaderSurfaces";
 import { BookReaderPreferencesPanel } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
 import { BookReaderTableOfContents } from "@/app/(app)/(lingocafe)/books/_components/BookReaderTableOfContents";
+import { useReaderPlayback } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/useReaderPlayback";
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
 import type {
   ReaderBookPage,
@@ -331,6 +332,14 @@ const BookReadPage = () => {
   );
   const desktopScrollRef = useRef<HTMLDivElement | null>(null);
   const mobileScrollRef = useRef<HTMLDivElement | null>(null);
+  const getActiveReaderScrollContainer = useCallback(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 768px)").matches
+        ? desktopScrollRef.current
+        : mobileScrollRef.current,
+    []
+  );
   const restoredKeyRef = useRef("");
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestProgressRef = useRef<number | null>(null);
@@ -388,6 +397,13 @@ const BookReadPage = () => {
   const bookshelfHref = "/books";
   const activeBookId = bookPage?.book.id || readerRoute?.bookId || bookId;
   const activePageId = bookPage?.page.pageId || readerRoute?.pageId || pageId;
+  const playback = useReaderPlayback({
+    bookId: bookPage?.book.id || "",
+    pageId: bookPage?.page.pageId || "",
+    language: bookPage?.book.lang || "",
+    getScrollContainer: getActiveReaderScrollContainer,
+    trackEvent,
+  });
   const bookInfoHref = activeBookId
     ? `/books/${encodeURIComponent(activeBookId)}`
     : bookshelfHref;
@@ -799,6 +815,7 @@ const BookReadPage = () => {
           readingProgressBps={readingProgressBps}
           headerTitleMode={headerTitleMode}
           preferences={readerPreferences}
+          playback={playback}
           pageTurnPending={pageTurnPending}
           onOpenTableOfContents={openTableOfContents}
           onOpenPreferences={openPreferences}
@@ -814,6 +831,7 @@ const BookReadPage = () => {
           readingProgressBps={readingProgressBps}
           headerTitleMode={headerTitleMode}
           preferences={readerPreferences}
+          playback={playback}
           pageTurnPending={pageTurnPending}
           onOpenTableOfContents={openTableOfContents}
           onOpenPreferences={openPreferences}

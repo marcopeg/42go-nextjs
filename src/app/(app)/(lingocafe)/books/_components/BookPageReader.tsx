@@ -23,10 +23,18 @@ import {
   getReaderFontSize,
   type ReaderPreferences,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
+import type {
+  ReaderPlaybackSentence,
+  ReaderPlaybackWordRange,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 
 type BookPageReaderProps = {
   bookPage: ReaderBookPage;
   preferences: ReaderPreferences;
+  playbackSentenceId: string | null;
+  playbackWordRange: ReaderPlaybackWordRange | null;
+  onSentenceCatalogChange: (sentences: ReaderPlaybackSentence[]) => void;
+  onSentenceActivate: (sentenceId: string) => void;
 };
 
 type SentenceAnchor = {
@@ -57,11 +65,14 @@ type TranslationState = SentenceSelection & {
 
 type SentenceRenderContext = {
   bookPage: ReaderBookPage;
-  enabled: boolean;
+  translationEnabled: boolean;
   activeSentenceId: string | null;
+  playbackSentenceId: string | null;
+  playbackWordRange: ReaderPlaybackWordRange | null;
   index: number;
   getSentenceAnchor: (element: HTMLElement) => SentenceAnchor | null;
   onSentenceSelect: (selection: SentenceSelection) => void;
+  onSentenceActivate: (sentenceId: string) => void;
 };
 
 type TranslationApiResponse = {
@@ -217,6 +228,36 @@ const getTranslationSourceLabel = (
     google: "API",
   })[source];
 
+const renderPlaybackText = (
+  segment: string,
+  sentence: string,
+  range: ReaderPlaybackWordRange | null
+) => {
+  if (!range) return segment;
+  const sentenceOffset = segment.indexOf(sentence);
+  if (sentenceOffset < 0) return segment;
+  const start = sentenceOffset + Math.max(0, range.start);
+  const end = sentenceOffset + Math.min(sentence.length, range.end);
+  if (end <= start) return segment;
+
+  return (
+    <>
+      {segment.slice(0, start)}
+      <mark
+        className="rounded-[2px] px-0.5"
+        style={{
+          backgroundColor:
+            "color-mix(in oklab, var(--primary) 34%, transparent)",
+          color: "var(--reader-fg)",
+        }}
+      >
+        {segment.slice(start, end)}
+      </mark>
+      {segment.slice(end)}
+    </>
+  );
+};
+
 const ReaderTranslationPopover = ({
   state,
 }: {
@@ -276,8 +317,7 @@ const renderSentenceText = (
     const id = `${context.bookPage.page.bookId}:${context.bookPage.page.pageId}:${context.index}`;
     context.index += 1;
     const active = context.activeSentenceId === id;
-
-    if (!context.enabled) return segment;
+    const playbackActive = context.playbackSentenceId === id;
 
     let tapCandidate: TapCandidate | null = null;
     const isTapMovement = (event: ReactPointerEvent<HTMLSpanElement>) => {
@@ -293,6 +333,8 @@ const renderSentenceText = (
     };
     const handleSelect = (target: HTMLSpanElement) => {
       if (hasActiveTextSelection()) return;
+      context.onSentenceActivate(id);
+      if (!context.translationEnabled) return;
       const anchor = context.getSentenceAnchor(target);
       if (!anchor) return;
       context.onSentenceSelect({
@@ -308,6 +350,7 @@ const renderSentenceText = (
         role="button"
         tabIndex={0}
         data-reader-sentence-id={id}
+        aria-current={playbackActive ? "true" : undefined}
         onPointerDown={(event) => {
           if (event.button !== 0) return;
           if (event.pointerType === "mouse") {
@@ -353,13 +396,25 @@ const renderSentenceText = (
         }}
         className="cursor-pointer rounded-[3px] px-0.5 transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
         style={{
-          backgroundColor: active ? "var(--reader-highlight-bg)" : undefined,
+          backgroundColor: active
+            ? "var(--reader-highlight-bg)"
+            : playbackActive
+              ? "color-mix(in oklab, var(--primary) 14%, transparent)"
+              : undefined,
           color: active ? "var(--reader-highlight-fg)" : undefined,
-          position: active ? "relative" : undefined,
-          zIndex: active ? 50 : undefined,
+          boxShadow:
+            playbackActive && !active
+              ? "inset 0 -2px 0 color-mix(in oklab, var(--primary) 60%, transparent)"
+              : undefined,
+          position: active || playbackActive ? "relative" : undefined,
+          zIndex: active ? 50 : playbackActive ? 40 : undefined,
         }}
       >
-        {segment}
+        {renderPlaybackText(
+          segment,
+          sentence,
+          playbackActive ? context.playbackWordRange : null
+        )}
       </span>
     );
   });
@@ -469,6 +524,10 @@ const BookPageMarkdown = ({
 export const BookPageReader = ({
   bookPage,
   preferences,
+  playbackSentenceId,
+  playbackWordRange,
+  onSentenceCatalogChange,
+  onSentenceActivate,
 }: BookPageReaderProps) => {
   const { trackEvent } = useEventTracker();
   const font = getReaderFont(preferences);
@@ -483,8 +542,10 @@ export const BookPageReader = ({
   const activeSentenceId = translationState?.id ?? null;
   const sentenceContext: SentenceRenderContext = {
     bookPage,
-    enabled: translationEnabled,
+    translationEnabled,
     activeSentenceId,
+    playbackSentenceId,
+    playbackWordRange,
     index: 0,
     getSentenceAnchor: (element) =>
       articleRef.current
@@ -503,7 +564,41 @@ export const BookPageReader = ({
             }
       );
     },
+    onSentenceActivate,
   };
+
+  useEffect(() => {
+    const article = articleRef.current;
+    if (!article) return;
+    const blockIndexes = new Map<Element, number>();
+    const sentenceElements = Array.from(
+      article.querySelectorAll<HTMLElement>("[data-reader-sentence-id]")
+    );
+    const catalog = sentenceElements
+      .map((element, index): ReaderPlaybackSentence | null => {
+        const id = element.dataset.readerSentenceId;
+        const text = element.textContent?.trim() || "";
+        if (!id || !text) return null;
+        const block = element.closest("h1,h2,h3,h4,h5,h6,p") || element;
+        if (!blockIndexes.has(block)) blockIndexes.set(block, blockIndexes.size);
+        return {
+          id,
+          text,
+          index,
+          paragraphIndex: blockIndexes.get(block) || 0,
+        };
+      })
+      .filter((sentence): sentence is ReaderPlaybackSentence => !!sentence);
+    onSentenceCatalogChange(catalog);
+  }, [
+    bookPage.page.bookId,
+    bookPage.page.content,
+    bookPage.page.pageId,
+    bookPage.page.summary,
+    bookPage.page.title,
+    onSentenceCatalogChange,
+    preferences,
+  ]);
 
   useEffect(() => {
     if (

@@ -14,12 +14,14 @@ import { BookOpenText, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { useTheme } from "@/42go/config/ThemeProvider";
 import { BookPageReader } from "@/app/(app)/(lingocafe)/books/_components/BookPageReader";
+import { BookReaderPlaybackControls } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPlaybackControls";
 import { BookReaderPreferencesTrigger } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
 import type { ReaderBookPage } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 import {
   getReaderThemeStyle,
   type ReaderPreferences,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
+import type { ReaderPlaybackController } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 import { Button } from "@/components/ui/button";
 
 type ReaderSurfaceProps = {
@@ -31,6 +33,7 @@ type ReaderSurfaceProps = {
   readingProgressBps: number;
   headerTitleMode: ReaderHeaderTitleMode;
   preferences: ReaderPreferences;
+  playback: ReaderPlaybackController;
   pageTurnPending: boolean;
   onOpenTableOfContents: () => void;
   onOpenPreferences: () => void;
@@ -407,6 +410,7 @@ export const BookReaderDesktopSurface = ({
   readingProgressBps,
   headerTitleMode,
   preferences,
+  playback,
   pageTurnPending,
   onOpenTableOfContents,
   onOpenPreferences,
@@ -468,7 +472,14 @@ export const BookReaderDesktopSurface = ({
           )}
           {!loading && !error && bookPage && (
             <>
-              <BookPageReader bookPage={bookPage} preferences={preferences} />
+              <BookPageReader
+                bookPage={bookPage}
+                preferences={preferences}
+                playbackSentenceId={playback.activeSentenceId}
+                playbackWordRange={playback.activeWordRange}
+                onSentenceCatalogChange={playback.registerSentences}
+                onSentenceActivate={playback.selectSentence}
+              />
               <div className="mx-auto flex w-full max-w-[680px] items-center justify-center px-1 pb-24 pt-4">
                 <BookProgress
                   bookPage={bookPage}
@@ -479,7 +490,7 @@ export const BookReaderDesktopSurface = ({
             </>
           )}
         </div>
-
+        <BookReaderPlaybackControls playback={playback} />
       </section>
     </div>
   );
@@ -494,6 +505,7 @@ export const BookReaderMobileSurface = ({
   readingProgressBps,
   headerTitleMode,
   preferences,
+  playback,
   pageTurnPending,
   onOpenTableOfContents,
   onOpenPreferences,
@@ -587,7 +599,14 @@ export const BookReaderMobileSurface = ({
           )}
           {!loading && !error && bookPage && (
             <>
-              <BookPageReader bookPage={bookPage} preferences={preferences} />
+              <BookPageReader
+                bookPage={bookPage}
+                preferences={preferences}
+                playbackSentenceId={playback.activeSentenceId}
+                playbackWordRange={playback.activeWordRange}
+                onSentenceCatalogChange={playback.registerSentences}
+                onSentenceActivate={playback.selectSentence}
+              />
               <div className="pb-10 pt-4">
                 <BookProgress
                   bookPage={bookPage}
@@ -599,7 +618,7 @@ export const BookReaderMobileSurface = ({
             </>
           )}
         </div>
-
+        <BookReaderPlaybackControls playback={playback} />
       </div>
     </div>
   );
