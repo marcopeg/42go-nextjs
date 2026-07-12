@@ -4,6 +4,7 @@ export const READER_PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25] as const;
 export const READER_SENTENCE_PAUSE_MS = 350;
 export const READER_PARAGRAPH_PAUSE_MS = 2000;
 export const READER_SUMMARY_PAUSE_MS = 3500;
+export const READER_PAGE_TRANSITION_PAUSE_MS = 3000;
 
 export const clampPlaybackBps = (value: number) =>
   Math.min(10000, Math.max(0, Math.round(value)));

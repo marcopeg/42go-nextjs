@@ -10,6 +10,7 @@ import {
   getReaderSentenceSelector,
   playbackBpsToSentenceIndex,
   READER_PARAGRAPH_PAUSE_MS,
+  READER_PAGE_TRANSITION_PAUSE_MS,
   READER_SENTENCE_PAUSE_MS,
   READER_SUMMARY_PAUSE_MS,
   sentenceIndexToPlaybackBps,
@@ -123,6 +124,7 @@ export const useReaderPlayback = ({
   const catalogPageKeyRef = useRef("");
   const resetPageKeyRef = useRef("");
   const autoStartedPageKeyRef = useRef("");
+  const onAutoStartRef = useRef(onAutoStart);
   const pausedByTranslationRef = useRef(false);
   const [sentences, setSentences] = useState<ReaderPlaybackSentence[]>([]);
   const [catalogPageKey, setCatalogPageKey] = useState("");
@@ -143,6 +145,10 @@ export const useReaderPlayback = ({
     statusRef.current = next;
     setStatusState(next);
   }, []);
+
+  useEffect(() => {
+    onAutoStartRef.current = onAutoStart;
+  }, [onAutoStart]);
 
   const setActiveIndex = useCallback((next: number) => {
     activeIndexRef.current = next;
@@ -603,17 +609,27 @@ export const useReaderPlayback = ({
     autoStartedPageKeyRef.current = pageKey;
     const container = getScrollContainer();
     if (container) container.scrollTop = 0;
-    start(true);
-    onAutoStart?.();
+    pendingIndexRef.current = 0;
+    pendingPauseMsRef.current = READER_PAGE_TRANSITION_PAUSE_MS;
+    setActiveIndex(-1);
+    setActiveWordRange(null);
+    setIsOpen(true);
+    setStatus("delay");
+    sentenceTimerRef.current = setTimeout(() => {
+      sentenceTimerRef.current = null;
+      pendingIndexRef.current = null;
+      speakIndexRef.current(0);
+      onAutoStartRef.current?.();
+    }, READER_PAGE_TRANSITION_PAUSE_MS);
   }, [
     autoStartPageKey,
     bookId,
     canPlay,
     catalogPageKey,
     getScrollContainer,
-    onAutoStart,
     pageId,
-    start,
+    setActiveIndex,
+    setStatus,
   ]);
 
   const activeSentenceId = sentences[activeIndex]?.id ?? null;

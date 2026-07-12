@@ -499,13 +499,15 @@ export const BookReaderDesktopSurface = ({
                 onSentenceActivate={playback.selectSentence}
                 onTranslationOpenChange={playback.setTranslationPaused}
               />
-              <div className="mx-auto flex w-full max-w-[680px] items-center justify-center px-1 pb-24 pt-4">
-                <BookProgress
-                  bookPage={bookPage}
-                  onNavigatePage={onNavigatePage}
-                  pageTurnPending={pageTurnPending}
-                />
-              </div>
+              {!playback.isOpen && (
+                <div className="mx-auto flex w-full max-w-[680px] items-center justify-center px-1 pb-24 pt-4">
+                  <BookProgress
+                    bookPage={bookPage}
+                    onNavigatePage={onNavigatePage}
+                    pageTurnPending={pageTurnPending}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
@@ -640,14 +642,16 @@ export const BookReaderMobileSurface = ({
                 onSentenceActivate={playback.selectSentence}
                 onTranslationOpenChange={playback.setTranslationPaused}
               />
-              <div className="pb-10 pt-4">
-                <BookProgress
-                  bookPage={bookPage}
-                  onNavigatePage={onNavigatePage}
-                  pageTurnPending={pageTurnPending}
-                  compact
-                />
-              </div>
+              {!playback.isOpen && (
+                <div className="pb-10 pt-4">
+                  <BookProgress
+                    bookPage={bookPage}
+                    onNavigatePage={onNavigatePage}
+                    pageTurnPending={pageTurnPending}
+                    compact
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
