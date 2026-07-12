@@ -35,6 +35,7 @@ type BookPageReaderProps = {
   playbackWordRange: ReaderPlaybackWordRange | null;
   onSentenceCatalogChange: (sentences: ReaderPlaybackSentence[]) => void;
   onSentenceActivate: (sentenceId: string) => void;
+  onTranslationOpenChange: (isOpen: boolean) => void;
 };
 
 type SentenceAnchor = {
@@ -107,14 +108,54 @@ const hasActiveTextSelection = () => {
   );
 };
 
+const sentenceAbbreviations = new Set([
+  "adm", "approx", "asst", "capt", "dept", "dr", "e.g", "etc", "fig",
+  "gen", "i.e", "jr", "mr", "mrs", "ms", "prof", "rev", "sr", "st",
+]);
+
 const splitSentenceSegments = (text: string) => {
   if (!text.trim()) return [text];
 
-  const matches = text.match(
-    /(\s*[^.!?。！？]+[.!?。！？]+["')\]]*|\s*[^.!?。！？]+$)/g
-  );
+  const segments: string[] = [];
+  let start = 0;
+  let wordCount = 0;
+  let cursor = 0;
+  const pushSegment = (end: number) => {
+    if (end <= start) return;
+    segments.push(text.slice(start, end));
+    start = end;
+    wordCount = 0;
+  };
 
-  return matches && matches.length > 0 ? matches : [text];
+  while (cursor < text.length) {
+    const character = text[cursor];
+    if (/\w/u.test(character)) {
+      wordCount += 1;
+      while (cursor + 1 < text.length && /[\w'’]/u.test(text[cursor + 1])) cursor += 1;
+    }
+
+    const isFullStop = character === ".";
+    if (/[!?。！？]/u.test(character) || isFullStop) {
+      const before = text.slice(start, cursor + 1);
+      const token = before.match(/([A-Za-z]{1,12}(?:\.[A-Za-z]{1,12})?)\.$/)?.[1]?.toLowerCase();
+      const isAbbreviation = isFullStop && (
+        token?.length === 1 ||
+        (token ? sentenceAbbreviations.has(token) : false) ||
+        /\d\.\d/u.test(text.slice(Math.max(0, cursor - 1), cursor + 2)) ||
+        wordCount < 2
+      );
+      if (!isAbbreviation) {
+        let end = cursor + 1;
+        while (end < text.length && /["')\]]/u.test(text[end])) end += 1;
+        pushSegment(end);
+        cursor = end - 1;
+      }
+    }
+    cursor += 1;
+  }
+
+  if (start < text.length) pushSegment(text.length);
+  return segments.length > 0 ? segments : [text];
 };
 
 const getSentenceAnchorInContainer = (
@@ -244,7 +285,7 @@ const renderPlaybackText = (
     <>
       {segment.slice(0, start)}
       <mark
-        className="rounded-[2px] px-0.5"
+        className="rounded-[2px]"
         style={{
           backgroundColor:
             "color-mix(in oklab, var(--primary) 34%, transparent)",
@@ -394,7 +435,7 @@ const renderSentenceText = (
           event.preventDefault();
           handleSelect(event.currentTarget);
         }}
-        className="cursor-pointer rounded-[3px] px-0.5 transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+        className="cursor-pointer rounded-[3px] transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
         style={{
           backgroundColor: active
             ? "var(--reader-highlight-bg)"
@@ -528,6 +569,7 @@ export const BookPageReader = ({
   playbackWordRange,
   onSentenceCatalogChange,
   onSentenceActivate,
+  onTranslationOpenChange,
 }: BookPageReaderProps) => {
   const { trackEvent } = useEventTracker();
   const font = getReaderFont(preferences);
@@ -540,6 +582,7 @@ export const BookPageReader = ({
   const [translationState, setTranslationState] =
     useState<TranslationState | null>(null);
   const activeSentenceId = translationState?.id ?? null;
+  const isTranslationOpen = translationState !== null;
   const sentenceContext: SentenceRenderContext = {
     bookPage,
     translationEnabled,
@@ -568,6 +611,14 @@ export const BookPageReader = ({
   };
 
   useEffect(() => {
+    onTranslationOpenChange(isTranslationOpen);
+  }, [isTranslationOpen, onTranslationOpenChange]);
+
+  useEffect(() => {
+    setTranslationState(null);
+  }, [bookPage.page.bookId, bookPage.page.pageId]);
+
+  useEffect(() => {
     const article = articleRef.current;
     if (!article) return;
     const blockIndexes = new Map<Element, number>();
@@ -586,6 +637,7 @@ export const BookPageReader = ({
           text,
           index,
           paragraphIndex: blockIndexes.get(block) || 0,
+          isSummary: Boolean(element.closest("[data-reader-summary]")),
         };
       })
       .filter((sentence): sentence is ReaderPlaybackSentence => !!sentence);
@@ -869,6 +921,7 @@ export const BookPageReader = ({
         </div>
         {bookPage.page.summary && (
           <p
+            data-reader-summary
             className="mx-auto mt-8 max-w-xl break-words italic leading-7"
             style={{
               color: "var(--reader-fg-muted)",

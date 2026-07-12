@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { Pause, Play, Volume2, X } from "lucide-react";
 
 import type { ReaderPlaybackController } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
@@ -13,11 +13,26 @@ export const BookReaderPlaybackControls = ({
 }) => {
   const [draftProgress, setDraftProgress] = useState<number | null>(null);
   const [seeking, setSeeking] = useState(false);
+  const floatingFabStyle: CSSProperties = {
+    position: "fixed",
+    right: "calc(env(safe-area-inset-right) + 1.25rem)",
+    bottom: "calc(env(safe-area-inset-bottom) + 1.25rem)",
+    zIndex: 1000,
+  };
+  const floatingPlayerStyle: CSSProperties = {
+    position: "fixed",
+    left: "0.75rem",
+    right: "0.75rem",
+    bottom: "calc(env(safe-area-inset-bottom) + 0.5rem)",
+    zIndex: 1000,
+  };
 
   if (!playback.isOpen) {
     return (
-      <div className="pointer-events-auto z-[70] flex h-24 shrink-0 items-start justify-end px-5 pt-2 md:h-28 md:px-8">
-        <div className="flex max-w-[min(22rem,calc(100vw-2.5rem))] flex-col items-end gap-2">
+      <div
+        className="pointer-events-auto flex max-w-[min(22rem,calc(100vw-2.5rem))] touch-manipulation flex-col items-end gap-2"
+        style={floatingFabStyle}
+      >
           {!playback.canPlay && playback.unavailableReason && (
             <div
               role="status"
@@ -29,7 +44,7 @@ export const BookReaderPlaybackControls = ({
           <Button
             type="button"
             size="icon"
-            onClick={playback.start}
+            onClick={() => playback.start()}
             disabled={!playback.canPlay}
             aria-label={
               playback.canPlay
@@ -41,7 +56,6 @@ export const BookReaderPlaybackControls = ({
           >
             <Volume2 className="h-6 w-6" />
           </Button>
-        </div>
       </div>
     );
   }
@@ -59,12 +73,15 @@ export const BookReaderPlaybackControls = ({
   };
 
   return (
-    <div className="pointer-events-auto z-[70] flex h-24 shrink-0 items-start justify-center px-3 pt-2 md:px-6">
-      <div
-        role="region"
-        aria-label="Page playback"
-        className="flex w-full max-w-2xl flex-nowrap items-center gap-2.5 rounded-2xl border bg-background/95 p-2.5 text-foreground shadow-2xl backdrop-blur md:gap-3 md:px-4"
-      >
+    <div
+      className="pointer-events-auto flex min-w-0 touch-manipulation justify-center md:left-6 md:right-6"
+      style={floatingPlayerStyle}
+    >
+        <div
+          role="region"
+          aria-label="Page playback"
+          className="pointer-events-auto flex w-full max-w-2xl flex-nowrap items-center gap-2.5 rounded-2xl border bg-background/95 p-2.5 text-foreground shadow-2xl backdrop-blur md:gap-3 md:px-4"
+        >
         <Button
           type="button"
           variant="neutralGhost"
@@ -141,7 +158,7 @@ export const BookReaderPlaybackControls = ({
         >
           <X className="h-4 w-4" />
         </Button>
-      </div>
+        </div>
     </div>
   );
 };

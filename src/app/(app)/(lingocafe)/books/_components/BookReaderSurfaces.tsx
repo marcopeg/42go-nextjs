@@ -34,6 +34,7 @@ type ReaderSurfaceProps = {
   headerTitleMode: ReaderHeaderTitleMode;
   preferences: ReaderPreferences;
   playback: ReaderPlaybackController;
+  forceScrollTop: boolean;
   pageTurnPending: boolean;
   onOpenTableOfContents: () => void;
   onOpenPreferences: () => void;
@@ -411,6 +412,7 @@ export const BookReaderDesktopSurface = ({
   headerTitleMode,
   preferences,
   playback,
+  forceScrollTop,
   pageTurnPending,
   onOpenTableOfContents,
   onOpenPreferences,
@@ -424,6 +426,17 @@ export const BookReaderDesktopSurface = ({
   const bookTitle = bookPage?.book.title || "Reading";
   const pageTitle = getReaderPageTitle(bookPage);
   const levelLabel = bookPage ? formatLevelLabel(bookPage) : null;
+
+  useLayoutEffect(() => {
+    if (!forceScrollTop || !bookPage) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    container.scrollTop = 0;
+    const frame = requestAnimationFrame(() => {
+      container.scrollTop = 0;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [bookPage, forceScrollTop, scrollRef]);
 
   return (
     <div className="hidden min-h-0 flex-1 bg-background text-foreground md:flex">
@@ -466,7 +479,12 @@ export const BookReaderDesktopSurface = ({
           titleTextClassName="text-sm font-medium"
         />
 
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+        <div
+          key={bookPage?.page.pageId || "reader-desktop"}
+          ref={scrollRef}
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto"
+          style={{ overflowAnchor: "none" }}
+        >
           {(!bookPage || loading || error) && (
             <ReaderState loading={loading} error={error} />
           )}
@@ -479,6 +497,7 @@ export const BookReaderDesktopSurface = ({
                 playbackWordRange={playback.activeWordRange}
                 onSentenceCatalogChange={playback.registerSentences}
                 onSentenceActivate={playback.selectSentence}
+                onTranslationOpenChange={playback.setTranslationPaused}
               />
               <div className="mx-auto flex w-full max-w-[680px] items-center justify-center px-1 pb-24 pt-4">
                 <BookProgress
@@ -506,6 +525,7 @@ export const BookReaderMobileSurface = ({
   headerTitleMode,
   preferences,
   playback,
+  forceScrollTop,
   pageTurnPending,
   onOpenTableOfContents,
   onOpenPreferences,
@@ -519,6 +539,16 @@ export const BookReaderMobileSurface = ({
   );
   const bookTitle = bookPage?.book.title || "Reading";
   const pageTitle = getReaderPageTitle(bookPage);
+  useLayoutEffect(() => {
+    if (!forceScrollTop || !bookPage) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    container.scrollTop = 0;
+    const frame = requestAnimationFrame(() => {
+      container.scrollTop = 0;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [bookPage, forceScrollTop, scrollRef]);
   const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
     if (pageTurnPending) return;
     if (hasActiveTextSelection()) return;
@@ -564,7 +594,7 @@ export const BookReaderMobileSurface = ({
       className="flex min-h-0 flex-1 bg-background md:hidden"
       style={readerThemeStyle}
     >
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         <ReaderHeader
           backHref={backHref}
           readingProgressBps={readingProgressBps}
@@ -589,8 +619,10 @@ export const BookReaderMobileSurface = ({
         />
 
         <div
+          key={bookPage?.page.pageId || "reader-mobile"}
           ref={scrollRef}
-          className="min-w-0 flex-1 overflow-y-auto px-5 py-6"
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto px-5 py-6"
+          style={{ overflowAnchor: "none" }}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
@@ -606,6 +638,7 @@ export const BookReaderMobileSurface = ({
                 playbackWordRange={playback.activeWordRange}
                 onSentenceCatalogChange={playback.registerSentences}
                 onSentenceActivate={playback.selectSentence}
+                onTranslationOpenChange={playback.setTranslationPaused}
               />
               <div className="pb-10 pt-4">
                 <BookProgress

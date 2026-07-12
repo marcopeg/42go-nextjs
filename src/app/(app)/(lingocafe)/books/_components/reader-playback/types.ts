@@ -3,6 +3,7 @@ export type ReaderPlaybackSentence = {
   text: string;
   index: number;
   paragraphIndex: number;
+  isSummary?: boolean;
 };
 
 export type ReaderPlaybackWordRange = {
@@ -55,8 +56,9 @@ export type ReaderPlaybackController = {
   speed: number;
   registerSentences: (sentences: ReaderPlaybackSentence[]) => void;
   selectSentence: (sentenceId: string) => void;
-  start: () => void;
+  start: (fromBeginning?: boolean) => void;
   togglePause: () => void;
+  setTranslationPaused: (isOpen: boolean) => void;
   cycleSpeed: () => void;
   seek: (progressBps: number) => void;
   close: () => void;

@@ -1,7 +1,9 @@
 import type { ReaderPlaybackSentence } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 
 export const READER_PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25] as const;
+export const READER_SENTENCE_PAUSE_MS = 350;
 export const READER_PARAGRAPH_PAUSE_MS = 2000;
+export const READER_SUMMARY_PAUSE_MS = 3500;
 
 export const clampPlaybackBps = (value: number) =>
   Math.min(10000, Math.max(0, Math.round(value)));
@@ -37,7 +39,8 @@ export const areSentenceCatalogsEqual = (
     (sentence, index) =>
       sentence.id === right[index]?.id &&
       sentence.text === right[index]?.text &&
-      sentence.paragraphIndex === right[index]?.paragraphIndex
+      sentence.paragraphIndex === right[index]?.paragraphIndex &&
+      sentence.isSummary === right[index]?.isSummary
   );
 
 export const getNextPlaybackSpeed = (current: number) => {
