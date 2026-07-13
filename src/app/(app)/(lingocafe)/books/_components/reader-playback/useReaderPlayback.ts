@@ -156,6 +156,8 @@ export const useReaderPlayback = ({
   const [status, setStatusState] = useState<ReaderPlaybackStatus>("idle");
   const statusRef = useRef<ReaderPlaybackStatus>("idle");
   const [activeIndex, setActiveIndexState] = useState(-1);
+  const [previewIndex, setPreviewIndexState] = useState<number | null>(null);
+  const previewIndexRef = useRef<number | null>(null);
   const [activeWordRange, setActiveWordRange] =
     useState<ReaderPlaybackWordRange | null>(null);
   const [speed, setSpeed] = useState(1);
@@ -283,7 +285,7 @@ export const useReaderPlayback = ({
   }, []);
 
   const centerSentence = useCallback(
-    (sentenceId: string) => {
+    (sentenceId: string, behavior: ScrollBehavior = "smooth") => {
       const container = getScrollContainer();
       if (!container) return;
       const element = getSentenceElement(container, sentenceId);
@@ -300,7 +302,7 @@ export const useReaderPlayback = ({
       guidedScrollRef.current = true;
       container.scrollTo({
         top: Math.max(0, targetTop),
-        behavior: "smooth",
+        behavior,
       });
       guidedScrollTimerRef.current = setTimeout(() => {
         guidedScrollTimerRef.current = null;
@@ -605,6 +607,27 @@ export const useReaderPlayback = ({
     setSpeed(next);
   }, []);
 
+  const previewSeek = useCallback(
+    (progressBps: number | null) => {
+      if (progressBps === null || sentencesRef.current.length === 0) {
+        previewIndexRef.current = null;
+        setPreviewIndexState(null);
+        return;
+      }
+
+      const index = playbackBpsToSentenceIndex(
+        progressBps,
+        sentencesRef.current.length
+      );
+      if (previewIndexRef.current === index) return;
+
+      previewIndexRef.current = index;
+      setPreviewIndexState(index);
+      centerSentence(sentencesRef.current[index].id, "auto");
+    },
+    [centerSentence]
+  );
+
   const seek = useCallback(
     (progressBps: number) => {
       if (sentencesRef.current.length === 0) return;
@@ -612,6 +635,8 @@ export const useReaderPlayback = ({
         progressBps,
         sentencesRef.current.length
       );
+      previewIndexRef.current = null;
+      setPreviewIndexState(null);
       cancelCurrentSpeech();
       setIsOpen(true);
       guidedScrollRef.current = true;
@@ -623,6 +648,8 @@ export const useReaderPlayback = ({
 
   const close = useCallback(() => {
     cancelCurrentSpeech();
+    previewIndexRef.current = null;
+    setPreviewIndexState(null);
     setIsOpen(false);
     setActiveIndex(-1);
     setStatus("idle");
@@ -718,7 +745,8 @@ export const useReaderPlayback = ({
     setStatus,
   ]);
 
-  const activeSentenceId = sentences[activeIndex]?.id ?? null;
+  const activeSentenceId =
+    sentences[previewIndex ?? activeIndex]?.id ?? null;
 
   useEffect(() => {
     if (!isOpen || !activeSentenceId) return;
@@ -768,7 +796,7 @@ export const useReaderPlayback = ({
     unavailableReason,
     status,
     activeSentenceId,
-    activeWordRange,
+    activeWordRange: previewIndex === null ? activeWordRange : null,
     progressBps: sentenceIndexToPlaybackBps(activeIndex, sentences.length),
     speed,
     registerSentences,
@@ -777,6 +805,7 @@ export const useReaderPlayback = ({
     togglePause,
     setTranslationPaused,
     cycleSpeed,
+    previewSeek,
     seek,
     close,
   };

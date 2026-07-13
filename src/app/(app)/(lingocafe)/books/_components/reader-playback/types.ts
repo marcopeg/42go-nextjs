@@ -60,6 +60,7 @@ export type ReaderPlaybackController = {
   togglePause: () => void;
   setTranslationPaused: (isOpen: boolean) => void;
   cycleSpeed: () => void;
+  previewSeek: (progressBps: number | null) => void;
   seek: (progressBps: number) => void;
   close: () => void;
 };

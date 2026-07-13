@@ -64,12 +64,18 @@ export const BookReaderPlaybackControls = ({
     playback.status === "playing" || playback.status === "delay";
   const displayedProgress =
     seeking && draftProgress !== null ? draftProgress : playback.progressBps;
-  const commitSeek = () => {
+  const commitSeek = (progress = draftProgress) => {
     setSeeking(false);
-    if (draftProgress !== null && draftProgress !== playback.progressBps) {
-      playback.seek(draftProgress);
+    playback.previewSeek(null);
+    if (progress !== null && progress !== playback.progressBps) {
+      playback.seek(progress);
     }
     setDraftProgress(null);
+  };
+  const cancelSeek = () => {
+    setSeeking(false);
+    setDraftProgress(null);
+    playback.previewSeek(null);
   };
 
   return (
@@ -117,15 +123,15 @@ export const BookReaderPlaybackControls = ({
             onPointerDown={() => {
               setSeeking(true);
               setDraftProgress(playback.progressBps);
+              playback.previewSeek(playback.progressBps);
             }}
-            onPointerUp={commitSeek}
-            onPointerCancel={() => {
-              setSeeking(false);
-              setDraftProgress(null);
-            }}
+            onPointerUp={() => commitSeek()}
+            onPointerCancel={cancelSeek}
             onChange={(event) => {
               const value = Number(event.target.value);
+              setSeeking(true);
               setDraftProgress(value);
+              playback.previewSeek(value);
             }}
             onKeyUp={(event) => {
               if (
@@ -136,10 +142,10 @@ export const BookReaderPlaybackControls = ({
                 event.key === "PageUp" ||
                 event.key === "PageDown"
               ) {
-                playback.seek(Number(event.currentTarget.value));
+                commitSeek(Number(event.currentTarget.value));
               }
             }}
-            onBlur={commitSeek}
+            onBlur={() => commitSeek()}
             aria-label="Playback position"
             className="h-2 min-w-0 flex-1 cursor-pointer accent-primary"
           />
