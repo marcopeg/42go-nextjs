@@ -46,6 +46,7 @@ type ReaderRouteState = {
   progressBps: number | null;
 };
 const READER_SCROLL_PROGRESS_IDLE_SAVE_MS = 4000;
+const READER_PLAYBACK_PROGRESS_SAVE_MS = 30000;
 const READER_HEADER_TITLE_TOP_THRESHOLD_PX = 12;
 const READER_HEADER_TITLE_DIRECTION_THRESHOLD_PX = 6;
 const BOOK_READER_PAGE_POLICY: Policy = {
@@ -343,6 +344,8 @@ const BookReadPage = () => {
   const restoredKeyRef = useRef("");
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestProgressRef = useRef<number | null>(null);
+  const persistCurrentProgressRef = useRef<(() => void) | null>(null);
+  const playbackProgressActiveRef = useRef(false);
   const latestRouteHrefRef = useRef(routeFromUrl?.href ?? "");
   const pendingReaderHrefRef = useRef<string | null>(null);
   const navigateToReaderPageRef = useRef<
@@ -366,6 +369,7 @@ const BookReadPage = () => {
     string | null
   >(null);
   const [playbackTopPageKey, setPlaybackTopPageKey] = useState("");
+  const [restoredPageKey, setRestoredPageKey] = useState("");
   const [readingProgressBps, setReadingProgressBps] = useState(0);
   const [headerTitleMode, setHeaderTitleMode] =
     useState<ReaderHeaderTitleMode>("book");
@@ -435,6 +439,8 @@ const BookReadPage = () => {
       navigateToReaderPageRef.current(nextHref, true);
     },
     autoStartPageKey: playbackContinuationPageKey,
+    restoredPageKey,
+    restoreLastPlayedSentence: !shouldForcePlaybackTop,
     onAutoStart: () => {
       if (playbackContinuationPageKey) {
         setPlaybackTopPageKey(playbackContinuationPageKey);
@@ -728,6 +734,9 @@ const BookReadPage = () => {
 
       if (restored || attempts >= 8) {
         restoredKeyRef.current = restoreKey;
+        setRestoredPageKey(
+          `${bookPage.page.bookId}:${bookPage.page.pageId}`
+        );
         return;
       }
 
@@ -769,6 +778,20 @@ const BookReadPage = () => {
         if (err instanceof DOMException && err.name === "AbortError") return;
         console.warn("Could not save reading progress", err);
       }
+    };
+
+    persistCurrentProgressRef.current = () => {
+      const element = getActiveReaderScrollContainer();
+      if (!element) return;
+      const progress = getScrollProgressBps(element);
+
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+        scrollTimerRef.current = null;
+      }
+      latestProgressRef.current = null;
+      setReadingProgressBps(progress);
+      void sendProgress(progress);
     };
 
     const sendFinalProgress = (progress: number) => {
@@ -837,9 +860,27 @@ const BookReadPage = () => {
         latestProgressRef.current = null;
       }
 
+      persistCurrentProgressRef.current = null;
+
       controller.abort();
     };
-  }, [bookPage, loadedBookPageApiHref]);
+  }, [bookPage, getActiveReaderScrollContainer, loadedBookPageApiHref]);
+
+  useEffect(() => {
+    playbackProgressActiveRef.current =
+      playback.status === "playing" || playback.status === "delay";
+  }, [playback.status]);
+
+  useEffect(() => {
+    if (!playback.isOpen || !currentBookPageKey) return;
+
+    const timer = window.setInterval(() => {
+      if (!playbackProgressActiveRef.current) return;
+      persistCurrentProgressRef.current?.();
+    }, READER_PLAYBACK_PROGRESS_SAVE_MS);
+
+    return () => window.clearInterval(timer);
+  }, [currentBookPageKey, playback.isOpen]);
 
   return (
     <AppLayout

@@ -15,6 +15,10 @@ import {
   READER_SUMMARY_PAUSE_MS,
   sentenceIndexToPlaybackBps,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/model";
+import {
+  readLastPlayedSentenceId,
+  storeLastPlayedSentenceId,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-playback/playback-memory";
 import type {
   ReaderPlaybackController,
   ReaderPlaybackSentence,
@@ -32,6 +36,8 @@ type UseReaderPlaybackInput = {
   onPageEnd?: () => void;
   autoStartPageKey?: string | null;
   onAutoStart?: () => void;
+  restoredPageKey?: string;
+  restoreLastPlayedSentence?: boolean;
 };
 
 const getSentenceElement = (container: HTMLElement, sentenceId: string) =>
@@ -48,12 +54,22 @@ const isElementInContainerViewport = (
   );
 };
 
-const getViewportSentenceIndex = (
+const getFirstViewportSentenceIndex = (
   sentences: ReaderPlaybackSentence[],
   container: HTMLElement | null
 ) => {
   if (!container || sentences.length === 0) return 0;
   const containerRect = container.getBoundingClientRect();
+
+  for (const sentence of sentences) {
+    const element = getSentenceElement(container, sentence.id);
+    if (element && isElementInContainerViewport(element, container)) {
+      return sentence.index;
+    }
+  }
+
+  // Layout gaps can leave no sentence intersecting the viewport. In that case,
+  // use the nearest sentence instead of jumping back to the page title.
   const viewportCenter = containerRect.top + containerRect.height / 2;
   let closestIndex = 0;
   let closestDistance = Number.POSITIVE_INFINITY;
@@ -99,6 +115,8 @@ export const useReaderPlayback = ({
   onPageEnd,
   autoStartPageKey = null,
   onAutoStart,
+  restoredPageKey = "",
+  restoreLastPlayedSentence = true,
 }: UseReaderPlaybackInput): ReaderPlaybackController => {
   const providerRef = useRef<ReaderSpeechProvider | null>(null);
   const sentencesRef = useRef<ReaderPlaybackSentence[]>([]);
@@ -124,6 +142,8 @@ export const useReaderPlayback = ({
   const catalogPageKeyRef = useRef("");
   const resetPageKeyRef = useRef("");
   const autoStartedPageKeyRef = useRef("");
+  const restoredSentencePageKeyRef = useRef("");
+  const lastPlayedSentenceIdRef = useRef<string | null>(null);
   const onAutoStartRef = useRef(onAutoStart);
   const pausedByTranslationRef = useRef(false);
   const [sentences, setSentences] = useState<ReaderPlaybackSentence[]>([]);
@@ -247,6 +267,7 @@ export const useReaderPlayback = ({
       sentencesRef.current = nextSentences;
       const pageKey = `${bookId}:${pageId}`;
       catalogPageKeyRef.current = pageKey;
+      lastPlayedSentenceIdRef.current = readLastPlayedSentenceId(bookId, pageId);
       setCatalogPageKey(pageKey);
       setSentences((current) => {
         if (areSentenceCatalogsEqual(current, nextSentences)) return current;
@@ -331,6 +352,8 @@ export const useReaderPlayback = ({
           rate: speedRef.current,
           onStart: () => {
             if (generationRef.current !== generation) return;
+            lastPlayedSentenceIdRef.current = sentence.id;
+            storeLastPlayedSentenceId(bookId, pageId, sentence.id);
             trackEvent("audio.play", {
               language,
               book_id: bookId,
@@ -453,12 +476,36 @@ export const useReaderPlayback = ({
         : -1;
       const container = getScrollContainer();
       const atTop = !container || container.scrollTop <= 8;
+      const lastPlayedIndex = lastPlayedSentenceIdRef.current
+        ? sentencesRef.current.findIndex(
+            (sentence) => sentence.id === lastPlayedSentenceIdRef.current
+          )
+        : -1;
+      const lastPlayedElement =
+        container && lastPlayedIndex >= 0
+          ? getSentenceElement(
+              container,
+              sentencesRef.current[lastPlayedIndex].id
+            )
+          : null;
+      const lastPlayedIsVisible = Boolean(
+        container &&
+          lastPlayedElement &&
+          isElementInContainerViewport(lastPlayedElement, container)
+      );
       const index =
         selectedIndex >= 0
           ? selectedIndex
-          : fromBeginning || atTop
+          : fromBeginning
             ? 0
-            : getViewportSentenceIndex(sentencesRef.current, container);
+            : lastPlayedIsVisible
+              ? lastPlayedIndex
+              : atTop
+                ? 0
+                : getFirstViewportSentenceIndex(
+                    sentencesRef.current,
+                    container
+                  );
       if (fromBeginning && container) container.scrollTop = 0;
       speakIndexRef.current(index);
     } catch (error) {
@@ -597,6 +644,45 @@ export const useReaderPlayback = ({
     bookId,
     close,
     pageId,
+  ]);
+
+  useEffect(() => {
+    const pageKey = `${bookId}:${pageId}`;
+    if (!restoreLastPlayedSentence || autoStartPageKey === pageKey) return;
+    if (restoredPageKey !== pageKey || catalogPageKey !== pageKey) return;
+    if (catalogPageKeyRef.current !== pageKey) return;
+    if (restoredSentencePageKeyRef.current === pageKey) return;
+
+    restoredSentencePageKeyRef.current = pageKey;
+    const sentenceId = readLastPlayedSentenceId(bookId, pageId);
+    lastPlayedSentenceIdRef.current = sentenceId;
+    if (!sentenceId) return;
+
+    const sentenceExists = sentencesRef.current.some(
+      (sentence) => sentence.id === sentenceId
+    );
+    const container = getScrollContainer();
+    const element = container
+      ? getSentenceElement(container, sentenceId)
+      : null;
+    if (!sentenceExists || !container || !element) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    container.scrollTop = Math.max(
+      0,
+      container.scrollTop +
+        (elementRect.top - containerRect.top) -
+        (container.clientHeight - elementRect.height) / 2
+    );
+  }, [
+    autoStartPageKey,
+    bookId,
+    catalogPageKey,
+    getScrollContainer,
+    pageId,
+    restoreLastPlayedSentence,
+    restoredPageKey,
   ]);
 
   useEffect(() => {
