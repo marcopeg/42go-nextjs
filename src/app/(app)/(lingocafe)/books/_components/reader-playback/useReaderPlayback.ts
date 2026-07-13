@@ -13,6 +13,7 @@ import {
   READER_PAGE_TRANSITION_PAUSE_MS,
   READER_SENTENCE_PAUSE_MS,
   READER_SUMMARY_PAUSE_MS,
+  READER_TITLE_SUMMARY_PAUSE_MS,
   sentenceIndexToPlaybackBps,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/model";
 import {
@@ -433,7 +434,9 @@ export const useReaderPlayback = ({
 
       const pauseMs =
         next.paragraphIndex !== current.paragraphIndex
-          ? current.isSummary
+          ? next.isSummary && !current.isSummary
+            ? READER_TITLE_SUMMARY_PAUSE_MS
+            : current.isSummary
             ? READER_SUMMARY_PAUSE_MS
             : READER_PARAGRAPH_PAUSE_MS
           : READER_SENTENCE_PAUSE_MS;
