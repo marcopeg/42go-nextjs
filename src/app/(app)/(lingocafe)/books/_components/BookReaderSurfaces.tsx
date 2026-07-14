@@ -494,7 +494,14 @@ export const BookReaderDesktopSurface = ({
                 bookPage={bookPage}
                 preferences={preferences}
                 playbackSentenceId={playback.activeSentenceId}
-                playbackWordRange={playback.activeWordRange}
+                playbackSentenceHighlighting={
+                  playback.preferences.sentenceHighlighting
+                }
+                playbackWordRange={
+                  playback.preferences.wordHighlighting
+                    ? playback.activeWordRange
+                    : null
+                }
                 onSentenceCatalogChange={playback.registerSentences}
                 onSentenceActivate={playback.selectSentence}
                 onTranslationOpenChange={playback.setTranslationPaused}
@@ -637,7 +644,14 @@ export const BookReaderMobileSurface = ({
                 bookPage={bookPage}
                 preferences={preferences}
                 playbackSentenceId={playback.activeSentenceId}
-                playbackWordRange={playback.activeWordRange}
+                playbackSentenceHighlighting={
+                  playback.preferences.sentenceHighlighting
+                }
+                playbackWordRange={
+                  playback.preferences.wordHighlighting
+                    ? playback.activeWordRange
+                    : null
+                }
                 onSentenceCatalogChange={playback.registerSentences}
                 onSentenceActivate={playback.selectSentence}
                 onTranslationOpenChange={playback.setTranslationPaused}

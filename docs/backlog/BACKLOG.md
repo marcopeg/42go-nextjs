@@ -50,9 +50,11 @@
 - [DV28: optimize: public asset cache headers](./draft/DV28-optimize-public-asset-cache-headers/DV28.task.md)
 - [AT01: optimize: event partition preparation](./draft/AT01-optimize-event-partition-preparation/AT01.task.md)
 - [YQ19: optimization epic](./draft/YQ19-optimization-epic/YQ19.task.md)
+- [XC01: Let readers mark a book as read](./draft/XC01-let-readers-mark-a-book-as-read/XC01.task.md)
 
 ## Refining
 
+- [NJ02: Add External TTS Audio with Timing and Native Media Controls](./refining/NJ02-add-external-tts-audio-with-timing-and-native-media-controls/NJ02.task.md)
 
 ## Refined
 
@@ -62,7 +64,6 @@
 
 ## WIP
 
-- [LN04: Add 42go Users Pull CLI Export](./wip/LN04-add-42go-users-pull-cli-export/LN04.task.md) | [plan](./wip/LN04-add-42go-users-pull-cli-export/LN04.plan.md) | [notes](./wip/LN04-add-42go-users-pull-cli-export/LN04.notes.md)
 
 ## Blocked
 

@@ -32,6 +32,7 @@ type BookPageReaderProps = {
   bookPage: ReaderBookPage;
   preferences: ReaderPreferences;
   playbackSentenceId: string | null;
+  playbackSentenceHighlighting: boolean;
   playbackWordRange: ReaderPlaybackWordRange | null;
   onSentenceCatalogChange: (sentences: ReaderPlaybackSentence[]) => void;
   onSentenceActivate: (sentenceId: string) => void;
@@ -69,6 +70,7 @@ type SentenceRenderContext = {
   translationEnabled: boolean;
   activeSentenceId: string | null;
   playbackSentenceId: string | null;
+  playbackSentenceHighlighting: boolean;
   playbackWordRange: ReaderPlaybackWordRange | null;
   index: number;
   getSentenceAnchor: (element: HTMLElement) => SentenceAnchor | null;
@@ -359,6 +361,10 @@ const renderSentenceText = (
     context.index += 1;
     const active = context.activeSentenceId === id;
     const playbackActive = context.playbackSentenceId === id;
+    const playbackSentenceHighlighted =
+      playbackActive && context.playbackSentenceHighlighting;
+    const playbackWordHighlighted =
+      playbackActive && context.playbackWordRange !== null;
 
     let tapCandidate: TapCandidate | null = null;
     const isTapMovement = (event: ReactPointerEvent<HTMLSpanElement>) => {
@@ -439,16 +445,24 @@ const renderSentenceText = (
         style={{
           backgroundColor: active
             ? "var(--reader-highlight-bg)"
-            : playbackActive
+            : playbackSentenceHighlighted
               ? "color-mix(in oklab, var(--primary) 14%, transparent)"
               : undefined,
           color: active ? "var(--reader-highlight-fg)" : undefined,
           boxShadow:
-            playbackActive && !active
+            playbackSentenceHighlighted && !active
               ? "inset 0 -2px 0 color-mix(in oklab, var(--primary) 60%, transparent)"
               : undefined,
-          position: active || playbackActive ? "relative" : undefined,
-          zIndex: active ? 50 : playbackActive ? 40 : undefined,
+          position:
+            active || playbackSentenceHighlighted || playbackWordHighlighted
+              ? "relative"
+              : undefined,
+          zIndex:
+            active
+              ? 50
+              : playbackSentenceHighlighted || playbackWordHighlighted
+                ? 40
+                : undefined,
         }}
       >
         {renderPlaybackText(
@@ -566,6 +580,7 @@ export const BookPageReader = ({
   bookPage,
   preferences,
   playbackSentenceId,
+  playbackSentenceHighlighting,
   playbackWordRange,
   onSentenceCatalogChange,
   onSentenceActivate,
@@ -588,6 +603,7 @@ export const BookPageReader = ({
     translationEnabled,
     activeSentenceId,
     playbackSentenceId,
+    playbackSentenceHighlighting,
     playbackWordRange,
     index: 0,
     getSentenceAnchor: (element) =>

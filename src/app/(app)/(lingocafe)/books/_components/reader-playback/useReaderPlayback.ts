@@ -6,7 +6,6 @@ import type { TEventJson } from "@/42go/events";
 import { createDeviceSpeechProvider } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/device-speech-provider";
 import {
   areSentenceCatalogsEqual,
-  getNextPlaybackSpeed,
   getReaderSentenceSelector,
   playbackBpsToSentenceIndex,
   READER_PARAGRAPH_PAUSE_MS,
@@ -16,10 +15,16 @@ import {
   READER_TITLE_SUMMARY_PAUSE_MS,
   sentenceIndexToPlaybackBps,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/model";
+import type { ReaderPlaybackSpeed } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/model";
 import {
   readLastPlayedSentenceId,
   storeLastPlayedSentenceId,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/playback-memory";
+import {
+  readReaderPlaybackPreferences,
+  storeReaderPlaybackPreferences,
+  type ReaderPlaybackPreferences,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-playback/playback-preferences";
 import type {
   ReaderPlaybackController,
   ReaderPlaybackSentence,
@@ -146,10 +151,15 @@ export const useReaderPlayback = ({
   const restoredSentencePageKeyRef = useRef("");
   const lastPlayedSentenceIdRef = useRef<string | null>(null);
   const onAutoStartRef = useRef(onAutoStart);
-  const pausedByTranslationRef = useRef(false);
+  const settingsOpenRef = useRef(false);
+  const translationOpenRef = useRef(false);
+  const autoPauseReasonsRef = useRef(new Set<"settings" | "translation">());
+  const autoPausedRef = useRef(false);
+  const restartSentenceOnAutoResumeRef = useRef(false);
   const [sentences, setSentences] = useState<ReaderPlaybackSentence[]>([]);
   const [catalogPageKey, setCatalogPageKey] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpenState] = useState(false);
   const [canPlay, setCanPlay] = useState(false);
   const [unavailableReason, setUnavailableReason] = useState<string | null>(
     "Checking device voices..."
@@ -161,8 +171,22 @@ export const useReaderPlayback = ({
   const previewIndexRef = useRef<number | null>(null);
   const [activeWordRange, setActiveWordRange] =
     useState<ReaderPlaybackWordRange | null>(null);
-  const [speed, setSpeed] = useState(1);
-  const speedRef = useRef(1);
+  const [preferences, setPreferences] = useState<ReaderPlaybackPreferences>(
+    readReaderPlaybackPreferences
+  );
+  const preferencesRef = useRef(preferences);
+  const speedRef = useRef<ReaderPlaybackSpeed>(preferences.speed);
+
+  const commitPreferences = useCallback(
+    (patch: Partial<ReaderPlaybackPreferences>) => {
+      const next = { ...preferencesRef.current, ...patch };
+      preferencesRef.current = next;
+      speedRef.current = next.speed;
+      setPreferences(next);
+      storeReaderPlaybackPreferences(next);
+    },
+    []
+  );
 
   const setStatus = useCallback((next: ReaderPlaybackStatus) => {
     statusRef.current = next;
@@ -585,30 +609,115 @@ export const useReaderPlayback = ({
     setStatus,
   ]);
 
-  const setTranslationPaused = useCallback(
-    (isOpen: boolean) => {
-      if (isOpen) {
-        if (pausedByTranslationRef.current) return;
-        if (statusRef.current !== "playing" && statusRef.current !== "delay") {
-          return;
+  const syncAutoPauseReason = useCallback(
+    (reason: "settings" | "translation", active: boolean) => {
+      const reasons = autoPauseReasonsRef.current;
+
+      if (active) {
+        if (reasons.has(reason)) return;
+        const wasEmpty = reasons.size === 0;
+        reasons.add(reason);
+        if (
+          wasEmpty &&
+          (statusRef.current === "playing" || statusRef.current === "delay")
+        ) {
+          autoPausedRef.current = true;
+          togglePause();
         }
-        pausedByTranslationRef.current = true;
-        togglePause();
         return;
       }
 
-      if (!pausedByTranslationRef.current) return;
-      pausedByTranslationRef.current = false;
+      if (!reasons.delete(reason)) return;
+      if (reasons.size > 0 || !autoPausedRef.current) return;
+
+      autoPausedRef.current = false;
+      if (
+        restartSentenceOnAutoResumeRef.current &&
+        activeIndexRef.current >= 0
+      ) {
+        restartSentenceOnAutoResumeRef.current = false;
+        cancelCurrentSpeech();
+        speakIndexRef.current(activeIndexRef.current);
+        return;
+      }
+
+      restartSentenceOnAutoResumeRef.current = false;
       if (statusRef.current === "paused") togglePause();
     },
-    [togglePause]
+    [cancelCurrentSpeech, togglePause]
   );
 
-  const cycleSpeed = useCallback(() => {
-    const next = getNextPlaybackSpeed(speedRef.current);
-    speedRef.current = next;
-    setSpeed(next);
-  }, []);
+  const setTranslationPaused = useCallback(
+    (isOpen: boolean) => {
+      translationOpenRef.current = isOpen;
+      syncAutoPauseReason(
+        "translation",
+        isOpen && preferencesRef.current.autoPauseOnTranslation
+      );
+    },
+    [syncAutoPauseReason]
+  );
+
+  const setSettingsOpen = useCallback(
+    (isOpen: boolean) => {
+      setSettingsOpenState(isOpen);
+      settingsOpenRef.current = isOpen;
+      syncAutoPauseReason(
+        "settings",
+        isOpen && preferencesRef.current.autoPauseOnSettings
+      );
+    },
+    [syncAutoPauseReason]
+  );
+
+  const setSpeed = useCallback(
+    (speed: ReaderPlaybackSpeed) => {
+      if (preferencesRef.current.speed === speed) return;
+      commitPreferences({ speed });
+
+      if (activeIndexRef.current < 0) return;
+      if (autoPausedRef.current) {
+        restartSentenceOnAutoResumeRef.current = true;
+        return;
+      }
+      if (statusRef.current !== "playing" && statusRef.current !== "delay") {
+        return;
+      }
+
+      cancelCurrentSpeech();
+      speakIndexRef.current(activeIndexRef.current);
+    },
+    [cancelCurrentSpeech, commitPreferences]
+  );
+
+  const setWordHighlighting = useCallback(
+    (enabled: boolean) => commitPreferences({ wordHighlighting: enabled }),
+    [commitPreferences]
+  );
+
+  const setSentenceHighlighting = useCallback(
+    (enabled: boolean) => commitPreferences({ sentenceHighlighting: enabled }),
+    [commitPreferences]
+  );
+
+  const setAutoPauseOnTranslation = useCallback(
+    (enabled: boolean) => {
+      commitPreferences({ autoPauseOnTranslation: enabled });
+      syncAutoPauseReason(
+        "translation",
+        enabled && translationOpenRef.current
+      );
+    },
+    [commitPreferences, syncAutoPauseReason]
+  );
+
+  const setAutoPauseOnSettings = useCallback(
+    (enabled: boolean) => {
+      commitPreferences({ autoPauseOnSettings: enabled });
+      syncAutoPauseReason("settings", enabled && settingsOpenRef.current);
+    },
+    [commitPreferences, syncAutoPauseReason]
+  );
 
   const previewSeek = useCallback(
     (progressBps: number | null) => {
@@ -651,6 +760,12 @@ export const useReaderPlayback = ({
 
   const close = useCallback(() => {
     cancelCurrentSpeech();
+    settingsOpenRef.current = false;
+    setSettingsOpenState(false);
+    translationOpenRef.current = false;
+    autoPauseReasonsRef.current.clear();
+    autoPausedRef.current = false;
+    restartSentenceOnAutoResumeRef.current = false;
     previewIndexRef.current = null;
     setPreviewIndexState(null);
     setIsOpen(false);
@@ -801,13 +916,20 @@ export const useReaderPlayback = ({
     activeSentenceId,
     activeWordRange: previewIndex === null ? activeWordRange : null,
     progressBps: sentenceIndexToPlaybackBps(activeIndex, sentences.length),
-    speed,
+    speed: preferences.speed,
+    settingsOpen,
+    preferences,
     registerSentences,
     selectSentence,
     start,
     togglePause,
     setTranslationPaused,
-    cycleSpeed,
+    setSettingsOpen,
+    setSpeed,
+    setWordHighlighting,
+    setSentenceHighlighting,
+    setAutoPauseOnTranslation,
+    setAutoPauseOnSettings,
     previewSeek,
     seek,
     close,

@@ -48,3 +48,4 @@
 - [DV28: optimize: public asset cache headers](./DV28-optimize-public-asset-cache-headers/DV28.task.md)
 - [AT01: optimize: event partition preparation](./AT01-optimize-event-partition-preparation/AT01.task.md)
 - [YQ19: optimization epic](./YQ19-optimization-epic/YQ19.task.md)
+- [XC01: Let readers mark a book as read](./XC01-let-readers-mark-a-book-as-read/XC01.task.md)

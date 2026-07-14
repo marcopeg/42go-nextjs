@@ -3,8 +3,13 @@
 import { useState, type CSSProperties } from "react";
 import { Pause, Play, Volume2, X } from "lucide-react";
 
+import {
+  BookReaderPlaybackSettings,
+  READER_PLAYBACK_SURFACE_CLASSNAME,
+} from "@/app/(app)/(lingocafe)/books/_components/BookReaderPlaybackSettings";
 import type { ReaderPlaybackController } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export const BookReaderPlaybackControls = ({
   playback,
@@ -86,7 +91,10 @@ export const BookReaderPlaybackControls = ({
         <div
           role="region"
           aria-label="Page playback"
-          className="pointer-events-auto flex w-full max-w-2xl flex-nowrap items-center gap-2.5 rounded-2xl border bg-background/95 p-2.5 text-foreground shadow-2xl backdrop-blur md:gap-3 md:px-4"
+          className={cn(
+            "pointer-events-auto flex w-full max-w-2xl flex-nowrap items-center gap-2.5 p-2.5 md:gap-3 md:px-4",
+            READER_PLAYBACK_SURFACE_CLASSNAME
+          )}
         >
         <Button
           type="button"
@@ -103,15 +111,11 @@ export const BookReaderPlaybackControls = ({
           )}
         </Button>
 
-        <Button
-          type="button"
-          variant="neutralGhost"
-          onClick={playback.cycleSpeed}
-          aria-label={`Playback speed ${playback.speed} times. Change speed.`}
-          className="h-9 w-12 shrink-0 px-1 text-xs font-semibold"
-        >
-          {playback.speed}×
-        </Button>
+        <BookReaderPlaybackSettings
+          playback={playback}
+          open={playback.settingsOpen}
+          onOpenChange={playback.setSettingsOpen}
+        />
 
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <input

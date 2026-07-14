@@ -1,3 +1,6 @@
+import type { ReaderPlaybackSpeed } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/model";
+import type { ReaderPlaybackPreferences } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/playback-preferences";
+
 export type ReaderPlaybackSentence = {
   id: string;
   text: string;
@@ -53,13 +56,20 @@ export type ReaderPlaybackController = {
   activeSentenceId: string | null;
   activeWordRange: ReaderPlaybackWordRange | null;
   progressBps: number;
-  speed: number;
+  speed: ReaderPlaybackSpeed;
+  settingsOpen: boolean;
+  preferences: ReaderPlaybackPreferences;
   registerSentences: (sentences: ReaderPlaybackSentence[]) => void;
   selectSentence: (sentenceId: string) => void;
   start: (fromBeginning?: boolean) => void;
   togglePause: () => void;
   setTranslationPaused: (isOpen: boolean) => void;
-  cycleSpeed: () => void;
+  setSettingsOpen: (isOpen: boolean) => void;
+  setSpeed: (speed: ReaderPlaybackSpeed) => void;
+  setWordHighlighting: (enabled: boolean) => void;
+  setSentenceHighlighting: (enabled: boolean) => void;
+  setAutoPauseOnTranslation: (enabled: boolean) => void;
+  setAutoPauseOnSettings: (enabled: boolean) => void;
   previewSeek: (progressBps: number | null) => void;
   seek: (progressBps: number) => void;
   close: () => void;
