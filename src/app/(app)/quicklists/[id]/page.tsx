@@ -50,6 +50,7 @@ export default function ProjectDetailsPage() {
   const {
     projectData,
     isLoading,
+    isRefreshing,
     error,
     refetch,
     tasks,
@@ -59,7 +60,9 @@ export default function ProjectDetailsPage() {
     handleToggleTask,
     handleDeleteTask,
     handleCreateTask,
+    handleBulkCreateTasks,
     handleUpdateTask,
+    handleReorderTasks,
     handleUpdateProject,
     refreshData,
     hasCompleted,
@@ -189,38 +192,22 @@ export default function ProjectDetailsPage() {
       const rest = parts.slice(1);
       if (rest.length > 0) {
         // Bulk create new tasks after current editingId
-        const res = await fetch(
-          `/api/quicklists/${projectId}/tasks/bulk-create`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "same-origin",
-            body: JSON.stringify({ titles: rest, afterId: editingId }),
-          }
-        );
-        if (res.ok) {
-          const data: { ok: boolean; created: Task[] } = await res.json();
-          const created = data.created;
-          setTasks((prev) => {
-            const pending = prev
-              .filter((t) => !t.completed_at)
-              .sort((a, b) => a.position - b.position);
-            const done = prev.filter((t) => !!t.completed_at);
-            const idx = pending.findIndex((t) => t.id === editingId);
-            if (idx === -1) return [...prev, ...created];
-            const before = pending.slice(0, idx + 1);
-            const after = pending.slice(idx + 1);
-            const newPending = [...before, ...created, ...after].map(
-              (t, i) => ({
-                ...t,
-                position: i + 1,
-              })
-            );
-            return [...newPending, ...done];
-          });
-        } else {
-          console.error("Bulk create failed", res.status);
-        }
+        const created = await handleBulkCreateTasks(rest, editingId);
+        setTasks((prev) => {
+          const pending = prev
+            .filter((t) => !t.completed_at)
+            .sort((a, b) => a.position - b.position);
+          const done = prev.filter((t) => !!t.completed_at);
+          const idx = pending.findIndex((t) => t.id === editingId);
+          if (idx === -1) return [...prev, ...created];
+          const before = pending.slice(0, idx + 1);
+          const after = pending.slice(idx + 1);
+          const newPending = [...before, ...created, ...after].map((t, i) => ({
+            ...t,
+            position: i + 1,
+          }));
+          return [...newPending, ...done];
+        });
       }
     } catch (e) {
       console.error("Failed to save edit", e);
@@ -251,32 +238,18 @@ export default function ProjectDetailsPage() {
           .sort((a, b) => a.position - b.position)
           .slice(-1)[0];
         const afterId = lastPending ? lastPending.id : null;
-        const res = await fetch(
-          `/api/quicklists/${projectId}/tasks/bulk-create`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "same-origin",
-            body: JSON.stringify({ titles, afterId }),
-          }
-        );
-        if (res.ok) {
-          const data: { ok: boolean; created: Task[] } = await res.json();
-          const created = data.created;
-          setTasks((prev) => {
-            const pending = prev
-              .filter((t) => !t.completed_at)
-              .sort((a, b) => a.position - b.position);
-            const done = prev.filter((t) => !!t.completed_at);
-            const newPending = [...pending, ...created].map((t, i) => ({
-              ...t,
-              position: i + 1,
-            }));
-            return [...newPending, ...done];
-          });
-        } else {
-          console.error("Bulk create failed", res.status);
-        }
+        const created = await handleBulkCreateTasks(titles, afterId);
+        setTasks((prev) => {
+          const pending = prev
+            .filter((t) => !t.completed_at)
+            .sort((a, b) => a.position - b.position);
+          const done = prev.filter((t) => !!t.completed_at);
+          const newPending = [...pending, ...created].map((t, i) => ({
+            ...t,
+            position: i + 1,
+          }));
+          return [...newPending, ...done];
+        });
       }
       setNewTitle("");
       focusComposer();
@@ -308,37 +281,16 @@ export default function ProjectDetailsPage() {
     const oldIndex = pendingIds.indexOf(String(active.id));
     const newIndex = pendingIds.indexOf(String(over.id));
     if (oldIndex === -1 || newIndex === -1) return;
-    setTasks((prev) => {
-      const pendingList = prev.filter((t) => !t.completed_at);
-      const doneList = prev.filter((t) => !!t.completed_at);
-      const from = pendingList.findIndex((t) => t.id === active.id);
-      const to = pendingList.findIndex((t) => t.id === over.id);
-      if (from === -1 || to === -1) return prev;
-      const reOrdered = arrayMove(pendingList, from, to).map((t, idx) => ({
-        ...t,
-        position: idx + 1,
-      }));
-      const orderedIds = reOrdered.map((t) => t.id);
-
-      // Fire-and-forget bulk reorder. If it fails we'll refresh to recover state.
-      fetch(`/api/quicklists/${projectId}/reorder`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ taskIds: orderedIds }),
-      })
-        .then((res) => {
-          if (!res.ok) {
-            // attempt to recover authoritative state
-            refetch();
-          }
-        })
-        .catch(() => {
-          refetch();
-        });
-
-      return [...reOrdered, ...doneList];
-    });
+    const reOrdered = arrayMove(pending, oldIndex, newIndex).map((task, idx) => ({
+      ...task,
+      position: idx + 1,
+    }));
+    const orderedIds = reOrdered.map((task) => task.id);
+    setTasks((prev) => [
+      ...reOrdered,
+      ...prev.filter((task) => !!task.completed_at),
+    ]);
+    void handleReorderTasks(orderedIds);
   };
 
   const startEditList = () => {
@@ -365,12 +317,14 @@ export default function ProjectDetailsPage() {
 
   const RefreshButton = () => (
     <Button
-      onClick={refreshData}
+      onClick={() => void refreshData()}
       size="sm"
       variant="outline"
       aria-label="Refresh project"
+      aria-busy={isRefreshing}
+      disabled={isRefreshing}
     >
-      <RotateCcw className="h-4 w-4" />
+      <RotateCcw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
     </Button>
   );
 
@@ -448,7 +402,7 @@ export default function ProjectDetailsPage() {
         {!!error && (
           <ProjectDetailsErrorState
             error={error instanceof Error ? error.message : String(error)}
-            onRetry={() => refetch()}
+            onRetry={() => void refetch()}
           />
         )}
         {projectData && (

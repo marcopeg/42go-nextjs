@@ -32,35 +32,26 @@ export const BookReaderPlaybackControls = ({
     zIndex: 1000,
   };
 
+  if (!playback.isOpen && !playback.canPlay) {
+    return null;
+  }
+
   if (!playback.isOpen) {
     return (
       <div
         className="pointer-events-auto flex max-w-[min(22rem,calc(100vw-2.5rem))] touch-manipulation flex-col items-end gap-2"
         style={floatingFabStyle}
       >
-          {!playback.canPlay && playback.unavailableReason && (
-            <div
-              role="status"
-              className="rounded-full border bg-background/95 px-3 py-1.5 text-xs text-muted-foreground shadow-lg backdrop-blur"
-            >
-              {playback.unavailableReason}
-            </div>
-          )}
-          <Button
-            type="button"
-            size="icon"
-            onClick={() => playback.start()}
-            disabled={!playback.canPlay}
-            aria-label={
-              playback.canPlay
-                ? "Play page aloud"
-                : playback.unavailableReason || "Playback unavailable"
-            }
-            title={playback.unavailableReason || "Play page aloud"}
-            className="h-14 w-14 rounded-full shadow-xl"
-          >
-            <Volume2 className="h-6 w-6" />
-          </Button>
+        <Button
+          type="button"
+          size="icon"
+          onClick={() => playback.start()}
+          aria-label="Play page aloud"
+          title="Play page aloud"
+          className="h-14 w-14 rounded-full shadow-xl"
+        >
+          <Volume2 className="h-6 w-6" />
+        </Button>
       </div>
     );
   }

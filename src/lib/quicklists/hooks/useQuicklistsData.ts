@@ -35,22 +35,23 @@ export interface UseQuicklistsDataReturn {
   // Data & loading states
   data: ProjectsData | undefined;
   isLoading: boolean;
+  isRefreshing: boolean;
   error: unknown;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 
   // UI state
   creating: boolean;
   busyInvite: string | null;
 
   // Operations
-  handleRefresh: () => void;
+  handleRefresh: () => Promise<void>;
   handleCreate: () => Promise<void>;
   handleJoin: (projectId: string) => Promise<void>;
   handleReject: (projectId: string, email: string) => Promise<void>;
 }
 
 export function useQuicklistsData(): UseQuicklistsDataReturn {
-  const { data, isLoading, error, refetch } = useQuicklists();
+  const { data, isLoading, isFetching, error, refetch } = useQuicklists();
   const refreshQuicklists = useRefreshQuicklists();
   const router = useRouter();
   const { toast } = useToast();
@@ -58,8 +59,18 @@ export function useQuicklistsData(): UseQuicklistsDataReturn {
   const [creating, setCreating] = useState(false);
   const [busyInvite, setBusyInvite] = useState<string | null>(null);
 
-  const handleRefresh = () => {
-    refreshQuicklists();
+  const handleRefresh = async () => {
+    const result = await refetch();
+    if (result.error) {
+      toast({
+        variant: "destructive",
+        title: "Refresh failed",
+        description:
+          result.error instanceof Error
+            ? result.error.message
+            : "Could not refresh lists.",
+      });
+    }
   };
 
   const handleCreate = async () => {
@@ -135,8 +146,9 @@ export function useQuicklistsData(): UseQuicklistsDataReturn {
   return {
     data,
     isLoading,
+    isRefreshing: isFetching,
     error,
-    refetch,
+    refetch: handleRefresh,
     creating,
     busyInvite,
     handleRefresh,

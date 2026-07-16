@@ -9,11 +9,15 @@ import {
 } from "@/lib/quicklists/components/ProjectListSkeleton";
 import { useQuicklistsData } from "@/lib/quicklists/hooks/useQuicklistsData";
 import { ProjectsList } from "@/lib/quicklists/components/ProjectsList";
+import { useQuicklistPreference } from "@/lib/quicklists/hooks/useQuicklistPreference";
 
 export default function ProjectsPage() {
+  useQuicklistPreference();
+
   const {
     data,
     isLoading,
+    isRefreshing,
     error,
     refetch,
     creating,
@@ -26,12 +30,14 @@ export default function ProjectsPage() {
 
   const RefreshButton = () => (
     <Button
-      onClick={handleRefresh}
+      onClick={() => void handleRefresh()}
       size="sm"
       variant="outline"
       aria-label="Refresh projects"
+      aria-busy={isRefreshing}
+      disabled={isRefreshing}
     >
-      <RotateCcw className="h-4 w-4" />
+      <RotateCcw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
     </Button>
   );
 
@@ -58,7 +64,7 @@ export default function ProjectsPage() {
         {!!error && (
           <ProjectListErrorState
             error={error instanceof Error ? error.message : String(error)}
-            onRetry={() => refetch()}
+            onRetry={() => void refetch()}
           />
         )}
 

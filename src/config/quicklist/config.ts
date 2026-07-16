@@ -1,6 +1,11 @@
 import { TAppConfigItem } from '../../AppConfig';
 
 import { User, ListTodo } from 'lucide-react';
+import { QuicklistPreferences } from '@/lib/quicklists/components/QuicklistPreferences';
+import {
+  QUICKLIST_AUTO_REFRESH_PROFILE_KEY,
+  quicklistProfileSchema,
+} from '@/config/quicklist/profile-options';
 
 export default {
   name: '',
@@ -89,8 +94,14 @@ export default {
       page: '/quicklists',
     },
     profile: {
+      schema: quicklistProfileSchema,
       items: [
         // { type: 'AccountInfo' },
+        {
+          type: 'component',
+          component: QuicklistPreferences,
+          profileKeys: [QUICKLIST_AUTO_REFRESH_PROFILE_KEY],
+        },
         {
           type: 'ThemePreference',
           title: 'Theme',

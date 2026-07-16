@@ -20,9 +20,11 @@ interface ProjectsResponse {
 }
 
 export interface ProjectData {
+  etag: string | null;
   project: {
     id: string;
     title: string;
+    created_at?: string;
     updated_at: string;
   };
   tasks: Array<{
@@ -44,15 +46,54 @@ const fetchProjects = async (cursor?: string): Promise<ProjectsResponse> => {
   return res.json();
 };
 
-const fetchProject = async (projectId: string): Promise<ProjectData> => {
+const parseProjectResponse = async (res: Response): Promise<ProjectData> => {
+  const data = (await res.json()) as Omit<ProjectData, "etag">;
+  return {
+    ...data,
+    etag: res.headers.get("etag"),
+  };
+};
+
+export const fetchProjectFull = async (
+  projectId: string,
+  signal?: AbortSignal
+): Promise<ProjectData> => {
   const res = await fetch(`/api/quicklists/${projectId}`, {
     credentials: "same-origin",
     cache: "no-store",
+    signal,
   });
   if (!res.ok) {
     throw new Error(`Failed to load project: ${res.status} ${res.statusText}`);
   }
-  return res.json();
+  return parseProjectResponse(res);
+};
+
+export type ConditionalProjectResult =
+  | { modified: false }
+  | { modified: true; data: ProjectData };
+
+export const fetchProjectConditional = async (
+  projectId: string,
+  etag: string | null,
+  signal?: AbortSignal
+): Promise<ConditionalProjectResult> => {
+  const res = await fetch(`/api/quicklists/${projectId}`, {
+    credentials: "same-origin",
+    cache: "no-store",
+    headers: etag ? { "If-None-Match": etag } : undefined,
+    signal,
+  });
+
+  if (res.status === 304) return { modified: false };
+  if (!res.ok) {
+    throw new Error(`Failed to load project: ${res.status} ${res.statusText}`);
+  }
+
+  return {
+    modified: true,
+    data: await parseProjectResponse(res),
+  };
 };
 
 export const QUICKLISTS_QUERY_KEY = ["quicklists"];
@@ -62,23 +103,23 @@ export function useQuicklists() {
   return useQuery({
     queryKey: QUICKLISTS_QUERY_KEY,
     queryFn: () => fetchProjects(),
-    staleTime: 0,
+    staleTime: Number.POSITIVE_INFINITY,
     gcTime: 0,
     refetchOnMount: "always",
-    refetchOnReconnect: "always",
-    refetchOnWindowFocus: "always",
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
   });
 }
 
 export function useProject(projectId: string) {
   return useQuery({
     queryKey: PROJECT_QUERY_KEY(projectId),
-    queryFn: () => fetchProject(projectId),
-    staleTime: 0,
+    queryFn: ({ signal }) => fetchProjectFull(projectId, signal),
+    staleTime: Number.POSITIVE_INFINITY,
     gcTime: 0,
     refetchOnMount: "always",
-    refetchOnReconnect: "always",
-    refetchOnWindowFocus: "always",
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
     enabled: !!projectId,
   });
 }

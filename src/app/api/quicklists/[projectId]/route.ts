@@ -4,6 +4,10 @@ import { getServerSession } from "next-auth";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { z } from "zod";
 import { getAppID } from "@/42go/config/app-config";
+import {
+  createQuicklistETag,
+  matchesIfNoneMatch,
+} from "@/lib/quicklists/server/etag";
 
 type FreshnessRow = {
   id: string;
@@ -50,9 +54,6 @@ const getProject = async (
   req: Request,
   { params }: { params: Promise<{ projectId: string }> }
 ) => {
-  // Touch url so linter doesn’t complain; protectRoute may infer feature
-  void req.url;
-
   const { projectId } = await params;
   if (!projectId || !isUUID(projectId)) return badRequest("invalid projectId");
 
@@ -122,10 +123,21 @@ const getProject = async (
     })),
   };
 
+  const etag = createQuicklistETag(body);
+  const responseHeaders = {
+    "Cache-Control": "private, no-cache",
+    ETag: etag,
+  };
+
+  if (matchesIfNoneMatch(req.headers.get("if-none-match"), etag)) {
+    return new Response(null, {
+      status: 304,
+      headers: responseHeaders,
+    });
+  }
+
   return Response.json(body, {
-    headers: {
-      "Cache-Control": "no-store",
-    },
+    headers: responseHeaders,
   });
 };
 
