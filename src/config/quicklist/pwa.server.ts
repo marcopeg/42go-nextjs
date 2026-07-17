@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { getDB } from "@/42go/db";
+import { createPWAInstallTargetStartUrl } from "@/42go/pwa/install-target-context";
 import type { TPWAInstallTargetResolver } from "@/42go/pwa/types";
 
 type QuicklistInstallRow = {
@@ -51,14 +52,18 @@ export const resolveQuicklistProjectInstallTarget: TPWAInstallTargetResolver =
     const project = rows[0];
     if (!project) return null;
 
-    const startUrl = `/quicklists/${project.id}`;
+    const targetId = `/quicklists/${project.id}`;
+    const startUrl = createPWAInstallTargetStartUrl({
+      startUrl: targetId,
+      targetId,
+    });
 
     return {
-      id: startUrl,
+      id: targetId,
       name: project.title,
       shortName: project.title,
       startUrl,
-      manifestPath: startUrl,
+      manifestPath: targetId,
       private: true,
     };
   };

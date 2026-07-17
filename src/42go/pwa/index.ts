@@ -1,6 +1,7 @@
 export { InstallAppAction } from "@/42go/pwa/InstallAppAction";
 export { PWAInstallProvider } from "@/42go/pwa/PWAInstallProvider";
 export { usePWAInstall } from "@/42go/pwa/usePWAInstall";
+export { useIsInstalledPWAInstallTarget } from "@/42go/pwa/useIsInstalledPWAInstallTarget";
 export type {
   TPWAConfig,
   TPWAInstallResolution,

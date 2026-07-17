@@ -134,6 +134,46 @@ When a native prompt is unavailable, `InstallAppAction` uses the shared 42Go Mod
 
 There is no cross-browser installed-target inventory. Do not persist an authoritative `installed` flag.
 
+## Installed-target UI context
+
+Standalone display mode alone cannot identify a virtual app because the base app can also be installed. When product UI needs target-specific chrome, keep the manifest `id` stable and add an exact target marker only to `startUrl`:
+
+```tsx
+const targetId = `/projects/${project.id}`;
+
+return {
+  id: targetId,
+  startUrl: createPWAInstallTargetStartUrl({
+    startUrl: targetId,
+    targetId,
+  }),
+};
+```
+
+On the target page, combine standalone detection with the exact launch target:
+
+```tsx
+const isInstalledProjectApp = useIsInstalledPWAInstallTarget(targetId);
+
+<AppLayout
+  backBtn={isInstalledProjectApp ? undefined : { to: "/projects" }}
+>
+  {/* project UI */}
+</AppLayout>
+```
+
+The hook records the exact launch marker in `sessionStorage` so target-specific UI remains consistent while navigating to nested routes in the current installed-app session. The marker is UX context only. It must never grant access, select a tenant, or replace server authorization. Installed copies created before a marked `startUrl` was deployed may need to be removed and reinstalled.
+
+Use the same hook to omit an install action that would reinstall the current target. Keep the action in ordinary browser and base-app contexts if those contexts are allowed to create a separate virtual-app install.
+
+### Installed launcher names are not readable
+
+The manifest `name` and `short_name` values are developer-provided installation inputs. A browser may let the user replace that label during installation, but no standard web API reflects the resulting OS launcher name into the running document. WebKit documents that iOS combines the user-edited name with Manifest ID internally, and Chromium's installed-related-app API exposes identity and URL metadata without the installed label.
+
+Do not claim that an in-app heading represents the native launcher label. If a product needs a synchronized custom heading, collect an app-owned display name before installation, persist it under normal authorization, and use the same value in both the resolved manifest and application UI. Later edits made only in the OS installation interface will still be invisible to the web app.
+
+References: [W3C Web Application Manifest](https://www.w3.org/TR/appmanifest/#application-s-name), [WebKit on iOS Home Screen names and Manifest ID](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/#manifest-id), and [Chrome Get Installed Related Apps](https://developer.chrome.com/docs/capabilities/get-installed-related-apps).
+
 ## Security rules
 
 - Installing a target never grants access.

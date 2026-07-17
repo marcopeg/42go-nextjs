@@ -4,6 +4,11 @@ import { describe, it } from "node:test";
 import { detectPWAInstallPlatform } from "../src/42go/pwa/install-platform.ts";
 import { shouldReloadPWAInstallDocument } from "../src/42go/pwa/document-identity.ts";
 import {
+  createPWAInstallTargetStartUrl,
+  getPWAInstallTargetMarker,
+  isInstalledPWAInstallTarget,
+} from "../src/42go/pwa/install-target-context.ts";
+import {
   matchPWAPathPattern,
   validatePWAInstallTargetDeclarations,
   validatePWAManifestPathTemplate,
@@ -167,6 +172,75 @@ describe("PWA document identity transitions", () => {
         currentPathname: "/quicklists/list-1",
         initialHref: "/manifest.webmanifest",
         initialPathname: "/quicklists/list-1",
+      }),
+      false
+    );
+  });
+});
+
+describe("PWA installed-target launch context", () => {
+  it("marks an installed target without changing its stable identity", () => {
+    const targetId = "/quicklists/list-1";
+    const startUrl = createPWAInstallTargetStartUrl({
+      startUrl: targetId,
+      targetId,
+    });
+
+    assert.equal(
+      startUrl,
+      "/quicklists/list-1?__42go_pwa_target=%2Fquicklists%2Flist-1"
+    );
+    assert.equal(
+      getPWAInstallTargetMarker(new URL(startUrl, "https://example.com").search),
+      targetId
+    );
+  });
+
+  it("rejects a cross-origin marked launch URL", () => {
+    assert.throws(() =>
+      createPWAInstallTargetStartUrl({
+        startUrl: "https://example.com/quicklists/list-1",
+        targetId: "/quicklists/list-1",
+      })
+    );
+  });
+
+  it("requires standalone mode and an exact launch or session target", () => {
+    const targetId = "/quicklists/list-1";
+
+    assert.equal(
+      isInstalledPWAInstallTarget({
+        isStandalone: false,
+        launchTargetId: targetId,
+        storedTargetId: null,
+        targetId,
+      }),
+      false
+    );
+    assert.equal(
+      isInstalledPWAInstallTarget({
+        isStandalone: true,
+        launchTargetId: targetId,
+        storedTargetId: null,
+        targetId,
+      }),
+      true
+    );
+    assert.equal(
+      isInstalledPWAInstallTarget({
+        isStandalone: true,
+        launchTargetId: null,
+        storedTargetId: targetId,
+        targetId,
+      }),
+      true
+    );
+    assert.equal(
+      isInstalledPWAInstallTarget({
+        isStandalone: true,
+        launchTargetId: "/quicklists/list-2",
+        storedTargetId: "/quicklists/list-2",
+        targetId,
       }),
       false
     );

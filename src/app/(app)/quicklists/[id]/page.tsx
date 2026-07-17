@@ -32,6 +32,7 @@ import { HeaderTitle } from "@/lib/quicklists/components/HeaderTitle";
 import { MobileEditPanel } from "@/lib/quicklists/components/MobileEditPanel";
 import { MobileCreatePanel } from "@/lib/quicklists/components/MobileCreatePanel";
 import { MobileListEditPanel } from "@/lib/quicklists/components/MobileListEditPanel";
+import { useIsInstalledPWAInstallTarget } from "@/42go/pwa";
 import { Clock } from "lucide-react";
 
 const EmptyState = () => (
@@ -46,6 +47,8 @@ export default function ProjectDetailsPage() {
   const params = useParams<{ id: string | string[] }>();
   const idParam = params?.id;
   const projectId = Array.isArray(idParam) ? idParam[0] : idParam || "";
+  const installTargetId = projectId ? `/quicklists/${projectId}` : "";
+  const isInstalledListApp = useIsInstalledPWAInstallTarget(installTargetId);
 
   const {
     projectData,
@@ -391,7 +394,7 @@ export default function ProjectDetailsPage() {
       hideMobileMenu
       disablePadding
       title={headerTitleElement}
-      backBtn={{ to: "/quicklists" }}
+      backBtn={isInstalledListApp ? undefined : { to: "/quicklists" }}
       actions={actions}
       policy={{ require: { feature: "page:quicklists" } }}
       footer={footerNode}

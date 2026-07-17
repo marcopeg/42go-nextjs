@@ -16,7 +16,10 @@ import { DisplayDate } from "@/42go/components/DisplayDate";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import { InstallAppAction } from "@/42go/pwa/InstallAppAction";
+import {
+  InstallAppAction,
+  useIsInstalledPWAInstallTarget,
+} from "@/42go/pwa";
 import {
   useRemoveProjectFromCache,
   useRefreshQuicklists,
@@ -107,6 +110,8 @@ export default function QuicklistInfoPage() {
   const { data: session } = useSession();
   const idParam = params?.id;
   const projectId = Array.isArray(idParam) ? idParam[0] : idParam || "";
+  const installTargetId = projectId ? `/quicklists/${projectId}` : "";
+  const isInstalledListApp = useIsInstalledPWAInstallTarget(installTargetId);
 
   const [data, setData] = useState<InfoResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -447,18 +452,20 @@ export default function QuicklistInfoPage() {
         {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
         {data && (
           <>
-            <section className="rounded-lg border bg-card p-4">
-              <h2 className="text-base font-semibold">Install this list</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Add {data.project.title} as its own virtual app. It will open
-                directly to this list.
-              </p>
-              <InstallAppAction
-                appName={data.project.title}
-                buttonLabel="Install this list"
-                className="mt-4 w-full sm:w-auto"
-              />
-            </section>
+            {!isInstalledListApp && (
+              <section className="rounded-lg border bg-card p-4">
+                <h2 className="text-base font-semibold">Install this list</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Add {data.project.title} as its own virtual app. It will open
+                  directly to this list.
+                </p>
+                <InstallAppAction
+                  appName={data.project.title}
+                  buttonLabel="Install this list"
+                  className="mt-4 w-full sm:w-auto"
+                />
+              </section>
+            )}
 
             <section>
               <h2 className="text-base font-semibold mb-2">

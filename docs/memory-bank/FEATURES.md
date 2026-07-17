@@ -52,7 +52,7 @@
 
 **Capability**: Selected same-origin routes can become distinct installable virtual apps with stable IDs, launch URLs, names, icons, and colors resolved from authorized server data.
 **Implementation**: `public.pwa.targets` AppConfig patterns, the server-only `src/PWAInstallTargets.ts` resolver registry, and the shared `src/42go/pwa` manifest/head/install-action pipeline.
-**Features**: App-level fallback inheritance, dynamic database-backed metadata, credentialed private manifests, full-document identity transitions between virtual apps, Chromium prompt integration, and Apple/Safari manual instructions through the shared Modal.
+**Features**: App-level fallback inheritance, dynamic database-backed metadata, credentialed private manifests, full-document identity transitions between virtual apps, exact target-aware standalone UI, Chromium prompt integration, and Apple/Safari manual instructions through the shared Modal.
 **Security**: Installation does not grant access; manifest and launch requests remain app/session/resource authorized and fail closed.
 **Usage guide**: See `docs/articles/PWA_INSTALL_TARGETS.md`.
 
