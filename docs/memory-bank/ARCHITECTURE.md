@@ -205,6 +205,16 @@ Rationale: This avoids SSR pitfalls (e.g., getaddrinfo on inferred hosts, cookie
 **Precedence**: User preference → App default → System preference
 **Implementation details**: See [docs/THEMING.md](../docs/THEMING.md)
 
+## Dynamic PWA Install Targets
+
+**Pattern**: AppConfig declares serializable same-origin pathname patterns mapped to named server-only resolvers. A resolver may load authorized database data and override the app PWA identity, launch path, name, icons, and colors for one resource.
+
+**Request flow**: The proxy injects a trusted internal pathname. The 42Go PWA layer resolves one target, emits one manifest/Apple metadata set, and serves `/manifest.webmanifest` through an explicit authorization-aware route. Because browsers bind installation metadata to the loaded document, crossing between base/virtual-app identities through App Router triggers one full-document reload; navigation inside one virtual app remains client-side.
+
+**Security boundary**: Resolver functions live in `src/PWAInstallTargets.ts` and app-owned server modules, never inside the client-imported AppConfig object. Dynamic manifest requests use credentials, private/no-store caching, same-origin URL validation, and 404 failure for inaccessible resources.
+
+**Usage guide**: See [PWA_INSTALL_TARGETS.md](../articles/PWA_INSTALL_TARGETS.md).
+
 ## Logging
 
 [[missing details about logging examples and best practices]]

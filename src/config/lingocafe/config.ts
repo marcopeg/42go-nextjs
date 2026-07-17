@@ -71,6 +71,7 @@ export default {
       ],
     },
     pwa: {
+      id: '/books',
       name: 'LingoCafe',
       shortName: 'LingoCafe',
       description: 'A focused language-learning app with simple sign-in.',

@@ -5,8 +5,7 @@ import { getAppInfo } from "@/42go/config/app-config";
 import { InjectAppID } from "@/42go/config/InjectAppID";
 import { Providers } from "@/components/Providers";
 import { Toaster } from "@/components/ui/sonner";
-import { resolvePWAColor, type TColorInput } from "@/42go/pwa/colors";
-import { resolveAppIcons } from "@/42go/icons";
+import { getCurrentPWAInstallResolution } from "@/42go/pwa/server/resolve-install-target";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { loadProfile } from "@/42go/profile/server";
 import type { TProfileContextConfig } from "@/42go/profile";
@@ -33,32 +32,37 @@ const inter = localFont({
 });
 
 export const generateMetadata = async (): Promise<Metadata> => {
-  const { id: appID, config } = await getAppInfo();
+  const [{ config }, resolution] = await Promise.all([
+    getAppInfo(),
+    getCurrentPWAInstallResolution(),
+  ]);
   const base = (config?.public?.meta || {}) as Metadata;
-  const pwa = config?.public?.pwa;
-  const icons = resolveAppIcons(appID, config);
+  if (!resolution) return base;
+
+  const target = resolution.target;
   const derivedIcons: Metadata["icons"] = {
     icon: [
-      { url: icons.faviconIco },
-      { url: icons.favicon16, sizes: "16x16", type: "image/png" },
-      { url: icons.favicon32, sizes: "32x32", type: "image/png" },
+      { url: target.icons.faviconIco },
+      { url: target.icons.favicon16, sizes: "16x16", type: "image/png" },
+      { url: target.icons.favicon32, sizes: "32x32", type: "image/png" },
     ],
-    apple: [{ url: icons.appleTouch180, sizes: "180x180", type: "image/png" }],
+    apple: [
+      {
+        url: target.icons.appleTouch180,
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
   };
 
-  if (!pwa) return { ...base, icons: derivedIcons };
-
-  // Derive supported fields from public.pwa (excluding themeColor - moved to viewport)
   const derived: Metadata = {
-    applicationName: pwa.name || base.applicationName,
+    ...(resolution.source === "override" ? { title: target.name } : {}),
+    applicationName: target.name || base.applicationName,
     icons: derivedIcons,
-    // Next metadata appleWebApp
     appleWebApp: {
       capable: true,
-      title: pwa.name,
-      statusBarStyle:
-        (pwa.statusBarStyle as "default" | "black" | "black-translucent") ||
-        "default",
+      title: target.name,
+      statusBarStyle: target.statusBarStyle,
     },
   };
 
@@ -66,16 +70,11 @@ export const generateMetadata = async (): Promise<Metadata> => {
 };
 
 export const generateViewport = async (): Promise<Viewport> => {
-  const { config } = await getAppInfo();
-  const pwa = config?.public?.pwa;
-
-  if (!pwa) return {};
-
-  // themeColor goes in viewport as of Next.js 15
-  const themeColorInput = pwa.themeColor as TColorInput | undefined;
+  const resolution = await getCurrentPWAInstallResolution();
+  if (!resolution) return {};
 
   return {
-    themeColor: resolvePWAColor(themeColorInput) || "#000000",
+    themeColor: resolution.target.themeColor,
   };
 };
 
@@ -142,7 +141,7 @@ const RootLayout = async ({
     <html suppressHydrationWarning lang="en" className={inter.variable}>
       <head>
         <InjectAppID id={appID} />
-        {/* Global PWA/iOS tags derived from config.public.pwa */}
+        {/* Sole manifest link; Apple metadata/icons are emitted by Metadata. */}
         <HeadTags />
       </head>
       {/* Use Tailwind font token so themes and utilities stay consistent */}

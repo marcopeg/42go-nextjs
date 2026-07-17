@@ -39,6 +39,7 @@ export default {
       },
     },
     pwa: {
+      id: "/",
       name: "Notes",
       shortName: "Notes",
       themeColor: "dark",

@@ -80,6 +80,7 @@ export default {
       },
     },
     pwa: {
+      id: '/quicklists',
       name: 'QuickList',
       shortName: 'QuickList',
       themeColor: 'dark',
@@ -87,6 +88,13 @@ export default {
       startUrl: '/quicklists',
       scope: '/',
       display: 'standalone',
+      targets: [
+        {
+          pattern: '/quicklists/:projectId/**',
+          resolver: 'quicklist-project',
+          manifestPath: '/quicklists/:projectId',
+        },
+      ],
     },
   },
   app: {

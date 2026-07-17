@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { resolveAppIDFromHeaders } from '@/42go/config/app-config';
 import { APP_ID_HEADER } from '@/42go/lib/app-id';
+import { PWA_PATHNAME_HEADER } from '@/42go/pwa/constants';
 
 export async function proxy(request: NextRequest) {
   // console.log("@@@@@ MIDDLEWARE :: START");
@@ -10,6 +11,8 @@ export async function proxy(request: NextRequest) {
   // configured header matchers, but cannot choose this internal value.
   const requestHeaders = new Headers(request.headers);
   requestHeaders.delete(APP_ID_HEADER);
+  requestHeaders.delete(PWA_PATHNAME_HEADER);
+  requestHeaders.set(PWA_PATHNAME_HEADER, request.nextUrl.pathname);
 
   const appID = resolveAppIDFromHeaders(requestHeaders);
   if (appID) {
@@ -33,6 +36,6 @@ export const config = {
      * - Include: API routes, pages, dynamic routes
      * - Exclude: static files, images, Next.js internals
      */
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|\\.well-known/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|\\.well-known/).*)',
   ],
 };

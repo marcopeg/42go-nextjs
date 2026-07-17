@@ -48,6 +48,14 @@
 **Implementation**: `public/app-icons/<app-id>/` with fallback to `public/app-icons/_default/` through the shared `resolveAppIcons()` helper
 **Features**: Dynamic metadata icon links for request-resolved apps, manifest icon generation, default fallback iconset, build-time registry validation
 
+### Dynamic PWA Virtual Apps
+
+**Capability**: Selected same-origin routes can become distinct installable virtual apps with stable IDs, launch URLs, names, icons, and colors resolved from authorized server data.
+**Implementation**: `public.pwa.targets` AppConfig patterns, the server-only `src/PWAInstallTargets.ts` resolver registry, and the shared `src/42go/pwa` manifest/head/install-action pipeline.
+**Features**: App-level fallback inheritance, dynamic database-backed metadata, credentialed private manifests, full-document identity transitions between virtual apps, Chromium prompt integration, and Apple/Safari manual instructions through the shared Modal.
+**Security**: Installation does not grant access; manifest and launch requests remain app/session/resource authorized and fail closed.
+**Usage guide**: See `docs/articles/PWA_INSTALL_TARGETS.md`.
+
 ### App Theme Stylesheets
 
 **Capability**: Per-app CSS token override stylesheets with default fallback and no missing stylesheet requests

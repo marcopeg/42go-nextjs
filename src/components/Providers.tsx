@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/42go/config/ThemeProvider";
 import { AppQrOverlay } from "@/42go/components/AppQrOverlay";
 import type { TAppID, ThemeValue } from "@/AppConfig";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PWAInstallProvider } from "@/42go/pwa/PWAInstallProvider";
 import { useEffect, useState } from "react";
 import {
   hydrateLingoCafeProfileCompletion,
@@ -82,10 +83,12 @@ export function Providers({
       <SessionProvider>
         <SessionUserBridge />
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme={defaultTheme}>
-            {children}
-            <AppQrOverlay />
-          </ThemeProvider>
+          <PWAInstallProvider>
+            <ThemeProvider defaultTheme={defaultTheme}>
+              {children}
+              <AppQrOverlay />
+            </ThemeProvider>
+          </PWAInstallProvider>
         </QueryClientProvider>
       </SessionProvider>
     </AppConfigProvider>
