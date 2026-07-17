@@ -58,13 +58,13 @@
 
 ## Refined
 
+- [HV34: Enable Per-URL Install Targets and Installable Quicklist Virtual Apps](./refined/HV34-investigate-installable-quicklist-lists-as-separate-home-screen-apps/HV34.task.md)
 
 ## Planned
 
 
 ## WIP
 
-- [VT60: PickNote: Repair List Refresh and Add Conditional Auto-Refresh](./wip/VT60-picknote-repair-list-refresh-and-add-conditional-auto-refresh/VT60.task.md) | [plan](./wip/VT60-picknote-repair-list-refresh-and-add-conditional-auto-refresh/VT60.plan.md)
 
 ## Blocked
 
