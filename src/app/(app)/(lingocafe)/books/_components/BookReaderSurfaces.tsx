@@ -20,6 +20,7 @@ import type { ReaderBookPage } from "@/app/(app)/(lingocafe)/books/_components/b
 import {
   getReaderThemeStyle,
   type ReaderPreferences,
+  type ReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import type { ReaderPlaybackController } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ type ReaderSurfaceProps = {
   readingProgressBps: number;
   headerTitleMode: ReaderHeaderTitleMode;
   preferences: ReaderPreferences;
+  translationScope: ReaderTranslationScope;
   playback: ReaderPlaybackController;
   forceScrollTop: boolean;
   pageTurnPending: boolean;
@@ -411,6 +413,7 @@ export const BookReaderDesktopSurface = ({
   readingProgressBps,
   headerTitleMode,
   preferences,
+  translationScope,
   playback,
   forceScrollTop,
   pageTurnPending,
@@ -493,6 +496,7 @@ export const BookReaderDesktopSurface = ({
               <BookPageReader
                 bookPage={bookPage}
                 preferences={preferences}
+                translationScope={translationScope}
                 playbackSentenceId={playback.activeSentenceId}
                 playbackSentenceHighlighting={
                   playback.preferences.sentenceHighlighting
@@ -533,6 +537,7 @@ export const BookReaderMobileSurface = ({
   readingProgressBps,
   headerTitleMode,
   preferences,
+  translationScope,
   playback,
   forceScrollTop,
   pageTurnPending,
@@ -643,6 +648,7 @@ export const BookReaderMobileSurface = ({
               <BookPageReader
                 bookPage={bookPage}
                 preferences={preferences}
+                translationScope={translationScope}
                 playbackSentenceId={playback.activeSentenceId}
                 playbackSentenceHighlighting={
                   playback.preferences.sentenceHighlighting

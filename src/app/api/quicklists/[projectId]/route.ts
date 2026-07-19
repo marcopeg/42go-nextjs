@@ -8,12 +8,17 @@ import {
   createQuicklistETag,
   matchesIfNoneMatch,
 } from "@/lib/quicklists/server/etag";
+import {
+  QUICKLIST_MODES,
+  resolveQuicklistMode,
+} from "@/lib/quicklists/mode";
 
 type FreshnessRow = {
   id: string;
   title: string;
   created_at: Date;
   updated_at: Date;
+  settings: unknown;
   freshness: Date; // GREATEST(updated_at, MAX(tasks.updated_at), MAX(tasks.completed_at))
 };
 
@@ -77,7 +82,7 @@ const getProject = async (
 
   // Access control baked into WHERE clause: owner or collab
   const freshnessSql = `
-    SELECT p.id, p.title, p.created_at, p.updated_at,
+    SELECT p.id, p.title, p.created_at, p.updated_at, p.settings,
            GREATEST(
              p.updated_at,
              COALESCE(MAX(t.updated_at), to_timestamp(0)),
@@ -90,7 +95,7 @@ const getProject = async (
              SELECT 1 FROM quicklist.collabs c
               WHERE c.project_id = p.id AND c.user_id = ?
            ))
-     GROUP BY p.id, p.title, p.created_at, p.updated_at
+     GROUP BY p.id, p.title, p.created_at, p.updated_at, p.settings
   `;
 
   const fres = (await db.raw(freshnessSql, [projectId, appId, userId, userId]))
@@ -111,6 +116,7 @@ const getProject = async (
     project: {
       id: p.id,
       title: p.title,
+      mode: resolveQuicklistMode(p.settings),
       created_at: toISO(p.created_at),
       updated_at: toISO(p.updated_at),
     },
@@ -285,9 +291,12 @@ export const POST = protectRoute(createTask, {
   },
 });
 
-// Update project title
+// Update project title and mode
 const updateProjectSchema = z.object({
-  title: z.string().min(1).max(255),
+  title: z.string().min(1).max(255).optional(),
+  mode: z.enum(QUICKLIST_MODES).optional(),
+}).refine((data) => data.title !== undefined || data.mode !== undefined, {
+  message: "Body must include title or mode",
 });
 
 const updateProject = async (
@@ -321,12 +330,32 @@ const updateProject = async (
     );
   }
 
-  const { title } = parsed.data;
+  const { title, mode } = parsed.data;
   const db = getDB();
+  const appId = await getAppID();
+  if (!appId) {
+    return Response.json(
+      { error: "app_not_found", message: "Unable to determine app context" },
+      { status: 404 }
+    );
+  }
+
+  const updates: Record<string, unknown> = {
+    updated_at: new Date(),
+    updated_by: userId,
+  };
+  if (title !== undefined) updates.title = title;
+  if (mode !== undefined) {
+    updates.settings = db.raw(
+      "jsonb_set(COALESCE(settings, '{}'::jsonb), '{mode}', to_jsonb(?::text), true)",
+      [mode]
+    );
+  }
+
   try {
     const updated = await db("quicklist.projects")
       .where((qb) => {
-        qb.where({ id: projectId }).andWhere((qb2) => {
+        qb.where({ id: projectId, app_id: appId }).andWhere((qb2) => {
           qb2.where("owned_by", userId).orWhereExists(function () {
             this.select(db.raw("1"))
               .from("quicklist.collabs as c")
@@ -335,8 +364,8 @@ const updateProject = async (
           });
         });
       })
-      .update({ title, updated_at: new Date(), updated_by: userId })
-      .returning(["id", "title", "updated_at"]);
+      .update(updates)
+      .returning(["id", "title", "settings", "updated_at"]);
 
     if (!updated || updated.length === 0) return notFound();
 
@@ -346,6 +375,7 @@ const updateProject = async (
       project: {
         id: row.id as string,
         title: row.title as string,
+        mode: resolveQuicklistMode(row.settings),
         updated_at: toISO(row.updated_at as Date),
       },
     });

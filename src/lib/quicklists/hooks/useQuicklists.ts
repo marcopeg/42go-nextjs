@@ -1,9 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { QuicklistMode } from "@/lib/quicklists/mode";
 
 interface ProjectsResponse {
   projects: Array<{
     id: string;
     title: string;
+    mode: QuicklistMode;
     owned: boolean;
     role: string;
     updated_at: string;
@@ -24,6 +26,7 @@ export interface ProjectData {
   project: {
     id: string;
     title: string;
+    mode: QuicklistMode;
     created_at?: string;
     updated_at: string;
   };
@@ -148,7 +151,7 @@ export function useUpdateProjectInCache() {
 
   return (
     projectId: string,
-    updates: { title?: string; updated_at?: string }
+    updates: { title?: string; mode?: QuicklistMode; updated_at?: string }
   ) => {
     queryClient.setQueryData(
       QUICKLISTS_QUERY_KEY,
@@ -172,7 +175,7 @@ export function useInvalidateQuicklistsOnProjectChange() {
 
   return (
     projectId: string,
-    newData: { title?: string; updated_at?: string }
+    newData: { title?: string; mode?: QuicklistMode; updated_at?: string }
   ) => {
     const currentData =
       queryClient.getQueryData<ProjectsResponse>(QUICKLISTS_QUERY_KEY);

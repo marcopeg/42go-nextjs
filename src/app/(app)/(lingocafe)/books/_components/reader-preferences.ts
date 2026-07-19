@@ -9,10 +9,12 @@ export type ReaderPreferences = {
 
 export type ReaderThemeMode = "light" | "dark";
 export type ReaderThemeProfileKey = "light" | "dark" | "system";
+export type ReaderTranslationScope = "sentence" | "word";
 export type ReaderPreferencesStore = Partial<
   Record<ReaderThemeProfileKey, ReaderPreferences>
 > & {
   sharedFontSizeIndex?: number;
+  translationScope?: ReaderTranslationScope;
 };
 
 export type ReaderPreferenceOption = {
@@ -25,6 +27,8 @@ export const READER_PREFERENCES_STORAGE_KEY =
   "lingocafe.reader.preferences.v1";
 export const READER_APP_BACKGROUND_KEY = "app-background";
 export const READER_APP_FOREGROUND_KEY = "app-foreground";
+export const DEFAULT_READER_TRANSLATION_SCOPE: ReaderTranslationScope =
+  "sentence";
 
 export const READER_FONT_SIZE_OPTIONS = [16, 17, 18, 19, 20, 21, 22, 24, 26, 28];
 
@@ -287,6 +291,10 @@ export const sanitizeReaderFontSizeIndex = (value: unknown) =>
       )
     : null;
 
+export const sanitizeReaderTranslationScope = (
+  value: unknown
+): ReaderTranslationScope => (value === "word" ? "word" : "sentence");
+
 export const sanitizeReaderPreferences = (
   input: Partial<ReaderPreferences> | null | undefined
 ): ReaderPreferences => {
@@ -369,6 +377,10 @@ export const sanitizeReaderPreferencesStore = (
 
   if (sharedFontSizeIndex !== null) {
     next.sharedFontSizeIndex = sharedFontSizeIndex;
+  }
+
+  if (typeof raw.translationScope === "string") {
+    next.translationScope = sanitizeReaderTranslationScope(raw.translationScope);
   }
 
   if (isReaderPreferencesRecord(raw.light)) {

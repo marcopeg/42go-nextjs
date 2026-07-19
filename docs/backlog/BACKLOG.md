@@ -64,7 +64,7 @@
 
 ## WIP
 
-- [HV34: Enable Per-URL Install Targets and Installable Quicklist Virtual Apps](./wip/HV34-investigate-installable-quicklist-lists-as-separate-home-screen-apps/HV34.task.md) | [plan](./wip/HV34-investigate-installable-quicklist-lists-as-separate-home-screen-apps/HV34.plan.md)
+- [HV34: Enable Per-URL Install Targets and Installable Quicklist Virtual Apps](./wip/HV34-investigate-installable-quicklist-lists-as-separate-home-screen-apps/HV34.task.md) | [plan](./wip/HV34-investigate-installable-quicklist-lists-as-separate-home-screen-apps/HV34.plan.md) | [notes](./wip/HV34-investigate-installable-quicklist-lists-as-separate-home-screen-apps/HV34.notes.md)
 
 ## Blocked
 

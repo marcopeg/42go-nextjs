@@ -3,6 +3,7 @@ import { getDB } from "@/42go/db";
 import { getServerSession } from "next-auth";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { getAppID } from "@/42go/config/app-config";
+import { resolveQuicklistMode } from "@/lib/quicklists/mode";
 
 type FreshnessRow = {
   id: string;
@@ -10,6 +11,7 @@ type FreshnessRow = {
   created_at: Date;
   updated_at: Date;
   owned_by: string;
+  settings: unknown;
   freshness: Date;
 };
 
@@ -82,7 +84,7 @@ const getInfo = async (
 
   // Compute freshness including invites and collabs (and tasks for safety)
   const freshnessSql = `
-    SELECT p.id, p.title, p.created_at, p.updated_at, p.owned_by,
+    SELECT p.id, p.title, p.created_at, p.updated_at, p.owned_by, p.settings,
            GREATEST(
              p.updated_at,
              COALESCE(MAX(t.updated_at), to_timestamp(0)),
@@ -99,7 +101,7 @@ const getInfo = async (
              SELECT 1 FROM quicklist.collabs c2
               WHERE c2.project_id = p.id AND c2.user_id = ?
            ))
-     GROUP BY p.id, p.title, p.created_at, p.updated_at, p.owned_by
+     GROUP BY p.id, p.title, p.created_at, p.updated_at, p.owned_by, p.settings
   `;
 
   const fres = (await db.raw(freshnessSql, [projectId, appId, userId, userId]))
@@ -154,6 +156,7 @@ const getInfo = async (
     project: {
       id: p.id,
       title: p.title,
+      mode: resolveQuicklistMode(p.settings),
       created_at: toISO(p.created_at),
       updated_at: toISO(p.updated_at),
       is_owner: p.owned_by === userId,

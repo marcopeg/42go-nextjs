@@ -16,6 +16,10 @@ import {
   shouldCoalesceQuicklistResumeSignal,
   shouldRunQuicklistAutoRefresh,
 } from "../src/lib/quicklists/polling.ts";
+import {
+  isQuicklistMode,
+  resolveQuicklistMode,
+} from "../src/lib/quicklists/mode.ts";
 
 describe("QuickList auto-refresh preference", () => {
   it("maps the final levels to their polling intervals", () => {
@@ -128,5 +132,20 @@ describe("QuickList polling decisions", () => {
   it("coalesces clustered mobile foreground signals", () => {
     assert.equal(shouldCoalesceQuicklistResumeSignal(1_000, 1_749), true);
     assert.equal(shouldCoalesceQuicklistResumeSignal(1_000, 1_750), false);
+  });
+});
+
+describe("QuickList list modes", () => {
+  it("defaults missing or invalid settings to todo", () => {
+    assert.equal(resolveQuicklistMode(undefined), "todo");
+    assert.equal(resolveQuicklistMode({}), "todo");
+    assert.equal(resolveQuicklistMode({ mode: "later" }), "todo");
+  });
+
+  it("accepts only the persisted Todo and Checklist values", () => {
+    assert.equal(isQuicklistMode("todo"), true);
+    assert.equal(isQuicklistMode("checklist"), true);
+    assert.equal(isQuicklistMode("reset"), false);
+    assert.equal(resolveQuicklistMode({ mode: "checklist" }), "checklist");
   });
 });

@@ -25,14 +25,17 @@ import type {
 } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 import {
   READER_PREFERENCES_STORAGE_KEY,
+  DEFAULT_READER_TRANSLATION_SCOPE,
   getDefaultReaderPreferences,
   readStoredReaderPreferencesStore,
   sanitizeReaderPreferences,
   sanitizeReaderFontSizeIndex,
+  sanitizeReaderTranslationScope,
   type ReaderPreferencesStore,
   type ReaderThemeMode,
   type ReaderThemeProfileKey,
   type ReaderPreferences,
+  type ReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 
 type BookPageResponse = {
@@ -399,6 +402,9 @@ const BookReadPage = () => {
       sanitizeReaderFontSizeIndex(readerPreferencesStore.sharedFontSizeIndex) ??
       baseReaderPreferences.fontSizeIndex,
   };
+  const readerTranslationScope = sanitizeReaderTranslationScope(
+    readerPreferencesStore.translationScope ?? DEFAULT_READER_TRANSLATION_SCOPE
+  );
 
   const apiHref = readerRoute?.apiHref || "";
   const loadedBookPageApiHref = bookPage
@@ -561,6 +567,21 @@ const BookReadPage = () => {
 
       return nextStore;
     });
+  };
+  const updateReaderTranslationScope = (next: ReaderTranslationScope) => {
+    if (readerTranslationScope === next) return;
+
+    trackEvent("read.settings.changed", {
+      ...getReaderSettingsEventData(),
+      action: "update",
+      changed_fields: ["translationScope"],
+      next_values: { translationScope: next },
+    });
+
+    setReaderPreferencesStore((current) => ({
+      ...current,
+      translationScope: sanitizeReaderTranslationScope(next),
+    }));
   };
   const resetReaderPreferences = () => {
     trackEvent("read.settings.changed", {
@@ -916,6 +937,7 @@ const BookReadPage = () => {
           readingProgressBps={readingProgressBps}
           headerTitleMode={headerTitleMode}
           preferences={readerPreferences}
+          translationScope={readerTranslationScope}
           playback={playback}
           forceScrollTop={shouldForcePlaybackTop}
           pageTurnPending={pageTurnPending}
@@ -933,6 +955,7 @@ const BookReadPage = () => {
           readingProgressBps={readingProgressBps}
           headerTitleMode={headerTitleMode}
           preferences={readerPreferences}
+          translationScope={readerTranslationScope}
           playback={playback}
           forceScrollTop={shouldForcePlaybackTop}
           pageTurnPending={pageTurnPending}
@@ -946,6 +969,8 @@ const BookReadPage = () => {
           onOpenChange={setIsPreferencesOpen}
           preferences={readerPreferences}
           onPreferencesChange={updateReaderPreferences}
+          translationScope={readerTranslationScope}
+          onTranslationScopeChange={updateReaderTranslationScope}
           canResetPreferences={canResetReaderPreferences}
           onResetPreferences={resetReaderPreferences}
         />

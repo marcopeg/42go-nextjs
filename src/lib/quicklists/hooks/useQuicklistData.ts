@@ -55,6 +55,7 @@ export interface UseQuicklistDataReturn {
   ) => Promise<Task[]>;
   handleUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   handleReorderTasks: (taskIds: string[]) => Promise<void>;
+  handleResetChecklist: () => Promise<void>;
   handleUpdateProject: (
     updates: Partial<ProjectData["project"]>
   ) => Promise<void>;
@@ -471,6 +472,56 @@ export const useQuicklistData = ({
     }
   };
 
+  const handleResetChecklist = async () => {
+    if (!hasCompleted) return;
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm("Reset checklist? This will mark all items unchecked.")
+    ) {
+      return;
+    }
+
+    const finishMutation = beginMutation();
+    const previousTasks = tasks;
+    const now = new Date().toISOString();
+    setResolvedTasks(
+      previousTasks.map((task) =>
+        task.completed_at
+          ? { ...task, completed_at: null, updated_at: now }
+          : task
+      )
+    );
+
+    try {
+      const res = await fetch(
+        `/api/quicklists/${projectId}/reset-checklist`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+        }
+      );
+      if (!res.ok) throw new Error(`Failed to reset checklist: ${res.status}`);
+
+      const data = (await res.json()) as { ok: boolean; tasks?: Task[] };
+      if (data.tasks) setResolvedTasks(data.tasks);
+      updateProjectInCache(projectId, { updated_at: new Date().toISOString() });
+    } catch (mutationError) {
+      setResolvedTasks(previousTasks);
+      toast({
+        variant: "destructive",
+        title: "Failed to reset checklist",
+        description:
+          mutationError instanceof Error
+            ? mutationError.message
+            : "Unknown error",
+      });
+      finishMutation();
+      await refreshData();
+    } finally {
+      finishMutation();
+    }
+  };
+
   return {
     projectData,
     isLoading,
@@ -489,6 +540,7 @@ export const useQuicklistData = ({
     handleBulkCreateTasks,
     handleUpdateTask,
     handleReorderTasks,
+    handleResetChecklist,
     handleUpdateProject,
     refreshData,
     hasCompleted,

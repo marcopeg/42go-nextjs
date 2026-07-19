@@ -3,6 +3,7 @@ import { getDB } from "@/42go/db";
 import { getServerSession } from "next-auth";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { getAppID } from "@/42go/config/app-config";
+import { resolveQuicklistMode } from "@/lib/quicklists/mode";
 
 // Simple uuid validator (reuse pattern from other routes)
 const isUUID = (v: string): boolean =>
@@ -50,7 +51,7 @@ const handler = async (
         // Ensure access (owner or collaborator)
         const access = (
           await trx.raw(
-            `SELECT 1 FROM quicklist.projects p
+            `SELECT p.settings FROM quicklist.projects p
              WHERE p.id = ? AND p.app_id = ?
                AND (p.owned_by = ? OR EXISTS (
                      SELECT 1 FROM quicklist.collabs c
@@ -58,11 +59,20 @@ const handler = async (
                    ))`,
             [projectId, appId, userId, userId]
           )
-        ).rows as Array<Record<string, unknown>>;
+        ).rows as Array<{ settings: unknown }>;
         if (access.length === 0) {
           return Response.json(
             { error: "not_found", message: "Not Found" },
             { status: 404 }
+          );
+        }
+        if (resolveQuicklistMode(access[0].settings) !== "todo") {
+          return Response.json(
+            {
+              error: "invalid_mode",
+              message: "Completed item cleanup is only available for todo lists",
+            },
+            { status: 409 }
           );
         }
 

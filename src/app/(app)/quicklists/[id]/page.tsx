@@ -66,6 +66,7 @@ export default function ProjectDetailsPage() {
     handleBulkCreateTasks,
     handleUpdateTask,
     handleReorderTasks,
+    handleResetChecklist,
     handleUpdateProject,
     refreshData,
     hasCompleted,
@@ -82,6 +83,7 @@ export default function ProjectDetailsPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const desktopInputRef = useRef<HTMLInputElement | null>(null);
   const [creatingMobile, setCreatingMobile] = useState(false);
+  const mode = projectData?.project.mode ?? "todo";
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -461,11 +463,21 @@ export default function ProjectDetailsPage() {
               <div className="mt-4 mb-8 flex justify-center">
                 <button
                   type="button"
-                  onClick={handleDropCompleted}
-                  aria-label="Drop completed tasks"
+                  onClick={
+                    mode === "checklist"
+                      ? handleResetChecklist
+                      : handleDropCompleted
+                  }
+                  aria-label={
+                    mode === "checklist"
+                      ? "Reset checklist"
+                      : "Drop completed tasks"
+                  }
                   className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition"
                 >
-                  Drop completed tasks
+                  {mode === "checklist"
+                    ? "Reset checklist"
+                    : "Drop completed tasks"}
                 </button>
               </div>
             )}

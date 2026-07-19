@@ -4,10 +4,12 @@ import { getServerSession } from "next-auth";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { z } from "zod";
 import { getAppID } from "@/42go/config/app-config";
+import { resolveQuicklistMode } from "@/lib/quicklists/mode";
 
 type ProjectRow = {
   id: string;
   title: string;
+  settings: unknown;
   updated_at: Date;
   role: string;
   owned: boolean;
@@ -94,11 +96,11 @@ const getQuicklists = async (req: Request) => {
 
   const projectsSql = `
     WITH owned AS (
-      SELECT p.id, p.title, p.updated_at, 'owner'::text AS role, TRUE AS owned
+      SELECT p.id, p.title, p.settings, p.updated_at, 'owner'::text AS role, TRUE AS owned
   FROM quicklist.projects p
   WHERE p.owned_by = ? AND p.app_id = ?
     ), collab AS (
-      SELECT p.id, p.title, p.updated_at, c.role::text AS role, FALSE AS owned
+      SELECT p.id, p.title, p.settings, p.updated_at, c.role::text AS role, FALSE AS owned
       FROM quicklist.collabs c
   JOIN quicklist.projects p ON p.id = c.project_id
   WHERE c.user_id = ? AND p.app_id = ?
@@ -107,7 +109,7 @@ const getQuicklists = async (req: Request) => {
       UNION ALL
       SELECT * FROM collab
     ), dedup AS (
-      SELECT DISTINCT ON (id) id, title, updated_at, role, owned
+      SELECT DISTINCT ON (id) id, title, settings, updated_at, role, owned
       FROM unioned
       ORDER BY id, owned DESC, updated_at DESC
     )
@@ -131,6 +133,7 @@ const getQuicklists = async (req: Request) => {
   const projects = pageRows.map((r) => ({
     id: r.id,
     title: r.title,
+    mode: resolveQuicklistMode(r.settings),
     owned: !!r.owned,
     role: r.role,
     updated_at: toISO(r.updated_at),

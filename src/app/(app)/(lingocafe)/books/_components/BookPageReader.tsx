@@ -22,6 +22,7 @@ import {
   getReaderFont,
   getReaderFontSize,
   type ReaderPreferences,
+  type ReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import type {
   ReaderPlaybackSentence,
@@ -31,6 +32,7 @@ import type {
 type BookPageReaderProps = {
   bookPage: ReaderBookPage;
   preferences: ReaderPreferences;
+  translationScope: ReaderTranslationScope;
   playbackSentenceId: string | null;
   playbackSentenceHighlighting: boolean;
   playbackWordRange: ReaderPlaybackWordRange | null;
@@ -50,15 +52,16 @@ type SentenceAnchor = {
   showBelow: boolean;
 };
 
-type SentenceSelection = {
+type TranslationSelection = {
   id: string;
+  sentenceId: string;
   text: string;
   anchor: SentenceAnchor;
 };
 
 type TranslationStatus = "idle" | "loading" | "success" | "error";
 
-type TranslationState = SentenceSelection & {
+type TranslationState = TranslationSelection & {
   status: TranslationStatus;
   translation: string | null;
   source: ReaderTranslationCacheEntry["source"] | null;
@@ -68,13 +71,14 @@ type TranslationState = SentenceSelection & {
 type SentenceRenderContext = {
   bookPage: ReaderBookPage;
   translationEnabled: boolean;
-  activeSentenceId: string | null;
+  translationScope: ReaderTranslationScope;
+  activeTranslationId: string | null;
   playbackSentenceId: string | null;
   playbackSentenceHighlighting: boolean;
   playbackWordRange: ReaderPlaybackWordRange | null;
   index: number;
   getSentenceAnchor: (element: HTMLElement) => SentenceAnchor | null;
-  onSentenceSelect: (selection: SentenceSelection) => void;
+  onTranslationSelect: (selection: TranslationSelection) => void;
   onSentenceActivate: (sentenceId: string) => void;
 };
 
@@ -217,14 +221,14 @@ const getPopoverStyle = (anchor: SentenceAnchor): CSSProperties => {
   };
 };
 
-const getReaderSentenceElement = (id: string) => {
+const getReaderTranslationElement = (id: string) => {
   const escapedId =
     typeof CSS !== "undefined" && CSS.escape
       ? CSS.escape(id)
       : id.replace(/["\\]/g, "\\$&");
 
   return document.querySelector<HTMLElement>(
-    `[data-reader-sentence-id="${escapedId}"]`
+    `[data-reader-translation-id="${escapedId}"]`
   );
 };
 
@@ -349,6 +353,133 @@ const ReaderTranslationPopover = ({
   </div>
 );
 
+type ReaderTranslationTargetProps = {
+  id: string;
+  sentenceId: string;
+  text: string;
+  context: SentenceRenderContext;
+  active: boolean;
+  children: ReactNode;
+};
+
+const ReaderTranslationTarget = ({
+  id,
+  sentenceId,
+  text,
+  context,
+  active,
+  children,
+}: ReaderTranslationTargetProps) => {
+  const tapCandidateRef = useRef<TapCandidate | null>(null);
+  const isTapMovement = (event: ReactPointerEvent<HTMLSpanElement>) =>
+    !!tapCandidateRef.current &&
+    tapCandidateRef.current.pointerId === event.pointerId &&
+    Math.abs(event.clientX - tapCandidateRef.current.clientX) <=
+      tapMovementThresholdPx &&
+    Math.abs(event.clientY - tapCandidateRef.current.clientY) <=
+      tapMovementThresholdPx;
+  const handleSelect = (target: HTMLSpanElement) => {
+    if (hasActiveTextSelection()) return;
+    context.onSentenceActivate(sentenceId);
+    if (!context.translationEnabled) return;
+    const anchor = context.getSentenceAnchor(target);
+    if (!anchor) return;
+    context.onTranslationSelect({ id, sentenceId, text, anchor });
+  };
+
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      data-reader-translation-id={id}
+      onPointerDown={(event) => {
+        if (event.button !== 0) return;
+        if (event.pointerType === "mouse") {
+          handleSelect(event.currentTarget);
+          return;
+        }
+        tapCandidateRef.current = {
+          pointerId: event.pointerId,
+          clientX: event.clientX,
+          clientY: event.clientY,
+          cancelled: false,
+        };
+      }}
+      onPointerMove={(event) => {
+        if (
+          tapCandidateRef.current?.pointerId === event.pointerId &&
+          !isTapMovement(event)
+        ) {
+          tapCandidateRef.current.cancelled = true;
+        }
+      }}
+      onPointerCancel={(event) => {
+        if (tapCandidateRef.current?.pointerId === event.pointerId) {
+          tapCandidateRef.current = null;
+        }
+      }}
+      onPointerUp={(event) => {
+        if (event.pointerType === "mouse") return;
+        const tapCandidate = tapCandidateRef.current;
+        if (!tapCandidate || tapCandidate.pointerId !== event.pointerId) return;
+        const shouldSelect = !tapCandidate.cancelled && isTapMovement(event);
+        tapCandidateRef.current = null;
+        if (shouldSelect) handleSelect(event.currentTarget);
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        handleSelect(event.currentTarget);
+      }}
+      className="cursor-pointer rounded-[3px] transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+      style={{
+        backgroundColor: active ? "var(--reader-highlight-bg)" : undefined,
+        color: active ? "var(--reader-highlight-fg)" : undefined,
+        position: active ? "relative" : undefined,
+        zIndex: active ? 50 : undefined,
+      }}
+    >
+      {children}
+    </span>
+  );
+};
+
+const wordPattern = /[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu;
+
+const renderWordTargets = (
+  sentence: string,
+  sentenceId: string,
+  context: SentenceRenderContext
+): ReactNode[] => {
+  const nodes: ReactNode[] = [];
+  let cursor = 0;
+  let wordIndex = 0;
+
+  for (const match of sentence.matchAll(wordPattern)) {
+    const word = match[0];
+    const start = match.index ?? cursor;
+    if (start > cursor) nodes.push(sentence.slice(cursor, start));
+    const id = `${sentenceId}:word:${wordIndex}`;
+    wordIndex += 1;
+    nodes.push(
+      <ReaderTranslationTarget
+        key={id}
+        id={id}
+        sentenceId={sentenceId}
+        text={word}
+        context={context}
+        active={context.activeTranslationId === id}
+      >
+        {word}
+      </ReaderTranslationTarget>
+    );
+    cursor = start + word.length;
+  }
+
+  if (cursor < sentence.length) nodes.push(sentence.slice(cursor));
+  return nodes.length > 0 ? nodes : [sentence];
+};
+
 const renderSentenceText = (
   text: string,
   context: SentenceRenderContext
@@ -359,118 +490,61 @@ const renderSentenceText = (
 
     const id = `${context.bookPage.page.bookId}:${context.bookPage.page.pageId}:${context.index}`;
     context.index += 1;
-    const active = context.activeSentenceId === id;
     const playbackActive = context.playbackSentenceId === id;
     const playbackSentenceHighlighted =
       playbackActive && context.playbackSentenceHighlighting;
     const playbackWordHighlighted =
       playbackActive && context.playbackWordRange !== null;
+    const sentenceStyle: CSSProperties = {
+      backgroundColor: playbackSentenceHighlighted
+        ? "color-mix(in oklab, var(--primary) 14%, transparent)"
+        : undefined,
+      boxShadow: playbackSentenceHighlighted
+        ? "inset 0 -2px 0 color-mix(in oklab, var(--primary) 60%, transparent)"
+        : undefined,
+      position:
+        playbackSentenceHighlighted || playbackWordHighlighted
+          ? "relative"
+          : undefined,
+      zIndex: playbackSentenceHighlighted || playbackWordHighlighted ? 40 : undefined,
+    };
 
-    let tapCandidate: TapCandidate | null = null;
-    const isTapMovement = (event: ReactPointerEvent<HTMLSpanElement>) => {
-      if (!tapCandidate || tapCandidate.pointerId !== event.pointerId) {
-        return false;
-      }
-
+    if (context.translationScope === "word") {
       return (
-        Math.abs(event.clientX - tapCandidate.clientX) <=
-          tapMovementThresholdPx &&
-        Math.abs(event.clientY - tapCandidate.clientY) <= tapMovementThresholdPx
+        <span
+          key={id}
+          data-reader-sentence-id={id}
+          aria-current={playbackActive ? "true" : undefined}
+          style={sentenceStyle}
+        >
+          {playbackWordHighlighted
+            ? renderPlaybackText(segment, sentence, context.playbackWordRange)
+            : renderWordTargets(sentence, id, context)}
+        </span>
       );
-    };
-    const handleSelect = (target: HTMLSpanElement) => {
-      if (hasActiveTextSelection()) return;
-      context.onSentenceActivate(id);
-      if (!context.translationEnabled) return;
-      const anchor = context.getSentenceAnchor(target);
-      if (!anchor) return;
-      context.onSentenceSelect({
-        id,
-        text: sentence,
-        anchor,
-      });
-    };
+    }
 
     return (
-      <span
+      <ReaderTranslationTarget
         key={id}
-        role="button"
-        tabIndex={0}
-        data-reader-sentence-id={id}
-        aria-current={playbackActive ? "true" : undefined}
-        onPointerDown={(event) => {
-          if (event.button !== 0) return;
-          if (event.pointerType === "mouse") {
-            handleSelect(event.currentTarget);
-            return;
-          }
-
-          tapCandidate = {
-            pointerId: event.pointerId,
-            clientX: event.clientX,
-            clientY: event.clientY,
-            cancelled: false,
-          };
-        }}
-        onPointerMove={(event) => {
-          if (!tapCandidate || tapCandidate.pointerId !== event.pointerId) {
-            return;
-          }
-
-          if (!isTapMovement(event)) {
-            tapCandidate.cancelled = true;
-          }
-        }}
-        onPointerCancel={(event) => {
-          if (tapCandidate?.pointerId === event.pointerId) {
-            tapCandidate = null;
-          }
-        }}
-        onPointerUp={(event) => {
-          if (event.pointerType === "mouse") return;
-          if (!tapCandidate || tapCandidate.pointerId !== event.pointerId) {
-            return;
-          }
-
-          const shouldSelect = !tapCandidate.cancelled && isTapMovement(event);
-          tapCandidate = null;
-          if (shouldSelect) handleSelect(event.currentTarget);
-        }}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter" && event.key !== " ") return;
-          event.preventDefault();
-          handleSelect(event.currentTarget);
-        }}
-        className="cursor-pointer rounded-[3px] transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-        style={{
-          backgroundColor: active
-            ? "var(--reader-highlight-bg)"
-            : playbackSentenceHighlighted
-              ? "color-mix(in oklab, var(--primary) 14%, transparent)"
-              : undefined,
-          color: active ? "var(--reader-highlight-fg)" : undefined,
-          boxShadow:
-            playbackSentenceHighlighted && !active
-              ? "inset 0 -2px 0 color-mix(in oklab, var(--primary) 60%, transparent)"
-              : undefined,
-          position:
-            active || playbackSentenceHighlighted || playbackWordHighlighted
-              ? "relative"
-              : undefined,
-          zIndex:
-            active
-              ? 50
-              : playbackSentenceHighlighted || playbackWordHighlighted
-                ? 40
-                : undefined,
-        }}
+        id={id}
+        sentenceId={id}
+        text={sentence}
+        context={context}
+        active={context.activeTranslationId === id}
       >
-        {renderPlaybackText(
-          segment,
-          sentence,
-          playbackActive ? context.playbackWordRange : null
-        )}
-      </span>
+        <span
+          data-reader-sentence-id={id}
+          aria-current={playbackActive ? "true" : undefined}
+          style={sentenceStyle}
+        >
+          {renderPlaybackText(
+            segment,
+            sentence,
+            playbackActive ? context.playbackWordRange : null
+          )}
+        </span>
+      </ReaderTranslationTarget>
     );
   });
 
@@ -579,6 +653,7 @@ const BookPageMarkdown = ({
 export const BookPageReader = ({
   bookPage,
   preferences,
+  translationScope,
   playbackSentenceId,
   playbackSentenceHighlighting,
   playbackWordRange,
@@ -596,12 +671,13 @@ export const BookPageReader = ({
     bookPage.translation.enabled && !!bookPage.translation.to;
   const [translationState, setTranslationState] =
     useState<TranslationState | null>(null);
-  const activeSentenceId = translationState?.id ?? null;
+  const activeTranslationId = translationState?.id ?? null;
   const isTranslationOpen = translationState !== null;
   const sentenceContext: SentenceRenderContext = {
     bookPage,
     translationEnabled,
-    activeSentenceId,
+    translationScope,
+    activeTranslationId,
     playbackSentenceId,
     playbackSentenceHighlighting,
     playbackWordRange,
@@ -610,7 +686,7 @@ export const BookPageReader = ({
       articleRef.current
         ? getSentenceAnchorInContainer(element, articleRef.current)
         : null,
-    onSentenceSelect: (selection) => {
+    onTranslationSelect: (selection) => {
       setTranslationState((current) =>
         current?.id === selection.id
           ? null
@@ -633,6 +709,10 @@ export const BookPageReader = ({
   useEffect(() => {
     setTranslationState(null);
   }, [bookPage.page.bookId, bookPage.page.pageId]);
+
+  useEffect(() => {
+    setTranslationState(null);
+  }, [translationScope]);
 
   useEffect(() => {
     const article = articleRef.current;
@@ -666,6 +746,7 @@ export const BookPageReader = ({
     bookPage.page.title,
     onSentenceCatalogChange,
     preferences,
+    translationScope,
   ]);
 
   useEffect(() => {
@@ -685,7 +766,7 @@ export const BookPageReader = ({
       to: bookPage.translation.to,
       bookId: bookPage.page.bookId,
       pageId: bookPage.page.pageId,
-      sentenceId: translationState.id,
+      sentenceId: translationState.sentenceId,
     };
 
     const loadTranslation = async () => {
@@ -699,7 +780,7 @@ export const BookPageReader = ({
             translation_hash: cached.hash,
             book_id: bookPage.page.bookId,
             page_id: bookPage.page.pageId,
-            sentence_id: translationState.id,
+            sentence_id: translationState.sentenceId,
           });
           setTranslationState((current) =>
             current?.id === translationState.id
@@ -784,17 +865,17 @@ export const BookPageReader = ({
   ]);
 
   useEffect(() => {
-    if (!activeSentenceId) return;
+    if (!activeTranslationId) return;
 
     let frame = 0;
     const syncPopoverAnchor = () => {
       frame = 0;
-      const sentence = getReaderSentenceElement(activeSentenceId);
+      const sentence = getReaderTranslationElement(activeTranslationId);
       const container = articleRef.current;
       if (!sentence || !container) return;
       const anchor = getSentenceAnchorInContainer(sentence, container);
       setTranslationState((current) =>
-        current?.id === activeSentenceId ? { ...current, anchor } : current
+        current?.id === activeTranslationId ? { ...current, anchor } : current
       );
     };
     const scheduleSync = () => {
@@ -808,10 +889,10 @@ export const BookPageReader = ({
       if (frame) window.cancelAnimationFrame(frame);
       window.removeEventListener("resize", scheduleSync);
     };
-  }, [activeSentenceId]);
+  }, [activeTranslationId]);
 
   useEffect(() => {
-    if (!activeSentenceId) return;
+    if (!activeTranslationId) return;
 
     let outsideTapCandidate: TapCandidate | null = null;
     const isOutsideTapMovement = (event: PointerEvent) => {
@@ -829,12 +910,12 @@ export const BookPageReader = ({
           tapMovementThresholdPx
       );
     };
-    const isSentenceTarget = (target: EventTarget | null) =>
+    const isTranslationTarget = (target: EventTarget | null) =>
       target instanceof Element &&
-      !!target.closest("[data-reader-sentence-id]");
+      !!target.closest("[data-reader-translation-id]");
     const closeOnOutsidePointerDown = (event: PointerEvent) => {
       const target = event.target;
-      if (isSentenceTarget(target)) {
+      if (isTranslationTarget(target)) {
         outsideTapCandidate = null;
         return;
       }
@@ -898,7 +979,7 @@ export const BookPageReader = ({
       document.removeEventListener("pointercancel", cancelOutsidePointer);
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, [activeSentenceId]);
+  }, [activeTranslationId]);
 
   return (
     <article

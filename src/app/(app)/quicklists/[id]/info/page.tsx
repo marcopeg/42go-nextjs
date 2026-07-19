@@ -13,8 +13,9 @@ import { createPortal } from "react-dom";
 
 import { useSession } from "next-auth/react";
 import { DisplayDate } from "@/42go/components/DisplayDate";
+import { SimplePanel } from "@/42go/components/panel";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { ListChecks, ListTodo, Trash2, type LucideIcon } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import {
   InstallAppAction,
@@ -22,8 +23,31 @@ import {
 } from "@/42go/pwa";
 import {
   useRemoveProjectFromCache,
+  useRefreshProject,
   useRefreshQuicklists,
 } from "@/lib/quicklists/hooks/useQuicklists";
+import type { QuicklistMode } from "@/lib/quicklists/mode";
+import { cn } from "@/lib/utils";
+
+const listModeOptions: {
+  value: QuicklistMode;
+  label: string;
+  description: string;
+  Icon: LucideIcon;
+}[] = [
+  {
+    value: "todo",
+    label: "Todo",
+    description: "Remove completed items",
+    Icon: ListTodo,
+  },
+  {
+    value: "checklist",
+    label: "Checklist",
+    description: "Reset completed items for reuse",
+    Icon: ListChecks,
+  },
+];
 
 type Invite = {
   email: string;
@@ -45,6 +69,7 @@ type InfoResponse = {
   project: {
     id: string;
     title: string;
+    mode: QuicklistMode;
     created_at: string | null;
     updated_at: string | null;
     is_owner: boolean;
@@ -121,10 +146,12 @@ export default function QuicklistInfoPage() {
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [savingMode, setSavingMode] = useState(false);
 
   const { toast } = useToast();
   const removeProjectFromCache = useRemoveProjectFromCache();
   const refreshQuicklists = useRefreshQuicklists();
+  const refreshProject = useRefreshProject(projectId);
 
   useEffect(() => {
     if (!projectId) return;
@@ -336,6 +363,39 @@ export default function QuicklistInfoPage() {
     }
   };
 
+  const updateMode = async (mode: QuicklistMode) => {
+    if (!data || data.project.mode === mode) return;
+
+    try {
+      setSavingMode(true);
+      const res = await fetch(`/api/quicklists/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ mode }),
+      });
+      if (!res.ok) throw new Error(`Failed to update list mode: ${res.status}`);
+
+      setData((current) =>
+        current
+          ? { ...current, project: { ...current.project, mode } }
+          : current
+      );
+      refreshProject();
+      refreshQuicklists();
+      toast({ title: `List changed to ${mode}` });
+    } catch (modeError) {
+      toast({
+        title: "Failed to update list mode",
+        description:
+          modeError instanceof Error ? modeError.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingMode(false);
+    }
+  };
+
   const title = useMemo(
     () => data?.project?.title || "Collaborators",
     [data?.project?.title]
@@ -466,6 +526,47 @@ export default function QuicklistInfoPage() {
                 />
               </section>
             )}
+
+            <SimplePanel
+              title="List type"
+              description="Choose whether completed items are removed or reset for reuse."
+            >
+              <div
+                role="tablist"
+                aria-label="List type"
+                className="flex flex-nowrap items-stretch gap-1 overflow-x-auto rounded-lg border border-border bg-muted/20 p-1"
+              >
+                {listModeOptions.map(({ value, label, description, Icon }) => {
+                  const selected = data.project.mode === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      aria-label={`${label}: ${description}`}
+                      title={description}
+                      disabled={savingMode}
+                      onClick={() => void updateMode(value)}
+                      className={cn(
+                        "flex h-10 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md border px-1.5 text-xs font-medium transition-colors outline-none sm:h-12 sm:gap-2 sm:px-2 sm:text-sm",
+                        "focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                        "disabled:cursor-not-allowed disabled:opacity-60",
+                        selected
+                          ? "border-[var(--primary)] bg-primary/5 text-foreground"
+                          : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      <Icon
+                        className="h-4 w-4 shrink-0 sm:h-5 sm:w-5"
+                        aria-hidden="true"
+                      />
+                      <span className="truncate">{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </SimplePanel>
 
             <section>
               <h2 className="text-base font-semibold mb-2">

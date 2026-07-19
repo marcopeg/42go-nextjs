@@ -18,6 +18,7 @@ import {
   READER_FONT_OPTIONS,
   READER_FONT_SIZE_OPTIONS,
   type ReaderPreferences,
+  type ReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import { Button } from "@/components/ui/button";
 
@@ -26,6 +27,8 @@ type BookReaderPreferencesPanelProps = {
   onOpenChange: (next: boolean) => void;
   preferences: ReaderPreferences;
   onPreferencesChange: (next: Partial<ReaderPreferences>) => void;
+  translationScope: ReaderTranslationScope;
+  onTranslationScopeChange: (next: ReaderTranslationScope) => void;
   canResetPreferences: boolean;
   onResetPreferences: () => void;
 };
@@ -158,6 +161,8 @@ export const BookReaderPreferencesPanel = ({
   onOpenChange,
   preferences,
   onPreferencesChange,
+  translationScope,
+  onTranslationScopeChange,
   canResetPreferences,
   onResetPreferences,
 }: BookReaderPreferencesPanelProps) => {
@@ -370,7 +375,51 @@ export const BookReaderPreferencesPanel = ({
           </section>
         </div>
 
-        <section className="mt-8 space-y-3 border-t pt-6">
+        <section className="mt-8 space-y-4">
+          <div>
+            <h3 className="font-semibold">Translation</h3>
+            <p className="text-sm text-muted-foreground">
+              Choose how much text is translated when you tap the reader.
+            </p>
+          </div>
+          <div
+            role="tablist"
+            aria-label="Translation scope"
+            className="flex flex-nowrap items-stretch gap-1 overflow-x-auto rounded-lg border border-border bg-muted/20 p-1"
+          >
+            {[
+              { value: "sentence", label: "Translate full sentence" },
+              { value: "word", label: "Translate single word" },
+            ].map(({ value, label }) => {
+              const selected = translationScope === value;
+
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() =>
+                    onTranslationScopeChange(
+                      value === "word" ? "word" : "sentence"
+                    )
+                  }
+                  className={cn(
+                    "flex min-h-10 min-w-0 flex-1 items-center justify-center rounded-md border px-2 text-center text-xs font-medium transition-colors outline-none sm:text-sm",
+                    "focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                    selected
+                      ? "border-[var(--primary)] bg-primary/5 text-foreground"
+                      : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <span className="leading-tight">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="mt-8 space-y-3">
           <Button
             type="button"
             className="w-full"
