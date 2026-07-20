@@ -15,12 +15,10 @@ import { useSession } from "next-auth/react";
 import { DisplayDate } from "@/42go/components/DisplayDate";
 import { SimplePanel } from "@/42go/components/panel";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { ListChecks, ListTodo, Trash2, type LucideIcon } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import {
-  InstallAppAction,
-  useIsInstalledPWAInstallTarget,
-} from "@/42go/pwa";
+import { useIsInstalledPWAInstallTarget } from "@/42go/pwa";
 import {
   useRemoveProjectFromCache,
   useRefreshProject,
@@ -73,6 +71,7 @@ type InfoResponse = {
     created_at: string | null;
     updated_at: string | null;
     is_owner: boolean;
+    api_enabled?: boolean;
   };
   invites: Invite[];
   collabs: Collab[];
@@ -147,6 +146,8 @@ export default function QuicklistInfoPage() {
   const [leaving, setLeaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [savingMode, setSavingMode] = useState(false);
+  const [savingApiAccess, setSavingApiAccess] = useState(false);
+  const [accountApiEnabled, setAccountApiEnabled] = useState<boolean | null>(null);
 
   const { toast } = useToast();
   const removeProjectFromCache = useRemoveProjectFromCache();
@@ -173,6 +174,24 @@ export default function QuicklistInfoPage() {
       }
     })();
   }, [projectId]);
+
+  useEffect(() => {
+    if (!data?.project.is_owner) return;
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/quicklists/api-access", {
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const payload = (await res.json()) as { status?: { exists?: boolean } };
+        setAccountApiEnabled(Boolean(payload.status?.exists));
+      } catch {
+        setAccountApiEnabled(null);
+      }
+    })();
+  }, [data?.project.is_owner]);
 
   const overLimit = useMemo(() => {
     const total = (data?.invites?.length || 0) + (data?.collabs?.length || 0);
@@ -396,10 +415,41 @@ export default function QuicklistInfoPage() {
     }
   };
 
-  const title = useMemo(
-    () => data?.project?.title || "Collaborators",
-    [data?.project?.title]
-  );
+  const updateApiAccess = async (enabled: boolean) => {
+    if (!data?.project.is_owner || savingApiAccess) return;
+
+    try {
+      setSavingApiAccess(true);
+      const res = await fetch(`/api/quicklists/${projectId}/api-access`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ enabled }),
+      });
+      if (!res.ok) throw new Error(`Failed to update API access: ${res.status}`);
+
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              project: { ...current.project, api_enabled: enabled },
+            }
+          : current
+      );
+      toast({ title: enabled ? "List API access enabled" : "List API access disabled" });
+    } catch (apiAccessError) {
+      toast({
+        title: "Failed to update list API access",
+        description:
+          apiAccessError instanceof Error ? apiAccessError.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingApiAccess(false);
+    }
+  };
+
+  const title = data?.project.title || "Collaborators";
   const subtitle = data?.project?.updated_at
     ? `Updated: ${new Date(data.project.updated_at).toLocaleString()}`
     : undefined;
@@ -519,11 +569,11 @@ export default function QuicklistInfoPage() {
                   Add {data.project.title} as its own virtual app. It will open
                   directly to this list.
                 </p>
-                <InstallAppAction
-                  appName={data.project.title}
-                  buttonLabel="Install this list"
-                  className="mt-4 w-full sm:w-auto"
-                />
+                <Button asChild className="mt-4 w-full sm:w-auto">
+                  <a href={`/quicklists/${projectId}/install`}>
+                    Install this list
+                  </a>
+                </Button>
               </section>
             )}
 
@@ -567,6 +617,33 @@ export default function QuicklistInfoPage() {
                 })}
               </div>
             </SimplePanel>
+
+            {data.project.is_owner && (
+              <SimplePanel
+                title="Agent API access"
+                description="Choose whether your agents and collaborators' agents can operate on this list."
+              >
+                <div className="flex min-h-11 items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">Enable API access for this list</p>
+                    <p className="text-sm text-muted-foreground">
+                      Lists created in the app are private from the API by default.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={Boolean(data.project.api_enabled)}
+                    aria-label="Enable API access for this list"
+                    disabled={savingApiAccess}
+                    onCheckedChange={(checked) => void updateApiAccess(checked)}
+                  />
+                </div>
+                {data.project.api_enabled && accountApiEnabled === false && (
+                  <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+                    This list is enabled, but your account has no API token. Go to your profile to enable personal API access.
+                  </p>
+                )}
+              </SimplePanel>
+            )}
 
             <section>
               <h2 className="text-base font-semibold mb-2">

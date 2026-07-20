@@ -63,7 +63,7 @@ export const resolveQuicklistProjectInstallTarget: TPWAInstallTargetResolver =
       name: project.title,
       shortName: project.title,
       startUrl,
-      manifestPath: targetId,
+      manifestPath: `${targetId}/install`,
       private: true,
     };
   };

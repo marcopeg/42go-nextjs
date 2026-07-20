@@ -6,6 +6,7 @@ import { Settings2, X } from "lucide-react";
 import { READER_PLAYBACK_SPEEDS } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/model";
 import type { ReaderPlaybackController } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 export const READER_PLAYBACK_SURFACE_CLASSNAME =
@@ -24,26 +25,11 @@ const PlaybackToggle = ({
 }: PlaybackToggleProps) => (
   <div className="flex min-h-11 items-center justify-between gap-4 px-4 py-1">
     <span className="text-sm font-medium">{label}</span>
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
+    <Switch
+      checked={checked}
       aria-label={label}
-      onClick={() => onCheckedChange(!checked)}
-      className={cn(
-        "relative h-6 w-11 shrink-0 rounded-full border outline-none transition-colors",
-        "focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-        checked ? "border-primary bg-primary" : "border-input bg-muted"
-      )}
-    >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "block h-5 w-5 rounded-full bg-background shadow-sm transition-transform",
-          checked ? "translate-x-5" : "translate-x-0"
-        )}
-      />
-    </button>
+      onCheckedChange={onCheckedChange}
+    />
   </div>
 );
 

@@ -12,6 +12,7 @@ type FreshnessRow = {
   updated_at: Date;
   owned_by: string;
   settings: unknown;
+  api_enabled: boolean;
   freshness: Date;
 };
 
@@ -84,7 +85,7 @@ const getInfo = async (
 
   // Compute freshness including invites and collabs (and tasks for safety)
   const freshnessSql = `
-    SELECT p.id, p.title, p.created_at, p.updated_at, p.owned_by, p.settings,
+    SELECT p.id, p.title, p.created_at, p.updated_at, p.owned_by, p.settings, p.api_enabled,
            GREATEST(
              p.updated_at,
              COALESCE(MAX(t.updated_at), to_timestamp(0)),
@@ -101,7 +102,7 @@ const getInfo = async (
              SELECT 1 FROM quicklist.collabs c2
               WHERE c2.project_id = p.id AND c2.user_id = ?
            ))
-     GROUP BY p.id, p.title, p.created_at, p.updated_at, p.owned_by, p.settings
+     GROUP BY p.id, p.title, p.created_at, p.updated_at, p.owned_by, p.settings, p.api_enabled
   `;
 
   const fres = (await db.raw(freshnessSql, [projectId, appId, userId, userId]))
@@ -152,6 +153,7 @@ const getInfo = async (
     created_at: toISO(c.created_at),
   }));
 
+  const isOwner = p.owned_by === userId;
   const body = {
     project: {
       id: p.id,
@@ -159,7 +161,8 @@ const getInfo = async (
       mode: resolveQuicklistMode(p.settings),
       created_at: toISO(p.created_at),
       updated_at: toISO(p.updated_at),
-      is_owner: p.owned_by === userId,
+      is_owner: isOwner,
+      ...(isOwner ? { api_enabled: p.api_enabled } : {}),
     },
     invites,
     collabs,

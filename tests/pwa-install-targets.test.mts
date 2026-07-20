@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 import { detectPWAInstallPlatform } from "../src/42go/pwa/install-platform.ts";
-import { shouldReloadPWAInstallDocument } from "../src/42go/pwa/document-identity.ts";
 import {
   createPWAInstallTargetStartUrl,
   getPWAInstallTargetMarker,
@@ -59,6 +59,45 @@ describe("PWA target path patterns", () => {
         { pattern: "/quicklists/:id", resolver: "one" },
         { pattern: "/quicklists/:projectId", resolver: "two" },
       ])
+    );
+  });
+});
+
+describe("QuickList installer target boundary", () => {
+  const pattern = "/quicklists/:projectId/install";
+
+  it("matches only the dedicated installer page", () => {
+    assert.deepEqual(
+      matchPWAPathPattern(pattern, "/quicklists/list-1/install"),
+      { projectId: "list-1" }
+    );
+    assert.equal(matchPWAPathPattern(pattern, "/quicklists/list-1"), null);
+    assert.equal(
+      matchPWAPathPattern(pattern, "/quicklists/list-1/info"),
+      null
+    );
+    assert.equal(matchPWAPathPattern(pattern, "/quicklists"), null);
+  });
+
+  it("keeps manifest identity fixed and never reloads during client routing", () => {
+    const manifestLinkSource = readFileSync(
+      new URL("../src/42go/pwa/ManifestLink.tsx", import.meta.url),
+      "utf8"
+    );
+    const quicklistConfigSource = readFileSync(
+      new URL("../src/config/quicklist/config.ts", import.meta.url),
+      "utf8"
+    );
+
+    assert.doesNotMatch(manifestLinkSource, /window\.location\.reload/);
+    assert.doesNotMatch(manifestLinkSource, /usePathname/);
+    assert.match(
+      quicklistConfigSource,
+      /pattern: '\/quicklists\/:projectId\/install'/
+    );
+    assert.doesNotMatch(
+      quicklistConfigSource,
+      /pattern: '\/quicklists\/:projectId\/\*\*'/
     );
   });
 });
@@ -135,45 +174,6 @@ describe("PWA installation instruction platform", () => {
         maxTouchPoints: 0,
       }),
       "mac-safari"
-    );
-  });
-});
-
-describe("PWA document identity transitions", () => {
-  it("reloads when client navigation crosses into a different virtual app", () => {
-    assert.equal(
-      shouldReloadPWAInstallDocument({
-        currentHref:
-          "/manifest.webmanifest?path=%2Fquicklists%2Flist-1",
-        currentPathname: "/quicklists/list-1",
-        initialHref: "/manifest.webmanifest",
-        initialPathname: "/quicklists",
-      }),
-      true
-    );
-  });
-
-  it("does not reload within one virtual app or loop on a direct request", () => {
-    const manifestHref =
-      "/manifest.webmanifest?path=%2Fquicklists%2Flist-1";
-
-    assert.equal(
-      shouldReloadPWAInstallDocument({
-        currentHref: manifestHref,
-        currentPathname: "/quicklists/list-1/info",
-        initialHref: manifestHref,
-        initialPathname: "/quicklists/list-1",
-      }),
-      false
-    );
-    assert.equal(
-      shouldReloadPWAInstallDocument({
-        currentHref: manifestHref,
-        currentPathname: "/quicklists/list-1",
-        initialHref: "/manifest.webmanifest",
-        initialPathname: "/quicklists/list-1",
-      }),
-      false
     );
   });
 });

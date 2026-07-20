@@ -2,6 +2,7 @@ import { TAppConfigItem } from '../../AppConfig';
 
 import { User, ListTodo } from 'lucide-react';
 import { QuicklistPreferences } from '@/lib/quicklists/components/QuicklistPreferences';
+import { QuicklistApiAccessPreferences } from '@/lib/quicklists/components/QuicklistApiAccessPreferences';
 import {
   QUICKLIST_AUTO_REFRESH_PROFILE_KEY,
   quicklistProfileSchema,
@@ -90,9 +91,9 @@ export default {
       display: 'standalone',
       targets: [
         {
-          pattern: '/quicklists/:projectId/**',
+          pattern: '/quicklists/:projectId/install',
           resolver: 'quicklist-project',
-          manifestPath: '/quicklists/:projectId',
+          manifestPath: '/quicklists/:projectId/install',
         },
       ],
     },
@@ -109,6 +110,10 @@ export default {
           type: 'component',
           component: QuicklistPreferences,
           profileKeys: [QUICKLIST_AUTO_REFRESH_PROFILE_KEY],
+        },
+        {
+          type: 'component',
+          component: QuicklistApiAccessPreferences,
         },
         {
           type: 'ThemePreference',

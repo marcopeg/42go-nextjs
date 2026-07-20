@@ -27,9 +27,9 @@ public: {
     display: "standalone",
     targets: [
       {
-        pattern: "/quicklists/:projectId/**",
+        pattern: "/quicklists/:projectId/install",
         resolver: "quicklist-project",
-        manifestPath: "/quicklists/:projectId",
+        manifestPath: "/quicklists/:projectId/install",
       },
     ],
   },
@@ -115,11 +115,13 @@ The explicit `/manifest.webmanifest` route preserves the historical app manifest
 
 Private manifests return `Cache-Control: private, no-store`, `Vary: Cookie`, and 404 when authorization fails. Static app manifests keep public revalidation caching.
 
-Browsers associate installation metadata with the loaded document. When App Router client navigation crosses from the base app into a virtual app, or between two virtual apps, 42Go performs one full-document reload. Navigation inside the same virtual app remains client-side. The reload makes the server-resolved manifest primary for Safari and Chromium instead of relying on a mutated head link.
+Browsers associate installation metadata with the loaded document. The framework therefore keeps the manifest selected during the initial server request fixed for that document's lifetime. App Router navigation does not replace it or trigger a reload.
+
+When a resource needs a distinct virtual-app identity, give it a dedicated installer route and enter that route through an intentional full-document navigation. The installer document then receives the authorized target manifest as its initial server-rendered identity. Ordinary index, detail, and settings routes should keep the base manifest and use normal client navigation.
 
 ## Installation UI
 
-Use the shared action inside a client component:
+Use the shared action on the dedicated installer page:
 
 ```tsx
 <InstallAppAction
@@ -129,6 +131,8 @@ Use the shared action inside a client component:
 ```
 
 `PWAInstallProvider` is mounted globally by `Providers`. It captures Chromium's `beforeinstallprompt` event before page navigation can lose it.
+
+The action that enters the installer page must use a native anchor or equivalent document navigation. Do not use `next/link` or `router.push()` for that one transition. Links among ordinary application pages remain client-side.
 
 When a native prompt is unavailable, `InstallAppAction` uses the shared 42Go Modal to show platform instructions. iOS/iPadOS and macOS Safari remain manual flows. Standalone display mode is not treated as evidence that a particular virtual app is installed.
 

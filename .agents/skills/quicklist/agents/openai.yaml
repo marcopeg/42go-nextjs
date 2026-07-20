@@ -1,0 +1,4 @@
+interface:
+  display_name: "QuickList"
+  short_description: "Manage QuickList lists and items through its API"
+  default_prompt: "Use $quicklist to add milk to my Shopping list."

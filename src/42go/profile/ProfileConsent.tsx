@@ -3,6 +3,7 @@
 import { createElement } from "react";
 
 import type { TConsentConfig, TConsentItem } from "@/42go/profile";
+import { Switch } from "@/components/ui/switch";
 
 type ProfileConsentProps = {
   items?: TConsentConfig["items"];
@@ -102,30 +103,17 @@ export const ProfileConsent = ({
                 <span className="ml-1 text-muted-foreground">(required)</span>
               )}
             </span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={checked}
+            <Switch
+              checked={checked}
               aria-invalid={invalid}
+              aria-label={typeof item.label === "string" ? item.label : item.name}
               disabled={disabled}
               onClick={(event) => {
                 event.stopPropagation();
-                onChange(item.name, !checked);
               }}
-              className={
-                checked
-                  ? "relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full bg-emerald-600 transition-colors duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:ring-2 aria-invalid:ring-destructive/40"
-                  : "relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full bg-muted-foreground/30 transition-colors duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:ring-2 aria-invalid:ring-destructive/40"
-              }
-            >
-              <span
-                className={
-                  checked
-                    ? "translate-x-6 inline-block size-4 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out"
-                    : "translate-x-1 inline-block size-4 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out"
-                }
-              />
-            </button>
+              onCheckedChange={(value) => onChange(item.name, value)}
+              className="mt-0.5"
+            />
           </div>
         );
       }
