@@ -28,6 +28,7 @@ import type {
   ReaderPlaybackSentence,
   ReaderPlaybackWordRange,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
+import { splitLingoCafeSentences } from "@/lib/lingocafe/sentence-segmentation";
 
 type BookPageReaderProps = {
   bookPage: ReaderBookPage;
@@ -112,56 +113,6 @@ const hasActiveTextSelection = () => {
     !selection.isCollapsed &&
     selection.toString().trim().length > 0
   );
-};
-
-const sentenceAbbreviations = new Set([
-  "adm", "approx", "asst", "capt", "dept", "dr", "e.g", "etc", "fig",
-  "gen", "i.e", "jr", "mr", "mrs", "ms", "prof", "rev", "sr", "st",
-]);
-
-const splitSentenceSegments = (text: string) => {
-  if (!text.trim()) return [text];
-
-  const segments: string[] = [];
-  let start = 0;
-  let wordCount = 0;
-  let cursor = 0;
-  const pushSegment = (end: number) => {
-    if (end <= start) return;
-    segments.push(text.slice(start, end));
-    start = end;
-    wordCount = 0;
-  };
-
-  while (cursor < text.length) {
-    const character = text[cursor];
-    if (/\w/u.test(character)) {
-      wordCount += 1;
-      while (cursor + 1 < text.length && /[\w'’]/u.test(text[cursor + 1])) cursor += 1;
-    }
-
-    const isFullStop = character === ".";
-    if (/[!?。！？]/u.test(character) || isFullStop) {
-      const before = text.slice(start, cursor + 1);
-      const token = before.match(/([A-Za-z]{1,12}(?:\.[A-Za-z]{1,12})?)\.$/)?.[1]?.toLowerCase();
-      const isAbbreviation = isFullStop && (
-        token?.length === 1 ||
-        (token ? sentenceAbbreviations.has(token) : false) ||
-        /\d\.\d/u.test(text.slice(Math.max(0, cursor - 1), cursor + 2)) ||
-        wordCount < 2
-      );
-      if (!isAbbreviation) {
-        let end = cursor + 1;
-        while (end < text.length && /["')\]]/u.test(text[end])) end += 1;
-        pushSegment(end);
-        cursor = end - 1;
-      }
-    }
-    cursor += 1;
-  }
-
-  if (start < text.length) pushSegment(text.length);
-  return segments.length > 0 ? segments : [text];
 };
 
 const getSentenceAnchorInContainer = (
@@ -484,7 +435,7 @@ const renderSentenceText = (
   text: string,
   context: SentenceRenderContext
 ): ReactNode[] =>
-  splitSentenceSegments(text).map((segment) => {
+  splitLingoCafeSentences(text).map((segment) => {
     const sentence = segment.trim();
     if (!sentence) return segment;
 

@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "test:email-validation": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/email-validation.test.mts",
     "test:quicklist-refresh": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/quicklist-refresh.test.mts",
+    "test:lingocafe-sentence-segmentation": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-sentence-segmentation.test.mts",
     "test:pwa-install-targets": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/pwa-install-targets.test.mts",
     "qa": "eslint . && npm run build"
   },

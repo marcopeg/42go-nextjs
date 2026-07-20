@@ -19,6 +19,7 @@ import {
   type TranslationResult,
   translateAndCacheText,
 } from "@/app/api/(lingocafe)/lingocafe/_lib/translation";
+import { hasExactlyOneLingoCafeSentence } from "@/lib/lingocafe/sentence-segmentation";
 
 const defaultMaxTranslateLength = 500;
 const maxSafeTranslateLength = 5000;
@@ -33,8 +34,6 @@ const translationPayloadSchema = z.object({
 });
 
 type TranslationPayload = z.infer<typeof translationPayloadSchema>;
-
-const closingSentenceCharacters = /^[\s"'’”)\]}»]*$/u;
 
 const getMaxTranslateLength = () => {
   const parsed = Number(process.env.LC_MAX_TRANSLATE_LENGTH);
@@ -52,17 +51,6 @@ const getMaxTranslateLength = () => {
 const normalizeFormalText = (text: string) =>
   text.normalize("NFKC").trim().replace(/\s+/g, " ");
 
-const hasSingleSentenceFullStopShape = (text: string) => {
-  const normalized = normalizeFormalText(text);
-  const firstFullStop = normalized.indexOf(".");
-  if (firstFullStop === -1) return true;
-
-  const lastFullStop = normalized.lastIndexOf(".");
-  if (firstFullStop !== lastFullStop) return false;
-
-  return closingSentenceCharacters.test(normalized.slice(lastFullStop + 1));
-};
-
 const getFormalValidationIssue = (text: string) => {
   const normalized = normalizeFormalText(text);
   const maxLength = getMaxTranslateLength();
@@ -71,7 +59,7 @@ const getFormalValidationIssue = (text: string) => {
     return `Text must be ${maxLength} characters or less.`;
   }
 
-  if (!hasSingleSentenceFullStopShape(normalized)) {
+  if (!hasExactlyOneLingoCafeSentence(normalized)) {
     return "Text must be one sentence with no full stops in the middle.";
   }
 
