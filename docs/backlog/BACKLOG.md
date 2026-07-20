@@ -61,13 +61,13 @@
 
 ## Planned
 
+- [FK40: Make QuickList Per-List Installation Explicit and Flicker-Free](./planned/FK40-make-quicklist-per-list-installation-explicit-and-flicker-free/FK40.task.md) | [plan](./planned/FK40-make-quicklist-per-list-installation-explicit-and-flicker-free/FK40.plan.md)
 
 ## WIP
 
 
 ## Blocked
 
-- [UT41: ESLint 9 → 10](./completed/UT41-eslint-9-10/UT41.task.md) | [plan](./completed/UT41-eslint-9-10/UT41.plan.md) | [notes](./completed/UT41-eslint-9-10/UT41.notes.md)
 
 ## Historical Logs
 
