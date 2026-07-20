@@ -45,12 +45,12 @@
 - [FI86: Add SMTP/Nodemailer Email Sender Strategy](./draft/FI86-add-smtp-nodemailer-email-sender-strategy/FI86.task.md)
 - [XQ11: Choose Runtime-Friendly Remote Image Handling](./draft/XQ11-choose-runtime-friendly-remote-image-handling/XQ11.task.md)
 - [AC03: optimize: root profile guard](./draft/AC03-optimize-root-profile-guard/AC03.task.md)
-- [IJ10: optimize: reader cache split](./draft/IJ10-optimize-reader-cache-split/IJ10.task.md)
+- [AT01: optimize: event partition preparation](./draft/AT01-optimize-event-partition-preparation/AT01.task.md)
 - [CG67: optimize: api session loading](./draft/CG67-optimize-api-session-loading/CG67.task.md)
 - [DV28: optimize: public asset cache headers](./draft/DV28-optimize-public-asset-cache-headers/DV28.task.md)
-- [AT01: optimize: event partition preparation](./draft/AT01-optimize-event-partition-preparation/AT01.task.md)
-- [YQ19: optimization epic](./draft/YQ19-optimization-epic/YQ19.task.md)
+- [IJ10: optimize: reader cache split](./draft/IJ10-optimize-reader-cache-split/IJ10.task.md)
 - [XC01: Let readers mark a book as read](./draft/XC01-let-readers-mark-a-book-as-read/XC01.task.md)
+- [YQ19: optimization epic](./draft/YQ19-optimization-epic/YQ19.task.md)
 
 ## Refining
 
@@ -64,10 +64,10 @@
 
 ## WIP
 
-- [HV34: Enable Per-URL Install Targets and Installable Quicklist Virtual Apps](./wip/HV34-investigate-installable-quicklist-lists-as-separate-home-screen-apps/HV34.task.md) | [plan](./wip/HV34-investigate-installable-quicklist-lists-as-separate-home-screen-apps/HV34.plan.md) | [notes](./wip/HV34-investigate-installable-quicklist-lists-as-separate-home-screen-apps/HV34.notes.md)
 
 ## Blocked
 
+- [UT41: ESLint 9 → 10](./completed/UT41-eslint-9-10/UT41.task.md) | [plan](./completed/UT41-eslint-9-10/UT41.plan.md) | [notes](./completed/UT41-eslint-9-10/UT41.notes.md)
 
 ## Historical Logs
 
