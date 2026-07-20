@@ -519,7 +519,7 @@ const renderSentenceText = (
         >
           {playbackWordHighlighted
             ? renderPlaybackText(segment, sentence, context.playbackWordRange)
-            : renderWordTargets(sentence, id, context)}
+            : renderWordTargets(segment, id, context)}
         </span>
       );
     }

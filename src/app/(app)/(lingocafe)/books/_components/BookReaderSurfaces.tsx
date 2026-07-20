@@ -663,7 +663,7 @@ export const BookReaderMobileSurface = ({
                 onTranslationOpenChange={playback.setTranslationPaused}
               />
               {!playback.isOpen && (
-                <div className="pb-10 pt-4">
+                <div className="pb-24 pt-4">
                   <BookProgress
                     bookPage={bookPage}
                     onNavigatePage={onNavigatePage}
