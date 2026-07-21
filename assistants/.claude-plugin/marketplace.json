@@ -1,0 +1,16 @@
+{
+  "name": "42go-assistants",
+  "owner": {
+    "name": "marcopeg"
+  },
+  "description": "Portable 42Go skills and assistant plugins",
+  "plugins": [
+    {
+      "name": "quicklist",
+      "source": "./plugins/quicklist",
+      "description": "Manage QuickList to-do lists and items with natural-language requests.",
+      "version": "0.1.0",
+      "category": "Productivity"
+    }
+  ]
+}

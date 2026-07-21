@@ -7,12 +7,14 @@ description: Manage QuickList to-do lists and items through the personal bearer-
 
 Use the bundled client for every QuickList operation. It keeps bearer tokens out of prompts and logs, resolves exact list names safely, and emits JSON.
 
+Resolve `<skill-dir>` to the directory containing this `SKILL.md`. Always invoke the client from `<skill-dir>/scripts/quicklist.py`; never assume the skill is installed in the current repository.
+
 ## First use
 
 Run this in a user-controlled terminal:
 
 ```bash
-python3 .agents/skills/quicklist/scripts/quicklist.py configure
+python3 <skill-dir>/scripts/quicklist.py configure
 ```
 
 Paste the QuickList connection code copied from profile settings into the command's hidden prompt. The code packages the API origin and bearer token; Base64URL is transport encoding, not encryption. Treat the entire code as a secret.
@@ -24,7 +26,7 @@ Never ask the user to paste a token or connection code into chat or pass it as a
 If the user voluntarily supplies a `qlc1_...` connection code in chat, support it as a less-secure mobile fallback:
 
 1. Warn that the envelope contains the raw bearer token and now remains in conversation history and may enter tool history.
-2. Configure with `python3 .agents/skills/quicklist/scripts/quicklist.py configure --from-stdin`, sending the envelope only to the process stdin. Never interpolate it into a shell command, environment variable, output, or file other than the credential store.
+2. Configure with `python3 <skill-dir>/scripts/quicklist.py configure --from-stdin`, sending the envelope only to the process stdin. Never interpolate it into a shell command, environment variable, output, or file other than the credential store.
 3. Complete the requested QuickList operation.
 4. Recommend rotating the token afterward and rerunning the normal `configure` command in a user-controlled terminal.
 
@@ -42,13 +44,13 @@ Do not refuse the requested operation solely because the user chose this documen
 Common commands:
 
 ```bash
-python3 .agents/skills/quicklist/scripts/quicklist.py lists
-python3 .agents/skills/quicklist/scripts/quicklist.py show "Shopping"
-python3 .agents/skills/quicklist/scripts/quicklist.py add "Shopping" "Milk"
-python3 .agents/skills/quicklist/scripts/quicklist.py check "Shopping" ITEM_UUID
-python3 .agents/skills/quicklist/scripts/quicklist.py create "Trip" --item Passport --item Charger
-python3 .agents/skills/quicklist/scripts/quicklist.py update-list "Trip" --title "Summer trip"
-python3 .agents/skills/quicklist/scripts/quicklist.py drop-completed "Shopping"
+python3 <skill-dir>/scripts/quicklist.py lists
+python3 <skill-dir>/scripts/quicklist.py show "Shopping"
+python3 <skill-dir>/scripts/quicklist.py add "Shopping" "Milk"
+python3 <skill-dir>/scripts/quicklist.py check "Shopping" ITEM_UUID
+python3 <skill-dir>/scripts/quicklist.py create "Trip" --item Passport --item Charger
+python3 <skill-dir>/scripts/quicklist.py update-list "Trip" --title "Summer trip"
+python3 <skill-dir>/scripts/quicklist.py drop-completed "Shopping"
 ```
 
-Use `python3 .agents/skills/quicklist/scripts/quicklist.py --help` for all commands and flags. Read [references/api.md](references/api.md) when endpoint shapes, permissions, or direct HTTP access matter.
+Use `python3 <skill-dir>/scripts/quicklist.py --help` for all commands and flags. Read [references/api.md](references/api.md) when endpoint shapes, permissions, or direct HTTP access matter.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "LingoCafe Design System"
+  short_description: "Build stable LingoCafe-style interfaces"
+  default_prompt: "Use $lingocafe-design-system to design and implement this UI consistently."

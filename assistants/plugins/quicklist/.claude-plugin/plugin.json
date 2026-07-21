@@ -1,0 +1,11 @@
+{
+  "name": "quicklist",
+  "version": "0.1.0",
+  "description": "Manage QuickList to-do lists and items with natural-language requests.",
+  "author": {
+    "name": "marcopeg"
+  },
+  "homepage": "https://github.com/marcopeg/42go-assistants/tree/main/plugins/quicklist",
+  "repository": "https://github.com/marcopeg/42go-assistants",
+  "keywords": ["quicklist", "todo", "tasks", "productivity", "automation"]
+}

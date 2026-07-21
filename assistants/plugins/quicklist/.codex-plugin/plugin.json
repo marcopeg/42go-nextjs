@@ -1,0 +1,28 @@
+{
+  "name": "quicklist",
+  "version": "0.1.0",
+  "description": "Manage QuickList to-do lists and items with natural-language requests.",
+  "author": {
+    "name": "marcopeg",
+    "url": "https://github.com/marcopeg"
+  },
+  "homepage": "https://github.com/marcopeg/42go-assistants/tree/main/plugins/quicklist",
+  "repository": "https://github.com/marcopeg/42go-assistants",
+  "keywords": ["quicklist", "todo", "tasks", "productivity", "automation"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "QuickList",
+    "shortDescription": "Manage QuickList lists and items with an agent.",
+    "longDescription": "Use natural-language requests to discover and manage API-enabled QuickList lists, including shared lists, while preserving the permissions of your QuickList account.",
+    "developerName": "marcopeg",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/marcopeg/42go-assistants",
+    "defaultPrompt": [
+      "Add milk to my Shopping list.",
+      "Show my API-enabled QuickList lists.",
+      "Mark the milk item as completed."
+    ],
+    "brandColor": "#00B83F"
+  }
+}

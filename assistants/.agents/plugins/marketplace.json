@@ -1,0 +1,20 @@
+{
+  "name": "42go-assistants",
+  "interface": {
+    "displayName": "42Go Assistants"
+  },
+  "plugins": [
+    {
+      "name": "quicklist",
+      "source": {
+        "source": "local",
+        "path": "./plugins/quicklist"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
