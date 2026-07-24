@@ -848,6 +848,17 @@ export const useReaderPlayback = ({
     [commitPreferences]
   );
 
+  const setProgressiveReveal = useCallback(
+    (enabled: boolean) => commitPreferences({ progressiveReveal: enabled }),
+    [commitPreferences]
+  );
+
+  const setDimPreviousSentences = useCallback(
+    (enabled: boolean) =>
+      commitPreferences({ dimPreviousSentences: enabled }),
+    [commitPreferences]
+  );
+
   const setAutoPauseOnTranslation = useCallback(
     (enabled: boolean) => {
       commitPreferences({ autoPauseOnTranslation: enabled });
@@ -1080,6 +1091,8 @@ export const useReaderPlayback = ({
     setSpeed,
     setWordHighlighting,
     setSentenceHighlighting,
+    setProgressiveReveal,
+    setDimPreviousSentences,
     setAutoPauseOnTranslation,
     setAutoPauseOnSettings,
     previewSeek,

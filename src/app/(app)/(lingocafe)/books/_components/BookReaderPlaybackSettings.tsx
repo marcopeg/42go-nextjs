@@ -116,7 +116,10 @@ export const BookReaderPlaybackSettings = ({
             </Button>
           </div>
 
-          <div className="divide-y pb-2">
+          <div
+            className="divide-y overflow-y-auto overscroll-contain pb-2"
+            style={{ maxHeight: "min(26rem, calc(100dvh - 10rem))" }}
+          >
             <div className="px-4 py-3">
               <div className="mb-2 text-sm font-medium">Speed</div>
               <div
@@ -154,6 +157,16 @@ export const BookReaderPlaybackSettings = ({
               label="Sentence highlighting"
               checked={preferences.sentenceHighlighting}
               onCheckedChange={playback.setSentenceHighlighting}
+            />
+            <PlaybackToggle
+              label="Reveal as you listen"
+              checked={preferences.progressiveReveal}
+              onCheckedChange={playback.setProgressiveReveal}
+            />
+            <PlaybackToggle
+              label="Dim previous sentences"
+              checked={preferences.dimPreviousSentences}
+              onCheckedChange={playback.setDimPreviousSentences}
             />
             <PlaybackToggle
               label="Auto-pause on translation"

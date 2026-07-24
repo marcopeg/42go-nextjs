@@ -10,6 +10,8 @@ export type ReaderPlaybackPreferences = {
   speed: ReaderPlaybackSpeed;
   wordHighlighting: boolean;
   sentenceHighlighting: boolean;
+  progressiveReveal: boolean;
+  dimPreviousSentences: boolean;
   autoPauseOnTranslation: boolean;
   autoPauseOnSettings: boolean;
 };
@@ -18,6 +20,8 @@ export const DEFAULT_READER_PLAYBACK_PREFERENCES: ReaderPlaybackPreferences = {
   speed: 1,
   wordHighlighting: true,
   sentenceHighlighting: true,
+  progressiveReveal: false,
+  dimPreviousSentences: false,
   autoPauseOnTranslation: true,
   autoPauseOnSettings: true,
 };
@@ -48,6 +52,14 @@ export const sanitizeReaderPlaybackPreferences = (
     sentenceHighlighting: getBoolean(
       raw.sentenceHighlighting,
       DEFAULT_READER_PLAYBACK_PREFERENCES.sentenceHighlighting
+    ),
+    progressiveReveal: getBoolean(
+      raw.progressiveReveal,
+      DEFAULT_READER_PLAYBACK_PREFERENCES.progressiveReveal
+    ),
+    dimPreviousSentences: getBoolean(
+      raw.dimPreviousSentences,
+      DEFAULT_READER_PLAYBACK_PREFERENCES.dimPreviousSentences
     ),
     autoPauseOnTranslation: getBoolean(
       raw.autoPauseOnTranslation,

@@ -506,6 +506,19 @@ export const BookReaderDesktopSurface = ({
                 playbackSentenceHighlighting={
                   playback.preferences.sentenceHighlighting
                 }
+                playbackFocusActive={
+                  playback.isOpen &&
+                  playback.canPlay &&
+                  (playback.status === "playing" ||
+                    playback.status === "paused" ||
+                    playback.status === "delay")
+                }
+                playbackProgressiveReveal={
+                  playback.preferences.progressiveReveal
+                }
+                playbackDimPreviousSentences={
+                  playback.preferences.dimPreviousSentences
+                }
                 playbackWordRange={
                   playback.preferences.wordHighlighting
                     ? playback.activeWordRange
@@ -666,6 +679,19 @@ export const BookReaderMobileSurface = ({
                 }
                 playbackSentenceHighlighting={
                   playback.preferences.sentenceHighlighting
+                }
+                playbackFocusActive={
+                  playback.isOpen &&
+                  playback.canPlay &&
+                  (playback.status === "playing" ||
+                    playback.status === "paused" ||
+                    playback.status === "delay")
+                }
+                playbackProgressiveReveal={
+                  playback.preferences.progressiveReveal
+                }
+                playbackDimPreviousSentences={
+                  playback.preferences.dimPreviousSentences
                 }
                 playbackWordRange={
                   playback.preferences.wordHighlighting

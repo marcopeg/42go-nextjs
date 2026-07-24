@@ -3,6 +3,7 @@
 import {
   Children,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -30,6 +31,7 @@ import type {
   ReaderPlaybackStatus,
   ReaderPlaybackWordRange,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
+import { applyReaderPlaybackFocus } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/focus-presentation";
 import { splitLingoCafeSentences } from "@/lib/lingocafe/sentence-segmentation";
 
 type BookPageReaderProps = {
@@ -41,6 +43,9 @@ type BookPageReaderProps = {
   playbackStatus: ReaderPlaybackStatus;
   playbackAutoPauseOnTranslation: boolean;
   playbackSentenceHighlighting: boolean;
+  playbackFocusActive: boolean;
+  playbackProgressiveReveal: boolean;
+  playbackDimPreviousSentences: boolean;
   playbackWordRange: ReaderPlaybackWordRange | null;
   onSentenceCatalogChange: (sentences: ReaderPlaybackSentence[]) => void;
   onSentenceActivate: (sentenceId: string) => void;
@@ -370,6 +375,7 @@ const ReaderTranslationTarget = ({
     <span
       role="button"
       tabIndex={0}
+      aria-pressed={active}
       data-reader-translation-id={id}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
@@ -638,6 +644,9 @@ export const BookPageReader = ({
   playbackStatus,
   playbackAutoPauseOnTranslation,
   playbackSentenceHighlighting,
+  playbackFocusActive,
+  playbackProgressiveReveal,
+  playbackDimPreviousSentences,
   playbackWordRange,
   onSentenceCatalogChange,
   onSentenceActivate,
@@ -691,6 +700,38 @@ export const BookPageReader = ({
     },
     onSentenceActivate,
   };
+
+  useLayoutEffect(() => {
+    const article = articleRef.current;
+    if (
+      !article ||
+      !playbackFocusActive ||
+      !playbackSentenceId ||
+      (!playbackProgressiveReveal && !playbackDimPreviousSentences)
+    ) {
+      return;
+    }
+
+    return applyReaderPlaybackFocus({
+      article,
+      activeSentenceId: playbackSentenceId,
+      progressiveReveal: playbackProgressiveReveal,
+      dimPreviousSentences: playbackDimPreviousSentences,
+    });
+  }, [
+    activeTranslationId,
+    bookPage.page.bookId,
+    bookPage.page.content,
+    bookPage.page.pageId,
+    bookPage.page.summary,
+    bookPage.page.title,
+    playbackDimPreviousSentences,
+    playbackFocusActive,
+    playbackProgressiveReveal,
+    playbackSentenceId,
+    preferences,
+    translationScope,
+  ]);
 
   useEffect(() => {
     onTranslationOpenChange(isTranslationOpen);
