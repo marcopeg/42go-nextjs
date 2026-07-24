@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
+import { Play } from "lucide-react";
 
 import { useEventTracker } from "@/42go/events/use-events";
 import type { ReaderBookPage } from "@/app/(app)/(lingocafe)/books/_components/book-types";
@@ -26,6 +27,7 @@ import {
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import type {
   ReaderPlaybackSentence,
+  ReaderPlaybackStatus,
   ReaderPlaybackWordRange,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 import { splitLingoCafeSentences } from "@/lib/lingocafe/sentence-segmentation";
@@ -35,10 +37,15 @@ type BookPageReaderProps = {
   preferences: ReaderPreferences;
   translationScope: ReaderTranslationScope;
   playbackSentenceId: string | null;
+  playbackCanPlay: boolean;
+  playbackStatus: ReaderPlaybackStatus;
+  playbackAutoPauseOnTranslation: boolean;
   playbackSentenceHighlighting: boolean;
   playbackWordRange: ReaderPlaybackWordRange | null;
   onSentenceCatalogChange: (sentences: ReaderPlaybackSentence[]) => void;
   onSentenceActivate: (sentenceId: string) => void;
+  onTranslationSentencePlay: (sentenceId: string) => void;
+  onTranslationWordPlay: (word: string) => void;
   onTranslationOpenChange: (isOpen: boolean) => void;
 };
 
@@ -148,8 +155,6 @@ const getPopoverStyle = (anchor: SentenceAnchor): CSSProperties => {
       borderLeftWidth: 0,
       borderRightWidth: 0,
       borderRadius: 0,
-      paddingLeft: 20,
-      paddingRight: 20,
     };
   }
 
@@ -258,12 +263,18 @@ const renderPlaybackText = (
 
 const ReaderTranslationPopover = ({
   state,
+  scope,
+  canListen,
+  onListen,
 }: {
   state: TranslationState;
+  scope: ReaderTranslationScope;
+  canListen: boolean;
+  onListen: () => void;
 }) => (
   <div
     data-reader-translation-popover
-    className="relative rounded-md border px-4 py-3 pb-4 backdrop-blur"
+    className="relative flex items-stretch overflow-hidden rounded-md border backdrop-blur"
     style={{
       ...getPopoverStyle(state.anchor),
       borderColor: "var(--reader-popover-border)",
@@ -273,33 +284,50 @@ const ReaderTranslationPopover = ({
       lineHeight: 1.45,
     }}
   >
-    {state.status === "loading" && (
-      <span style={{ color: "var(--reader-fg-muted)" }}>Translating...</span>
-    )}
-    {state.status === "error" && (
-      <span className="text-destructive">
-        {state.error || "Could not translate."}
-      </span>
-    )}
-    {state.status === "success" && (
-      <div>
-        <p>{state.translation}</p>
-        {state.source && (
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-1.5 right-2 uppercase tracking-normal"
-            style={{
-              color: "var(--reader-fg-muted)",
-              fontSize: "6px",
-              lineHeight: "6px",
-              textSizeAdjust: "none",
-              WebkitTextSizeAdjust: "none",
-            }}
-          >
-            {getTranslationSourceLabel(state.source)}
-          </span>
-        )}
-      </div>
+    <div className="relative min-w-0 flex-1 px-5 py-3 pb-4 md:px-4">
+      {state.status === "loading" && (
+        <span style={{ color: "var(--reader-fg-muted)" }}>Translating...</span>
+      )}
+      {state.status === "error" && (
+        <span className="text-destructive">
+          {state.error || "Could not translate."}
+        </span>
+      )}
+      {state.status === "success" && (
+        <div>
+          <p>{state.translation}</p>
+          {state.source && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-1.5 right-2 uppercase tracking-normal"
+              style={{
+                color: "var(--reader-fg-muted)",
+                fontSize: "6px",
+                lineHeight: "6px",
+                textSizeAdjust: "none",
+                WebkitTextSizeAdjust: "none",
+              }}
+            >
+              {getTranslationSourceLabel(state.source)}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+    {canListen && (
+      <button
+        type="button"
+        aria-label={scope === "word" ? "Play word" : "Listen from here"}
+        onClick={onListen}
+        className="flex w-28 shrink-0 flex-col items-center justify-center gap-1 border-l px-3 py-3 font-sans text-xs font-medium leading-tight transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/60"
+        style={{
+          borderColor: "var(--reader-popover-border)",
+          color: "var(--reader-fg)",
+        }}
+      >
+        <Play aria-hidden="true" className="size-4 fill-current" />
+        <span>{scope === "word" ? "Play word" : "Listen from here"}</span>
+      </button>
     )}
   </div>
 );
@@ -606,10 +634,15 @@ export const BookPageReader = ({
   preferences,
   translationScope,
   playbackSentenceId,
+  playbackCanPlay,
+  playbackStatus,
+  playbackAutoPauseOnTranslation,
   playbackSentenceHighlighting,
   playbackWordRange,
   onSentenceCatalogChange,
   onSentenceActivate,
+  onTranslationSentencePlay,
+  onTranslationWordPlay,
   onTranslationOpenChange,
 }: BookPageReaderProps) => {
   const { trackEvent } = useEventTracker();
@@ -624,6 +657,12 @@ export const BookPageReader = ({
     useState<TranslationState | null>(null);
   const activeTranslationId = translationState?.id ?? null;
   const isTranslationOpen = translationState !== null;
+  const canListenFromTranslation =
+    playbackCanPlay &&
+    !(
+      (playbackStatus === "playing" || playbackStatus === "delay") &&
+      !playbackAutoPauseOnTranslation
+    );
   const sentenceContext: SentenceRenderContext = {
     bookPage,
     translationEnabled,
@@ -861,12 +900,14 @@ export const BookPageReader = ({
           tapMovementThresholdPx
       );
     };
-    const isTranslationTarget = (target: EventTarget | null) =>
+    const isTranslationInteraction = (target: EventTarget | null) =>
       target instanceof Element &&
-      !!target.closest("[data-reader-translation-id]");
+      !!target.closest(
+        "[data-reader-translation-id], [data-reader-translation-popover]"
+      );
     const closeOnOutsidePointerDown = (event: PointerEvent) => {
       const target = event.target;
-      if (isTranslationTarget(target)) {
+      if (isTranslationInteraction(target)) {
         outsideTapCandidate = null;
         return;
       }
@@ -987,7 +1028,21 @@ export const BookPageReader = ({
         preferences={preferences}
         context={sentenceContext}
       />
-      {translationState && <ReaderTranslationPopover state={translationState} />}
+      {translationState && (
+        <ReaderTranslationPopover
+          state={translationState}
+          scope={translationScope}
+          canListen={canListenFromTranslation}
+          onListen={() => {
+            if (translationScope === "word") {
+              onTranslationWordPlay(translationState.text);
+              return;
+            }
+            onTranslationSentencePlay(translationState.sentenceId);
+            setTranslationState(null);
+          }}
+        />
+      )}
     </article>
   );
 };

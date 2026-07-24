@@ -156,6 +156,8 @@ export const useReaderPlayback = ({
   const autoPauseReasonsRef = useRef(new Set<"settings" | "translation">());
   const autoPausedRef = useRef(false);
   const restartSentenceOnAutoResumeRef = useRef(false);
+  const restartSentenceOnManualResumeRef = useRef(false);
+  const wordPronunciationActiveRef = useRef(false);
   const [sentences, setSentences] = useState<ReaderPlaybackSentence[]>([]);
   const [catalogPageKey, setCatalogPageKey] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -382,6 +384,7 @@ export const useReaderPlayback = ({
             lastPlayedSentenceIdRef.current = sentence.id;
             storeLastPlayedSentenceId(bookId, pageId, sentence.id);
             trackEvent("audio.play", {
+              type: "sentence",
               language,
               book_id: bookId,
               page_id: pageId,
@@ -582,6 +585,15 @@ export const useReaderPlayback = ({
       return;
     }
     if (statusRef.current === "paused") {
+      if (
+        restartSentenceOnManualResumeRef.current &&
+        activeIndexRef.current >= 0
+      ) {
+        restartSentenceOnManualResumeRef.current = false;
+        cancelCurrentSpeech();
+        speakIndexRef.current(activeIndexRef.current);
+        return;
+      }
       if (pausedFromDelayRef.current && pendingIndexRef.current !== null) {
         schedulePendingSentence();
       } else {
@@ -647,15 +659,151 @@ export const useReaderPlayback = ({
     [cancelCurrentSpeech, togglePause]
   );
 
+  const playSentenceFromTranslation = useCallback(
+    (sentenceId: string) => {
+      if (!canPlay) return;
+      if (
+        (statusRef.current === "playing" || statusRef.current === "delay") &&
+        !preferencesRef.current.autoPauseOnTranslation
+      ) {
+        return;
+      }
+      if (
+        (statusRef.current === "playing" || statusRef.current === "delay") &&
+        preferencesRef.current.autoPauseOnTranslation
+      ) {
+        translationOpenRef.current = true;
+        syncAutoPauseReason("translation", true);
+      }
+
+      translationOpenRef.current = false;
+      if (
+        autoPausedRef.current &&
+        autoPauseReasonsRef.current.has("translation")
+      ) {
+        autoPauseReasonsRef.current.delete("translation");
+        autoPausedRef.current = autoPauseReasonsRef.current.size > 0;
+        restartSentenceOnAutoResumeRef.current = false;
+      } else {
+        syncAutoPauseReason("translation", false);
+      }
+      const sentenceIndex = sentencesRef.current.findIndex(
+        (sentence) => sentence.id === sentenceId
+      );
+      if (sentenceIndex < 0) {
+        reportPlaybackError(
+          "translation-sentence",
+          "The translated sentence is missing from the playback catalog."
+        );
+        return;
+      }
+
+      cancelCurrentSpeech();
+      restartSentenceOnManualResumeRef.current = false;
+      setIsOpen(true);
+      guidedScrollRef.current = true;
+      speakIndexRef.current(sentenceIndex);
+    },
+    [
+      canPlay,
+      cancelCurrentSpeech,
+      reportPlaybackError,
+      syncAutoPauseReason,
+    ]
+  );
+
+  const playWordFromTranslation = useCallback(
+    (word: string) => {
+      const text = word.trim();
+      if (!canPlay || !text) return;
+      if (
+        (statusRef.current === "playing" || statusRef.current === "delay") &&
+        !preferencesRef.current.autoPauseOnTranslation
+      ) {
+        return;
+      }
+      if (
+        (statusRef.current === "playing" || statusRef.current === "delay") &&
+        preferencesRef.current.autoPauseOnTranslation
+      ) {
+        translationOpenRef.current = true;
+        syncAutoPauseReason("translation", true);
+      }
+
+      const provider = providerRef.current;
+      const voice = provider?.getMatchingVoice(language);
+      if (!provider || !voice) return;
+
+      const hasActiveSentence = activeIndexRef.current >= 0;
+      restartSentenceOnAutoResumeRef.current =
+        hasActiveSentence &&
+        autoPausedRef.current &&
+        autoPauseReasonsRef.current.has("translation");
+      restartSentenceOnManualResumeRef.current =
+        hasActiveSentence &&
+        isOpen &&
+        statusRef.current === "paused" &&
+        !autoPausedRef.current;
+
+      cancelCurrentSpeech();
+      wordPronunciationActiveRef.current = true;
+      const generation = generationRef.current + 1;
+      generationRef.current = generation;
+      const started = provider.speak({
+        text,
+        language: voice.lang,
+        rate: speedRef.current,
+        onStart: () => {
+          if (generationRef.current !== generation) return;
+          trackEvent("audio.play", {
+            type: "word",
+            language,
+            book_id: bookId,
+            page_id: pageId,
+          });
+        },
+        onBoundary: () => undefined,
+        onEnd: () => {
+          if (generationRef.current !== generation) return;
+          wordPronunciationActiveRef.current = false;
+        },
+        onError: (message) => {
+          if (generationRef.current !== generation) return;
+          wordPronunciationActiveRef.current = false;
+          console.warn("Reader word pronunciation failed.", message);
+        },
+      });
+
+      if (!started) {
+        wordPronunciationActiveRef.current = false;
+        console.warn("Reader word pronunciation could not start.");
+      }
+    },
+    [
+      bookId,
+      canPlay,
+      cancelCurrentSpeech,
+      isOpen,
+      language,
+      pageId,
+      syncAutoPauseReason,
+      trackEvent,
+    ]
+  );
+
   const setTranslationPaused = useCallback(
     (isOpen: boolean) => {
+      if (!isOpen && wordPronunciationActiveRef.current) {
+        cancelCurrentSpeech();
+        wordPronunciationActiveRef.current = false;
+      }
       translationOpenRef.current = isOpen;
       syncAutoPauseReason(
         "translation",
         isOpen && preferencesRef.current.autoPauseOnTranslation
       );
     },
-    [syncAutoPauseReason]
+    [cancelCurrentSpeech, syncAutoPauseReason]
   );
 
   const setSettingsOpen = useCallback(
@@ -766,6 +914,8 @@ export const useReaderPlayback = ({
     autoPauseReasonsRef.current.clear();
     autoPausedRef.current = false;
     restartSentenceOnAutoResumeRef.current = false;
+    restartSentenceOnManualResumeRef.current = false;
+    wordPronunciationActiveRef.current = false;
     previewIndexRef.current = null;
     setPreviewIndexState(null);
     setIsOpen(false);
@@ -922,6 +1072,8 @@ export const useReaderPlayback = ({
     registerSentences,
     selectSentence,
     start,
+    playSentenceFromTranslation,
+    playWordFromTranslation,
     togglePause,
     setTranslationPaused,
     setSettingsOpen,

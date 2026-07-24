@@ -498,6 +498,11 @@ export const BookReaderDesktopSurface = ({
                 preferences={preferences}
                 translationScope={translationScope}
                 playbackSentenceId={playback.activeSentenceId}
+                playbackCanPlay={playback.canPlay}
+                playbackStatus={playback.status}
+                playbackAutoPauseOnTranslation={
+                  playback.preferences.autoPauseOnTranslation
+                }
                 playbackSentenceHighlighting={
                   playback.preferences.sentenceHighlighting
                 }
@@ -508,6 +513,10 @@ export const BookReaderDesktopSurface = ({
                 }
                 onSentenceCatalogChange={playback.registerSentences}
                 onSentenceActivate={playback.selectSentence}
+                onTranslationSentencePlay={
+                  playback.playSentenceFromTranslation
+                }
+                onTranslationWordPlay={playback.playWordFromTranslation}
                 onTranslationOpenChange={playback.setTranslationPaused}
               />
               {!playback.isOpen && (
@@ -650,6 +659,11 @@ export const BookReaderMobileSurface = ({
                 preferences={preferences}
                 translationScope={translationScope}
                 playbackSentenceId={playback.activeSentenceId}
+                playbackCanPlay={playback.canPlay}
+                playbackStatus={playback.status}
+                playbackAutoPauseOnTranslation={
+                  playback.preferences.autoPauseOnTranslation
+                }
                 playbackSentenceHighlighting={
                   playback.preferences.sentenceHighlighting
                 }
@@ -660,6 +674,10 @@ export const BookReaderMobileSurface = ({
                 }
                 onSentenceCatalogChange={playback.registerSentences}
                 onSentenceActivate={playback.selectSentence}
+                onTranslationSentencePlay={
+                  playback.playSentenceFromTranslation
+                }
+                onTranslationWordPlay={playback.playWordFromTranslation}
                 onTranslationOpenChange={playback.setTranslationPaused}
               />
               {!playback.isOpen && (
