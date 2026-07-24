@@ -3,35 +3,13 @@
 import { useEffect, useRef } from "react";
 import { Settings2, X } from "lucide-react";
 
-import { READER_PLAYBACK_SPEEDS } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/model";
+import { BookReaderPlaybackPreferencesEditor } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPlaybackPreferencesEditor";
 import type { ReaderPlaybackController } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 export const READER_PLAYBACK_SURFACE_CLASSNAME =
   "rounded-2xl border bg-background text-foreground shadow-lg";
-
-type PlaybackToggleProps = {
-  label: string;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-};
-
-const PlaybackToggle = ({
-  label,
-  checked,
-  onCheckedChange,
-}: PlaybackToggleProps) => (
-  <div className="flex min-h-11 items-center justify-between gap-4 px-4 py-1">
-    <span className="text-sm font-medium">{label}</span>
-    <Switch
-      checked={checked}
-      aria-label={label}
-      onCheckedChange={onCheckedChange}
-    />
-  </div>
-);
 
 export const BookReaderPlaybackSettings = ({
   playback,
@@ -42,7 +20,6 @@ export const BookReaderPlaybackSettings = ({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) => {
-  const { preferences } = playback;
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -116,69 +93,7 @@ export const BookReaderPlaybackSettings = ({
             </Button>
           </div>
 
-          <div
-            className="divide-y overflow-y-auto overscroll-contain pb-2"
-            style={{ maxHeight: "min(26rem, calc(100dvh - 10rem))" }}
-          >
-            <div className="px-4 py-3">
-              <div className="mb-2 text-sm font-medium">Speed</div>
-              <div
-                role="group"
-                aria-label="Playback speed"
-                className="grid gap-1.5"
-                style={{
-                  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-                }}
-              >
-                {READER_PLAYBACK_SPEEDS.map((speed) => {
-                  const selected = preferences.speed === speed;
-                  return (
-                    <Button
-                      key={speed}
-                      type="button"
-                      variant={selected ? "default" : "neutralGhost"}
-                      aria-pressed={selected}
-                      onClick={() => playback.setSpeed(speed)}
-                      className="h-9 px-1 text-xs font-semibold"
-                    >
-                      {speed}×
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <PlaybackToggle
-              label="Word highlighting"
-              checked={preferences.wordHighlighting}
-              onCheckedChange={playback.setWordHighlighting}
-            />
-            <PlaybackToggle
-              label="Sentence highlighting"
-              checked={preferences.sentenceHighlighting}
-              onCheckedChange={playback.setSentenceHighlighting}
-            />
-            <PlaybackToggle
-              label="Reveal as you listen"
-              checked={preferences.progressiveReveal}
-              onCheckedChange={playback.setProgressiveReveal}
-            />
-            <PlaybackToggle
-              label="Dim previous sentences"
-              checked={preferences.dimPreviousSentences}
-              onCheckedChange={playback.setDimPreviousSentences}
-            />
-            <PlaybackToggle
-              label="Auto-pause on translation"
-              checked={preferences.autoPauseOnTranslation}
-              onCheckedChange={playback.setAutoPauseOnTranslation}
-            />
-            <PlaybackToggle
-              label="Auto-pause on settings"
-              checked={preferences.autoPauseOnSettings}
-              onCheckedChange={playback.setAutoPauseOnSettings}
-            />
-          </div>
+          <BookReaderPlaybackPreferencesEditor playback={playback} />
         </div>
       )}
     </div>

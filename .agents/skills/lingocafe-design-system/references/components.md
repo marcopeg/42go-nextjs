@@ -62,13 +62,15 @@ Textarea: minimum 80 px, same border/radius/focus contract.
 
 Select: 40 px high, semantic background, 14 px text.
 
-Segmented control:
+Segmented data picker (setting tabs):
 
 - one rounded 8 px border container, muted surface at 20%, 4 px padding, 4 px gap;
-- each tab is 40 px mobile and 48 px larger;
+- each option is 40 px mobile and 48 px larger;
 - selected: primary border, primary at 5–10% background, foreground text;
 - unselected: transparent border, muted text, muted hover;
-- use `role=tablist`, `role=tab`, and `aria-selected`.
+- use it to choose one value for information or a setting, such as theme, speed, level, or translation scope;
+- do not use it to navigate between subviews;
+- use a labelled `role=group` with button `aria-pressed` states for immediate settings, or a radio group when the value belongs to a form.
 
 Switch:
 
@@ -122,6 +124,17 @@ Book detail cover repeats the overlay title treatment at larger scale. Metadata 
 - Mobile nav stacks icon and label. Do not place more than four items plus optional More.
 - Toolbar action groups use 16 px gap in app chrome and 8 px in public chrome.
 - Back controls use a 20 px chevron in a 36 px icon button.
+
+Subview navigation tabs:
+
+- use them to switch between peer views inside the same page, panel, or popover;
+- make them a flat, full-width row rather than a rounded segmented picker;
+- the standard component owns an explicit `1px solid var(--border)` leading border on every tab after the first;
+- indicate the active view with restrained primary tint and a 2 px bottom indicator;
+- use `role=tablist`, `role=tab`, `aria-selected`, roving focus, and linked tab panels;
+- do not use navigation tabs to select a setting value.
+
+In this repository, use `NavigationalTabs` from `@/components/ui/navigational-tabs`. Do not recreate its layout or separator at the call site.
 
 ## Modal and panel overlays
 

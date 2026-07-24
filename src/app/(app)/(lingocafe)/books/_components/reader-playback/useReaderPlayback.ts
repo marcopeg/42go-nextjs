@@ -27,6 +27,7 @@ import {
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/playback-preferences";
 import type {
   ReaderPlaybackController,
+  ReaderPlaybackSettingsSurface,
   ReaderPlaybackSentence,
   ReaderPlaybackStatus,
   ReaderPlaybackWordRange,
@@ -151,7 +152,9 @@ export const useReaderPlayback = ({
   const restoredSentencePageKeyRef = useRef("");
   const lastPlayedSentenceIdRef = useRef<string | null>(null);
   const onAutoStartRef = useRef(onAutoStart);
-  const settingsOpenRef = useRef(false);
+  const settingsSurfacesRef = useRef(
+    new Set<ReaderPlaybackSettingsSurface>()
+  );
   const translationOpenRef = useRef(false);
   const autoPauseReasonsRef = useRef(new Set<"settings" | "translation">());
   const autoPausedRef = useRef(false);
@@ -163,6 +166,7 @@ export const useReaderPlayback = ({
   const [isOpen, setIsOpen] = useState(false);
   const [settingsOpen, setSettingsOpenState] = useState(false);
   const [canPlay, setCanPlay] = useState(false);
+  const [capabilityPending, setCapabilityPending] = useState(true);
   const [unavailableReason, setUnavailableReason] = useState<string | null>(
     "Checking device voices..."
   );
@@ -255,10 +259,18 @@ export const useReaderPlayback = ({
   const refreshAvailability = useCallback(() => {
     const provider = providerRef.current;
     if (!provider?.supported) {
+      setCapabilityPending(false);
       setCanPlay(false);
       setUnavailableReason("Text-to-speech is not available on this device.");
       return;
     }
+    if (provider.isVoiceDiscoveryPending()) {
+      setCapabilityPending(true);
+      setCanPlay(false);
+      setUnavailableReason("Checking device voices...");
+      return;
+    }
+    setCapabilityPending(false);
     if (!language.trim()) {
       setCanPlay(false);
       setUnavailableReason("This book has no playback language.");
@@ -809,13 +821,39 @@ export const useReaderPlayback = ({
   const setSettingsOpen = useCallback(
     (isOpen: boolean) => {
       setSettingsOpenState(isOpen);
-      settingsOpenRef.current = isOpen;
+      const surfaces = settingsSurfacesRef.current;
+      if (isOpen) {
+        surfaces.add("playback");
+      } else {
+        surfaces.delete("playback");
+      }
       syncAutoPauseReason(
         "settings",
-        isOpen && preferencesRef.current.autoPauseOnSettings
+        surfaces.size > 0 && preferencesRef.current.autoPauseOnSettings
       );
     },
     [syncAutoPauseReason]
+  );
+
+  const setSettingsSurfaceOpen = useCallback(
+    (surface: ReaderPlaybackSettingsSurface, isOpen: boolean) => {
+      if (surface === "playback") {
+        setSettingsOpen(isOpen);
+        return;
+      }
+
+      const surfaces = settingsSurfacesRef.current;
+      if (isOpen) {
+        surfaces.add(surface);
+      } else {
+        surfaces.delete(surface);
+      }
+      syncAutoPauseReason(
+        "settings",
+        surfaces.size > 0 && preferencesRef.current.autoPauseOnSettings
+      );
+    },
+    [setSettingsOpen, syncAutoPauseReason]
   );
 
   const setSpeed = useCallback(
@@ -873,7 +911,10 @@ export const useReaderPlayback = ({
   const setAutoPauseOnSettings = useCallback(
     (enabled: boolean) => {
       commitPreferences({ autoPauseOnSettings: enabled });
-      syncAutoPauseReason("settings", enabled && settingsOpenRef.current);
+      syncAutoPauseReason(
+        "settings",
+        enabled && settingsSurfacesRef.current.size > 0
+      );
     },
     [commitPreferences, syncAutoPauseReason]
   );
@@ -919,7 +960,7 @@ export const useReaderPlayback = ({
 
   const close = useCallback(() => {
     cancelCurrentSpeech();
-    settingsOpenRef.current = false;
+    settingsSurfacesRef.current.clear();
     setSettingsOpenState(false);
     translationOpenRef.current = false;
     autoPauseReasonsRef.current.clear();
@@ -1072,6 +1113,7 @@ export const useReaderPlayback = ({
   return {
     isOpen,
     canPlay,
+    capabilityPending,
     unavailableReason,
     status,
     activeSentenceId,
@@ -1088,6 +1130,7 @@ export const useReaderPlayback = ({
     togglePause,
     setTranslationPaused,
     setSettingsOpen,
+    setSettingsSurfaceOpen,
     setSpeed,
     setWordHighlighting,
     setSentenceHighlighting,

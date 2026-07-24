@@ -141,6 +141,7 @@ The reader is a full-viewport panel above the normal app shell. It uses no norma
 
 - Stack panels with 20–24 px vertical gap.
 - Keep normal panels at 24 px padding; use 16 px on cramped mobile surfaces if needed.
-- Use segmented tab controls for mutually exclusive appearance and level choices.
+- Use segmented data pickers for mutually exclusive appearance, level, and other setting values.
+- Use flat navigation tabs only when switching between peer subviews inside the settings surface.
 - Use card grids for image/flag-heavy choices.
 - Keep the save action in the page toolbar when changes span multiple panels.

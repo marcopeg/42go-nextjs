@@ -146,6 +146,8 @@ Open as a right side panel on desktop and full-screen on mobile.
 
 Open as a 420 px right panel on desktop and full-screen on mobile. Put a sticky preview card under the panel header.
 
+When preferences contain peer Reading and Listening subviews, switch them with the flat full-width navigation-tab pattern. Keep one thin semantic divider between the tabs. Theme, playback speed, translation scope, and similar values use the segmented data-picker pattern instead.
+
 Order:
 
 1. app theme: Auto, Light, Dark segmented control;

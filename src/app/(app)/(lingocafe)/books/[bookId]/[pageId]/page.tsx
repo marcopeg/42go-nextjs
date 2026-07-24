@@ -457,6 +457,21 @@ const BookReadPage = () => {
   const bookInfoHref = activeBookId
     ? `/books/${encodeURIComponent(activeBookId)}`
     : bookshelfHref;
+  const { setSettingsSurfaceOpen } = playback;
+  const handlePreferencesOpenChange = useCallback(
+    (next: boolean) => {
+      setIsPreferencesOpen(next);
+      setSettingsSurfaceOpen("preferences", next);
+    },
+    [setSettingsSurfaceOpen]
+  );
+  const handleTableOfContentsOpenChange = useCallback(
+    (next: boolean) => {
+      setIsTableOfContentsOpen(next);
+      setSettingsSurfaceOpen("contents", next);
+    },
+    [setSettingsSurfaceOpen]
+  );
   const handleReaderOpenChange = (next: boolean) => {
     if (!next) {
       router.push(bookshelfHref);
@@ -513,11 +528,11 @@ const BookReadPage = () => {
     if (!isPreferencesOpen) {
       trackEvent("read.settings.opened", getReaderSettingsEventData());
     }
-    setIsPreferencesOpen(true);
+    handlePreferencesOpenChange(true);
   };
 
   const openTableOfContents = () => {
-    setIsTableOfContentsOpen(true);
+    handleTableOfContentsOpenChange(true);
   };
 
   useEffect(() => {
@@ -966,18 +981,19 @@ const BookReadPage = () => {
 
         <BookReaderPreferencesPanel
           open={isPreferencesOpen}
-          onOpenChange={setIsPreferencesOpen}
+          onOpenChange={handlePreferencesOpenChange}
           preferences={readerPreferences}
           onPreferencesChange={updateReaderPreferences}
           translationScope={readerTranslationScope}
           onTranslationScopeChange={updateReaderTranslationScope}
           canResetPreferences={canResetReaderPreferences}
           onResetPreferences={resetReaderPreferences}
+          playback={playback}
         />
 
         <BookReaderTableOfContents
           open={isTableOfContentsOpen}
-          onOpenChange={setIsTableOfContentsOpen}
+          onOpenChange={handleTableOfContentsOpenChange}
           bookPage={bookPage}
           bookInfoHref={bookInfoHref}
           onNavigatePage={navigateToReaderPage}

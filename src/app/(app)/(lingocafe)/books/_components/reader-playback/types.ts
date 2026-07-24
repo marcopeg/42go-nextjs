@@ -40,6 +40,7 @@ export type ReaderSpeechRequest = {
 
 export type ReaderSpeechProvider = {
   supported: boolean;
+  isVoiceDiscoveryPending: () => boolean;
   getMatchingVoice: (language: string) => SpeechSynthesisVoice | null;
   subscribeToVoices: (listener: () => void) => () => void;
   speak: (request: ReaderSpeechRequest) => boolean;
@@ -48,9 +49,15 @@ export type ReaderSpeechProvider = {
   cancel: () => void;
 };
 
+export type ReaderPlaybackSettingsSurface =
+  | "playback"
+  | "preferences"
+  | "contents";
+
 export type ReaderPlaybackController = {
   isOpen: boolean;
   canPlay: boolean;
+  capabilityPending: boolean;
   unavailableReason: string | null;
   status: ReaderPlaybackStatus;
   activeSentenceId: string | null;
@@ -67,6 +74,10 @@ export type ReaderPlaybackController = {
   togglePause: () => void;
   setTranslationPaused: (isOpen: boolean) => void;
   setSettingsOpen: (isOpen: boolean) => void;
+  setSettingsSurfaceOpen: (
+    surface: ReaderPlaybackSettingsSurface,
+    isOpen: boolean
+  ) => void;
   setSpeed: (speed: ReaderPlaybackSpeed) => void;
   setWordHighlighting: (enabled: boolean) => void;
   setSentenceHighlighting: (enabled: boolean) => void;

@@ -9,6 +9,7 @@ import type { Policy } from "@/42go/policy/types";
 import { BookCard } from "@/app/(app)/(lingocafe)/books/_components/BookCard";
 import { BooksHeaderLanguageFlag } from "@/app/(app)/(lingocafe)/books/_components/BooksHeaderLanguageFlag";
 import type { ReaderBook } from "@/app/(app)/(lingocafe)/books/_components/book-types";
+import { preloadDeviceSpeechVoices } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/device-speech-provider";
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
 import type { TConsentData } from "@/42go/profile";
 import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
@@ -161,6 +162,10 @@ const BooksPage = () => {
     isLoading: loading,
     canDelay: !!data,
   });
+
+  useEffect(() => {
+    preloadDeviceSpeechVoices();
+  }, []);
 
   const loadBooks = useCallback(
     async (signal?: AbortSignal) => {

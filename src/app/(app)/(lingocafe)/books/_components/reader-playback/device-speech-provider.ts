@@ -3,10 +3,73 @@ import type {
   ReaderSpeechRequest,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 
+const VOICE_DISCOVERY_FALLBACK_MS = 1500;
+
+type VoiceDiscoveryStatus = "pending" | "resolved";
+
+let voiceDiscoveryStarted = false;
+let voiceDiscoveryStatus: VoiceDiscoveryStatus = "pending";
+let voiceDiscoverySynthesis: SpeechSynthesis | null = null;
+let voiceDiscoveryFallbackTimer: ReturnType<typeof setTimeout> | null = null;
+const voiceDiscoveryListeners = new Set<() => void>();
+
 const normalizePrimaryLanguage = (language: string) =>
   language.trim().toLowerCase().split(/[-_]/)[0] || "";
 
+const notifyVoiceDiscoveryListeners = () => {
+  voiceDiscoveryListeners.forEach((listener) => listener());
+};
+
+const resolveVoiceDiscovery = () => {
+  if (voiceDiscoveryFallbackTimer) {
+    clearTimeout(voiceDiscoveryFallbackTimer);
+    voiceDiscoveryFallbackTimer = null;
+  }
+  voiceDiscoveryStatus = "resolved";
+  notifyVoiceDiscoveryListeners();
+};
+
+export const preloadDeviceSpeechVoices = () => {
+  if (voiceDiscoveryStarted || typeof window === "undefined") return;
+
+  voiceDiscoveryStarted = true;
+  const supported =
+    "speechSynthesis" in window &&
+    typeof SpeechSynthesisUtterance !== "undefined";
+
+  if (!supported) {
+    voiceDiscoveryStatus = "resolved";
+    notifyVoiceDiscoveryListeners();
+    return;
+  }
+
+  voiceDiscoverySynthesis = window.speechSynthesis;
+  voiceDiscoverySynthesis.addEventListener(
+    "voiceschanged",
+    resolveVoiceDiscovery
+  );
+
+  if (voiceDiscoverySynthesis.getVoices().length > 0) {
+    resolveVoiceDiscovery();
+    return;
+  }
+
+  voiceDiscoveryStatus = "pending";
+  voiceDiscoveryFallbackTimer = setTimeout(
+    resolveVoiceDiscovery,
+    VOICE_DISCOVERY_FALLBACK_MS
+  );
+};
+
+const subscribeToDeviceSpeechVoices = (listener: () => void) => {
+  voiceDiscoveryListeners.add(listener);
+  preloadDeviceSpeechVoices();
+  return () => voiceDiscoveryListeners.delete(listener);
+};
+
 export const createDeviceSpeechProvider = (): ReaderSpeechProvider => {
+  preloadDeviceSpeechVoices();
+
   const supported =
     typeof window !== "undefined" &&
     "speechSynthesis" in window &&
@@ -30,8 +93,7 @@ export const createDeviceSpeechProvider = (): ReaderSpeechProvider => {
 
   const subscribeToVoices = (listener: () => void) => {
     if (!synthesis) return () => undefined;
-    synthesis.addEventListener("voiceschanged", listener);
-    return () => synthesis.removeEventListener("voiceschanged", listener);
+    return subscribeToDeviceSpeechVoices(listener);
   };
 
   const speak = (request: ReaderSpeechRequest) => {
@@ -71,6 +133,7 @@ export const createDeviceSpeechProvider = (): ReaderSpeechProvider => {
 
   return {
     supported,
+    isVoiceDiscoveryPending: () => voiceDiscoveryStatus === "pending",
     getMatchingVoice,
     subscribeToVoices,
     speak,

@@ -1,12 +1,23 @@
 "use client";
 
-import { useMemo } from "react";
-import { CaseSensitive, Minus, MonitorCog, MoonStar, Plus, Sun } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  CaseSensitive,
+  LoaderCircle,
+  Minus,
+  MonitorCog,
+  MoonStar,
+  Plus,
+  Sun,
+} from "lucide-react";
 
 import type { ThemeValue } from "@/AppConfig";
 import { Modal } from "@/42go/components/modal";
 import { useTheme } from "@/42go/config/ThemeProvider";
 import { cn } from "@/42go/utils/utils";
+import { BookReaderPlaybackPreferencesEditor } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPlaybackPreferencesEditor";
+import { ReaderSettingSegmentedControl } from "@/app/(app)/(lingocafe)/books/_components/ReaderSettingSegmentedControl";
+import type { ReaderPlaybackController } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 import {
   getAvailableReaderForegrounds,
   getReaderBackground,
@@ -22,6 +33,10 @@ import {
   type ReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import { Button } from "@/components/ui/button";
+import {
+  NavigationalTabs,
+  type NavigationalTabOption,
+} from "@/components/ui/navigational-tabs";
 
 type BookReaderPreferencesPanelProps = {
   open: boolean;
@@ -32,7 +47,26 @@ type BookReaderPreferencesPanelProps = {
   onTranslationScopeChange: (next: ReaderTranslationScope) => void;
   canResetPreferences: boolean;
   onResetPreferences: () => void;
+  playback: ReaderPlaybackController;
 };
+
+type ReaderPreferencesTab = "reading" | "listening";
+type ListeningAvailability = "pending" | "available" | "unavailable";
+
+const readerPreferencesTabs: NavigationalTabOption<ReaderPreferencesTab>[] = [
+  {
+    value: "reading",
+    label: "Reading",
+    tabId: "reader-preferences-reading-tab",
+    panelId: "reader-preferences-reading-panel",
+  },
+  {
+    value: "listening",
+    label: "Listening",
+    tabId: "reader-preferences-listening-tab",
+    panelId: "reader-preferences-listening-panel",
+  },
+];
 
 const themeOptions: {
   value: ThemeValue;
@@ -181,7 +215,13 @@ export const BookReaderPreferencesPanel = ({
   onTranslationScopeChange,
   canResetPreferences,
   onResetPreferences,
+  playback,
 }: BookReaderPreferencesPanelProps) => {
+  const [activeTab, setActiveTab] =
+    useState<ReaderPreferencesTab>("reading");
+  const [listeningAvailability, setListeningAvailability] =
+    useState<ListeningAvailability>("pending");
+  const [previousOpen, setPreviousOpen] = useState(open);
   const { mounted, resolvedTheme, setTheme, theme } = useTheme();
   const currentTheme = normalizeTheme(theme);
   const font = getReaderFont(preferences);
@@ -232,6 +272,28 @@ export const BookReaderPreferencesPanel = ({
     if (!confirmed) return;
     onResetPreferences();
   };
+  if (open !== previousOpen) {
+    setPreviousOpen(open);
+    setActiveTab("reading");
+    setListeningAvailability(
+      !open || playback.capabilityPending
+        ? "pending"
+        : playback.canPlay
+          ? "available"
+          : "unavailable"
+    );
+  } else if (
+    open &&
+    listeningAvailability === "pending" &&
+    !playback.capabilityPending
+  ) {
+    setListeningAvailability(
+      playback.canPlay ? "available" : "unavailable"
+    );
+  }
+
+  const showTabs = listeningAvailability === "available";
+  const showReading = !showTabs || activeTab === "reading";
 
   return (
     <Modal
@@ -240,16 +302,46 @@ export const BookReaderPreferencesPanel = ({
       presentation="panel"
       anchor="right"
       size="md"
-      title="Reading Preferences"
-      ariaLabel="Reading preferences"
+      title="Reader Preferences"
+      ariaLabel="Reader preferences"
       headerClassName="md:h-[68px] md:px-8"
-      bodyClassName="px-0 py-0 md:px-5 md:pb-6 md:pt-0"
+      bodyClassName="px-0 py-0 md:pb-6"
     >
-      <div className="sticky top-0 z-10 border-b bg-background px-5 py-4 md:mb-6 md:border-0 md:px-0 md:pb-4 md:pt-6">
-        <PreviewCard preferences={preferences} />
-      </div>
+      {listeningAvailability === "pending" ? (
+        <div
+          role="status"
+          className="flex min-h-48 flex-col items-center justify-center gap-3 px-5 py-10 text-center text-sm text-muted-foreground"
+        >
+          <LoaderCircle
+            className="h-6 w-6 animate-spin text-primary"
+            aria-hidden="true"
+          />
+          <span>Checking listening availability...</span>
+        </div>
+      ) : (
+        <>
+          {showTabs ? (
+            <NavigationalTabs
+              ariaLabel="Reader preferences"
+              value={activeTab}
+              options={readerPreferencesTabs}
+              onValueChange={setActiveTab}
+            />
+          ) : null}
 
-      <div className="px-5 py-6 md:p-0">
+          {showReading ? (
+            <div
+              id={showTabs ? "reader-preferences-reading-panel" : undefined}
+              role={showTabs ? "tabpanel" : undefined}
+              aria-labelledby={
+                showTabs ? "reader-preferences-reading-tab" : undefined
+              }
+            >
+              <div className="sticky top-0 z-10 border-b bg-background px-5 py-4 md:mb-6 md:border-0 md:pb-4 md:pt-6">
+                <PreviewCard preferences={preferences} />
+              </div>
+
+              <div className="px-5 py-6 md:py-0">
         <section className="space-y-4">
           <div>
             <h3 className="font-semibold">Theme</h3>
@@ -263,35 +355,12 @@ export const BookReaderPreferencesPanel = ({
               Loading theme preference...
             </p>
           ) : (
-            <div
-              role="tablist"
-              aria-label="Theme"
-              className="flex flex-nowrap items-stretch gap-1 overflow-x-auto rounded-lg border border-border bg-muted/20 p-1"
-            >
-              {themeOptions.map(({ value, label, Icon }) => {
-                const active = currentTheme === value;
-
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setTheme(value)}
-                    className={cn(
-                      "flex h-10 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md border px-1.5 text-xs font-medium transition-colors outline-none sm:h-12 sm:gap-2 sm:px-2 sm:text-sm",
-                      "focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-                      active
-                        ? "border-[var(--primary)] bg-primary/5 text-foreground"
-                        : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    <Icon className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
-                    <span className="truncate">{label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <ReaderSettingSegmentedControl
+              ariaLabel="Theme"
+              value={currentTheme}
+              options={themeOptions}
+              onValueChange={setTheme}
+            />
           )}
         </section>
 
@@ -505,7 +574,23 @@ export const BookReaderPreferencesPanel = ({
         <p className="mt-6 text-center text-xs text-muted-foreground/60">
           These preferences are stored on your device.
         </p>
-      </div>
+              </div>
+            </div>
+          ) : (
+            <div
+              id="reader-preferences-listening-panel"
+              role="tabpanel"
+              aria-labelledby="reader-preferences-listening-tab"
+              className="px-5 py-6"
+            >
+              <BookReaderPlaybackPreferencesEditor
+                playback={playback}
+                variant="panel"
+              />
+            </div>
+          )}
+        </>
+      )}
     </Modal>
   );
 };
