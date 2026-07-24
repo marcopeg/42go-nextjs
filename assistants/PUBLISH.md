@@ -4,9 +4,9 @@ This directory is designed to become the root of the public `marcopeg/42go-assis
 
 ## Before the first release
 
-1. Select and add a root open-source license. Do not publish as reusable open source without an explicit license.
-2. Create the Git repository and update `README.md` if its final owner or name differs from `marcopeg/42go-assistants`.
-3. Enable GitHub private vulnerability reporting or publish another private security contact referenced by `SECURITY.md`.
+1. Create the Git repository and update `README.md` if its final owner or name differs from `marcopeg/42go-assistants`.
+2. Enable GitHub private vulnerability reporting or publish another private security contact referenced by `SECURITY.md`.
+3. Confirm that the root MIT license and plugin manifest license declarations remain aligned.
 4. Confirm that no credentials, connection codes, local paths, caches, or generated files are tracked.
 
 ## Release checklist

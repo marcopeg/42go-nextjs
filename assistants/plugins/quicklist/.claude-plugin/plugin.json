@@ -7,5 +7,6 @@
   },
   "homepage": "https://github.com/marcopeg/42go-assistants/tree/main/plugins/quicklist",
   "repository": "https://github.com/marcopeg/42go-assistants",
+  "license": "MIT",
   "keywords": ["quicklist", "todo", "tasks", "productivity", "automation"]
 }

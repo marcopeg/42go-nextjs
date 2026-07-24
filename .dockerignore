@@ -43,6 +43,7 @@ contents/.obsidian
 .tmp
 knex
 db-backups
+assistants
 *.sql
 *.dump
 *.backup

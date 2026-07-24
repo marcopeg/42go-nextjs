@@ -125,4 +125,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the plugin contract and validation wo
 
 ## License
 
-A public license has not been selected yet. Add a root license before the first public release; publishing source code without a license does not grant others permission to reuse it.
+Released under the [MIT License](LICENSE).

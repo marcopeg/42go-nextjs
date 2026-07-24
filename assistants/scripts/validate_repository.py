@@ -107,6 +107,14 @@ def main() -> int:
         if len(versions) != 1 or None in versions:
             errors.append(f"plugins/{name}: manifest and Claude catalog versions must match")
 
+        licenses = {
+            codex_manifest.get("license"),
+            claude_manifest.get("license"),
+            claude_entries.get(name, {}).get("license"),
+        }
+        if licenses != {"MIT"}:
+            errors.append(f"plugins/{name}: manifests and Claude catalog must declare MIT")
+
         codex_source = codex_entries.get(name, {}).get("source", {})
         if not isinstance(codex_source, dict) or codex_source.get("path") != f"./plugins/{name}":
             errors.append(f"plugins/{name}: invalid Codex marketplace source")
