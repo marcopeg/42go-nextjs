@@ -140,6 +140,38 @@ In this repository, use `NavigationalTabs` from `@/components/ui/navigational-ta
 
 Use the shared `Modal` abstraction backed by Radix Dialog. Do not build bespoke fixed overlays.
 
+### Focused mobile editors
+
+Use the QuickList add/edit surface as the canonical mobile pattern when a modal
+edits one input, one textarea, or a short group of controls:
+
+- Below `md`, cover the viewport with `fixed inset-0`, `100dvh`, and a
+  translucent blurred semantic background.
+- Use a three-part flex column: compact header, independently scrollable body,
+  and fixed action footer.
+- Give the header 16 px horizontal/top and 12 px bottom spacing, a 16 px
+  semibold title, a bottom border, and an optional 36 px neutral close control.
+- Give the body 16 px horizontal and 12 px vertical spacing. Autofocus the
+  primary control and select existing text when replacement is the likely task.
+- Keep mobile text inputs at 16 px to prevent browser zoom. Use 12 px control
+  inset, an 8 px radius, semantic border/background, and the primary focus ring.
+  A primary textarea starts at 140 px high. Space a small control group on the
+  4 px grid without introducing cards inside the editor.
+- Give the footer 16 px horizontal, 8 px top, and 16 px plus the device safe
+  area at the bottom. Move it above the software keyboard using
+  `visualViewport`. Use an 8 px action gap.
+- Use equal-width Cancel and Save actions for simple forms. Cancel stays neutral;
+  Save uses primary. Both use 16 px labels and 12 px vertical padding.
+- Keep normal-state helper copy and counters out of the surface. Put concise
+  validation next to the affected control only when action is required.
+- At `md` and above, use the shared centered `Modal` or appropriate panel while
+  preserving the same field order, labels, validation, and action hierarchy.
+
+Use `TextareaModal` for the single-textarea version. For an input or a few
+controls, reuse this shell and substitute only the body controls. The caller
+owns domain validation and persistence; the pattern owns responsive chrome,
+focus, keyboard avoidance, safe areas, and action hierarchy.
+
 Presentation modes:
 
 - `modal`: centered on desktop, full-screen on mobile;

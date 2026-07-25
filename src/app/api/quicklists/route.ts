@@ -5,6 +5,10 @@ import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { z } from "zod";
 import { getAppID } from "@/42go/config/app-config";
 import { resolveQuicklistMode } from "@/lib/quicklists/mode";
+import {
+  quicklistItemTextSchema,
+  quicklistListNameSchema,
+} from "@/lib/quicklists/validation";
 
 type ProjectRow = {
   id: string;
@@ -189,9 +193,9 @@ export const GET = protectRoute(getQuicklists, {
 // Create a new project with two default tasks
 const createProjectSchema = z
   .object({
-    title: z.string().min(1).max(255).optional(),
+    title: quicklistListNameSchema.optional(),
     // Optional custom tasks; if not provided, default tasks will be used
-    tasks: z.array(z.string().min(1).max(255)).max(50).optional(),
+    tasks: z.array(quicklistItemTextSchema).max(50).optional(),
   })
   .optional();
 

@@ -66,6 +66,32 @@ There is no public `stack` or `zIndex` prop. Stacking is inferred from nested `M
 
 ## Recipes
 
+Focused textarea editor:
+
+```tsx
+const [value, setValue] = useState("");
+
+<TextareaModal
+  open={open}
+  onOpenChange={setOpen}
+  title="Edit notes"
+  value={value}
+  onValueChange={setValue}
+  onSave={saveNotes}
+  textareaLabel="Notes"
+  placeholder="Write your notes"
+/>
+```
+
+Use `TextareaModal` for the single-textarea form of the focused mobile editor
+pattern. It copies the existing QuickList add/edit presentation: a translucent
+blurred full-screen mobile surface, compact 16/12 px header and body spacing,
+140 px textarea, safe-area and software-keyboard-aware footer, equal-width
+Cancel/Save actions, autofocus and selection, busy state, and accessible error
+association. For one input or a short control group, keep this exact mobile
+shell and replace only the body controls; use the shared `Modal` presentation
+from `md` upward. Keep domain validation and persistence in the caller.
+
 Centered dialog:
 
 ```tsx

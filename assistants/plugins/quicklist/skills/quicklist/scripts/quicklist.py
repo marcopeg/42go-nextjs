@@ -180,25 +180,44 @@ class Client:
         self.base_url = base_url
         self.token = token
 
-    def request(self, method: str, path: str, body: Any = None, query: dict[str, Any] | None = None) -> Any:
+    def request(
+        self,
+        method: str,
+        path: str,
+        body: Any = None,
+        query: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        include_etag: bool = False,
+    ) -> Any:
         url = f"{self.base_url}/api/quicklists/v1{path}"
         if query:
             url += "?" + urlencode({key: value for key, value in query.items() if value is not None})
         payload = json.dumps(body).encode("utf-8") if body is not None else None
+        request_headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        if headers:
+            request_headers.update(headers)
         request = Request(
             url,
             data=payload,
             method=method,
-            headers={
-                "Authorization": f"Bearer {self.token}",
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            },
+            headers=request_headers,
         )
         try:
             with urlopen(request, timeout=30) as response:
                 content = response.read()
-                return json.loads(content) if content else {"ok": True}
+                result = json.loads(content) if content else {"ok": True}
+                if include_etag:
+                    etag = response.headers.get("ETag")
+                    if not etag:
+                        raise QuickListError("QuickList reorder response did not include an ETag")
+                    if not isinstance(result, dict):
+                        raise QuickListError("QuickList reorder response has an invalid shape")
+                    result = {**result, "etag": etag}
+                return result
         except HTTPError as exc:
             content = exc.read().decode("utf-8", errors="replace")
             try:
@@ -212,6 +231,11 @@ class Client:
                     message = content
             except json.JSONDecodeError:
                 message = content or exc.reason
+            if exc.code == 409 and path.endswith("/reorder"):
+                raise QuickListError(
+                    "Reorder context is stale. Run reorder-context again, reason over the fresh list, "
+                    "then submit a new order."
+                ) from exc
             raise QuickListError(f"QuickList API returned {exc.code}: {message}") from exc
         except URLError as exc:
             raise QuickListError(f"Cannot reach QuickList: {exc.reason}") from exc
@@ -236,6 +260,39 @@ class Client:
             raise QuickListError(f'No API-enabled list has the exact name "{value}"')
         choices = ", ".join(f'{row.get("title")} ({row.get("id")})' for row in matches)
         raise QuickListError(f'List name "{value}" is ambiguous: {choices}')
+
+
+def parse_position_items(values: list[str]) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    seen_positions: set[int] = set()
+    for value in values:
+        item_id, separator, raw_position = value.rpartition(":")
+        if not separator or not UUID_RE.fullmatch(item_id):
+            raise QuickListError(
+                f'Invalid reorder item "{value}". Use ITEM_UUID:POSITION.'
+            )
+        try:
+            position = int(raw_position)
+        except ValueError as exc:
+            raise QuickListError(
+                f'Invalid reorder item "{value}". Position must be an integer.'
+            ) from exc
+        normalized_id = item_id.lower()
+        if normalized_id in seen_ids:
+            raise QuickListError(f"Duplicate reorder item ID: {item_id}")
+        if position in seen_positions:
+            raise QuickListError(f"Duplicate reorder position: {position}")
+        seen_ids.add(normalized_id)
+        seen_positions.add(position)
+        items.append({"id": item_id, "position": position})
+
+    expected_positions = set(range(1, len(items) + 1))
+    if seen_positions != expected_positions:
+        raise QuickListError(
+            f"Reorder positions must be unique and gapless from 1 through {len(items)}."
+        )
+    return items
 
 
 def parser() -> argparse.ArgumentParser:
@@ -285,7 +342,43 @@ def parser() -> argparse.ArgumentParser:
     delete_item = commands.add_parser("delete-item", help="Delete an item")
     delete_item.add_argument("list")
     delete_item.add_argument("item")
-    reorder = commands.add_parser("reorder", help="Set the complete item order")
+    reorder_context = commands.add_parser(
+        "reorder-context",
+        help="Read LLM sorting instructions, every item, and the current ETag",
+    )
+    reorder_context.add_argument("list")
+    sorting_instructions = commands.add_parser(
+        "sorting-instructions",
+        help="Read the stored sorting instructions for a list",
+    )
+    sorting_instructions.add_argument("list")
+    set_sorting_instructions = commands.add_parser(
+        "set-sorting-instructions",
+        help="Replace the stored sorting instructions for future reorder runs",
+    )
+    set_sorting_instructions.add_argument("list")
+    set_sorting_instructions.add_argument(
+        "instructions",
+        help="New instructions; pass an empty string to clear them",
+    )
+    apply_order = commands.add_parser(
+        "apply-order",
+        help="Apply a complete order using repeatable --item ID:POSITION values",
+    )
+    apply_order.add_argument("list")
+    apply_order.add_argument("--etag", required=True)
+    apply_order.add_argument(
+        "--item",
+        dest="items",
+        action="append",
+        default=[],
+        metavar="ID:POSITION",
+        help="One item position; repeat for every item in the list",
+    )
+    reorder = commands.add_parser(
+        "reorder",
+        help="Set the complete item order by item IDs using the low-level endpoint",
+    )
     reorder.add_argument("list")
     reorder.add_argument("items", nargs="+")
     for name in ("drop-completed", "reset-checklist"):
@@ -337,6 +430,23 @@ def execute(args: argparse.Namespace) -> Any:
         return client.request("PATCH", f"{path}/items/{args.item}", {"completed": not args.undo})
     if args.command == "delete-item":
         return client.request("DELETE", f"{path}/items/{args.item}")
+    if args.command == "reorder-context":
+        return client.request("GET", f"{path}/reorder", include_etag=True)
+    if args.command == "sorting-instructions":
+        return client.request("GET", f"{path}/sorting-instructions")
+    if args.command == "set-sorting-instructions":
+        return client.request(
+            "POST",
+            f"{path}/sorting-instructions",
+            {"sortingInstructions": args.instructions},
+        )
+    if args.command == "apply-order":
+        return client.request(
+            "POST",
+            f"{path}/reorder",
+            {"items": parse_position_items(args.items)},
+            headers={"If-Match": args.etag},
+        )
     if args.command == "reorder":
         return client.request("POST", f"{path}/items/reorder", {"itemIds": args.items})
     if args.command in ("drop-completed", "reset-checklist"):

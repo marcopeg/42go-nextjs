@@ -146,6 +146,170 @@ class QuickListSkillTests(unittest.TestCase):
                 client.request("GET", "")
         self.assertNotIn("ql_super-secret", str(raised.exception))
 
+    def test_reorder_context_captures_the_response_etag(self):
+        class FakeResponse:
+            headers = {"ETag": '"ql-context"'}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return b'{"list":{"id":"list-id"},"items":[]}'
+
+        client = quicklist.Client("https://quicklist.example", "secret")
+        with patch.object(quicklist, "urlopen", return_value=FakeResponse()):
+            result = client.request("GET", "/list-id/reorder", include_etag=True)
+
+        self.assertEqual(result["etag"], '"ql-context"')
+        self.assertEqual(result["items"], [])
+
+    def test_apply_order_sends_if_match_and_compact_items(self):
+        captured = {}
+
+        class FakeResponse:
+            headers = {"ETag": '"ql-next"'}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return b'{"items":[]}'
+
+        def open_request(request, timeout):
+            captured["if_match"] = request.get_header("If-match")
+            captured["body"] = json.loads(request.data)
+            captured["timeout"] = timeout
+            return FakeResponse()
+
+        client = quicklist.Client("https://quicklist.example", "secret")
+        with patch.object(quicklist, "urlopen", side_effect=open_request):
+            client.request(
+                "POST",
+                "/list-id/reorder",
+                {"items": []},
+                headers={"If-Match": '"ql-context"'},
+            )
+
+        self.assertEqual(captured["if_match"], '"ql-context"')
+        self.assertEqual(captured["body"], {"items": []})
+        self.assertEqual(captured["timeout"], 30)
+
+    def test_sorting_instruction_commands_use_the_dedicated_resource(self):
+        captured = []
+
+        class FakeClient:
+            def __init__(self, _base_url, _token):
+                pass
+
+            def resolve_list(self, value):
+                self.assert_list = value
+                return "11111111-1111-4111-8111-111111111111"
+
+            def request(self, method, path, body=None):
+                captured.append((method, path, body))
+                return {"sortingInstructions": body["sortingInstructions"] if body else "Current"}
+
+        with (
+            patch.object(quicklist, "load_credential", return_value=("https://quicklist.example", "secret")),
+            patch.object(quicklist, "Client", FakeClient),
+        ):
+            read_result = quicklist.execute(
+                quicklist.parser().parse_args(["sorting-instructions", "Shopping"])
+            )
+            write_result = quicklist.execute(
+                quicklist.parser().parse_args(
+                    [
+                        "set-sorting-instructions",
+                        "Shopping",
+                        "Place fruit first.",
+                    ]
+                )
+            )
+
+        self.assertEqual(read_result, {"sortingInstructions": "Current"})
+        self.assertEqual(
+            write_result,
+            {"sortingInstructions": "Place fruit first."},
+        )
+        self.assertEqual(
+            captured,
+            [
+                (
+                    "GET",
+                    "/11111111-1111-4111-8111-111111111111/sorting-instructions",
+                    None,
+                ),
+                (
+                    "POST",
+                    "/11111111-1111-4111-8111-111111111111/sorting-instructions",
+                    {"sortingInstructions": "Place fruit first."},
+                ),
+            ],
+        )
+
+    def test_position_parser_requires_unique_gapless_complete_pairs(self):
+        first = "11111111-1111-4111-8111-111111111111"
+        second = "22222222-2222-4222-8222-222222222222"
+        self.assertEqual(
+            quicklist.parse_position_items([f"{first}:2", f"{second}:1"]),
+            [
+                {"id": first, "position": 2},
+                {"id": second, "position": 1},
+            ],
+        )
+        self.assertEqual(quicklist.parse_position_items([]), [])
+        with self.assertRaisesRegex(quicklist.QuickListError, "Duplicate reorder position"):
+            quicklist.parse_position_items([f"{first}:1", f"{second}:1"])
+        with self.assertRaisesRegex(quicklist.QuickListError, "gapless"):
+            quicklist.parse_position_items([f"{first}:2"])
+
+    def test_apply_order_parser_accepts_items_after_etag(self):
+        first = "11111111-1111-4111-8111-111111111111"
+        second = "22222222-2222-4222-8222-222222222222"
+        args = quicklist.parser().parse_args(
+            [
+                "apply-order",
+                "Shopping",
+                "--etag",
+                '"ql-context"',
+                "--item",
+                f"{first}:1",
+                "--item",
+                f"{second}:2",
+            ]
+        )
+
+        self.assertEqual(args.etag, '"ql-context"')
+        self.assertEqual(args.items, [f"{first}:1", f"{second}:2"])
+
+    def test_stale_reorder_error_requires_fresh_reasoning(self):
+        client = quicklist.Client("https://quicklist.example", "secret")
+        response = HTTPError(
+            "https://quicklist.example/api/quicklists/v1/list-id/reorder",
+            409,
+            "Conflict",
+            {},
+            None,
+        )
+        response.read = lambda: b'{"error":"conflict","message":"stale"}'
+        with patch.object(quicklist, "urlopen", side_effect=response):
+            with self.assertRaisesRegex(
+                quicklist.QuickListError,
+                "Run reorder-context again",
+            ):
+                client.request(
+                    "POST",
+                    "/list-id/reorder",
+                    {"items": []},
+                    headers={"If-Match": '"ql-old"'},
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

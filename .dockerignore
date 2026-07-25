@@ -44,6 +44,8 @@ contents/.obsidian
 knex
 db-backups
 assistants
+cli
+tests
 *.sql
 *.dump
 *.backup

@@ -32,3 +32,22 @@ export interface ModalProps {
   footerClassName?: string;
   ariaLabel?: string;
 }
+
+export interface TextareaModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: ReactNode;
+  value: string;
+  onValueChange: (value: string) => void;
+  onSave: () => void;
+  textareaLabel?: string;
+  placeholder?: string;
+  error?: ReactNode;
+  saving?: boolean;
+  saveDisabled?: boolean;
+  saveLabel?: string;
+  savingLabel?: string;
+  cancelLabel?: string;
+  closeLabel?: string;
+  size?: ModalSize;
+}

@@ -16,9 +16,19 @@ Only lists that their owner has API-enabled are visible. A collaborator can oper
 - `PATCH /api/quicklists/v1/{listId}/items/{itemId}` — body may contain `title` or `completed`.
 - `DELETE /api/quicklists/v1/{listId}/items/{itemId}`.
 - `POST /api/quicklists/v1/{listId}/items/reorder` — `{ "itemIds": uuid[] }`, containing every item exactly once.
+- `GET /api/quicklists/v1/{listId}/sorting-instructions` — returns `{ "sortingInstructions": string }`.
+- `POST /api/quicklists/v1/{listId}/sorting-instructions` — strict body `{ "sortingInstructions": string }`; trims and replaces the durable guidance, and an empty string clears it.
+- `GET /api/quicklists/v1/{listId}/reorder` — LLM sorting context with list ID/name, `sortingInstructions`, and every item as `{ "id", "text", "position" }`. Completed items are included, but completion status and unrelated fields are omitted. Preserve the strong `ETag` response header.
+- `POST /api/quicklists/v1/{listId}/reorder` — strict body `{ "items": [{ "id": uuid, "position": integer }] }`, containing every current item exactly once with unique gapless positions `1..N`. Send the preceding GET value as `If-Match`. The response returns canonical `{ "id", "position" }` entries and a replacement `ETag`.
 - `POST /api/quicklists/v1/{listId}/actions` — `{ "action": "drop-completed" | "reset-checklist" }`.
 
 Success responses are JSON. Errors use `{ "error": string, "message": string, "timestamp": string }`. Expect `400` validation errors, `401` invalid/missing credentials, `403` owner-only denial, `404` inaccessible or disabled lists, and `409` conflicts.
+
+Reorder POST returns `428 Precondition Required` when `If-Match` is missing or malformed. It returns `409 Conflict` without mutation when the list name, sorting instructions, item IDs, item text, or item positions changed after GET. Fetch fresh context and reason again; do not retry the stale payload. Completion-only changes do not invalidate this reorder ETag.
+
+Sorting instructions are trimmed plain text capped at 4,000 Unicode characters. List names and item text are capped at 250 Unicode characters on all create/update paths.
+
+Reading or writing sorting instructions uses the same bearer-token, API-enabled-list, and owner/collaborator access rules as other list settings. Because an instruction update changes reorder context, fetch `/reorder` after the instruction POST before calculating or submitting positions.
 
 The helper accepts `QUICKLIST_API_TOKEN` and `QUICKLIST_API_BASE_URL` as an explicit paired override. `QUICKLIST_CREDENTIALS_FILE` changes the credential file path. Do not print these values.
 

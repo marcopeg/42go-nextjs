@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { getAppID } from "@/42go/config/app-config";
 import { resolveQuicklistMode } from "@/lib/quicklists/mode";
+import { resolveQuicklistSortingInstructions } from "@/lib/quicklists/settings";
 
 type FreshnessRow = {
   id: string;
@@ -159,6 +160,7 @@ const getInfo = async (
       id: p.id,
       title: p.title,
       mode: resolveQuicklistMode(p.settings),
+      sortingInstructions: resolveQuicklistSortingInstructions(p.settings),
       created_at: toISO(p.created_at),
       updated_at: toISO(p.updated_at),
       is_owner: isOwner,

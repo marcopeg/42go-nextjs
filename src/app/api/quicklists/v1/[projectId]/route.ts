@@ -12,11 +12,12 @@ import {
   serializeQuicklistApiItem,
   serializeQuicklistApiList,
 } from "@/lib/quicklists/server/api-serialization";
+import { quicklistListNameSchema } from "@/lib/quicklists/validation";
 
 const paramsSchema = z.object({ projectId: z.string().uuid() });
 const updateSchema = z
   .object({
-    title: z.string().trim().min(1).max(255).optional(),
+    title: quicklistListNameSchema.optional(),
     mode: z.enum(QUICKLIST_MODES).optional(),
   })
   .refine((value) => value.title !== undefined || value.mode !== undefined, {

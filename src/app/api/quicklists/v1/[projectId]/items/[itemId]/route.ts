@@ -8,6 +8,7 @@ import {
 } from "@/lib/quicklists/server/api-context";
 import { quicklistApiError, quicklistApiJson } from "@/lib/quicklists/server/api-response";
 import { serializeQuicklistApiItem } from "@/lib/quicklists/server/api-serialization";
+import { quicklistItemTextSchema } from "@/lib/quicklists/validation";
 
 const paramsSchema = z.object({
   projectId: z.string().uuid(),
@@ -15,7 +16,7 @@ const paramsSchema = z.object({
 });
 const updateSchema = z
   .object({
-    title: z.string().trim().min(1).max(255).optional(),
+    title: quicklistItemTextSchema.optional(),
     completed: z.boolean().optional(),
   })
   .refine((value) => value.title !== undefined || value.completed !== undefined, {

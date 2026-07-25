@@ -135,3 +135,4 @@
 - [ZD09: Fix Auth Users Name Unique Constraint](./ZD09-fix-auth-users-name-unique-constraint/ZD09.task.md) | [plan](./ZD09-fix-auth-users-name-unique-constraint/ZD09.plan.md) | [notes](./ZD09-fix-auth-users-name-unique-constraint/ZD09.notes.md)
 - [ZE11: Book Page Read UI](./ZE11-book-page-read-ui/ZE11.task.md) | [plan](./ZE11-book-page-read-ui/ZE11.plan.md) | [notes](./ZE11-book-page-read-ui/ZE11.notes.md)
 - [ZZ62: Investigate and Optimize Docker Build Performance](./ZZ62-investigate-and-optimize-docker-build-performance/ZZ62.task.md) | [plan](./ZZ62-investigate-and-optimize-docker-build-performance/ZZ62.plan.md) | [notes](./ZZ62-investigate-and-optimize-docker-build-performance/ZZ62.notes.md)
+- [YZ67: Fix Docker Security Gate Findings](./YZ67-fix-docker-security-gate-findings/YZ67.task.md)

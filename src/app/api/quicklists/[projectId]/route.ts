@@ -12,6 +12,12 @@ import {
   QUICKLIST_MODES,
   resolveQuicklistMode,
 } from "@/lib/quicklists/mode";
+import { resolveQuicklistSortingInstructions } from "@/lib/quicklists/settings";
+import {
+  quicklistItemTextSchema,
+  quicklistListNameSchema,
+  quicklistSortingInstructionsSchema,
+} from "@/lib/quicklists/validation";
 
 type FreshnessRow = {
   id: string;
@@ -156,7 +162,7 @@ export const GET = protectRoute(getProject, {
 
 // Create a new task in the project
 const createSchema = z.object({
-  title: z.string().min(1).max(255),
+  title: quicklistItemTextSchema,
   position: z.number().int().min(1).optional(),
 });
 
@@ -291,13 +297,22 @@ export const POST = protectRoute(createTask, {
   },
 });
 
-// Update project title and mode
-const updateProjectSchema = z.object({
-  title: z.string().min(1).max(255).optional(),
-  mode: z.enum(QUICKLIST_MODES).optional(),
-}).refine((data) => data.title !== undefined || data.mode !== undefined, {
-  message: "Body must include title or mode",
-});
+// Update project title and settings
+const updateProjectSchema = z
+  .object({
+    title: quicklistListNameSchema.optional(),
+    mode: z.enum(QUICKLIST_MODES).optional(),
+    sortingInstructions: quicklistSortingInstructionsSchema.optional(),
+  })
+  .refine(
+    (data) =>
+      data.title !== undefined ||
+      data.mode !== undefined ||
+      data.sortingInstructions !== undefined,
+    {
+      message: "Body must include title, mode, or sortingInstructions",
+    }
+  );
 
 const updateProject = async (
   req: Request,
@@ -330,7 +345,7 @@ const updateProject = async (
     );
   }
 
-  const { title, mode } = parsed.data;
+  const { title, mode, sortingInstructions } = parsed.data;
   const db = getDB();
   const appId = await getAppID();
   if (!appId) {
@@ -345,11 +360,21 @@ const updateProject = async (
     updated_by: userId,
   };
   if (title !== undefined) updates.title = title;
+  let settingsUpdate = db.raw("COALESCE(settings, '{}'::jsonb)");
   if (mode !== undefined) {
-    updates.settings = db.raw(
-      "jsonb_set(COALESCE(settings, '{}'::jsonb), '{mode}', to_jsonb(?::text), true)",
-      [mode]
+    settingsUpdate = db.raw(
+      "jsonb_set(?, '{mode}', to_jsonb(?::text), true)",
+      [settingsUpdate, mode]
     );
+  }
+  if (sortingInstructions !== undefined) {
+    settingsUpdate = db.raw(
+      "jsonb_set(?, '{sortingInstructions}', to_jsonb(?::text), true)",
+      [settingsUpdate, sortingInstructions]
+    );
+  }
+  if (mode !== undefined || sortingInstructions !== undefined) {
+    updates.settings = settingsUpdate;
   }
 
   try {
@@ -376,6 +401,7 @@ const updateProject = async (
         id: row.id as string,
         title: row.title as string,
         mode: resolveQuicklistMode(row.settings),
+        sortingInstructions: resolveQuicklistSortingInstructions(row.settings),
         updated_at: toISO(row.updated_at as Date),
       },
     });

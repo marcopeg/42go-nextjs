@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Layers, PanelRight } from "lucide-react";
+import { Layers, PanelRight, TextCursorInput } from "lucide-react";
 
-import { Modal } from "@/42go/components/modal";
+import { Modal, TextareaModal } from "@/42go/components/modal";
 import type { ModalAnchor, ModalSize } from "@/42go/components/modal";
 import { AppLayout } from "@/42go/layouts/app";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ export default function DemoModalPage() {
   const [centeredOpen, setCenteredOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [fullOpen, setFullOpen] = useState(false);
+  const [textareaOpen, setTextareaOpen] = useState(false);
+  const [textareaValue, setTextareaValue] = useState("");
   const [nestedOpen, setNestedOpen] = useState(false);
   const [nestedChildOpen, setNestedChildOpen] = useState(false);
   const [nestedGrandchildOpen, setNestedGrandchildOpen] = useState(false);
@@ -62,7 +64,7 @@ export default function DemoModalPage() {
       policy={{ require: { feature: "page:demo-modal" } }}
     >
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border bg-card p-5">
             <PanelRight className="h-5 w-5 text-primary" />
             <h2 className="mt-4 text-lg font-semibold">Centered</h2>
@@ -105,6 +107,21 @@ export default function DemoModalPage() {
               onClick={() => setFullOpen(true)}
             >
               Open long modal
+            </Button>
+          </div>
+
+          <div className="rounded-lg border bg-card p-5">
+            <TextCursorInput className="h-5 w-5 text-primary" />
+            <h2 className="mt-4 text-lg font-semibold">Textarea</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Focused text editing with fixed Cancel and Save actions.
+            </p>
+            <Button
+              className="mt-5 w-full"
+              type="button"
+              onClick={() => setTextareaOpen(true)}
+            >
+              Open textarea modal
             </Button>
           </div>
         </section>
@@ -210,6 +227,17 @@ export default function DemoModalPage() {
             </div>
           </div>
         </Modal>
+
+        <TextareaModal
+          open={textareaOpen}
+          onOpenChange={setTextareaOpen}
+          title="Edit notes"
+          value={textareaValue}
+          onValueChange={setTextareaValue}
+          onSave={() => setTextareaOpen(false)}
+          textareaLabel="Notes"
+          placeholder="Write your notes"
+        />
 
         <Modal
           open={panelOpen}

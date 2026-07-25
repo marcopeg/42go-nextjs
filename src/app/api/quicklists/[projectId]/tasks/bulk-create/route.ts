@@ -4,9 +4,10 @@ import { getServerSession } from "next-auth";
 import { getAuthOptions } from "@/42go/auth/lib/authOptions";
 import { z } from "zod";
 import { getAppID } from "@/42go/config/app-config";
+import { quicklistItemTextSchema } from "@/lib/quicklists/validation";
 
 const bodySchema = z.object({
-  titles: z.array(z.string().min(1).max(255)).min(1),
+  titles: z.array(quicklistItemTextSchema).min(1),
   afterId: z.string().uuid().nullable().optional(), // null or undefined -> prepend
 });
 

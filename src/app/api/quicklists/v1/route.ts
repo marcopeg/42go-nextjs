@@ -8,11 +8,15 @@ import {
 } from "@/lib/quicklists/server/api-context";
 import { quicklistApiError, quicklistApiJson } from "@/lib/quicklists/server/api-response";
 import { serializeQuicklistApiList } from "@/lib/quicklists/server/api-serialization";
+import {
+  quicklistItemTextSchema,
+  quicklistListNameSchema,
+} from "@/lib/quicklists/validation";
 
 const createSchema = z.object({
-  title: z.string().trim().min(1).max(255).default("New list"),
+  title: quicklistListNameSchema.default("New list"),
   mode: z.enum(QUICKLIST_MODES).default("todo"),
-  items: z.array(z.string().trim().min(1).max(255)).max(100).default([]),
+  items: z.array(quicklistItemTextSchema).max(100).default([]),
 });
 
 const encodeCursor = (row: { updated_at: Date; id: string }) =>

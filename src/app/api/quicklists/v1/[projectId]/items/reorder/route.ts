@@ -8,6 +8,7 @@ import {
 } from "@/lib/quicklists/server/api-context";
 import { quicklistApiError, quicklistApiJson } from "@/lib/quicklists/server/api-response";
 import { serializeQuicklistApiItem } from "@/lib/quicklists/server/api-serialization";
+import { validateCompleteQuicklistItemIds } from "@/lib/quicklists/reorder";
 
 const paramsSchema = z.object({ projectId: z.string().uuid() });
 const bodySchema = z.object({ itemIds: z.array(z.string().uuid()).min(1) });
@@ -41,9 +42,7 @@ const reorderItems = async (
   const existingIds = new Set(existing.map((item) => String(item.id)));
   const requestedIds = parsedBody.data.itemIds;
   if (
-    requestedIds.length !== existingIds.size ||
-    new Set(requestedIds).size !== requestedIds.length ||
-    requestedIds.some((id) => !existingIds.has(id))
+    !validateCompleteQuicklistItemIds([...existingIds], requestedIds)
   ) {
     return quicklistApiError(
       400,

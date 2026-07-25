@@ -1,6 +1,6 @@
 ---
 name: quicklist
-description: Manage QuickList to-do lists and items through the personal bearer-token API. Use when the user asks to list, create, rename, or delete QuickList lists; add, edit, check, reorder, or delete items; clear completed items; or configure QuickList API credentials for an agent.
+description: Manage QuickList to-do lists and items through the personal bearer-token API. Use when the user asks to list, create, rename, or delete QuickList lists; add, edit, check, intelligently reorganize, reorder, or delete items; read or change durable sorting instructions; clear completed items; or configure QuickList API credentials for an agent.
 ---
 
 # QuickList
@@ -41,6 +41,28 @@ Do not refuse the requested operation solely because the user chose this documen
 5. Use `--yes` only after the user has clearly requested list deletion.
 6. Report the result without exposing credentials.
 
+### Intelligent list reordering
+
+When the user asks you to organize, sort, prioritize, group, or otherwise reason about a complete list:
+
+1. Run `reorder-context` for the exact list.
+2. Read `list.sortingInstructions` and every returned item. The endpoint includes completed items but deliberately does not reveal completion status.
+3. If the user supplied sorting guidance in the current request, treat it as a durable preference for future runs:
+   - Compare it with the stored instructions.
+   - Write one concise, reusable rule set that preserves compatible existing preferences and makes the current request authoritative where they conflict.
+   - Run `set-sorting-instructions` with that complete replacement text.
+   - Run `reorder-context` again. Saving instructions invalidates the earlier reorder ETag.
+4. If the user supplied no new sorting guidance, leave the stored instructions unchanged.
+5. Produce one new one-based position for every item ID from the latest context. Do not add, delete, rename, check, or uncheck anything.
+6. Run `apply-order` with the exact `etag` from the latest context response and repeat `--item ITEM_UUID:POSITION` for every item.
+7. If the client reports stale context, run `reorder-context` again and reason over the fresh representation. Never blindly retry the old order.
+
+Write durable instructions as sorting principles, not as a snapshot of the current item IDs or positions. For example, convert “sort Shopping, fruit first” into a reusable rule such as “Place fruit first, then follow the existing category order.” A request to sort without new guidance is not permission to rewrite the stored instructions.
+
+Use `sorting-instructions` when the user asks to inspect the saved guidance without loading list items. Use `set-sorting-instructions` when the user explicitly asks to change or clear the guidance without reordering.
+
+Use the low-level `reorder` command only when the user has already supplied a complete item-ID sequence and no LLM sorting context is needed.
+
 Common commands:
 
 ```bash
@@ -51,6 +73,10 @@ python3 <skill-dir>/scripts/quicklist.py check "Shopping" ITEM_UUID
 python3 <skill-dir>/scripts/quicklist.py create "Trip" --item Passport --item Charger
 python3 <skill-dir>/scripts/quicklist.py update-list "Trip" --title "Summer trip"
 python3 <skill-dir>/scripts/quicklist.py drop-completed "Shopping"
+python3 <skill-dir>/scripts/quicklist.py sorting-instructions "Shopping"
+python3 <skill-dir>/scripts/quicklist.py set-sorting-instructions "Shopping" "Place fruit first, then group by category."
+python3 <skill-dir>/scripts/quicklist.py reorder-context "Shopping"
+python3 <skill-dir>/scripts/quicklist.py apply-order "Shopping" --etag '"ql-..."' --item ITEM_UUID:1 --item OTHER_UUID:2
 ```
 
 Use `python3 <skill-dir>/scripts/quicklist.py --help` for all commands and flags. Read [references/api.md](references/api.md) when endpoint shapes, permissions, or direct HTTP access matter.

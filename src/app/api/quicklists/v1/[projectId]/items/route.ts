@@ -8,15 +8,16 @@ import {
 } from "@/lib/quicklists/server/api-context";
 import { quicklistApiError, quicklistApiJson } from "@/lib/quicklists/server/api-response";
 import { serializeQuicklistApiItem } from "@/lib/quicklists/server/api-serialization";
+import { quicklistItemTextSchema } from "@/lib/quicklists/validation";
 
 const paramsSchema = z.object({ projectId: z.string().uuid() });
 const createSchema = z.union([
   z.object({
-    title: z.string().trim().min(1).max(255),
+    title: quicklistItemTextSchema,
     position: z.number().int().min(1).optional(),
   }),
   z.object({
-    titles: z.array(z.string().trim().min(1).max(255)).min(1).max(100),
+    titles: z.array(quicklistItemTextSchema).min(1).max(100),
     afterId: z.string().uuid().nullable().optional(),
   }),
 ]);

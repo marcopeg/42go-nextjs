@@ -16,7 +16,13 @@ import { DisplayDate } from "@/42go/components/DisplayDate";
 import { SimplePanel } from "@/42go/components/panel";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ListChecks, ListTodo, Trash2, type LucideIcon } from "lucide-react";
+import {
+  ListChecks,
+  ListOrdered,
+  ListTodo,
+  Trash2,
+  type LucideIcon,
+} from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { useIsInstalledPWAInstallTarget } from "@/42go/pwa";
 import {
@@ -25,6 +31,7 @@ import {
   useRefreshQuicklists,
 } from "@/lib/quicklists/hooks/useQuicklists";
 import type { QuicklistMode } from "@/lib/quicklists/mode";
+import { SortingInstructionsModal } from "@/lib/quicklists/components/SortingInstructionsModal";
 import { cn } from "@/lib/utils";
 
 const listModeOptions: {
@@ -68,6 +75,7 @@ type InfoResponse = {
     id: string;
     title: string;
     mode: QuicklistMode;
+    sortingInstructions: string;
     created_at: string | null;
     updated_at: string | null;
     is_owner: boolean;
@@ -147,6 +155,7 @@ export default function QuicklistInfoPage() {
   const [deleting, setDeleting] = useState(false);
   const [savingMode, setSavingMode] = useState(false);
   const [savingApiAccess, setSavingApiAccess] = useState(false);
+  const [sortingInstructionsOpen, setSortingInstructionsOpen] = useState(false);
   const [accountApiEnabled, setAccountApiEnabled] = useState<boolean | null>(null);
 
   const { toast } = useToast();
@@ -449,6 +458,42 @@ export default function QuicklistInfoPage() {
     }
   };
 
+  const updateSortingInstructions = async (instructions: string) => {
+    const res = await fetch(`/api/quicklists/${projectId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ sortingInstructions: instructions }),
+    });
+    if (!res.ok) {
+      let message = `Failed to save sorting instructions (${res.status})`;
+      try {
+        const payload = await res.json();
+        message = extractMessage(payload) || message;
+      } catch {}
+      throw new Error(message);
+    }
+
+    const payload = (await res.json()) as {
+      project?: { sortingInstructions?: string };
+    };
+    const saved = payload.project?.sortingInstructions ?? instructions.trim();
+    setData((current) =>
+      current
+        ? {
+            ...current,
+            project: {
+              ...current.project,
+              sortingInstructions: saved,
+            },
+          }
+        : current
+    );
+    refreshProject();
+    refreshQuicklists();
+    toast({ title: "Sorting instructions saved" });
+  };
+
   const title = data?.project.title || "Collaborators";
   const subtitle = data?.project?.updated_at
     ? `Updated: ${new Date(data.project.updated_at).toLocaleString()}`
@@ -618,6 +663,27 @@ export default function QuicklistInfoPage() {
               </div>
             </SimplePanel>
 
+            <SimplePanel
+              title="Agent sorting"
+              description="Describe how an agent should organize every item in this list."
+            >
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="min-w-0 text-sm text-muted-foreground">
+                  {data.project.sortingInstructions ||
+                    "No sorting instructions have been set."}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full shrink-0 sm:w-auto"
+                  onClick={() => setSortingInstructionsOpen(true)}
+                >
+                  <ListOrdered className="h-4 w-4" aria-hidden="true" />
+                  Sorting instructions
+                </Button>
+              </div>
+            </SimplePanel>
+
             {data.project.is_owner && (
               <SimplePanel
                 title="Agent API access"
@@ -774,6 +840,14 @@ export default function QuicklistInfoPage() {
           </>
         )}
       </div>
+      {data && sortingInstructionsOpen && (
+        <SortingInstructionsModal
+          open
+          instructions={data.project.sortingInstructions}
+          onOpenChange={setSortingInstructionsOpen}
+          onSave={updateSortingInstructions}
+        />
+      )}
     </AppLayout>
   );
 }
