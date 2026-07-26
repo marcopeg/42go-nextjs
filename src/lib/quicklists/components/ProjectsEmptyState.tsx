@@ -2,14 +2,18 @@
 
 import { ListTodo } from "lucide-react";
 
-export function ProjectsEmptyState() {
+export const ProjectsEmptyState = () => {
   return (
-    <div className="text-center py-8 text-muted-foreground">
-      <ListTodo className="h-12 w-12 mx-auto mb-4 opacity-50" />
-      <p>No lists yet</p>
-      <p className="text-sm">
-        Create your first list to get started
+    <div className="px-6 py-12 text-center md:mt-8">
+      <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <ListTodo className="size-7" aria-hidden="true" />
+      </div>
+      <h2 className="mt-5 text-lg font-semibold text-foreground">
+        No lists yet
+      </h2>
+      <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+        Create your first list and get things moving.
       </p>
     </div>
   );
-}
+};

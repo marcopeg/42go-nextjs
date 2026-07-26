@@ -87,7 +87,11 @@ export default function ProjectsPage() {
                 className="w-full"
                 size="lg"
               >
-                {creating ? "Creating…" : "Add new list"}
+                {creating
+                  ? "Creating…"
+                  : data.projects.length === 0
+                    ? "Create your first list"
+                    : "Create new list"}
               </Button>
             </div>
 

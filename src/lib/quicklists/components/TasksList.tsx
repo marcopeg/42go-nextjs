@@ -1,7 +1,8 @@
 "use client";
 
-import { Clock } from "lucide-react";
+import { ListPlus } from "lucide-react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { Button } from "@/components/ui/button";
 import { TaskItem } from "./TaskItem";
 import { Task } from "../hooks/useQuicklistData";
 
@@ -18,6 +19,7 @@ interface TasksListProps {
   enableDnd?: boolean;
   sortableIds?: string[];
   movingDownIds?: Set<string>;
+  onAddFirstItem: () => void;
 }
 
 // Sortable wrapper using dnd-kit for pending items
@@ -90,13 +92,29 @@ export const TasksList = ({
   enableDnd = false,
   sortableIds = [],
   movingDownIds,
+  onAddFirstItem,
 }: TasksListProps) => {
   if (tasks.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-        <p>No tasks yet</p>
-        <p className="text-sm">Tasks will appear here when created</p>
+      <div className="px-6 py-12 text-center md:mt-8">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <ListPlus className="size-7" aria-hidden="true" />
+        </div>
+        <h2 className="mt-5 text-lg font-semibold text-foreground">
+          This list is empty
+        </h2>
+        <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+          Add the first item and get things moving.
+        </p>
+        <Button
+          type="button"
+          variant="link"
+          className="mt-4"
+          onClick={onAddFirstItem}
+        >
+          <ListPlus aria-hidden="true" />
+          Add your first item
+        </Button>
       </div>
     );
   }

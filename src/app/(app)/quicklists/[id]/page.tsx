@@ -33,15 +33,6 @@ import { MobileEditPanel } from "@/lib/quicklists/components/MobileEditPanel";
 import { MobileCreatePanel } from "@/lib/quicklists/components/MobileCreatePanel";
 import { MobileListEditPanel } from "@/lib/quicklists/components/MobileListEditPanel";
 import { useIsInstalledPWAInstallTarget } from "@/42go/pwa";
-import { Clock } from "lucide-react";
-
-const EmptyState = () => (
-  <div className="text-center py-8 text-muted-foreground">
-    <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-    <p>No tasks in this list</p>
-    <p className="text-sm">Add some tasks to get started</p>
-  </div>
-);
 
 export default function ProjectDetailsPage() {
   const params = useParams<{ id: string | string[] }>();
@@ -118,6 +109,15 @@ export default function ProjectDetailsPage() {
   const focusComposer = () => {
     const el = desktopInputRef.current;
     el?.focus();
+  };
+
+  const openCreateTask = () => {
+    if (isDesktop) {
+      focusComposer();
+      return;
+    }
+
+    setCreatingMobile(true);
   };
 
   useEffect(() => {
@@ -430,6 +430,7 @@ export default function ProjectDetailsPage() {
                 enableDnd
                 sortableIds={pendingIds}
                 movingDownIds={movingDownIds}
+                onAddFirstItem={openCreateTask}
               />
               <DragOverlay>
                 {activeTask ? (
@@ -457,8 +458,6 @@ export default function ProjectDetailsPage() {
                 ) : null}
               </DragOverlay>
             </DndContext>
-            {tasks.length === 0 && <EmptyState />}
-
             {hasCompleted && (
               <div className="mt-4 mb-8 flex justify-center">
                 <button
