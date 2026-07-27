@@ -13,6 +13,7 @@ from urllib.error import HTTPError
 
 
 SCRIPT = Path(__file__).parents[1] / ".agents/skills/quicklist/scripts/quicklist.py"
+SKILL = Path(__file__).parents[1] / ".agents/skills/quicklist/SKILL.md"
 SPEC = importlib.util.spec_from_file_location("quicklist_skill", SCRIPT)
 quicklist = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader
@@ -29,6 +30,26 @@ def connection_code(base_url: str, token: str, version: int = 1) -> str:
 
 
 class QuickListSkillTests(unittest.TestCase):
+    def test_skill_requires_instruction_driven_reorder_after_item_text_mutations(self):
+        skill = SKILL.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "Every skill-driven item addition or item-text edit must end with a complete instruction-driven reorder.",
+            skill,
+        )
+        self.assertIn(
+            "stop before adding or editing anything and ask the user to provide the ordering instructions",
+            skill,
+        )
+        self.assertIn(
+            "place every item that cannot be confidently matched to an instruction after all matched items",
+            skill,
+        )
+        self.assertIn(
+            "Preserve the current relative order among unmatched items",
+            skill,
+        )
+
     def test_configure_stores_scoped_secret_without_returning_it(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "credentials.json"

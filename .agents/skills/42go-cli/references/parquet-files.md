@@ -2,6 +2,16 @@
 
 This reference explains the local Parquet contract used by `42go pull`, `42go query`, `42go peek`, and `42go update`.
 
+## Consumer boundary
+
+This repository owns the meaning and lifecycle of these files. External
+applications may discover and read them, but must treat them as read-only and
+must not reproduce the pull or aggregation logic that creates them.
+
+When a file schema or location changes, update the producing command, tests,
+CLI help, and this reference together. Consumers should isolate compatibility
+handling in one adapter rather than making the producer depend on them.
+
 ## Roots
 
 - Raw pulled data: `.local/42go-data/`

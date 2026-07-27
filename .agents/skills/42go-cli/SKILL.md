@@ -7,6 +7,20 @@ description: Use when operating the local `42go` CLI, running backups/restores, 
 
 Use this skill for operator-facing `42go` CLI usage. It is the consolidated manual for capabilities that used to be split across backup, events export, and events logging skills.
 
+## Ownership
+
+This repository is the standalone producer and authority for:
+
+- shared event-writing expectations;
+- database-to-local pulls;
+- raw Parquet contracts;
+- query aggregation behavior and outputs;
+- CLI help for all of those capabilities.
+
+Downstream tools may consume generated files or invoke the CLI, but producer
+semantics must be evolved and documented here first. Do not depend on a parent
+LingoCafe wrapper or a backoffice repository.
+
 ## Rules
 
 - Keep the console command `42go`.
@@ -80,6 +94,12 @@ Use this skill for operator-facing `42go` CLI usage. It is the consolidated manu
 - Event logging expectations:
   - New application events should flow through the shared core events system and be consumable by `42go pull events`.
   - Load `references/event-logging.md`.
+- External consumers:
+  - Treat local Parquet and state files as producer-owned artifacts.
+  - Consumers should discover current behavior through CLI help and these
+    references instead of duplicating pull/query logic.
+  - Schema or artifact changes require updating producer tests, CLI help, and
+    the relevant reference before downstream adapters.
 - Full refresh shortcut:
   - `42go update`
   - `42go update --reset`

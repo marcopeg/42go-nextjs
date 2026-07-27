@@ -30,6 +30,16 @@ Sorting instructions are trimmed plain text capped at 4,000 Unicode characters. 
 
 Reading or writing sorting instructions uses the same bearer-token, API-enabled-list, and owner/collaborator access rules as other list settings. Because an instruction update changes reorder context, fetch `/reorder` after the instruction POST before calculating or submitting positions.
 
+## Agent ordering policy
+
+The QuickList skill treats sorting instructions as mandatory input for any LLM-calculated reorder. If neither the saved setting nor the current user request provides instructions, it must ask the user for reusable ordering guidance and must not submit a reorder.
+
+Every skill-driven item addition or item-text edit must finish with a fresh `GET /reorder`, a complete recalculation, and `POST /reorder` using the new ETag. Check the sorting instructions before the item mutation; when they are empty and the user supplied no guidance, ask before mutating. Completion-only changes do not require this sequence.
+
+When creating a list with initial items, require ordering guidance before creation because no saved setting exists yet. Save that guidance immediately after creation, then fetch reorder context and apply the complete order.
+
+Apply explicit instruction matches first. Unless the saved instructions define another fallback, put items that cannot be confidently matched to any instruction at the end and preserve their existing relative order.
+
 The helper accepts `QUICKLIST_API_TOKEN` and `QUICKLIST_API_BASE_URL` as an explicit paired override. `QUICKLIST_CREDENTIALS_FILE` changes the credential file path. Do not print these values.
 
 ## Connection code

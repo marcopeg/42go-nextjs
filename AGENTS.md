@@ -316,6 +316,23 @@ export default function MyAppPage() {
 
 ## Database Patterns
 
+### LingoCafe reader data ownership
+
+This repository is the standalone authority for the LingoCafe reader database,
+event system, data pulls, and analytical aggregates.
+
+- `knex/migrations/` is the schema source of truth. Consumers must evaluate the
+  complete ordered migration history, not copy an initial table definition.
+- `docs/lingocafe/BOOKS_DATA_MODEL.md` documents the intended content-export
+  contract and must agree with the accumulated migrations.
+- `.agents/skills/42go-cli/` owns operator knowledge for pulling events and
+  source tables, inspecting Parquet, and building local analytics.
+- `.agents/skills/42go-cli-dev/` owns CLI implementation guidance.
+
+External backoffice or reporting projects may consume these contracts, but
+this repository must not depend on a parent workspace or sibling repository to
+build, migrate, run, or explain them.
+
 ### Connection
 
 ```typescript

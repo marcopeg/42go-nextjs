@@ -47,17 +47,44 @@ When the user asks you to organize, sort, prioritize, group, or otherwise reason
 
 1. Run `reorder-context` for the exact list.
 2. Read `list.sortingInstructions` and every returned item. The endpoint includes completed items but deliberately does not reveal completion status.
-3. If the user supplied sorting guidance in the current request, treat it as a durable preference for future runs:
+3. Reorder only from explicit sorting instructions:
+   - If the user supplied sorting guidance in the current request, treat it as a durable preference for future runs.
+   - If the current request supplies no sorting guidance and `list.sortingInstructions` is empty or whitespace-only, stop without applying an order and ask the user what ordering instructions should be saved.
+   - Never invent sorting priorities from the item texts alone.
+4. When the user supplied sorting guidance in the current request:
    - Compare it with the stored instructions.
    - Write one concise, reusable rule set that preserves compatible existing preferences and makes the current request authoritative where they conflict.
    - Run `set-sorting-instructions` with that complete replacement text.
    - Run `reorder-context` again. Saving instructions invalidates the earlier reorder ETag.
-4. If the user supplied no new sorting guidance, leave the stored instructions unchanged.
-5. Produce one new one-based position for every item ID from the latest context. Do not add, delete, rename, check, or uncheck anything.
-6. Run `apply-order` with the exact `etag` from the latest context response and repeat `--item ITEM_UUID:POSITION` for every item.
-7. If the client reports stale context, run `reorder-context` again and reason over the fresh representation. Never blindly retry the old order.
+5. If the user supplied no new sorting guidance, leave the non-empty stored instructions unchanged.
+6. Produce one new one-based position for every item ID from the latest context. Do not add, delete, rename, check, or uncheck anything.
+   - Apply the explicit saved instructions first.
+   - Unless those instructions say otherwise, place every item that cannot be confidently matched to an instruction after all matched items.
+   - Preserve the current relative order among unmatched items unless the saved instructions define another fallback.
+7. Run `apply-order` with the exact `etag` from the latest context response and repeat `--item ITEM_UUID:POSITION` for every item.
+8. If the client reports stale context, run `reorder-context` again and reason over the fresh representation. Never blindly retry the old order.
 
 Write durable instructions as sorting principles, not as a snapshot of the current item IDs or positions. For example, convert “sort Shopping, fruit first” into a reusable rule such as “Place fruit first, then follow the existing category order.” A request to sort without new guidance is not permission to rewrite the stored instructions.
+
+### Mandatory reorder after adding or editing item text
+
+Every skill-driven item addition or item-text edit must end with a complete instruction-driven reorder. This applies to `add`, a title-changing `update-item`, bulk item additions, and `create --item` when the new list contains initial items. Completion-only `check` operations do not trigger this workflow because completion status is not a sorting input.
+
+For an existing list, before changing item membership or text:
+
+1. Resolve the exact list and run `sorting-instructions`.
+2. If the saved value is empty or whitespace-only:
+   - If the current request includes ordering guidance, turn it into concise reusable sorting instructions and save it.
+   - Otherwise stop before adding or editing anything and ask the user to provide the ordering instructions to save. Do not mutate first and leave the list unreordered.
+3. Perform the requested add or item-text edit.
+4. Run `reorder-context` after the mutation. Do not reuse context or an ETag captured before it.
+5. Reorder the complete list by following the **Intelligent list reordering** rules above, including the default that unmatched items go at the end while retaining their relative order.
+6. Apply the complete order with the latest ETag. The operation is not finished until `apply-order` succeeds.
+7. On a stale-context conflict, fetch fresh context, reason again, and apply a newly calculated complete order.
+
+For `create --item`, there is no saved setting to inspect yet. Require ordering guidance in the current request; if it is absent, ask before creating the list. After creation, save the reusable instructions, fetch reorder context, and apply the complete order.
+
+Do not silently skip the final reorder because the new or edited item appears to be in a reasonable position. The saved instructions, not insertion position or guesswork, determine the final list.
 
 Use `sorting-instructions` when the user asks to inspect the saved guidance without loading list items. Use `set-sorting-instructions` when the user explicitly asks to change or clear the guidance without reordering.
 

@@ -27,11 +27,42 @@ The content-export application writes content into:
 The content-export application must understand but not directly own:
 
 - `lingocafe.books_progress`
-- `lingocafe.events`
+- `events.events`
 - `auth.users.profile`
 - `auth.users.consent`
 
 The target application migration is the source of truth for the live schema. This document describes the schema contract that the export application needs in order to generate SQL safely.
+
+### Verify the accumulated migration schema
+
+An exporter must not treat this document or the first LingoCafe create
+migration as sufficient schema evidence.
+
+Before changing generated SQL:
+
+1. Enumerate the complete ordered set under `knex/migrations/`.
+2. Trace every migration that creates, alters, renames, constrains, or drops
+   `lingocafe.books`, `lingocafe.books_pages`, or
+   `lingocafe.books_progress`.
+3. Apply the migrations conceptually in Knex order and derive the final
+   columns, types, nullability, defaults, primary keys, unique constraints,
+   foreign keys, and delete behavior.
+4. Use seeds only as payload examples. They do not define schema.
+5. Compare the accumulated migration result with this document and the
+   consuming export adapter.
+6. If they disagree, resolve the migration/document mismatch in this
+   repository before changing the consumer.
+
+Useful discovery commands:
+
+```bash
+find knex/migrations -maxdepth 2 -type f -print | sort
+rg -n "lingocafe|books_pages|books_progress" knex/migrations
+make migrate.status
+```
+
+This repository must remain sufficient to determine the reader contract when
+checked out on its own.
 
 ## Source Content Model
 
@@ -80,7 +111,7 @@ Cover assets are not persisted in `lingocafe.books`. The reader resolves covers 
 | `lingocafe.books` | Owned by content export | Book catalog metadata. |
 | `lingocafe.books_pages` | Owned by content export | Ordered readable pages for each book. |
 | `lingocafe.books_progress` | User state | Current reading position. Not owned by content export. |
-| `lingocafe.events` | Runtime telemetry | Historical reader events. Not owned by content export. |
+| `events.events` | Runtime telemetry | Historical reader events. Not owned by content export. |
 | `auth.users.profile` | User state | Reader language preferences. Not owned by content export. |
 | `auth.users.consent` | User state | Consent evidence history. Not owned by content export. |
 
@@ -200,9 +231,9 @@ The export SQL should normally delete stale pages and let the cascade clean stal
 
 Only add explicit progress deletes if the target schema changes in the future and no longer has the page-progress cascade.
 
-## `lingocafe.events`
+## `events.events`
 
-`lingocafe.events` stores historical reader telemetry.
+`events.events` stores historical reader telemetry.
 
 The export application must not rewrite this table as part of content replacement.
 
@@ -702,5 +733,5 @@ Before shipping `content-export.sql`, verify:
 - Every page position is unique inside its book.
 - Book upserts refresh `updated_at`.
 - Stale progress cleanup relies on the page-progress `ON DELETE CASCADE`.
-- `lingocafe.events` is not rewritten.
+- `events.events` is not rewritten.
 - `auth.users.profile` and `auth.users.consent` are not rewritten.
