@@ -10,9 +10,14 @@ export { formatRelativeTime } from "./format";
 interface DisplayDateProps {
   date: Date | string | null | undefined;
   className?: string;
+  interactive?: boolean;
 }
 
-export const DisplayDate = ({ date, className = "" }: DisplayDateProps) => {
+export const DisplayDate = ({
+  date,
+  className = "",
+  interactive = true,
+}: DisplayDateProps) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const rootRef = useRef<HTMLSpanElement>(null);
 
@@ -38,12 +43,28 @@ export const DisplayDate = ({ date, className = "" }: DisplayDateProps) => {
 
   const relativeTime = formatRelativeTime(dateObj);
   const fullDate = dateObj.toLocaleString();
+  const dateTime = dateObj.toISOString();
+  const dateClassName = cn(
+    "cursor-help rounded-sm underline decoration-dotted underline-offset-2",
+    className
+  );
+
+  if (!interactive) {
+    return (
+      <time className={dateClassName} dateTime={dateTime} title={fullDate}>
+        {relativeTime}
+      </time>
+    );
+  }
 
   return (
     <span ref={rootRef} className="relative inline-block">
       <button
         type="button"
-        className={cn("cursor-help rounded-sm underline decoration-dotted underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", className)}
+        className={cn(
+          dateClassName,
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        )}
         aria-expanded={showTooltip}
         aria-label={`${relativeTime}. ${fullDate}`}
         title={fullDate}

@@ -562,7 +562,11 @@ export default function BackofficeNotificationsPage() {
                       <p className="truncate font-semibold">{item.title || item.subject || kind.label}</p>
                       <p className="line-clamp-1 text-sm text-muted-foreground">{item.bodyMarkdown || "No message body"}</p>
                     </div>
-                    <DisplayDate date={statusDate(item)} className="shrink-0 text-xs text-muted-foreground" />
+                    <DisplayDate
+                      date={statusDate(item)}
+                      className="shrink-0 text-xs text-muted-foreground"
+                      interactive={false}
+                    />
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                     <span className="inline-flex items-center gap-1"><status.Icon className="h-3.5 w-3.5" />{status.label}</span>

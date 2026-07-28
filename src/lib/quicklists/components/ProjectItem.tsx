@@ -32,6 +32,7 @@ export function ProjectItem({ project }: ProjectItemProps) {
           <DisplayDate
             date={project.updated_at}
             className="text-xs text-muted-foreground"
+            interactive={false}
           />
         </div>
         <ChevronRight className="h-5 w-5 text-muted-foreground" />
