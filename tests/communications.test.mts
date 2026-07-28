@@ -367,5 +367,9 @@ describe("notification container behavior", () => {
     );
     assert.match(admin, /<Switch/);
     assert.match(admin, /Add description/);
+    assert.match(admin, /const CompactChoice/);
+    assert.match(admin, /const CommunicationSummary/);
+    assert.match(admin, /Poll options/);
+    assert.match(admin, /<Markdown source=\{item\.bodyMarkdown\}/);
   });
 });

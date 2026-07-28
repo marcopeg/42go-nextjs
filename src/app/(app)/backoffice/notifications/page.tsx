@@ -6,6 +6,7 @@ import {
   Bell,
   CalendarClock,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   FilePenLine,
   ListChecks,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 
 import { DisplayDate } from "@/42go/components/DisplayDate";
+import Markdown from "@/42go/components/Markdown";
 import { Modal } from "@/42go/components/modal";
 import { Panel } from "@/42go/components/panel";
 import {
@@ -35,6 +37,13 @@ import {
 } from "@/42go/communications";
 import { AppLayout } from "@/42go/layouts/app";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,8 +59,23 @@ type Details = {
   communication: Communication;
   audienceUsers: AudienceUser[];
   metrics: { eligible: number; displayed: number; responded: number };
-  displays: Array<AudienceUser & { firstDisplayedAt: string; lastDisplayedAt: string; displayCount: string }>;
-  responses: Array<AudienceUser & { reaction: string | null; response: unknown; skipped: boolean; respondedAt: string }>;
+  displays: Array<
+    Omit<AudienceUser, "id"> & {
+      userId: string;
+      firstDisplayedAt: string;
+      lastDisplayedAt: string;
+      displayCount: string;
+    }
+  >;
+  responses: Array<
+    Omit<AudienceUser, "id"> & {
+      userId: string;
+      reaction: string | null;
+      response: unknown;
+      skipped: boolean;
+      respondedAt: string;
+    }
+  >;
 };
 
 type Draft = {
@@ -188,6 +212,53 @@ const Field = ({
   </label>
 );
 
+const CompactChoice = ({
+  label,
+  value,
+  options,
+  onValueChange,
+}: {
+  label: string;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  onValueChange: (value: string) => void;
+}) => {
+  const selectedLabel =
+    options.find((option) => option.value === value)?.label || value;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="flex min-h-12 w-full min-w-0 items-center justify-between gap-2 rounded-md border bg-background px-3 py-2 text-left shadow-xs outline-none transition-colors hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          aria-label={`${label}: ${selectedLabel}`}
+        >
+          <span className="min-w-0">
+            <span className="block text-xs text-muted-foreground">{label}</span>
+            <span className="block truncate text-sm font-medium">
+              {selectedLabel}
+            </span>
+          </span>
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        className="z-[750] w-[var(--radix-dropdown-menu-trigger-width)]"
+      >
+        <DropdownMenuRadioGroup value={value} onValueChange={onValueChange}>
+          {options.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value}>
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 const AudienceEditor = ({
   draft,
   setDraft,
@@ -309,30 +380,45 @@ const DraftEditor = ({
   );
   return (
     <div className="space-y-5">
-      <div className="grid gap-4 sm:grid-cols-2">
-        {draft.kind !== "email" && (
-          <>
-            <Field label="Style">
-              <select className="h-11 rounded-md border bg-background px-3" value={draft.style} onChange={(event) => setDraft((current) => ({ ...current, style: event.target.value as CommunicationStyle }))}>
-                <option value="info">Info</option><option value="warning">Warning</option><option value="danger">Danger</option><option value="success">Success</option>
-              </select>
-            </Field>
-            <Field label="Priority">
-              <div className="grid grid-cols-3 rounded-md border p-1">
-                {([0, 5, 10] as const).map((priority) => (
-                  <Button key={priority} type="button" size="sm" variant={draft.priority === priority ? "default" : "neutralGhost"} onClick={() => setDraft((current) => ({ ...current, priority }))}>
-                    {priority === 0 ? "Low" : priority === 5 ? "Normal" : "High"}
-                  </Button>
-                ))}
-              </div>
-            </Field>
-          </>
-        )}
-      </div>
       {draft.kind === "email" ? (
         <Field label="Subject"><Input maxLength={200} value={draft.subject} onChange={(event) => setDraft((current) => ({ ...current, subject: event.target.value }))} /></Field>
       ) : (
         <Field label="Title"><Input maxLength={160} value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} /></Field>
+      )}
+      {draft.kind !== "email" && (
+        <div className="grid grid-cols-2 gap-3">
+          <CompactChoice
+            label="Style"
+            value={draft.style}
+            options={[
+              { value: "info", label: "Info" },
+              { value: "warning", label: "Warning" },
+              { value: "danger", label: "Danger" },
+              { value: "success", label: "Success" },
+            ]}
+            onValueChange={(style) =>
+              setDraft((current) => ({
+                ...current,
+                style: style as CommunicationStyle,
+              }))
+            }
+          />
+          <CompactChoice
+            label="Priority"
+            value={String(draft.priority)}
+            options={[
+              { value: "0", label: "Low" },
+              { value: "5", label: "Normal" },
+              { value: "10", label: "High" },
+            ]}
+            onValueChange={(priority) =>
+              setDraft((current) => ({
+                ...current,
+                priority: Number(priority) as 0 | 5 | 10,
+              }))
+            }
+          />
+        </div>
       )}
       {draft.kind === "poll" ? (
         showPollDescription ? (
@@ -468,6 +554,233 @@ const DraftEditor = ({
       </div>
       <AudienceEditor draft={draft} setDraft={setDraft} selectedUsers={selectedUsers} setSelectedUsers={setSelectedUsers} />
     </div>
+  );
+};
+
+const priorityLabel = (priority: Communication["priority"]) =>
+  priority === 0 ? "Low" : priority === 10 ? "High" : "Normal";
+
+const DetailValue = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) => (
+  <div className="min-w-0">
+    <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+    <dd className="mt-1 break-words text-sm">{children}</dd>
+  </div>
+);
+
+const CommunicationSummary = ({ details }: { details: Details }) => {
+  const item = details.communication;
+  const poll =
+    item.kind === "poll"
+      ? (item.interactionConfig as PollConfig)
+      : null;
+  const input =
+    item.kind === "input"
+      ? (item.interactionConfig as InputConfig)
+      : null;
+  const audienceLabel =
+    item.audienceMode === "everyone"
+      ? "Everyone in this app"
+      : item.audienceMode === "whitelist"
+        ? "Only selected users"
+        : "Everyone except selected users";
+
+  return (
+    <>
+      <section className="space-y-2" aria-labelledby="communication-content">
+        <h3 id="communication-content" className="font-semibold">
+          Communication
+        </h3>
+        <Panel className="space-y-4">
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">
+              {item.kind === "email" ? "Subject" : "Title"}
+            </p>
+            <p className="mt-1 whitespace-pre-wrap font-medium">
+              {item.kind === "email"
+                ? item.subject || "No subject"
+                : item.title || "No title"}
+            </p>
+          </div>
+          <div className="border-t pt-4">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">
+              {item.kind === "email" ? "Email body" : "Description"}
+            </p>
+            {item.bodyMarkdown ? (
+              <div className="text-sm leading-relaxed">
+                <Markdown source={item.bodyMarkdown} />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No description.</p>
+            )}
+          </div>
+        </Panel>
+      </section>
+
+      <section className="space-y-2" aria-labelledby="communication-settings">
+        <h3 id="communication-settings" className="font-semibold">
+          Configuration
+        </h3>
+        <Panel className="space-y-4">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <DetailValue label="Type">{kindMeta[item.kind].label}</DetailValue>
+            <DetailValue label="Channel">
+              {item.channel === "in_app" ? "In-app" : "Email"}
+            </DetailValue>
+            {item.channel === "in_app" && (
+              <DetailValue label="Style">
+                {item.style.charAt(0).toUpperCase() + item.style.slice(1)}
+              </DetailValue>
+            )}
+            {item.channel === "in_app" && (
+              <DetailValue label="Priority">
+                {priorityLabel(item.priority)}
+              </DetailValue>
+            )}
+            <DetailValue label="Audience">{audienceLabel}</DetailValue>
+            <DetailValue label="Created by">
+              {item.creatorName || "Deleted administrator"}
+            </DetailValue>
+          </dl>
+
+          {details.audienceUsers.length > 0 && (
+            <div className="border-t pt-4">
+              <p className="text-xs font-medium text-muted-foreground">
+                Selected users
+              </p>
+              <ul className="mt-2 space-y-1 text-sm">
+                {details.audienceUsers.map((user) => (
+                  <li key={user.id}>
+                    {user.name || user.username || user.email}
+                    <span className="ml-1 text-muted-foreground">
+                      ({user.email})
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {item.kind === "notification" && item.reactionTemplate && (
+            <div className="border-t pt-4">
+              <p className="text-xs font-medium text-muted-foreground">
+                Reaction template
+              </p>
+              <p className="mt-1 text-sm">
+                {item.reactionTemplate.replaceAll("_", " ")} —{" "}
+                {REACTION_TEMPLATES[item.reactionTemplate].join(" / ")}
+              </p>
+            </div>
+          )}
+
+          {poll && (
+            <div className="space-y-3 border-t pt-4">
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+                <DetailValue label="Selection">
+                  {poll.selection === "single"
+                    ? "Single choice"
+                    : "Multiple choice"}
+                </DetailValue>
+                <DetailValue label="Answer required">
+                  {poll.required ? "Yes" : "No"}
+                </DetailValue>
+                <DetailValue label="Other answer">
+                  {poll.allowOther ? "Allowed" : "Not allowed"}
+                </DetailValue>
+                <DetailValue label="Optional notes">
+                  {poll.allowNotes ? "Allowed" : "Not allowed"}
+                </DetailValue>
+              </dl>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Poll options
+                </p>
+                <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">
+                  {poll.options.map((option) => (
+                    <li key={option.id}>{option.label}</li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+          )}
+
+          {input && (
+            <dl className="grid grid-cols-2 gap-4 border-t pt-4">
+              <DetailValue label="Input type">
+                {input.inputType === "short" ? "Short input" : "Long textarea"}
+              </DetailValue>
+              <DetailValue label="Response required">
+                {input.required ? "Yes" : "No"}
+              </DetailValue>
+            </dl>
+          )}
+
+          {(item.linkUrl || item.mediaUrl) && (
+            <dl className="grid gap-4 border-t pt-4 sm:grid-cols-2">
+              {item.linkUrl && (
+                <DetailValue label="Link URL">
+                  <a
+                    href={item.linkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline underline-offset-4"
+                  >
+                    {item.linkUrl}
+                  </a>
+                </DetailValue>
+              )}
+              {item.mediaUrl && (
+                <DetailValue
+                  label={`Media URL${item.mediaType ? ` (${item.mediaType})` : ""}`}
+                >
+                  <a
+                    href={item.mediaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline underline-offset-4"
+                  >
+                    {item.mediaUrl}
+                  </a>
+                </DetailValue>
+              )}
+            </dl>
+          )}
+        </Panel>
+      </section>
+
+      <section className="space-y-2" aria-labelledby="communication-timing">
+        <h3 id="communication-timing" className="font-semibold">
+          Timing
+        </h3>
+        <Panel>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <DetailValue label="Created">
+              <DisplayDate date={item.createdAt} />
+            </DetailValue>
+            <DetailValue label="Updated">
+              <DisplayDate date={item.updatedAt} />
+            </DetailValue>
+            <DetailValue label="Published">
+              <DisplayDate date={item.publishedAt} />
+            </DetailValue>
+            <DetailValue label="Aborted">
+              <DisplayDate date={item.abortedAt} />
+            </DetailValue>
+            <DetailValue label="Available from">
+              <DisplayDate date={item.availableFrom} />
+            </DetailValue>
+            <DetailValue label="Available until">
+              <DisplayDate date={item.availableUntil} />
+            </DetailValue>
+          </dl>
+        </Panel>
+      </section>
+    </>
   );
 };
 
@@ -729,16 +1042,28 @@ export default function BackofficeNotificationsPage() {
           </div>
         ) : details ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-3 gap-2">
-              {Object.entries(details.metrics).map(([label, value]) => <Panel key={label} padding="sm" className="text-center"><strong className="block text-xl">{value}</strong><span className="text-xs capitalize text-muted-foreground">{label}</span></Panel>)}
-            </div>
-            <Panel className="space-y-2">
-              <p className="text-sm"><strong>Created by:</strong> {details.communication.creatorName || "Deleted administrator"}</p>
-              <p className="text-sm"><strong>Audience:</strong> {details.communication.audienceMode}</p>
-              <p className="text-sm"><strong>Published:</strong> <DisplayDate date={details.communication.publishedAt} /></p>
-            </Panel>
-            <section className="space-y-2"><h3 className="font-semibold">Qualified displays</h3>{details.displays.length === 0 ? <p className="text-sm text-muted-foreground">No qualified displays.</p> : details.displays.map((row) => <Panel padding="sm" key={row.id} className="flex justify-between gap-3 text-sm"><span>{row.name || row.username || row.email}<br /><span className="text-xs text-muted-foreground">{row.displayCount} display(s)</span></span><DisplayDate date={row.lastDisplayedAt} /></Panel>)}</section>
-            <section className="space-y-2"><h3 className="font-semibold">Responses</h3>{details.responses.length === 0 ? <p className="text-sm text-muted-foreground">No responses.</p> : details.responses.map((row) => <Panel padding="sm" key={row.id} className="text-sm"><div className="flex justify-between gap-3"><strong>{row.name || row.username || row.email}</strong><DisplayDate date={row.respondedAt} /></div><pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-xs text-muted-foreground">{row.skipped ? "Skipped" : row.reaction || JSON.stringify(row.response, null, 2)}</pre></Panel>)}</section>
+            <CommunicationSummary details={details} />
+            <section className="space-y-2" aria-labelledby="communication-engagement">
+              <h3 id="communication-engagement" className="font-semibold">
+                Engagement
+              </h3>
+              <div className="grid grid-cols-3 gap-2">
+                {Object.entries(details.metrics).map(([label, value]) => (
+                  <Panel
+                    key={label}
+                    padding="sm"
+                    className="text-center"
+                  >
+                    <strong className="block text-xl">{value}</strong>
+                    <span className="text-xs capitalize text-muted-foreground">
+                      {label}
+                    </span>
+                  </Panel>
+                ))}
+              </div>
+            </section>
+            <section className="space-y-2"><h3 className="font-semibold">Qualified displays</h3>{details.displays.length === 0 ? <p className="text-sm text-muted-foreground">No qualified displays.</p> : details.displays.map((row) => <Panel padding="sm" key={row.userId} className="flex justify-between gap-3 text-sm"><span>{row.name || row.username || row.email}<br /><span className="text-xs text-muted-foreground">{row.displayCount} display(s)</span></span><DisplayDate date={row.lastDisplayedAt} /></Panel>)}</section>
+            <section className="space-y-2"><h3 className="font-semibold">Responses</h3>{details.responses.length === 0 ? <p className="text-sm text-muted-foreground">No responses.</p> : details.responses.map((row) => <Panel padding="sm" key={row.userId} className="text-sm"><div className="flex justify-between gap-3"><strong>{row.name || row.username || row.email}</strong><DisplayDate date={row.respondedAt} /></div><pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-xs text-muted-foreground">{row.skipped ? "Skipped" : row.reaction || JSON.stringify(row.response, null, 2)}</pre></Panel>)}</section>
           </div>
         ) : null}
       </Modal>
