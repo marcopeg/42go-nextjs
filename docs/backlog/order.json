@@ -2,8 +2,8 @@
   "version": 1,
   "manualOrder": {
     "draft": [
-      "AAM",
       "AAT",
+      "AAM",
       "ABD",
       "ABE",
       "ABF",
@@ -47,11 +47,14 @@
       "KO29",
       "QW92",
       "TO37",
-      "XC01",
       "XQ11",
-      "YQ19"
+      "YQ19",
+      "LG69",
+      "YS05"
     ],
-    "todo": [],
+    "todo": [
+      "XC01"
+    ],
     "someday": [],
     "planned": []
   }

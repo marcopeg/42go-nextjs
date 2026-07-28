@@ -2,8 +2,8 @@
 
 ## Draft
 
-- [AAM: RBAC Advanced Features [aam]](./tasks/AAM-rbac-advanced-features-aam/AAM.task.md)
 - [AAT: Support i18n](./tasks/AAT-support-i18n/AAT.task.md)
+- [AAM: RBAC Advanced Features [aam]](./tasks/AAM-rbac-advanced-features-aam/AAM.task.md)
 - [ABD: Optimize Database Documentation [abd]](./tasks/ABD-optimize-database-documentation-abd/ABD.task.md)
 - [ABE: Optimize Theming Documentation [abe]](./tasks/ABE-optimize-theming-documentation-abe/ABE.task.md)
 - [ABF: Optimize Route Groups Documentation [abf]](./tasks/ABF-optimize-route-groups-documentation-abf/ABF.task.md)
@@ -47,12 +47,14 @@
 - [KO29: Automate next.config allowedDevOrigins](./tasks/KO29-automate-next-config-alloweddevorigins/KO29.task.md)
 - [QW92: Split AppConfig Into Public and Server-Only Configuration](./tasks/QW92-split-appconfig-into-public-and-server-only-configuration/QW92.task.md)
 - [TO37: Add Social Login: Apple](./tasks/TO37-add-social-login-apple/TO37.task.md)
-- [XC01: Let readers mark a book as read](./tasks/XC01-let-readers-mark-a-book-as-read/XC01.task.md)
 - [XQ11: Choose Runtime-Friendly Remote Image Handling](./tasks/XQ11-choose-runtime-friendly-remote-image-handling/XQ11.task.md)
 - [YQ19: optimization epic](./tasks/YQ19-optimization-epic/YQ19.task.md)
+- [LG69: Move User Administration Under the Backoffice Namespace](./tasks/LG69-move-user-administration-under-the-backoffice-namespace/LG69.task.md)
+- [YS05: Enforce users:edit for User Updates](./tasks/YS05-enforce-users-edit-for-user-updates/YS05.task.md)
 
 ## Todo
 
+- [XC01: Let readers mark a book as read](./tasks/XC01-let-readers-mark-a-book-as-read/XC01.task.md)
 
 ## Someday
 
@@ -63,6 +65,7 @@
 
 ## Refined
 
+- [OE92: Add Multi-App In-App Notifications and Admin Management](./tasks/OE92-add-multi-app-in-app-notifications-and-admin-management/OE92.task.md)
 
 ## Planned
 
