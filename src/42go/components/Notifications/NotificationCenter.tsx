@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -53,13 +59,41 @@ const postAction = async (
   if (!res.ok) throw new Error(result?.message || "Could not update notification.");
 };
 
+const NotificationFooter = ({
+  showHistoryLink,
+  primaryAction,
+  secondaryAction,
+}: {
+  showHistoryLink: boolean;
+  primaryAction: ReactNode;
+  secondaryAction?: ReactNode;
+}) => (
+  <div className="flex min-h-11 items-center gap-2">
+    {showHistoryLink && (
+      <Link
+        href="/notifications"
+        className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
+      >
+        <MessageSquareText className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate">View all notifications</span>
+      </Link>
+    )}
+    <div className="ml-auto flex shrink-0 items-center gap-1">
+      {secondaryAction}
+      {primaryAction}
+    </div>
+  </div>
+);
+
 const PollActions = ({
   config,
   busy,
+  showHistoryLink,
   onSubmit,
 }: {
   config: PollConfig;
   busy: boolean;
+  showHistoryLink: boolean;
   onSubmit: (response: CommunicationResponse) => void;
 }) => {
   const [selected, setSelected] = useState<string[]>([]);
@@ -117,16 +151,25 @@ const PollActions = ({
           )}
         </>
       )}
-      <div className="flex flex-wrap gap-2">
-        <Button disabled={busy} onClick={() => onSubmit({ optionIds: selected, other, notes })}>
-          Submit
-        </Button>
-        {!config.required && (
-          <Button variant="neutralLink" disabled={busy} onClick={() => onSubmit({ skip: true })}>
-            Skip
+      <NotificationFooter
+        showHistoryLink={showHistoryLink}
+        primaryAction={
+          <Button disabled={busy} onClick={() => onSubmit({ optionIds: selected, other, notes })}>
+            Submit
           </Button>
-        )}
-      </div>
+        }
+        secondaryAction={
+          !config.required ? (
+            <Button
+              variant="neutralLink"
+              disabled={busy}
+              onClick={() => onSubmit({ skip: true })}
+            >
+              Skip
+            </Button>
+          ) : undefined
+        }
+      />
     </div>
   );
 };
@@ -134,10 +177,12 @@ const PollActions = ({
 const InputActions = ({
   config,
   busy,
+  showHistoryLink,
   onSubmit,
 }: {
   config: InputConfig;
   busy: boolean;
+  showHistoryLink: boolean;
   onSubmit: (response: CommunicationResponse) => void;
 }) => {
   const [value, setValue] = useState("");
@@ -151,7 +196,14 @@ const InputActions = ({
         placeholder="Your answer"
         onChange={(event) => setValue(event.target.value)}
       />
-      <Button disabled={busy} onClick={() => onSubmit({ input: value })}>Submit</Button>
+      <NotificationFooter
+        showHistoryLink={showHistoryLink}
+        primaryAction={
+          <Button disabled={busy} onClick={() => onSubmit({ input: value })}>
+            Submit
+          </Button>
+        }
+      />
     </div>
   );
 };
@@ -247,6 +299,12 @@ export const NotificationCenter = ({
   }
 
   const { Icon, className: styleClassName } = presentation;
+  const reactions =
+    current.kind === "notification" && current.reactionTemplate
+      ? REACTION_TEMPLATES[current.reactionTemplate]
+      : null;
+  const primaryReaction = reactions?.[0];
+  const secondaryReaction = reactions?.[1];
   return (
     <Panel
       className={cn(
@@ -283,28 +341,48 @@ export const NotificationCenter = ({
             Open link
           </a>
         )}
-        {current.kind === "notification" && current.reactionTemplate && (
-          <div className="flex flex-wrap gap-2">
-            {REACTION_TEMPLATES[current.reactionTemplate].map((reaction) => (
-              <Button key={reaction} disabled={busy} onClick={() => void respond({ reaction })}>
+        {primaryReaction && (
+          <NotificationFooter
+            showHistoryLink={canLinkHistory}
+            primaryAction={
+              <Button
+                disabled={busy}
+                onClick={() => void respond({ reaction: primaryReaction })}
+              >
                 {busy && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                {reaction}
+                {primaryReaction}
               </Button>
-            ))}
-          </div>
+            }
+            secondaryAction={
+              secondaryReaction ? (
+                <Button
+                  variant="neutralLink"
+                  disabled={busy}
+                  onClick={() => void respond({ reaction: secondaryReaction })}
+                >
+                  {secondaryReaction}
+                </Button>
+              ) : undefined
+            }
+          />
         )}
         {current.kind === "poll" && (
-          <PollActions config={current.interactionConfig as PollConfig} busy={busy} onSubmit={(response) => void respond(response)} />
+          <PollActions
+            config={current.interactionConfig as PollConfig}
+            busy={busy}
+            showHistoryLink={canLinkHistory}
+            onSubmit={(response) => void respond(response)}
+          />
         )}
         {current.kind === "input" && (
-          <InputActions config={current.interactionConfig as InputConfig} busy={busy} onSubmit={(response) => void respond(response)} />
+          <InputActions
+            config={current.interactionConfig as InputConfig}
+            busy={busy}
+            showHistoryLink={canLinkHistory}
+            onSubmit={(response) => void respond(response)}
+          />
         )}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-        {canLinkHistory && (
-          <Link href="/notifications" className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground">
-            <MessageSquareText className="h-3.5 w-3.5" /> View all notifications
-          </Link>
-        )}
       </div>
     </Panel>
   );
