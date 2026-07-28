@@ -10,6 +10,7 @@ import {
 import { useQuicklistsData } from "@/lib/quicklists/hooks/useQuicklistsData";
 import { ProjectsList } from "@/lib/quicklists/components/ProjectsList";
 import { useQuicklistPreference } from "@/lib/quicklists/hooks/useQuicklistPreference";
+import { NotificationCenter } from "@/42go/components/Notifications";
 
 export default function ProjectsPage() {
   useQuicklistPreference();
@@ -59,6 +60,7 @@ export default function ProjectsPage() {
     >
       {/* Align list with header on desktop; no horizontal padding on mobile */}
       <div className="max-w-3xl w-full pt-2 pb-24 md:pb-0 px-0">
+        <NotificationCenter className="mx-4 mb-4 md:mx-6" />
         {isLoading && <ProjectListSkeleton />}
 
         {!!error && (

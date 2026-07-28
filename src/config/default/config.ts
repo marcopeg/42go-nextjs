@@ -44,6 +44,8 @@ export default {
     'page:books',
     'page:demo-panel',
     'page:demo-modal',
+    'page:notifications',
+    'api:notifications',
   ],
   theme: {
     default: 'system',
@@ -145,6 +147,10 @@ export default {
     },
   },
   app: {
+    notifications: {
+      showInProfile: true,
+      showHistoryLink: true,
+    },
     // default: {
     //   page: "/quicklists",
     // },

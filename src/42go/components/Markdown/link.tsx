@@ -42,19 +42,25 @@ export function createLink(params?: { className?: string; basePath?: string }) {
   const LinkComponent = React.forwardRef<
     HTMLAnchorElement,
     React.AnchorHTMLAttributes<HTMLAnchorElement>
-  >(({ href, children, ...props }, ref) => (
-    <Link
-      href={getHref(href, params?.basePath)}
-      className={
-        params?.className ||
-        "text-neutral-500 font-extralight hover:text-primary transition-colors"
-      }
-      ref={ref}
-      {...props}
-    >
-      {children}
-    </Link>
-  ));
+  >(({ href, children, ...props }, ref) => {
+    const resolvedHref = getHref(href, params?.basePath);
+    const external = /^https?:\/\//i.test(resolvedHref);
+    return (
+      <Link
+        href={resolvedHref}
+        className={
+          params?.className ||
+          "text-primary underline underline-offset-4 hover:opacity-80 transition-opacity"
+        }
+        ref={ref}
+        {...props}
+        target={external ? "_blank" : props.target}
+        rel={external ? "noopener noreferrer" : props.rel}
+      >
+        {children}
+      </Link>
+    );
+  });
   LinkComponent.displayName = "MarkdownLink";
   return LinkComponent;
 }

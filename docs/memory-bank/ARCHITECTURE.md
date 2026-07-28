@@ -198,6 +198,14 @@ For all routes under the `(app)` route group:
 
 Rationale: This avoids SSR pitfalls (e.g., getaddrinfo on inferred hosts, cookie propagation) and unifies UX for loading states.
 
+### Backoffice Route Namespace
+
+Authenticated management surfaces live under `/backoffice/<feature>` with APIs under `/api/backoffice/<feature>`. The namespace communicates operator intent; it never replaces explicit page/API features, session checks, app scoping, roles, or exact grants. Notification management establishes this convention at `/backoffice/notifications`.
+
+### App Communication Data
+
+Shared app-to-user communication data lives in the quoted PostgreSQL schema `"42go_data"`, separate from app-owned feature schemas. The root communication row separates channel, immutable authoring kind, presentation style, and priority. Audience membership, per-user final state, and append-only qualified displays are normalized with redundant `app_id` and composite same-app foreign keys. See [NOTIFICATIONS.md](../articles/NOTIFICATIONS.md).
+
 ## Theme Management
 
 **Architecture**: `next-themes` with app-specific defaults via AppConfig

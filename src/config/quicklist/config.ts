@@ -16,7 +16,7 @@ export default {
   qr: {
     active: true,
   },
-  features: ['api:waitlist', 'api:quicklists', 'api:profile', 'page:quicklists'],
+  features: ['api:waitlist', 'api:quicklists', 'api:profile', 'api:notifications', 'page:quicklists', 'page:notifications'],
   auth: {
     providers: [
       {
@@ -99,6 +99,10 @@ export default {
     },
   },
   app: {
+    notifications: {
+      showInProfile: true,
+      showHistoryLink: true,
+    },
     default: {
       page: '/quicklists',
     },

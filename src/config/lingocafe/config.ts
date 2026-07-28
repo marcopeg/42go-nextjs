@@ -25,7 +25,7 @@ export default {
       },
     },
   },
-  features: ['page:books', 'page:users', 'api:lingocafe', 'api:events', 'api:profile', 'api:users'],
+  features: ['page:books', 'page:users', 'page:notifications', 'api:lingocafe', 'api:events', 'api:profile', 'api:users', 'api:notifications'],
   theme: {
     default: 'system',
   },
@@ -117,6 +117,10 @@ export default {
     },
   },
   app: {
+    notifications: {
+      showInProfile: true,
+      showHistoryLink: true,
+    },
     default: {
       page: '/books',
     },

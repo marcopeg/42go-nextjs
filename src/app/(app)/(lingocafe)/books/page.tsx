@@ -13,6 +13,7 @@ import { preloadDeviceSpeechVoices } from "@/app/(app)/(lingocafe)/books/_compon
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
 import type { TConsentData } from "@/42go/profile";
 import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
+import { NotificationCenter } from "@/42go/components/Notifications";
 
 type LanguageOption = {
   code: string;
@@ -276,6 +277,7 @@ const BooksPage = () => {
       policy={BOOKS_PAGE_POLICY}
     >
       <div className="min-w-0 max-w-full overflow-x-clip space-y-6">
+        <NotificationCenter />
         {error && !showLoading && (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}

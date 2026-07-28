@@ -42,6 +42,14 @@
 **Implementation**: Dedicated `42go/components/ProfileBlock` renderer with platform blocks and app-specific component blocks.
 **Features**: Account info, RBAC diagnostics, inline logout, top-bar save orchestration, and app-owned custom profile sections such as LingoCafe preferences.
 
+### App Communications and Notifications
+
+**Capability**: App-scoped backoffice authoring and authenticated in-app delivery for notifications, polls, open input, and reserved email communications.
+**Implementation**: Normalized `"42go_data"` tables, shared `NotificationCenter`, `/notifications`, `/backoffice/notifications`, and protected APIs.
+**Features**: Draft/publish/abort lifecycle, whitelist/blacklist targeting, scheduling, reaction templates, qualified display history, responses, reusable placements, and paginated user history.
+**Security**: `page:notifications`/`api:notifications`, server-derived app/user scope, backoffice role, and exact notification grants.
+**Usage guide**: See `docs/articles/NOTIFICATIONS.md`.
+
 ### App Icon System
 
 **Capability**: Per-app favicon, Apple touch icon, manifest icon, maskable icon, and UI title icon resolution

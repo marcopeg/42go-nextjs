@@ -109,6 +109,16 @@ export interface TAppConfigItem {
      * exposes the `api:events` feature.
      */
     events?: TEventsConfig;
+    /**
+     * Shared in-app communication placement behavior.
+     * Availability remains controlled by page/api notification features.
+     */
+    notifications?: {
+      /** Render the shared notification container on Profile. Defaults to true. */
+      showInProfile?: boolean;
+      /** Offer the authenticated notification-history link. Defaults to false. */
+      showHistoryLink?: boolean;
+    };
     menu?: {
       /**
        * Controls where the desktop sidebar collapse button appears.

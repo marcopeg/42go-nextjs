@@ -33,6 +33,7 @@ import { MobileEditPanel } from "@/lib/quicklists/components/MobileEditPanel";
 import { MobileCreatePanel } from "@/lib/quicklists/components/MobileCreatePanel";
 import { MobileListEditPanel } from "@/lib/quicklists/components/MobileListEditPanel";
 import { useIsInstalledPWAInstallTarget } from "@/42go/pwa";
+import { NotificationCenter } from "@/42go/components/Notifications";
 
 export default function ProjectDetailsPage() {
   const params = useParams<{ id: string | string[] }>();
@@ -403,6 +404,7 @@ export default function ProjectDetailsPage() {
     >
       {/* Align list with header on desktop; no horizontal padding on mobile */}
       <div className="max-w-3xl w-full pt-2 pb-24 md:pb-0 px-0">
+        <NotificationCenter className="mx-4 mb-4 md:mx-6" />
         {isLoading && <ProjectDetailsSkeleton />}
         {!!error && (
           <ProjectDetailsErrorState

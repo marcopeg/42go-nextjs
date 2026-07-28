@@ -14,6 +14,7 @@ import {
   type TProfileSaveSummary,
 } from "@/42go/components/ProfileBlock";
 import { cn } from "@/lib/utils";
+import { NotificationCenter } from "@/42go/components/Notifications";
 
 const PROFILE_PAGE_POLICY: Policy = {
   require: { session: true },
@@ -268,6 +269,10 @@ export default function ProfilePage() {
         },
       ]}
     >
+      {config?.features.includes("api:notifications") &&
+        config.app?.notifications?.showInProfile !== false && (
+          <NotificationCenter className="mb-6" />
+        )}
       <ProfilePageRenderer
         ref={rendererRef}
         profile={config?.app?.profile}
