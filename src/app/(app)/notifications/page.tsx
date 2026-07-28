@@ -54,7 +54,6 @@ export default function NotificationsPage() {
 
   const handleQueueLoaded = useCallback((count: number) => {
     setActiveCount(count);
-    if (count === 0) setHistoryOpen(true);
   }, []);
 
   return (
@@ -69,7 +68,11 @@ export default function NotificationsPage() {
           <h2 id="active-notifications-title" className="text-lg font-semibold">
             Active
           </h2>
-          <NotificationCenter onQueueLoaded={handleQueueLoaded} />
+          <NotificationCenter
+            displayMode="list"
+            showHistoryLink={false}
+            onQueueLoaded={handleQueueLoaded}
+          />
           {activeCount === 0 && (
             <Panel><p className="text-sm text-muted-foreground">You have no notifications waiting.</p></Panel>
           )}

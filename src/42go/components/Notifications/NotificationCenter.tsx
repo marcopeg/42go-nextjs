@@ -5,7 +5,6 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
-  useMemo,
   useState,
 } from "react";
 import {
@@ -32,14 +31,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useQualifiedDisplay } from "./useQualifiedDisplay";
-import {
-  advanceCommunicationQueue,
-  getCommunicationQueuePosition,
-} from "./queue";
+import { getCommunicationQueuePosition } from "./queue";
 
 const styleMap = {
   info: { Icon: Info, className: "border-primary/40 bg-primary/5 text-foreground" },
-  warning: { Icon: AlertTriangle, className: "border-border bg-muted text-foreground" },
+  warning: {
+    Icon: AlertTriangle,
+    className:
+      "border-amber-400/60 bg-amber-50 text-amber-950 dark:border-amber-500/50 dark:bg-amber-950/35 dark:text-amber-100",
+  },
   danger: { Icon: CircleAlert, className: "border-destructive/40 bg-destructive/10 text-destructive-foreground" },
   success: { Icon: CheckCircle2, className: "border-primary/40 bg-accent text-accent-foreground" },
 };
@@ -88,11 +88,13 @@ const NotificationFooter = ({
 const PollActions = ({
   config,
   busy,
+  groupName,
   showHistoryLink,
   onSubmit,
 }: {
   config: PollConfig;
   busy: boolean;
+  groupName: string;
   showHistoryLink: boolean;
   onSubmit: (response: CommunicationResponse) => void;
 }) => {
@@ -117,7 +119,7 @@ const PollActions = ({
           <label key={option.id} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border bg-background px-3 py-2">
             <input
               type={config.selection === "single" ? "radio" : "checkbox"}
-              name="notification-poll"
+              name={groupName}
               checked={selected.includes(option.id)}
               onChange={() => {
                 toggle(option.id);
@@ -208,72 +210,38 @@ const InputActions = ({
   );
 };
 
-export const NotificationCenter = ({
+const NotificationItem = ({
+  item,
   className,
-  onQueueLoaded,
+  position,
+  showHistoryLink,
+  onHandled,
 }: {
+  item: Communication;
   className?: string;
-  onQueueLoaded?: (count: number) => void;
+  position?: { current: number; total: number };
+  showHistoryLink: boolean;
+  onHandled: (id: string) => void;
 }) => {
-  const config = useAppConfig();
-  const [items, setItems] = useState<Communication[]>([]);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState("");
-  const [handled, setHandled] = useState(0);
-  const current = items[0];
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch("/api/notifications", {
-      credentials: "same-origin",
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Could not load notifications.");
-        return res.json() as Promise<{ items?: Communication[] }>;
-      })
-      .then((payload) => {
-        const queue = Array.isArray(payload.items) ? payload.items : [];
-        setItems(queue);
-      })
-      .catch((fetchError) => {
-        if ((fetchError as Error).name !== "AbortError") setError((fetchError as Error).message);
-      })
-      .finally(() => setLoading(false));
-    return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
-    if (!loading) onQueueLoaded?.(items.length);
-  }, [items.length, loading, onQueueLoaded]);
 
   const recordDisplay = useCallback(
     (visitId: string) => {
-      if (!current) return;
-      void postAction(current.id, "display", { visitId });
+      void postAction(item.id, "display", { visitId });
     },
-    [current]
+    [item.id]
   );
-  const rootRef = useQualifiedDisplay(current?.id, recordDisplay);
-  const position = getCommunicationQueuePosition(handled, items.length);
-  const canLinkHistory = Boolean(
-    config?.app?.notifications?.showHistoryLink &&
-      config.features.includes("page:notifications")
-  );
-  const presentation = useMemo(
-    () => (current ? styleMap[current.style] : styleMap.info),
-    [current]
-  );
+  const rootRef = useQualifiedDisplay(item.id, recordDisplay);
+  const presentation = styleMap[item.style];
 
   const respond = async (response: CommunicationResponse) => {
-    if (!current || busy) return;
+    if (busy) return;
     setBusy(true);
     setError("");
     try {
-      await postAction(current.id, "respond", { response });
+      await postAction(item.id, "respond", { response });
       setLeaving(true);
       const transitionMs = window.matchMedia(
         "(prefers-reduced-motion: reduce)"
@@ -283,25 +251,19 @@ export const NotificationCenter = ({
       await new Promise<void>((resolve) =>
         window.setTimeout(resolve, transitionMs)
       );
-      setItems(advanceCommunicationQueue);
-      setHandled((count) => count + 1);
-      setLeaving(false);
+      onHandled(item.id);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Could not submit response.");
+      setLeaving(false);
     } finally {
       setBusy(false);
     }
   };
 
-  if (loading || (!current && !error)) return null;
-  if (!current) {
-    return <p role="alert" className={cn("text-sm text-destructive", className)}>{error}</p>;
-  }
-
   const { Icon, className: styleClassName } = presentation;
   const reactions =
-    current.kind === "notification" && current.reactionTemplate
-      ? REACTION_TEMPLATES[current.reactionTemplate]
+    item.kind === "notification" && item.reactionTemplate
+      ? REACTION_TEMPLATES[item.reactionTemplate]
       : null;
   const primaryReaction = reactions?.[0];
   const secondaryReaction = reactions?.[1];
@@ -318,32 +280,50 @@ export const NotificationCenter = ({
         <div className="flex items-start gap-3">
           <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            {current.title && <h2 className="font-semibold leading-tight">{current.title}</h2>}
-            {position.total > 1 && (
+            {item.title && (
+              <h2 className="font-semibold leading-tight">{item.title}</h2>
+            )}
+            {position && position.total > 1 && (
               <span className="absolute right-4 top-4 text-xs font-medium text-muted-foreground">
                 {position.current} of {position.total}
               </span>
             )}
-            {current.bodyMarkdown && (
-              <div className="mt-2 text-sm leading-relaxed"><Markdown source={current.bodyMarkdown} /></div>
+            {item.bodyMarkdown && (
+              <div className="mt-2 text-sm leading-relaxed">
+                <Markdown source={item.bodyMarkdown} />
+              </div>
             )}
           </div>
         </div>
-        {current.mediaUrl && current.mediaType === "image" && (
+        {item.mediaUrl && item.mediaType === "image" && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={current.mediaUrl} alt="" className="max-h-80 w-full rounded-md object-cover" />
+          <img
+            src={item.mediaUrl}
+            alt=""
+            className="max-h-80 w-full rounded-md object-cover"
+          />
         )}
-        {current.mediaUrl && current.mediaType === "video" && (
-          <video src={current.mediaUrl} controls preload="metadata" className="max-h-80 w-full rounded-md" />
+        {item.mediaUrl && item.mediaType === "video" && (
+          <video
+            src={item.mediaUrl}
+            controls
+            preload="metadata"
+            className="max-h-80 w-full rounded-md"
+          />
         )}
-        {current.linkUrl && (
-          <a href={current.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4">
+        {item.linkUrl && (
+          <a
+            href={item.linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
+          >
             Open link
           </a>
         )}
         {primaryReaction && (
           <NotificationFooter
-            showHistoryLink={canLinkHistory}
+            showHistoryLink={showHistoryLink}
             primaryAction={
               <Button
                 disabled={busy}
@@ -366,24 +346,120 @@ export const NotificationCenter = ({
             }
           />
         )}
-        {current.kind === "poll" && (
+        {item.kind === "poll" && (
           <PollActions
-            config={current.interactionConfig as PollConfig}
+            config={item.interactionConfig as PollConfig}
             busy={busy}
-            showHistoryLink={canLinkHistory}
+            groupName={`notification-poll-${item.id}`}
+            showHistoryLink={showHistoryLink}
             onSubmit={(response) => void respond(response)}
           />
         )}
-        {current.kind === "input" && (
+        {item.kind === "input" && (
           <InputActions
-            config={current.interactionConfig as InputConfig}
+            config={item.interactionConfig as InputConfig}
             busy={busy}
-            showHistoryLink={canLinkHistory}
+            showHistoryLink={showHistoryLink}
             onSubmit={(response) => void respond(response)}
           />
         )}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       </div>
     </Panel>
+  );
+};
+
+export const NotificationCenter = ({
+  className,
+  displayMode = "queue",
+  showHistoryLink,
+  onQueueLoaded,
+}: {
+  className?: string;
+  displayMode?: "queue" | "list";
+  showHistoryLink?: boolean;
+  onQueueLoaded?: (count: number) => void;
+}) => {
+  const config = useAppConfig();
+  const [items, setItems] = useState<Communication[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [handled, setHandled] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/notifications", {
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Could not load notifications.");
+        return res.json() as Promise<{ items?: Communication[] }>;
+      })
+      .then((payload) => {
+        const queue = Array.isArray(payload.items) ? payload.items : [];
+        setItems(queue);
+      })
+      .catch((fetchError) => {
+        if ((fetchError as Error).name !== "AbortError") {
+          setError((fetchError as Error).message);
+        }
+      })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!loading) onQueueLoaded?.(items.length);
+  }, [items.length, loading, onQueueLoaded]);
+
+  const handleItem = useCallback(
+    (id: string) => {
+      setItems((current) => current.filter((item) => item.id !== id));
+      if (displayMode === "queue") setHandled((count) => count + 1);
+    },
+    [displayMode]
+  );
+
+  if (loading || (items.length === 0 && !error)) return null;
+  if (items.length === 0) {
+    return (
+      <p role="alert" className={cn("text-sm text-destructive", className)}>
+        {error}
+      </p>
+    );
+  }
+
+  const canLinkHistory =
+    showHistoryLink ??
+    Boolean(
+      config?.app?.notifications?.showHistoryLink &&
+        config.features.includes("page:notifications")
+    );
+
+  if (displayMode === "list") {
+    return (
+      <div className={cn("space-y-3", className)}>
+        {items.map((item) => (
+          <NotificationItem
+            key={item.id}
+            item={item}
+            showHistoryLink={canLinkHistory}
+            onHandled={handleItem}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <NotificationItem
+      item={items[0]}
+      className={className}
+      position={getCommunicationQueuePosition(handled, items.length)}
+      showHistoryLink={canLinkHistory}
+      onHandled={handleItem}
+    />
   );
 };

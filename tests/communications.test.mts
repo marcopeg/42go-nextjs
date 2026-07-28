@@ -334,4 +334,38 @@ describe("notification container behavior", () => {
     assert.equal(MIN_INTERSECTION_RATIO, 0.5);
     assert.equal(QUALIFIED_DISPLAY_MS, 10_000);
   });
+
+  it("keeps the full notifications page stacked and history lazy", async () => {
+    const [center, page, admin] = await Promise.all([
+      readFile(
+        new URL(
+          "../src/42go/components/Notifications/NotificationCenter.tsx",
+          import.meta.url
+        ),
+        "utf8"
+      ),
+      readFile(
+        new URL("../src/app/(app)/notifications/page.tsx", import.meta.url),
+        "utf8"
+      ),
+      readFile(
+        new URL(
+          "../src/app/(app)/backoffice/notifications/page.tsx",
+          import.meta.url
+        ),
+        "utf8"
+      ),
+    ]);
+
+    assert.match(center, /displayMode === "list"/);
+    assert.match(center, /border-amber-400/);
+    assert.match(page, /displayMode="list"/);
+    assert.doesNotMatch(page, /setHistoryOpen\(true\)/);
+    assert.equal(
+      admin.includes('placeholder={`Option ${index + 1}`}'),
+      true
+    );
+    assert.match(admin, /<Switch/);
+    assert.match(admin, /Add description/);
+  });
 });

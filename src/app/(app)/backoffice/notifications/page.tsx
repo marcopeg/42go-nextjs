@@ -36,6 +36,7 @@ import {
 import { AppLayout } from "@/42go/layouts/app";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 type AudienceUser = {
@@ -303,6 +304,9 @@ const DraftEditor = ({
 }) => {
   const poll = draft.interactionConfig as PollConfig;
   const input = draft.interactionConfig as InputConfig;
+  const [showPollDescription, setShowPollDescription] = useState(
+    draft.kind === "poll" && Boolean(draft.bodyMarkdown)
+  );
   return (
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -330,9 +334,53 @@ const DraftEditor = ({
       ) : (
         <Field label="Title"><Input maxLength={160} value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} /></Field>
       )}
-      <Field label={draft.kind === "email" ? "Email body (Markdown)" : "Message (Markdown)"}>
-        <Textarea rows={7} maxLength={20000} value={draft.bodyMarkdown} onChange={(event) => setDraft((current) => ({ ...current, bodyMarkdown: event.target.value }))} />
-      </Field>
+      {draft.kind === "poll" ? (
+        showPollDescription ? (
+          <Field label="Description (Markdown)">
+            <Textarea
+              rows={4}
+              maxLength={20000}
+              value={draft.bodyMarkdown}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  bodyMarkdown: event.target.value,
+                }))
+              }
+            />
+          </Field>
+        ) : (
+          <div>
+            <Button
+              type="button"
+              variant="neutralLink"
+              size="sm"
+              onClick={() => setShowPollDescription(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Add description
+            </Button>
+          </div>
+        )
+      ) : (
+        <Field
+          label={
+            draft.kind === "email" ? "Email body (Markdown)" : "Message (Markdown)"
+          }
+        >
+          <Textarea
+            rows={7}
+            maxLength={20000}
+            value={draft.bodyMarkdown}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                bodyMarkdown: event.target.value,
+              }))
+            }
+          />
+        </Field>
+      )}
       {draft.kind === "notification" && (
         <Field label="Reaction template">
           <select className="h-11 rounded-md border bg-background px-3" value={draft.reactionTemplate || "acknowledge"} onChange={(event) => setDraft((current) => ({ ...current, reactionTemplate: event.target.value as ReactionTemplate }))}>
@@ -352,6 +400,7 @@ const DraftEditor = ({
               <Input
                 maxLength={200}
                 aria-label={`Poll option ${index + 1}`}
+                placeholder={`Option ${index + 1}`}
                 value={option.label}
                 onChange={(event) => setDraft((current) => ({
                   ...current,
@@ -367,14 +416,41 @@ const DraftEditor = ({
             ["allowOther", "Allow Other short answer"],
             ["allowNotes", "Allow optional notes"],
           ].map(([key, label]) => (
-            <label key={key} className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={Boolean(poll[key as keyof PollConfig])} onChange={(event) => setDraft((current) => ({ ...current, interactionConfig: { ...poll, [key]: event.target.checked } }))} />{label}</label>
+            <label
+              key={key}
+              className="flex min-h-11 items-center justify-between gap-4 text-sm"
+            >
+              <span>{label}</span>
+              <Switch
+                checked={Boolean(poll[key as keyof PollConfig])}
+                onCheckedChange={(checked) =>
+                  setDraft((current) => ({
+                    ...current,
+                    interactionConfig: { ...poll, [key]: checked },
+                  }))
+                }
+                aria-label={label}
+              />
+            </label>
           ))}
         </div>
       )}
       {draft.kind === "input" && (
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Input type"><select className="h-11 rounded-md border bg-background px-3" value={input.inputType} onChange={(event) => setDraft((current) => ({ ...current, interactionConfig: { ...input, inputType: event.target.value } }))}><option value="short">Short input</option><option value="long">Long textarea</option></select></Field>
-          <label className="flex min-h-11 items-center gap-3 self-end text-sm"><input type="checkbox" checked={input.required} onChange={(event) => setDraft((current) => ({ ...current, interactionConfig: { ...input, required: event.target.checked } }))} />Response required</label>
+          <label className="flex min-h-11 items-center justify-between gap-4 self-end text-sm">
+            <span>Response required</span>
+            <Switch
+              checked={input.required}
+              onCheckedChange={(checked) =>
+                setDraft((current) => ({
+                  ...current,
+                  interactionConfig: { ...input, required: checked },
+                }))
+              }
+              aria-label="Response required"
+            />
+          </label>
         </div>
       )}
       {draft.kind !== "email" && (
@@ -590,17 +666,67 @@ export default function BackofficeNotificationsPage() {
         title={editorTitle}
         subtitle={current?.publishedAt ? "Published communications are locked." : "Drafts stay private until published."}
         footer={
-          <div className="flex w-full flex-wrap justify-end gap-2">
-            {details && <Button variant="destructive" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>}
-            {draft && <Button disabled={saving} onClick={() => void save()}>{saving && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}Save draft</Button>}
-            {details && !details.communication.publishedAt && <Button disabled={saving} variant="outline" onClick={() => void transition("publish")}><Send className="mr-2 h-4 w-4" />Publish</Button>}
-            {details && details.communication.publishedAt && !details.communication.abortedAt && <Button disabled={saving} variant="outline" onClick={() => void transition("abort")}><Ban className="mr-2 h-4 w-4" />Abort</Button>}
-          </div>
+          !draft && details ? (
+            <div className="flex w-full flex-wrap justify-end gap-2">
+              <Button
+                variant="destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+              {details.communication.publishedAt &&
+                !details.communication.abortedAt && (
+                  <Button
+                    disabled={saving}
+                    variant="outline"
+                    onClick={() => void transition("abort")}
+                  >
+                    <Ban className="mr-2 h-4 w-4" />
+                    Abort
+                  </Button>
+                )}
+            </div>
+          ) : undefined
         }
       >
         {error && <p role="alert" className="mb-4 text-sm text-destructive">{error}</p>}
         {draft ? (
-          <DraftEditor draft={draft} setDraft={updateDraft} selectedUsers={selectedUsers} setSelectedUsers={setSelectedUsers} />
+          <div>
+            <DraftEditor
+              draft={draft}
+              setDraft={updateDraft}
+              selectedUsers={selectedUsers}
+              setSelectedUsers={setSelectedUsers}
+            />
+            <div className="mt-8 flex flex-wrap justify-end gap-2 border-t pt-5">
+              {details && (
+                <Button
+                  variant="destructiveGhost"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              )}
+              <Button disabled={saving} onClick={() => void save()}>
+                {saving && (
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Save draft
+              </Button>
+              {details && !details.communication.publishedAt && (
+                <Button
+                  disabled={saving}
+                  variant="outline"
+                  onClick={() => void transition("publish")}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  Publish
+                </Button>
+              )}
+            </div>
+          </div>
         ) : details ? (
           <div className="space-y-6">
             <div className="grid grid-cols-3 gap-2">
