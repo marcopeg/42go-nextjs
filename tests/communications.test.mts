@@ -379,6 +379,10 @@ describe("notification container behavior", () => {
     ]);
 
     assert.match(center, /displayMode === "list"/);
+    assert.match(center, /key=\{items\[0\]\.id\}/);
+    assert.match(center, /grid-rows-\[0fr\]/);
+    assert.match(center, /requestAnimationFrame/);
+    assert.match(center, /: 200;/);
     assert.match(styles, /border-amber-400/);
     assert.match(page, /displayMode="list"/);
     assert.doesNotMatch(page, /setHistoryOpen\(true\)/);

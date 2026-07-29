@@ -210,8 +210,14 @@ const NotificationItem = ({
   onHandled: (id: string) => void;
 }) => {
   const [busy, setBusy] = useState(false);
+  const [entering, setEntering] = useState(true);
   const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setEntering(false));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   const recordDisplay = useCallback(
     (visitId: string) => {
@@ -233,7 +239,7 @@ const NotificationItem = ({
         "(prefers-reduced-motion: reduce)"
       ).matches
         ? 0
-        : 180;
+        : 200;
       await new Promise<void>((resolve) =>
         window.setTimeout(resolve, transitionMs)
       );
@@ -254,104 +260,110 @@ const NotificationItem = ({
   const primaryReaction = reactions?.[0];
   const secondaryReaction = reactions?.[1];
   return (
-    <Panel
+    <div
       className={cn(
-        "relative overflow-hidden transition-[opacity,transform,max-height] motion-reduce:transition-none",
-        leaving && "translate-y-1 opacity-0",
-        styleClassName,
+        "grid transition-[grid-template-rows,opacity,transform] duration-200 ease-out motion-reduce:transition-none",
+        entering && "translate-y-1 opacity-0",
+        leaving
+          ? "-translate-y-1 grid-rows-[0fr] opacity-0 ease-in"
+          : "grid-rows-[1fr]",
         className
       )}
     >
-      <div ref={rootRef} className="space-y-4">
-        <div className="flex items-start gap-3">
-          <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-          <div className="min-w-0 flex-1">
-            {item.title && (
-              <h2 className="font-semibold leading-tight">{item.title}</h2>
-            )}
-            {position && position.total > 1 && (
-              <span className="absolute right-4 top-4 text-xs font-medium text-muted-foreground">
-                {position.current} of {position.total}
-              </span>
-            )}
-            {item.bodyMarkdown && (
-              <div className="mt-2 text-sm leading-relaxed">
-                <Markdown source={item.bodyMarkdown} />
+      <div className="min-h-0 overflow-hidden">
+        <Panel className={cn("relative overflow-hidden", styleClassName)}>
+          <div ref={rootRef} className="space-y-4">
+            <div className="flex items-start gap-3">
+              <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                {item.title && (
+                  <h2 className="font-semibold leading-tight">{item.title}</h2>
+                )}
+                {position && position.total > 1 && (
+                  <span className="absolute right-4 top-4 text-xs font-medium text-muted-foreground">
+                    {position.current} of {position.total}
+                  </span>
+                )}
+                {item.bodyMarkdown && (
+                  <div className="mt-2 text-sm leading-relaxed">
+                    <Markdown source={item.bodyMarkdown} />
+                  </div>
+                )}
               </div>
+            </div>
+            {item.mediaUrl && item.mediaType === "image" && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={item.mediaUrl}
+                alt=""
+                className="max-h-80 w-full rounded-md object-cover"
+              />
             )}
-          </div>
-        </div>
-        {item.mediaUrl && item.mediaType === "image" && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.mediaUrl}
-            alt=""
-            className="max-h-80 w-full rounded-md object-cover"
-          />
-        )}
-        {item.mediaUrl && item.mediaType === "video" && (
-          <video
-            src={item.mediaUrl}
-            controls
-            preload="metadata"
-            className="max-h-80 w-full rounded-md"
-          />
-        )}
-        {item.linkUrl && (
-          <a
-            href={item.linkUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
-          >
-            Open link
-          </a>
-        )}
-        {primaryReaction && (
-          <NotificationFooter
-            showHistoryLink={showHistoryLink}
-            primaryAction={
-              <Button
-                disabled={busy}
-                onClick={() => void respond({ reaction: primaryReaction })}
+            {item.mediaUrl && item.mediaType === "video" && (
+              <video
+                src={item.mediaUrl}
+                controls
+                preload="metadata"
+                className="max-h-80 w-full rounded-md"
+              />
+            )}
+            {item.linkUrl && (
+              <a
+                href={item.linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
               >
-                {busy && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                {primaryReaction}
-              </Button>
-            }
-            secondaryAction={
-              secondaryReaction ? (
-                <Button
-                  variant="neutralLink"
-                  disabled={busy}
-                  onClick={() => void respond({ reaction: secondaryReaction })}
-                >
-                  {secondaryReaction}
-                </Button>
-              ) : undefined
-            }
-          />
-        )}
-        {item.kind === "poll" && (
-          <PollActions
-            config={item.interactionConfig as PollConfig}
-            busy={busy}
-            groupName={`notification-poll-${item.id}`}
-            showHistoryLink={showHistoryLink}
-            onSubmit={(response) => void respond(response)}
-          />
-        )}
-        {item.kind === "input" && (
-          <InputActions
-            config={item.interactionConfig as InputConfig}
-            busy={busy}
-            showHistoryLink={showHistoryLink}
-            onSubmit={(response) => void respond(response)}
-          />
-        )}
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+                Open link
+              </a>
+            )}
+            {primaryReaction && (
+              <NotificationFooter
+                showHistoryLink={showHistoryLink}
+                primaryAction={
+                  <Button
+                    disabled={busy}
+                    onClick={() => void respond({ reaction: primaryReaction })}
+                  >
+                    {busy && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                    {primaryReaction}
+                  </Button>
+                }
+                secondaryAction={
+                  secondaryReaction ? (
+                    <Button
+                      variant="neutralLink"
+                      disabled={busy}
+                      onClick={() => void respond({ reaction: secondaryReaction })}
+                    >
+                      {secondaryReaction}
+                    </Button>
+                  ) : undefined
+                }
+              />
+            )}
+            {item.kind === "poll" && (
+              <PollActions
+                config={item.interactionConfig as PollConfig}
+                busy={busy}
+                groupName={`notification-poll-${item.id}`}
+                showHistoryLink={showHistoryLink}
+                onSubmit={(response) => void respond(response)}
+              />
+            )}
+            {item.kind === "input" && (
+              <InputActions
+                config={item.interactionConfig as InputConfig}
+                busy={busy}
+                showHistoryLink={showHistoryLink}
+                onSubmit={(response) => void respond(response)}
+              />
+            )}
+            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+          </div>
+        </Panel>
       </div>
-    </Panel>
+    </div>
   );
 };
 
@@ -441,6 +453,7 @@ export const NotificationCenter = ({
 
   return (
     <NotificationItem
+      key={items[0].id}
       item={items[0]}
       className={className}
       position={getCommunicationQueuePosition(handled, items.length)}
