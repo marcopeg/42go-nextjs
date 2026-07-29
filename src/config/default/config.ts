@@ -200,7 +200,7 @@ export default {
           },
           {
             title: 'Users',
-            href: '/users',
+            href: '/backoffice/users',
             icon: Users,
             policy: {
               require: { role: 'backoffice' },
@@ -283,7 +283,7 @@ export default {
           },
           {
             title: 'Users',
-            href: '/users',
+            href: '/backoffice/users',
             icon: Users,
             policy: {
               require: { role: 'backoffice' },

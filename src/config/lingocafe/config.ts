@@ -211,7 +211,7 @@ export default {
         items: [
           {
             title: 'Users',
-            href: '/users',
+            href: '/backoffice/users',
             icon: Users,
             policy: {
               require: { role: 'backoffice' },

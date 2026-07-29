@@ -50,6 +50,12 @@
 **Security**: `page:notifications`/`api:notifications`, server-derived app/user scope, backoffice role, and exact notification grants.
 **Usage guide**: See `docs/articles/NOTIFICATIONS.md`.
 
+### Backoffice User Administration
+
+**Capability**: App-scoped operators can list, inspect, edit, and erase user accounts from the canonical backoffice namespace.
+**Implementation**: Client-only `/backoffice/users` page with browser-side requests to `/api/backoffice/users`.
+**Security**: `page:users`/`api:users`, authenticated session, current-app scope, `backoffice` role, and exact user-management grants remain explicit; the route prefix grants no access by itself.
+
 ### App Icon System
 
 **Capability**: Per-app favicon, Apple touch icon, manifest icon, maskable icon, and UI title icon resolution

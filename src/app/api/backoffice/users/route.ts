@@ -343,7 +343,7 @@ const deleteUser = async (req: Request) => {
       );
     }
 
-    console.error("[users] account erasure failed", error);
+    console.error("[backoffice/users] account erasure failed", error);
     return Response.json(
       {
         error: "account_erasure_failed",

@@ -321,7 +321,7 @@ const CopyableValue = ({
 );
 
 const fetchUsersData = async (signal?: AbortSignal) => {
-  const res = await fetch('/api/users', {
+  const res = await fetch('/api/backoffice/users', {
     credentials: 'same-origin',
     signal,
   });
@@ -338,7 +338,7 @@ const fetchUsersData = async (signal?: AbortSignal) => {
 };
 
 const updateUserData = async (userId: string, action: UserAction) => {
-  const res = await fetch('/api/users', {
+  const res = await fetch('/api/backoffice/users', {
     method: 'PATCH',
     credentials: 'same-origin',
     headers: {
@@ -357,7 +357,7 @@ const updateUserData = async (userId: string, action: UserAction) => {
 };
 
 const saveUserData = async (userId: string, fields: UserEditFields) => {
-  const res = await fetch('/api/users', {
+  const res = await fetch('/api/backoffice/users', {
     method: 'PATCH',
     credentials: 'same-origin',
     headers: {
@@ -388,7 +388,7 @@ const saveUserData = async (userId: string, fields: UserEditFields) => {
 };
 
 const deleteUserData = async (user: AppUser, confirmationEmail: string) => {
-  const res = await fetch('/api/users', {
+  const res = await fetch('/api/backoffice/users', {
     method: 'DELETE',
     credentials: 'same-origin',
     headers: {

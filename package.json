@@ -17,6 +17,7 @@
     "test:lingocafe-translation-language": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-translation-language.test.mts",
     "test:pwa-install-targets": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/pwa-install-targets.test.mts",
     "test:communications": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/communications.test.mts",
+    "test:backoffice-users-routes": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/backoffice-users-routes.test.mts",
     "qa": "eslint . && npm run build"
   },
   "dependencies": {
