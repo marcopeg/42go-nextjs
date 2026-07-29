@@ -14,7 +14,6 @@ import {
   LockKeyhole,
   Mail,
   MessageSquareText,
-  MoreHorizontal,
   Plus,
   Send,
   Trash2,
@@ -23,6 +22,7 @@ import {
 
 import { DisplayDate } from "@/42go/components/DisplayDate";
 import Markdown from "@/42go/components/Markdown";
+import { communicationStyleMap } from "@/42go/components/Notifications";
 import { Modal } from "@/42go/components/modal";
 import { Panel } from "@/42go/components/panel";
 import {
@@ -47,6 +47,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 type AudienceUser = {
   id: string;
@@ -928,7 +929,6 @@ export default function BackofficeNotificationsPage() {
   return (
     <AppLayout
       title="Notifications"
-      subtitle="Communicate with users in this app"
       icon={Bell}
       actions={[{ type: "component", component: NewAction }]}
       policy={{ require: { feature: "page:notifications", session: true, role: "backoffice", grants: ["notifications:list"] } }}
@@ -937,36 +937,44 @@ export default function BackofficeNotificationsPage() {
         {error && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
         {loading && <LoaderCircle className="mx-auto h-6 w-6 animate-spin" aria-label="Loading notifications" />}
         {!loading && items.length === 0 && <Panel><p className="text-sm text-muted-foreground">No communications yet. Create one. Chuck Norris already approved the empty state.</p></Panel>}
-        {items.map((item) => {
-          const kind = kindMeta[item.kind];
-          const status = getStatus(item);
-          const AudienceIcon = item.audienceMode === "everyone" ? Users : LockKeyhole;
-          return (
-            <button type="button" key={item.id} className="block w-full text-left" onClick={() => void openDetails(item)}>
-              <Panel className="flex items-start gap-3 transition-colors hover:bg-accent/50">
-                <kind.Icon className="mt-0.5 h-5 w-5 shrink-0" aria-label={kind.label} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+        {items.length > 0 && (
+          <div className="-mx-6 divide-y border-y md:mx-0 md:space-y-3 md:divide-y-0 md:border-y-0">
+            {items.map((item) => {
+              const kind = kindMeta[item.kind];
+              const status = getStatus(item);
+              const AudienceIcon = item.audienceMode === "everyone" ? Users : LockKeyhole;
+              return (
+                <div key={item.id}>
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex w-full items-start gap-3 px-6 py-3 text-left outline-none transition-[filter,box-shadow] hover:brightness-[0.98] focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:brightness-110 md:rounded-lg md:border md:px-5 md:py-4",
+                      communicationStyleMap[item.style].className
+                    )}
+                    onClick={() => void openDetails(item)}
+                  >
+                    <kind.Icon className="mt-0.5 h-5 w-5 shrink-0" aria-label={kind.label} />
+                    <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">{item.title || item.subject || kind.label}</p>
                       <p className="line-clamp-1 text-sm text-muted-foreground">{item.bodyMarkdown || "No message body"}</p>
+                      <div className="mt-2 flex min-w-0 items-center justify-between gap-3 text-xs text-muted-foreground">
+                        <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                          <span className="inline-flex items-center gap-1"><status.Icon className="h-3.5 w-3.5" />{status.label}</span>
+                          <span className="inline-flex items-center gap-1"><AudienceIcon className="h-3.5 w-3.5" />{item.audienceMode === "everyone" ? "Public" : "Restricted"}</span>
+                        </span>
+                        <DisplayDate
+                          date={statusDate(item)}
+                          className="shrink-0 text-xs text-muted-foreground"
+                          interactive={false}
+                        />
+                      </div>
                     </div>
-                    <DisplayDate
-                      date={statusDate(item)}
-                      className="shrink-0 text-xs text-muted-foreground"
-                      interactive={false}
-                    />
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1"><status.Icon className="h-3.5 w-3.5" />{status.label}</span>
-                    <span className="inline-flex items-center gap-1"><AudienceIcon className="h-3.5 w-3.5" />{item.audienceMode === "everyone" ? "Public" : "Restricted"}</span>
-                  </div>
+                  </button>
                 </div>
-                <MoreHorizontal className="h-5 w-5 shrink-0 text-muted-foreground" />
-              </Panel>
-            </button>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <Modal

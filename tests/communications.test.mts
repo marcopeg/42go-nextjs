@@ -336,7 +336,7 @@ describe("notification container behavior", () => {
   });
 
   it("keeps the full notifications page stacked and history lazy", async () => {
-    const [center, page, admin] = await Promise.all([
+    const [center, page, admin, styles] = await Promise.all([
       readFile(
         new URL(
           "../src/42go/components/Notifications/NotificationCenter.tsx",
@@ -355,10 +355,17 @@ describe("notification container behavior", () => {
         ),
         "utf8"
       ),
+      readFile(
+        new URL(
+          "../src/42go/components/Notifications/style.ts",
+          import.meta.url
+        ),
+        "utf8"
+      ),
     ]);
 
     assert.match(center, /displayMode === "list"/);
-    assert.match(center, /border-amber-400/);
+    assert.match(styles, /border-amber-400/);
     assert.match(page, /displayMode="list"/);
     assert.doesNotMatch(page, /setHistoryOpen\(true\)/);
     assert.match(page, /You&apos;re all set!/);
@@ -373,5 +380,8 @@ describe("notification container behavior", () => {
     assert.match(admin, /const CommunicationSummary/);
     assert.match(admin, /Poll options/);
     assert.match(admin, /<Markdown source=\{item\.bodyMarkdown\}/);
+    assert.doesNotMatch(admin, /subtitle="Communicate with users in this app"/);
+    assert.match(admin, /communicationStyleMap\[item\.style\]\.className/);
+    assert.match(admin, /-mx-6 divide-y border-y/);
   });
 });

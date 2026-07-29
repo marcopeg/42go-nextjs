@@ -8,10 +8,6 @@ import {
   useState,
 } from "react";
 import {
-  AlertTriangle,
-  CheckCircle2,
-  CircleAlert,
-  Info,
   LoaderCircle,
   MessageSquareText,
 } from "lucide-react";
@@ -32,17 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useQualifiedDisplay } from "./useQualifiedDisplay";
 import { getCommunicationQueuePosition } from "./queue";
-
-const styleMap = {
-  info: { Icon: Info, className: "border-primary/40 bg-primary/5 text-foreground" },
-  warning: {
-    Icon: AlertTriangle,
-    className:
-      "border-amber-400/60 bg-amber-50 text-amber-950 dark:border-amber-500/50 dark:bg-amber-950/35 dark:text-amber-100",
-  },
-  danger: { Icon: CircleAlert, className: "border-destructive/40 bg-destructive/10 text-destructive-foreground" },
-  success: { Icon: CheckCircle2, className: "border-primary/40 bg-accent text-accent-foreground" },
-};
+import { communicationStyleMap } from "./style";
 
 const postAction = async (
   communicationId: string,
@@ -234,7 +220,7 @@ const NotificationItem = ({
     [item.id]
   );
   const rootRef = useQualifiedDisplay(item.id, recordDisplay);
-  const presentation = styleMap[item.style];
+  const presentation = communicationStyleMap[item.style];
 
   const respond = async (response: CommunicationResponse) => {
     if (busy) return;
