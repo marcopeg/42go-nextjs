@@ -10,7 +10,12 @@ import {
   type RefObject,
   type TouchEvent as ReactTouchEvent,
 } from "react";
-import { BookOpenText, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  BookCheck,
+  BookOpenText,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 import { useTheme } from "@/42go/config/ThemeProvider";
 import { BookPageReader } from "@/app/(app)/(lingocafe)/books/_components/BookPageReader";
@@ -41,6 +46,8 @@ type ReaderSurfaceProps = {
   onOpenTableOfContents: () => void;
   onOpenPreferences: () => void;
   onNavigatePage: (href: string) => void;
+  completionPending: boolean;
+  onMarkRead: () => void;
 };
 
 type PageProgressProps = {
@@ -259,6 +266,30 @@ const BookProgress = ({
   </div>
 );
 
+const FinalPageCompletionAction = ({
+  bookPage,
+  pending,
+  onMarkRead,
+}: {
+  bookPage: ReaderBookPage;
+  pending: boolean;
+  onMarkRead: () => void;
+}) => {
+  if (bookPage.next || bookPage.completedAt) return null;
+
+  return (
+    <Button
+      type="button"
+      disabled={pending}
+      onClick={onMarkRead}
+      className="min-h-11 w-full max-w-sm"
+    >
+      <BookCheck className="size-4" />
+      {pending ? "Marking as read..." : "Mark as read"}
+    </Button>
+  );
+};
+
 const ReaderHeaderAction = ({
   onClick,
   icon: Icon,
@@ -420,6 +451,8 @@ export const BookReaderDesktopSurface = ({
   onOpenTableOfContents,
   onOpenPreferences,
   onNavigatePage,
+  completionPending,
+  onMarkRead,
 }: ReaderSurfaceProps) => {
   const { resolvedTheme } = useTheme();
   const readerThemeStyle = getReaderThemeStyle(
@@ -533,11 +566,16 @@ export const BookReaderDesktopSurface = ({
                 onTranslationOpenChange={playback.setTranslationPaused}
               />
               {!playback.isOpen && (
-                <div className="mx-auto flex w-full max-w-[680px] items-center justify-center px-1 pb-24 pt-4">
+                <div className="mx-auto flex w-full max-w-[680px] flex-col items-center justify-center gap-5 px-1 pb-24 pt-4">
                   <BookProgress
                     bookPage={bookPage}
                     onNavigatePage={onNavigatePage}
                     pageTurnPending={pageTurnPending}
+                  />
+                  <FinalPageCompletionAction
+                    bookPage={bookPage}
+                    pending={completionPending}
+                    onMarkRead={onMarkRead}
                   />
                 </div>
               )}
@@ -566,6 +604,8 @@ export const BookReaderMobileSurface = ({
   onOpenTableOfContents,
   onOpenPreferences,
   onNavigatePage,
+  completionPending,
+  onMarkRead,
 }: ReaderSurfaceProps) => {
   const { resolvedTheme } = useTheme();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -707,12 +747,17 @@ export const BookReaderMobileSurface = ({
                 onTranslationOpenChange={playback.setTranslationPaused}
               />
               {!playback.isOpen && (
-                <div className="pb-24 pt-4">
+                <div className="space-y-5 pb-24 pt-4">
                   <BookProgress
                     bookPage={bookPage}
                     onNavigatePage={onNavigatePage}
                     pageTurnPending={pageTurnPending}
                     compact
+                  />
+                  <FinalPageCompletionAction
+                    bookPage={bookPage}
+                    pending={completionPending}
+                    onMarkRead={onMarkRead}
                   />
                 </div>
               )}

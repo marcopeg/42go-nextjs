@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -92,6 +92,8 @@ const normalizeBookInfo = (payload: Partial<BookInfoResponse>) => {
     tags: Array.isArray(book.tags) ? book.tags : [],
     description: book.description || "",
     readingAction,
+    completedAt:
+      typeof book.completedAt === "string" ? book.completedAt : null,
     pages: Array.isArray(book.pages) ? book.pages.filter(isBookInfoPage) : [],
   };
 };
@@ -101,11 +103,13 @@ const MobileBookInfo = ({
   loading,
   error,
   collapsedDescriptionMinWords,
+  onCompletedAtChange,
 }: {
   book: ReaderBookInfo | null;
   loading: boolean;
   error: string | null;
   collapsedDescriptionMinWords: number;
+  onCompletedAtChange: (completedAt: string | null) => void;
 }) => (
   <div className="fixed inset-0 z-[500] overflow-x-hidden bg-background md:hidden">
     <div
@@ -138,6 +142,7 @@ const MobileBookInfo = ({
           <BookInfoContent
             book={book}
             collapsedDescriptionMinWords={collapsedDescriptionMinWords}
+            onCompletedAtChange={onCompletedAtChange}
           />
         )}
       </div>
@@ -158,6 +163,9 @@ const BookInfoPage = () => {
     canDelay: !!book,
   });
   const visibleError = showLoading ? null : error;
+  const updateCompletedAt = useCallback((completedAt: string | null) => {
+    setBook((current) => (current ? { ...current, completedAt } : current));
+  }, []);
 
   useEffect(() => {
     if (status !== "authenticated" || !bookId) {
@@ -221,6 +229,7 @@ const BookInfoPage = () => {
         loading={showLoading}
         error={visibleError}
         collapsedDescriptionMinWords={collapsedDescriptionMinWords}
+        onCompletedAtChange={updateCompletedAt}
       />
 
       <div className="hidden min-w-0 max-w-full md:block">
@@ -238,6 +247,7 @@ const BookInfoPage = () => {
           <BookInfoContent
             book={book}
             collapsedDescriptionMinWords={collapsedDescriptionMinWords}
+            onCompletedAtChange={updateCompletedAt}
           />
         )}
       </div>

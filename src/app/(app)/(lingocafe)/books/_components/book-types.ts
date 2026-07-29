@@ -13,6 +13,7 @@ export type ReaderBook = {
   createdAt: string | null;
   updatedAt: string | null;
   readingAction: ReaderBookReadingAction;
+  completedAt: string | null;
 };
 
 export type ReaderBookReadingAction = {
@@ -87,4 +88,5 @@ export type ReaderBookPage = {
     pageId: string;
     progressBps: number;
   } | null;
+  completedAt: string | null;
 };

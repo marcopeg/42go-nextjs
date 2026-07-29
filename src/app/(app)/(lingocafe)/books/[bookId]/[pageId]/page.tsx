@@ -18,6 +18,7 @@ import { BookReaderPreferencesPanel } from "@/app/(app)/(lingocafe)/books/_compo
 import { BookReaderTableOfContents } from "@/app/(app)/(lingocafe)/books/_components/BookReaderTableOfContents";
 import { useReaderPlayback } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/useReaderPlayback";
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
+import { useBookCompletionMutation } from "@/app/(app)/(lingocafe)/books/_components/useBookCompletionMutation";
 import type {
   ReaderBookPage,
   ReaderBookPageNeighbor,
@@ -264,6 +265,8 @@ const normalizeBookPage = (
           : null,
     },
     progress: normalizeProgress(bookPage.progress),
+    completedAt:
+      typeof bookPage.completedAt === "string" ? bookPage.completedAt : null,
   };
 };
 
@@ -414,6 +417,16 @@ const BookReadPage = () => {
   const bookshelfHref = "/books";
   const activeBookId = bookPage?.book.id || readerRoute?.bookId || bookId;
   const activePageId = bookPage?.page.pageId || readerRoute?.pageId || pageId;
+  const updateCompletedAt = useCallback((completedAt: string | null) => {
+    setBookPage((current) =>
+      current ? { ...current, completedAt } : current
+    );
+  }, []);
+  const { pending: completionPending, setCompleted } =
+    useBookCompletionMutation({
+      bookId: activeBookId,
+      onCompletedAtChange: updateCompletedAt,
+    });
   const playbackContinuationRoute = playbackContinuationHref
     ? parseReaderRouteHref(playbackContinuationHref)
     : null;
@@ -959,6 +972,10 @@ const BookReadPage = () => {
           onOpenTableOfContents={openTableOfContents}
           onOpenPreferences={openPreferences}
           onNavigatePage={navigateToReaderPage}
+          completionPending={completionPending}
+          onMarkRead={() => {
+            void setCompleted(true);
+          }}
         />
 
         <BookReaderDesktopSurface
@@ -977,6 +994,10 @@ const BookReadPage = () => {
           onOpenTableOfContents={openTableOfContents}
           onOpenPreferences={openPreferences}
           onNavigatePage={navigateToReaderPage}
+          completionPending={completionPending}
+          onMarkRead={() => {
+            void setCompleted(true);
+          }}
         />
 
         <BookReaderPreferencesPanel

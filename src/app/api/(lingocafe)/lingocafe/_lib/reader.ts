@@ -76,6 +76,11 @@ type BookProgress = {
   progressBps: number;
 };
 
+type BookCompletionRow = {
+  book_id: string;
+  completed_at: Date | string;
+};
+
 type BookReadingAction = {
   kind: "start" | "resume" | "unavailable";
   label: "Read now" | "Continue reading" | "No pages available";
@@ -382,10 +387,15 @@ const mapBook = (book: BookRow) => ({
   updatedAt: toISO(book.updated_at),
 });
 
-const mapBookInfo = (book: BookInfoRow, readingAction: BookReadingAction) => ({
+const mapBookInfo = (
+  book: BookInfoRow,
+  readingAction: BookReadingAction,
+  completedAt: string | null
+) => ({
   ...mapBook(book),
   description: book.description,
   readingAction,
+  completedAt,
 });
 
 const mapBookInfoPage = (page: BookInfoPageRow): BookInfoPageSummary => ({
@@ -456,6 +466,13 @@ export const loadReaderData = async (userId: string) => {
           .where({ user_id: userId })
           .whereIn("book_id", bookIds)) as BookProgressRow[])
       : [];
+  const completionRows =
+    bookIds.length > 0
+      ? ((await db("lingocafe.books_completed")
+          .select("book_id", "completed_at")
+          .where({ user_id: userId })
+          .whereIn("book_id", bookIds)) as BookCompletionRow[])
+      : [];
   const firstPageRows =
     bookIds.length > 0
       ? ((await db("lingocafe.books_pages")
@@ -474,6 +491,9 @@ export const loadReaderData = async (userId: string) => {
     }
   }
   const progressByBookId = new Map(progressRows.map((row) => [row.book_id, row]));
+  const completionByBookId = new Map(
+    completionRows.map((row) => [row.book_id, toISO(row.completed_at)])
+  );
 
   return {
     profile: mapProfile(userId, profile),
@@ -484,6 +504,7 @@ export const loadReaderData = async (userId: string) => {
         progress: progressByBookId.get(book.id),
         firstPage: firstPageByBookId.get(book.id),
       }),
+      completedAt: completionByBookId.get(book.id) ?? null,
     })),
     languages,
   };
@@ -515,6 +536,10 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
     .select("book_id", "page_id", "progress_bps", "updated_at")
     .where({ user_id: userId, book_id: bookId })
     .first()) as BookProgressRow | undefined;
+  const completion = (await db("lingocafe.books_completed")
+    .select("book_id", "completed_at")
+    .where({ user_id: userId, book_id: bookId })
+    .first()) as BookCompletionRow | undefined;
 
   const firstPage = progress
     ? null
@@ -536,7 +561,8 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
         bookId: book.id,
         progress,
         firstPage,
-      })
+      }),
+      toISO(completion?.completed_at ?? null)
     ),
     pages: pages.map(mapBookInfoPage),
   };
@@ -588,6 +614,99 @@ export const loadBookProgress = async (userId: string, bookId: string) => {
     .first()) as BookProgressRow | undefined;
 
   return progress ? mapBookProgress(progress) : null;
+};
+
+export const loadBookCompletion = async (
+  userId: string,
+  bookId: string,
+  db: Knex | Knex.Transaction = getDB()
+) => {
+  const completion = (await db("lingocafe.books_completed")
+    .select("book_id", "completed_at")
+    .where({ user_id: userId, book_id: bookId })
+    .first()) as BookCompletionRow | undefined;
+
+  return toISO(completion?.completed_at ?? null);
+};
+
+export const markBookRead = async ({
+  userId,
+  bookId,
+}: {
+  userId: string;
+  bookId: string;
+}) => {
+  const db = getDB();
+
+  return db.transaction(async (trx) => {
+    const book = await trx("lingocafe.books")
+      .select("id")
+      .where({ id: bookId })
+      .first();
+    if (!book) return null;
+
+    const inserted = (await trx("lingocafe.books_completed")
+      .insert({
+        user_id: userId,
+        book_id: bookId,
+        completed_at: trx.fn.now(),
+      })
+      .onConflict(["user_id", "book_id"])
+      .ignore()
+      .returning("completed_at")) as Array<{
+      completed_at: Date | string;
+    }>;
+
+    const changed = inserted.length > 0;
+    const completedAt = changed
+      ? toISO(inserted[0].completed_at)
+      : await loadBookCompletion(userId, bookId, trx);
+
+    if (changed) {
+      await trackReaderEvent({
+        userId,
+        name: "book.mark.read",
+        bookId,
+        db: trx,
+      });
+    }
+
+    return { completedAt, changed };
+  });
+};
+
+export const markBookUnread = async ({
+  userId,
+  bookId,
+}: {
+  userId: string;
+  bookId: string;
+}) => {
+  const db = getDB();
+
+  return db.transaction(async (trx) => {
+    const book = await trx("lingocafe.books")
+      .select("id")
+      .where({ id: bookId })
+      .first();
+    if (!book) return null;
+
+    const removed = await trx("lingocafe.books_completed")
+      .where({ user_id: userId, book_id: bookId })
+      .del();
+    const changed = removed > 0;
+
+    if (changed) {
+      await trackReaderEvent({
+        userId,
+        name: "book.mark.unread",
+        bookId,
+        db: trx,
+      });
+    }
+
+    return { completedAt: null, changed };
+  });
 };
 
 export const saveBookProgress = async ({

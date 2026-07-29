@@ -8,6 +8,7 @@ import type { TComponentBlock } from "@/42go/components/ContentBlock/blocks/Comp
 import type { Policy } from "@/42go/policy/types";
 import { BookCard } from "@/app/(app)/(lingocafe)/books/_components/BookCard";
 import { BooksHeaderLanguageFlag } from "@/app/(app)/(lingocafe)/books/_components/BooksHeaderLanguageFlag";
+import { buildBookshelfSections } from "@/app/(app)/(lingocafe)/books/_components/bookshelf";
 import type { ReaderBook } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 import { preloadDeviceSpeechVoices } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/device-speech-provider";
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
@@ -78,6 +79,8 @@ const normalizeReaderData = (payload: Partial<ReaderData>): ReaderData => ({
           ...(book.readingAction ?? {}),
           bookId: book.id,
         },
+        completedAt:
+          typeof book.completedAt === "string" ? book.completedAt : null,
       }))
     : [],
   languages: {
@@ -104,35 +107,25 @@ const getResponseMessage = async (res: Response, fallback: string) => {
   return typeof payload?.message === "string" ? payload.message : fallback;
 };
 
-const collator = new Intl.Collator(undefined, {
-  sensitivity: "base",
-  numeric: true,
-});
-
-const compareBooksByTitle = (left: ReaderBook, right: ReaderBook) =>
-  collator.compare(left.title, right.title);
-
-const getReadingActionTime = (book: ReaderBook) => {
-  const updatedAt = book.readingAction.updatedAt;
-  if (!updatedAt) return 0;
-
-  const time = new Date(updatedAt).getTime();
-  return Number.isNaN(time) ? 0 : time;
-};
-
-const compareBooksByRecentReading = (left: ReaderBook, right: ReaderBook) => {
-  const timeDelta = getReadingActionTime(right) - getReadingActionTime(left);
-  return timeDelta || compareBooksByTitle(left, right);
-};
-
-const isCurrentlyReadingBook = (book: ReaderBook) =>
-  book.readingAction.kind === "resume" &&
-  typeof book.readingAction.href === "string";
-
-const BooksGrid = ({ books }: { books: ReaderBook[] }) => (
+const BooksGrid = ({
+  books,
+  onBookCompletedAtChange,
+}: {
+  books: ReaderBook[];
+  onBookCompletedAtChange: (
+    bookId: string,
+    completedAt: string | null
+  ) => void;
+}) => (
   <div className="grid min-w-0 max-w-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
     {books.map((book) => (
-      <BookCard key={book.id} book={book} />
+      <BookCard
+        key={book.id}
+        book={book}
+        onCompletedAtChange={(completedAt) =>
+          onBookCompletedAtChange(book.id, completedAt)
+        }
+      />
     ))}
   </div>
 );
@@ -140,9 +133,14 @@ const BooksGrid = ({ books }: { books: ReaderBook[] }) => (
 const BooksSection = ({
   title,
   books,
+  onBookCompletedAtChange,
 }: {
   title?: string;
   books: ReaderBook[];
+  onBookCompletedAtChange: (
+    bookId: string,
+    completedAt: string | null
+  ) => void;
 }) => (
   <section className="min-w-0 space-y-3">
     {title ? (
@@ -150,7 +148,10 @@ const BooksSection = ({
         {title}
       </h2>
     ) : null}
-    <BooksGrid books={books} />
+    <BooksGrid
+      books={books}
+      onBookCompletedAtChange={onBookCompletedAtChange}
+    />
   </section>
 );
 
@@ -246,20 +247,23 @@ const BooksPage = () => {
           },
         ]
       : [];
+  const updateBookCompletedAt = useCallback(
+    (bookId: string, completedAt: string | null) => {
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              books: current.books.map((book) =>
+                book.id === bookId ? { ...book, completedAt } : book
+              ),
+            }
+          : current
+      );
+    },
+    []
+  );
   const bookshelf = useMemo(() => {
-    const books = data?.books ?? [];
-    const currentlyReading = books
-      .filter(isCurrentlyReadingBook)
-      .sort(compareBooksByRecentReading);
-    const catalog = books
-      .filter((book) => !isCurrentlyReadingBook(book))
-      .sort(compareBooksByTitle);
-
-    return {
-      currentlyReading,
-      catalog,
-      hasCurrentlyReading: currentlyReading.length > 0,
-    };
+    return buildBookshelfSections(data?.books ?? []);
   }, [data?.books]);
 
   return (
@@ -314,6 +318,7 @@ const BooksPage = () => {
                 <BooksSection
                   title="Currently Reading"
                   books={bookshelf.currentlyReading}
+                  onBookCompletedAtChange={updateBookCompletedAt}
                 />
               ) : null}
 
@@ -322,6 +327,15 @@ const BooksPage = () => {
                 <BooksSection
                   title={bookshelf.hasCurrentlyReading ? "Catalog" : undefined}
                   books={bookshelf.catalog}
+                  onBookCompletedAtChange={updateBookCompletedAt}
+                />
+              ) : null}
+
+              {bookshelf.hasCompleted ? (
+                <BooksSection
+                  title="Completed"
+                  books={bookshelf.completed}
+                  onBookCompletedAtChange={updateBookCompletedAt}
                 />
               ) : null}
             </div>

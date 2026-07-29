@@ -5,16 +5,19 @@ import Link from "next/link";
 import ReactMarkdown, { type Components } from "react-markdown";
 import {
   BookOpen,
+  BookCheck,
   ChevronDown,
   ChevronRight,
   FileText,
   Globe2,
   GraduationCap,
+  Undo2,
   type LucideIcon,
 } from "lucide-react";
 
 import { BookCover } from "@/app/(app)/(lingocafe)/books/_components/BookCover";
 import { BookTags } from "@/app/(app)/(lingocafe)/books/_components/BookTags";
+import { useBookCompletionMutation } from "@/app/(app)/(lingocafe)/books/_components/useBookCompletionMutation";
 import type {
   ReaderBookInfo,
   ReaderBookInfoPage,
@@ -25,6 +28,7 @@ import { cn } from "@/lib/utils";
 type BookInfoContentProps = {
   book: ReaderBookInfo;
   collapsedDescriptionMinWords: number;
+  onCompletedAtChange: (completedAt: string | null) => void;
 };
 
 type MetaItemProps = {
@@ -431,7 +435,13 @@ const BookCoverHero = ({ book }: { book: ReaderBookInfo }) => {
 export const BookInfoContent = ({
   book,
   collapsedDescriptionMinWords,
+  onCompletedAtChange,
 }: BookInfoContentProps) => {
+  const { pending, setCompleted } = useBookCompletionMutation({
+    bookId: book.id,
+    onCompletedAtChange,
+  });
+  const isCompleted = book.completedAt !== null;
   const wordsCount = getOptionalCount(book.info, "words_count");
   const infoChaptersCount = getOptionalCount(book.info, "chapters_count");
   const metricItems = [
@@ -511,8 +521,28 @@ export const BookInfoContent = ({
           />
 
           <div className="sticky bottom-0 z-20 -mx-4 bg-background/95 px-4 py-3 backdrop-blur md:mx-0 md:flex md:justify-end md:px-0">
-            <div className="md:w-64">
+            <div className="grid gap-2 md:w-64">
               <BookReadingAction action={book.readingAction} />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                onClick={() => {
+                  void setCompleted(!isCompleted);
+                }}
+                className="h-10 w-full"
+              >
+                {isCompleted ? (
+                  <Undo2 className="size-4" />
+                ) : (
+                  <BookCheck className="size-4" />
+                )}
+                {pending
+                  ? "Saving..."
+                  : isCompleted
+                    ? "Mark as unread"
+                    : "Mark as read"}
+              </Button>
             </div>
           </div>
 

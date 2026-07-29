@@ -27,6 +27,7 @@ The content-export application writes content into:
 The content-export application must understand but not directly own:
 
 - `lingocafe.books_progress`
+- `lingocafe.books_completed`
 - `events.events`
 - `auth.users.profile`
 - `auth.users.consent`
@@ -111,6 +112,7 @@ Cover assets are not persisted in `lingocafe.books`. The reader resolves covers 
 | `lingocafe.books` | Owned by content export | Book catalog metadata. |
 | `lingocafe.books_pages` | Owned by content export | Ordered readable pages for each book. |
 | `lingocafe.books_progress` | User state | Current reading position. Not owned by content export. |
+| `lingocafe.books_completed` | User state | Explicit book-level completion. Not owned by content export. |
 | `events.events` | Runtime telemetry | Historical reader events. Not owned by content export. |
 | `auth.users.profile` | User state | Reader language preferences. Not owned by content export. |
 | `auth.users.consent` | User state | Consent evidence history. Not owned by content export. |
@@ -143,6 +145,7 @@ The content export owns the canonical page set only for the books included in th
 - Primary key: `id`
 - `lingocafe.books_pages.book_id` references `lingocafe.books(id)` with `ON DELETE CASCADE`
 - `lingocafe.books_progress.book_id` references `lingocafe.books(id)` with `ON DELETE CASCADE`
+- `lingocafe.books_completed.book_id` references `lingocafe.books(id)` with `ON DELETE CASCADE`
 
 ### Book ID Rules
 
@@ -209,7 +212,6 @@ The export application does not own this table.
 | `progress_bps` | `integer` | yes | Scroll progress inside the page, from `0` to `10000`. |
 | `created_at` | `timestamp` | yes | Progress row creation timestamp. |
 | `updated_at` | `timestamp` | yes | Last progress update timestamp. |
-| `completed_at` | `timestamp` | no | Optional completion timestamp. |
 
 ### Keys And Constraints
 
@@ -230,6 +232,32 @@ This happens because the target schema defines the progress-to-page foreign key 
 The export SQL should normally delete stale pages and let the cascade clean stale progress.
 
 Only add explicit progress deletes if the target schema changes in the future and no longer has the page-progress cascade.
+
+## `lingocafe.books_completed`
+
+`lingocafe.books_completed` stores explicit book-level completion independently
+from mutable page and scroll progress. A reader may mark a book completed even
+when no `books_progress` row exists, for example after reading it elsewhere.
+
+The export application does not own this table.
+
+### Columns
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `user_id` | `text` | yes | Reader user ID. |
+| `book_id` | `text` | yes | Completed book. |
+| `completed_at` | `timestamp` | yes | Time the reader most recently marked the book as read. |
+
+### Keys And Constraints
+
+- Primary key: `(user_id, book_id)`
+- Foreign key: `user_id` references `auth.users(id)` with `ON DELETE CASCADE`
+- Foreign key: `book_id` references `lingocafe.books(id)` with `ON DELETE CASCADE`
+- Index: `(user_id, completed_at DESC)`
+
+Marking a book unread deletes this row. Page-open and page-scroll progress
+writes do not create, update, or delete it.
 
 ## `events.events`
 
@@ -256,6 +284,7 @@ The reader expects:
 - Pages for a book are ordered by `lingocafe.books_pages.position`.
 - The first readable page is the lowest `position` for that `book_id`.
 - A resume link uses `books_progress.book_id`, `books_progress.page_id`, and `books_progress.progress_bps`.
+- Explicit completion uses `books_completed.user_id`, `books_completed.book_id`, and `books_completed.completed_at`.
 - A reader URL contains both book ID and page ID: `/books/[bookId]/[pageId]`.
 - `progress_bps` is a basis-point percentage from `0` to `10000`.
 
@@ -274,6 +303,7 @@ The payload is not authoritative for:
 - pages belonging to books missing from the export payload
 - user profiles or consent
 - reader progress except stale progress removed through page deletion cascade
+- reader completion
 - event history
 
 ## Required Export Flow

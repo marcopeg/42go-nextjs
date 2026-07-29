@@ -6,6 +6,7 @@ import {
   getReaderProfileStringValue,
   loadReaderProfile,
   json,
+  loadBookCompletion,
   loadBookPage,
   saveBookOpenProgress,
   saveBookProgress,
@@ -49,7 +50,10 @@ const getBookPage = async (
   const profile = await loadReaderProfile(userId);
   const targetLang = getReaderProfileStringValue(profile, "ownLang");
   const canTranslate = !!targetLang && isTranslationEnabled();
-  const progress = await saveBookOpenProgress({ userId, bookId, pageId });
+  const [progress, completedAt] = await Promise.all([
+    saveBookOpenProgress({ userId, bookId, pageId }),
+    loadBookCompletion(userId, bookId),
+  ]);
 
   await trackReaderEvent({
     userId,
@@ -68,6 +72,7 @@ const getBookPage = async (
         from: bookPage.book.lang,
         to: targetLang,
       },
+      completedAt,
     },
   });
 };

@@ -1,11 +1,20 @@
 import Link from "next/link";
-// import { Heart, MoreHorizontal } from "lucide-react";
+import { BookCheck, MoreHorizontal, Undo2 } from "lucide-react";
 
 import { BookCover } from "@/app/(app)/(lingocafe)/books/_components/BookCover";
 import type { ReaderBook } from "@/app/(app)/(lingocafe)/books/_components/book-types";
+import { useBookCompletionMutation } from "@/app/(app)/(lingocafe)/books/_components/useBookCompletionMutation";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type BookCardProps = {
   book: ReaderBook;
+  onCompletedAtChange: (completedAt: string | null) => void;
 };
 
 const levelPattern = /(?:^|[-_])(a1|a2|b1|b2|c1|c2)(?:$|[-_])/i;
@@ -15,40 +24,29 @@ const getBookLevelLabel = (book: ReaderBook) => {
   return level ? level.toUpperCase() : null;
 };
 
-// const MorePlaceholder = () => (
-//   <span
-//     aria-hidden="true"
-//     className="pointer-events-none absolute right-4 bottom-4 grid size-10 place-items-center rounded-full bg-background/90 text-foreground shadow-md ring-1 ring-border/60 backdrop-blur-sm"
-//   >
-//     <MoreHorizontal className="size-5" strokeWidth={2.5} />
-//   </span>
-// );
-//
-// const FavoritePlaceholder = () => (
-//   <span
-//     aria-hidden="true"
-//     className="pointer-events-none grid size-9 shrink-0 place-items-center rounded-full text-foreground"
-//   >
-//     <Heart className="size-5" strokeWidth={2.2} />
-//   </span>
-// );
-
-export const BookCard = ({ book }: BookCardProps) => {
+export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
   const coverTags = book.tags.slice(0, 3);
   const levelLabel = getBookLevelLabel(book);
   const author = book.author.trim();
   const readingHref = book.readingAction.href;
   const isReading =
-    book.readingAction.kind === "resume" && typeof readingHref === "string";
+    !book.completedAt &&
+    book.readingAction.kind === "resume" &&
+    typeof readingHref === "string";
   const href = isReading
     ? readingHref
     : `/books/${encodeURIComponent(book.id)}`;
   const ariaLabel = isReading
     ? `Continue reading ${book.title}`
     : `Open ${book.title} details`;
+  const isCompleted = book.completedAt !== null;
+  const { pending, setCompleted } = useBookCompletionMutation({
+    bookId: book.id,
+    onCompletedAtChange,
+  });
 
   return (
-    <article className="group min-w-0 overflow-hidden rounded-lg shadow-sm transition-transform duration-200 hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-ring/60">
+    <article className="group relative min-w-0 overflow-hidden rounded-lg shadow-sm transition-transform duration-200 hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-ring/60">
       <Link
         href={href}
         className="relative block min-w-0 overflow-hidden rounded-lg outline-none"
@@ -70,12 +68,12 @@ export const BookCard = ({ book }: BookCardProps) => {
           className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/75 via-black/35 to-transparent"
         />
         {isReading ? (
-          <div className="pointer-events-none absolute right-0 top-0 z-10 bg-green-600 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-white shadow-md sm:text-xs">
+          <div className="pointer-events-none absolute right-0 top-14 z-10 bg-green-600 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-white shadow-md sm:text-xs">
             Reading
           </div>
         ) : null}
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 p-3 sm:p-4">
+        <div className="pointer-events-none absolute inset-x-0 top-0 p-3 pr-16 sm:p-4 sm:pr-16">
           <h2 className="line-clamp-3 break-words font-serif text-[1.05rem] font-bold leading-tight tracking-normal text-amber-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] sm:text-xl md:text-2xl">
             {book.title}
           </h2>
@@ -109,6 +107,36 @@ export const BookCard = ({ book }: BookCardProps) => {
           </div>
         )}
       </Link>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="neutralGhost"
+            size="icon"
+            disabled={pending}
+            aria-label={`More actions for ${book.title}`}
+            className="absolute right-3 top-3 z-20 size-10 rounded-full border border-white/30 bg-black/55 text-white shadow-sm backdrop-blur-sm hover:bg-black/70 hover:text-white focus-visible:ring-white/70"
+          >
+            <MoreHorizontal className="size-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            disabled={pending}
+            onSelect={() => {
+              void setCompleted(!isCompleted);
+            }}
+          >
+            {isCompleted ? (
+              <Undo2 className="size-4" />
+            ) : (
+              <BookCheck className="size-4" />
+            )}
+            {isCompleted ? "Mark as unread" : "Mark as read"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </article>
   );
 };

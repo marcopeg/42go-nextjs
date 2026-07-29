@@ -52,7 +52,6 @@
 
 ## Todo
 
-- [XC01: Let readers mark a book as read](./tasks/XC01-let-readers-mark-a-book-as-read/XC01.task.md)
 
 ## Someday
 
@@ -205,6 +204,7 @@
 
 ## Completed
 
+- [XC01: Let readers mark a book as read](./tasks/XC01-let-readers-mark-a-book-as-read/XC01.task.md)
 - [YS05: Enforce users:edit for User Updates](./tasks/YS05-enforce-users-edit-for-user-updates/YS05.task.md)
 - [LG69: Move User Administration Under the Backoffice Namespace](./tasks/LG69-move-user-administration-under-the-backoffice-namespace/LG69.task.md)
 - [PH34: Choose a Translation Language When Reading and Fluent Languages Match](./tasks/PH34-choose-a-translation-language-when-reading-and-fluent-languages-match/PH34.task.md)
