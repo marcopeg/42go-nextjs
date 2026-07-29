@@ -131,6 +131,7 @@ When working inside the original repository, treat these as code authority:
 - `src/42go/layouts/app/`
 - `src/42go/components/modal/`
 - `src/42go/components/panel/`
+- `src/42go/components/PlainList/`
 - `src/config/lingocafe/`
 - `src/app/(app)/(lingocafe)/books/`
 

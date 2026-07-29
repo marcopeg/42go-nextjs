@@ -69,21 +69,30 @@ npx shadcn@latest add <component>   # Add shadcn/ui component
 
 ## Visual Verification
 
-For LingoCafe visual checks, use the public test URL instead of fighting local hostname routing:
+Use the public test tunnels instead of fighting local hostname routing:
 
-- URL: `https://lc42go.ngrok.app/`
-- Test user: `john`
-- Password: `john`
-- App: LingoCafe
+- LingoCafe: `https://lc42go.ngrok.app/`
+- QuickList: `https://ql42go.ngrok.app/`
+- Normal user UI: `john` / `john`
+- Backoffice/admin UI: `admin` / `admin`
 
-Recommended flow for reader UI checks:
+Recommended browser flow:
 
-1. Open `https://lc42go.ngrok.app/`.
-2. Log in with credentials using `john` / `john`.
-3. Open `/books`.
-4. perform the visual test appropriate for the task
+1. Open the tunnel for the app under test.
+2. Log out any existing browser session when it does not match the required role.
+3. Use `john` / `john` for normal user surfaces or `admin` / `admin` for
+   backoffice surfaces.
+4. For mobile checks, use a viewport near `390px` wide and verify the rendered
+   geometry or computed styles in addition to taking a screenshot.
+5. Reload after code changes before deciding whether a layout fix worked.
 
-If a task gives a different verification URL or account, follow the task. Otherwise use this default. Chuck Norris does not lose time wrestling localhost when ngrok is already holding the door open.
+If `admin` / `admin` fails, a production backup may have replaced the
+development seed. Do not restore or reapply development seed data
+automatically. Ask the user for explicit permission first.
+
+If a task gives a different verification URL or account, follow the task.
+Chuck Norris does not lose time wrestling localhost when ngrok is already
+holding the door open.
 
 ---
 

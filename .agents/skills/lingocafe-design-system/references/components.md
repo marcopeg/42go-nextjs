@@ -6,6 +6,7 @@
 - Buttons and actions
 - Inputs and selection
 - Panels and cards
+- Plain lists
 - Book components
 - Navigation
 - Modal and panel overlays
@@ -95,6 +96,27 @@ General `Panel`:
 - footer starts 16 px below the body.
 
 Prefer panel composition (`Panel`, `PanelHeader`, `PanelBody`, `PanelFooter`) over a new one-off card. Do not hard-code white/gray surfaces; use semantic card tokens.
+
+## Plain lists
+
+Use `PlainList`, `PlainListItem`, and `PlainListButton` from
+`@/42go/components/PlainList` for dense app rows that should read as one
+continuous list instead of separate cards.
+
+- On mobile, the list owns the standard `24px` negative horizontal margins so
+  rows reach the viewport edges and use hairline dividers.
+- Set `flushMobileTop` only when the list is the first rendered page content and
+  should meet the app toolbar directly. It cancels the app shell's `24px` mobile
+  top padding while preserving normal desktop spacing.
+- At `md` and above, the list becomes one contained, rounded, bordered surface.
+  Rows remain divided; do not turn each row back into a separate card.
+- `PlainListButton` owns row padding, full-width hit area, hover feedback, and
+  the visible focus ring. Keep its contents structured with a leading icon,
+  `min-w-0` text, and optional trailing metadata or action.
+- Callers may add semantic status backgrounds or tints, but must keep
+  text/icons so state is never encoded by color alone.
+- Do not recreate the `-mx-6`, divider, flush-top, or focus classes at call
+  sites.
 
 ## Book components
 
