@@ -74,14 +74,14 @@ export default function NotificationsPage() {
             onQueueLoaded={handleQueueLoaded}
           />
           {activeCount === 0 && (
-            <Panel><p className="text-sm text-muted-foreground">You have no notifications waiting.</p></Panel>
+            <p className="py-2 text-sm text-muted-foreground">You&apos;re all set!</p>
           )}
         </section>
 
         <section aria-labelledby="notification-history-title">
           <Button
             variant="neutralGhost"
-            className="w-full justify-between px-0 text-lg font-semibold"
+            className="w-full justify-between px-0 text-lg font-semibold has-[>svg]:px-0"
             aria-expanded={historyOpen}
             onClick={() => setHistoryOpen((open) => !open)}
           >

@@ -361,6 +361,8 @@ describe("notification container behavior", () => {
     assert.match(center, /border-amber-400/);
     assert.match(page, /displayMode="list"/);
     assert.doesNotMatch(page, /setHistoryOpen\(true\)/);
+    assert.match(page, /You&apos;re all set!/);
+    assert.match(page, /has-\[>svg\]:px-0/);
     assert.equal(
       admin.includes('placeholder={`Option ${index + 1}`}'),
       true
