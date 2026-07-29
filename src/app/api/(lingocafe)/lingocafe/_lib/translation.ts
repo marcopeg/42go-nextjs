@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import type { Knex } from "knex";
 
 import { getDB } from "@/42go/db";
+import { normalizeLingoCafeTranslationLanguage } from "@/lib/lingocafe/translation-language";
 
 export type TranslationCacheSource = "memory" | "database" | "google";
 
@@ -64,8 +65,8 @@ export const isTranslationEnabled = () =>
 export const normalizeTranslationText = (text: string) =>
   text.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase();
 
-export const normalizeTranslationLanguage = (lang: string) =>
-  lang.normalize("NFKC").trim().toLocaleLowerCase();
+export const normalizeTranslationLanguage =
+  normalizeLingoCafeTranslationLanguage;
 
 export const buildTranslationHash = ({
   text,

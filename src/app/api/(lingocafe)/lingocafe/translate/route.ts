@@ -20,6 +20,7 @@ import {
   translateAndCacheText,
 } from "@/app/api/(lingocafe)/lingocafe/_lib/translation";
 import { hasExactlyOneLingoCafeSentence } from "@/lib/lingocafe/sentence-segmentation";
+import { isSameLingoCafeTranslationLanguage } from "@/lib/lingocafe/translation-language";
 
 const defaultMaxTranslateLength = 500;
 const maxSafeTranslateLength = 5000;
@@ -205,6 +206,15 @@ const postTranslation = async (req: Request) => {
         message: "Translation is not enabled.",
       },
       { status: 403 }
+    );
+  }
+
+  if (
+    isSameLingoCafeTranslationLanguage(parsed.data.from, parsed.data.to)
+  ) {
+    return validationError(
+      "Choose a translation language different from the reading language.",
+      "to"
     );
   }
 

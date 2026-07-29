@@ -32,7 +32,15 @@ import type {
   ReaderPlaybackWordRange,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 import { applyReaderPlaybackFocus } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/focus-presentation";
+import {
+  getLingoCafeReaderLanguages,
+  type LingoCafeLanguageOption,
+} from "@/config/lingocafe/profile-options";
 import { splitLingoCafeSentences } from "@/lib/lingocafe/sentence-segmentation";
+import {
+  filterLingoCafeTranslationTargets,
+  isSameLingoCafeTranslationLanguage,
+} from "@/lib/lingocafe/translation-language";
 
 type BookPageReaderProps = {
   bookPage: ReaderBookPage;
@@ -72,7 +80,12 @@ type TranslationSelection = {
   anchor: SentenceAnchor;
 };
 
-type TranslationStatus = "idle" | "loading" | "success" | "error";
+type TranslationStatus =
+  | "choose-language"
+  | "saving-language"
+  | "loading"
+  | "success"
+  | "error";
 
 type TranslationState = TranslationSelection & {
   status: TranslationStatus;
@@ -107,9 +120,14 @@ type TranslationApiResponse = {
   message?: unknown;
 };
 
+type ProfileApiResponse = {
+  message?: unknown;
+};
+
 const popoverMaxWidth = 360;
 const mobilePopoverBreakpointPx = 768;
 const tapMovementThresholdPx = 10;
+const fluentLanguageOptions = getLingoCafeReaderLanguages().own;
 
 type TapCandidate = {
   pointerId: number;
@@ -270,12 +288,16 @@ const ReaderTranslationPopover = ({
   state,
   scope,
   canListen,
+  languageOptions,
   onListen,
+  onLanguageSelect,
 }: {
   state: TranslationState;
   scope: ReaderTranslationScope;
   canListen: boolean;
+  languageOptions: LingoCafeLanguageOption[];
   onListen: () => void;
+  onLanguageSelect: (language: string) => void;
 }) => (
   <div
     data-reader-translation-popover
@@ -290,6 +312,50 @@ const ReaderTranslationPopover = ({
     }}
   >
     <div className="relative min-w-0 flex-1 px-5 py-3 pb-4 md:px-4">
+      {(state.status === "choose-language" ||
+        state.status === "saving-language") && (
+        <div className="space-y-3 font-sans">
+          <p className="text-sm font-medium">
+            Which language do you want me to translate to?
+          </p>
+          <label className="block">
+            <span className="sr-only">Translate to</span>
+            <select
+              value=""
+              disabled={state.status === "saving-language"}
+              onChange={(event) => {
+                if (event.target.value) {
+                  onLanguageSelect(event.target.value);
+                }
+              }}
+              className="h-10 w-full rounded-md border bg-transparent px-3 text-base shadow-xs outline-none focus-visible:ring-ring/60 focus-visible:ring-[3px] disabled:cursor-wait disabled:opacity-60 md:text-sm"
+              style={{
+                borderColor: "var(--reader-popover-border)",
+                backgroundColor: "var(--reader-bg)",
+                color: "var(--reader-fg)",
+              }}
+            >
+              <option value="">Choose language</option>
+              {languageOptions.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {state.status === "saving-language" && (
+            <p
+              className="text-xs"
+              style={{ color: "var(--reader-fg-muted)" }}
+            >
+              Saving language...
+            </p>
+          )}
+          {state.error && (
+            <p className="text-sm text-destructive">{state.error}</p>
+          )}
+        </div>
+      )}
       {state.status === "loading" && (
         <span style={{ color: "var(--reader-fg-muted)" }}>Translating...</span>
       )}
@@ -660,10 +726,17 @@ export const BookPageReader = ({
   const titleSize = Math.round(fontSize * 1.7);
   const summarySize = Math.max(14, Math.round(fontSize * 0.9));
   const articleRef = useRef<HTMLElement | null>(null);
+  const [translationTargetLanguage, setTranslationTargetLanguage] = useState(
+    bookPage.translation.to
+  );
   const translationEnabled =
-    bookPage.translation.enabled && !!bookPage.translation.to;
+    bookPage.translation.enabled && !!translationTargetLanguage;
   const [translationState, setTranslationState] =
     useState<TranslationState | null>(null);
+  const availableTranslationLanguages = filterLingoCafeTranslationTargets(
+    fluentLanguageOptions,
+    bookPage.translation.from
+  );
   const activeTranslationId = translationState?.id ?? null;
   const isTranslationOpen = translationState !== null;
   const canListenFromTranslation =
@@ -691,7 +764,12 @@ export const BookPageReader = ({
           ? null
           : {
               ...selection,
-              status: "loading",
+              status: isSameLingoCafeTranslationLanguage(
+                bookPage.translation.from,
+                translationTargetLanguage
+              )
+                ? "choose-language"
+                : "loading",
               translation: null,
               source: null,
               error: null,
@@ -742,6 +820,14 @@ export const BookPageReader = ({
   }, [bookPage.page.bookId, bookPage.page.pageId]);
 
   useEffect(() => {
+    setTranslationTargetLanguage(bookPage.translation.to);
+  }, [
+    bookPage.page.bookId,
+    bookPage.page.pageId,
+    bookPage.translation.to,
+  ]);
+
+  useEffect(() => {
     setTranslationState(null);
   }, [translationScope]);
 
@@ -785,7 +871,7 @@ export const BookPageReader = ({
       !translationState ||
       translationState.status !== "loading" ||
       !translationEnabled ||
-      !bookPage.translation.to
+      !translationTargetLanguage
     ) {
       return;
     }
@@ -794,7 +880,7 @@ export const BookPageReader = ({
     const input = {
       text: translationState.text,
       from: bookPage.translation.from,
-      to: bookPage.translation.to,
+      to: translationTargetLanguage,
       bookId: bookPage.page.bookId,
       pageId: bookPage.page.pageId,
       sentenceId: translationState.sentenceId,
@@ -887,12 +973,12 @@ export const BookPageReader = ({
     return () => controller.abort();
   }, [
     bookPage.translation.from,
-    bookPage.translation.to,
     bookPage.page.bookId,
     bookPage.page.pageId,
     trackEvent,
     translationEnabled,
     translationState,
+    translationTargetLanguage,
   ]);
 
   useEffect(() => {
@@ -1073,7 +1159,10 @@ export const BookPageReader = ({
         <ReaderTranslationPopover
           state={translationState}
           scope={translationScope}
-          canListen={canListenFromTranslation}
+          canListen={
+            canListenFromTranslation && translationState.status === "success"
+          }
+          languageOptions={availableTranslationLanguages}
           onListen={() => {
             if (translationScope === "word") {
               onTranslationWordPlay(translationState.text);
@@ -1081,6 +1170,78 @@ export const BookPageReader = ({
             }
             onTranslationSentencePlay(translationState.sentenceId);
             setTranslationState(null);
+          }}
+          onLanguageSelect={(language) => {
+            if (
+              isSameLingoCafeTranslationLanguage(
+                bookPage.translation.from,
+                language
+              )
+            ) {
+              return;
+            }
+
+            const translationId = translationState.id;
+            setTranslationState((current) =>
+              current?.id === translationId
+                ? {
+                    ...current,
+                    status: "saving-language",
+                    error: null,
+                  }
+                : current
+            );
+
+            void (async () => {
+              try {
+                const res = await fetch("/api/profile", {
+                  method: "PATCH",
+                  credentials: "same-origin",
+                  cache: "no-store",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    values: { ownLang: language },
+                    source: "reader-translation",
+                    method: "language-select",
+                  }),
+                });
+                const payload = (await res.json().catch(() => null)) as
+                  | ProfileApiResponse
+                  | null;
+
+                if (!res.ok) {
+                  throw new Error(
+                    typeof payload?.message === "string"
+                      ? payload.message
+                      : "Could not save language."
+                  );
+                }
+
+                setTranslationTargetLanguage(language);
+                setTranslationState((current) =>
+                  current?.id === translationId
+                    ? {
+                        ...current,
+                        status: "loading",
+                        error: null,
+                      }
+                    : current
+                );
+              } catch (error) {
+                setTranslationState((current) =>
+                  current?.id === translationId
+                    ? {
+                        ...current,
+                        status: "choose-language",
+                        error:
+                          error instanceof Error
+                            ? error.message
+                            : "Could not save language.",
+                      }
+                    : current
+                );
+              }
+            })();
           }}
         />
       )}

@@ -14,6 +14,7 @@
     "test:quicklist-llm-reorder": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/quicklist-llm-reorder.test.mts",
     "test:quicklist-skill": "python3 -m unittest tests/quicklist_skill_test.py",
     "test:lingocafe-sentence-segmentation": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-sentence-segmentation.test.mts",
+    "test:lingocafe-translation-language": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-translation-language.test.mts",
     "test:pwa-install-targets": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/pwa-install-targets.test.mts",
     "test:communications": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/communications.test.mts",
     "qa": "eslint . && npm run build"

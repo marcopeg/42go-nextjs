@@ -207,6 +207,7 @@
 
 ## Completed
 
+- [PH34: Choose a Translation Language When Reading and Fluent Languages Match](./tasks/PH34-choose-a-translation-language-when-reading-and-fluent-languages-match/PH34.task.md)
 - [OE92: Add Multi-App In-App Notifications and Admin Management](./tasks/OE92-add-multi-app-in-app-notifications-and-admin-management/OE92.task.md)
 - [CO54: Restore Draft-Centric Backlog Metadata and Lifecycle States](./tasks/CO54-restore-draft-centric-backlog-metadata-and-lifecycle-states/CO54.task.md)
 - [GM77: Design Reusable Overlay Surface Component and Agent Skill](./tasks/GM77-design-reusable-overlay-surface-component-and-agent-skill/GM77.task.md)
