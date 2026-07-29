@@ -82,6 +82,18 @@ Marketing composition:
 
 When a page needs persistent actions, use a 64 px fixed footer matching the header surface and border. Add content padding so neither footer nor bottom nav covers the page.
 
+### Backoffice lists
+
+- Treat the Users page as the canonical backoffice list layout unless a feature
+  explicitly needs another presentation.
+- On desktop, use the full available content width with no page padding, a
+  scrollable table, sticky column headers, compact 24 × 16 px cells, hairline
+  row dividers, and full-row keyboard/click activation.
+- On mobile, switch dense tables to a purpose-built compact list. Preserve the
+  same information hierarchy without forcing horizontal table scrolling.
+- Keep loading skeletons, empty states, and errors inside the same full-height
+  list surface so the page does not jump between unrelated layouts.
+
 ## Bookshelf
 
 - Page title: “Bookshelf”; optional language flag action on the right.

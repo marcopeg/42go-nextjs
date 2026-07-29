@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  AlertCircle,
   Ban,
   Bell,
   CalendarClock,
@@ -15,6 +16,7 @@ import {
   Mail,
   MessageSquareText,
   Plus,
+  RefreshCw,
   Send,
   Trash2,
   Users,
@@ -932,49 +934,166 @@ export default function BackofficeNotificationsPage() {
 
   return (
     <AppLayout
+      stickyHeader
       title="Notifications"
       icon={Bell}
       actions={[{ type: "component", component: NewAction }]}
-      flushMobileTop
+      disablePadding
       policy={{ require: { feature: "page:notifications", session: true, role: "backoffice", grants: ["notifications:list"] } }}
     >
-      <div className="mx-auto w-full max-w-5xl">
-        {error && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
-        {loading && <LoaderCircle className="mx-auto h-6 w-6 animate-spin" aria-label="Loading notifications" />}
-        {!loading && items.length === 0 && <Panel><p className="text-sm text-muted-foreground">No communications yet. Create one. Chuck Norris already approved the empty state.</p></Panel>}
-        {items.length > 0 && (
-          <PlainList flushMobileTop>
-            {items.map((item) => {
-              const kind = kindMeta[item.kind];
-              const status = getStatus(item);
-              const AudienceIcon = item.audienceMode === "everyone" ? Users : LockKeyhole;
-              return (
-                <PlainListItem key={item.id}>
-                  <PlainListButton
-                    className={communicationStyleMap[item.style].className}
-                    onClick={() => void openDetails(item)}
-                  >
-                    <kind.Icon className="mt-0.5 h-5 w-5 shrink-0" aria-label={kind.label} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">{item.title || item.subject || kind.label}</p>
-                      <p className="line-clamp-1 text-sm text-muted-foreground">{item.bodyMarkdown || "No message body"}</p>
-                      <div className="mt-2 flex min-w-0 items-center justify-between gap-3 text-xs text-muted-foreground">
-                        <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-                          <span className="inline-flex items-center gap-1"><status.Icon className="h-3.5 w-3.5" />{status.label}</span>
-                          <span className="inline-flex items-center gap-1"><AudienceIcon className="h-3.5 w-3.5" />{item.audienceMode === "everyone" ? "Public" : "Restricted"}</span>
-                        </span>
-                        <DisplayDate
-                          date={statusDate(item)}
-                          className="shrink-0 text-xs text-muted-foreground"
-                          interactive={false}
-                        />
-                      </div>
-                    </div>
-                  </PlainListButton>
-                </PlainListItem>
-              );
-            })}
-          </PlainList>
+      <div className="flex min-h-[calc(100vh-4rem)] flex-col overflow-hidden bg-background">
+        {error ? (
+          <div className="flex items-start gap-3 p-6 text-sm text-destructive">
+            <AlertCircle className="mt-0.5 size-4 shrink-0" />
+            <div className="space-y-3">
+              <p role="alert">{error}</p>
+              <Button type="button" variant="outline" size="sm" onClick={() => void loadList()}>
+                <RefreshCw />
+                Retry
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="md:hidden">
+              {loading ? (
+                <div className="p-6">
+                  <LoaderCircle className="mx-auto h-6 w-6 animate-spin" aria-label="Loading notifications" />
+                </div>
+              ) : items.length === 0 ? (
+                <p className="p-6 text-sm text-muted-foreground">
+                  No communications yet. Create one.
+                </p>
+              ) : (
+                <div className="px-6">
+                  <PlainList flushMobileTop>
+                    {items.map((item) => {
+                      const kind = kindMeta[item.kind];
+                      const status = getStatus(item);
+                      const AudienceIcon = item.audienceMode === "everyone" ? Users : LockKeyhole;
+                      return (
+                        <PlainListItem key={item.id}>
+                          <PlainListButton
+                            className={communicationStyleMap[item.style].className}
+                            onClick={() => void openDetails(item)}
+                          >
+                            <kind.Icon className="mt-0.5 h-5 w-5 shrink-0" aria-label={kind.label} />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-semibold">{item.title || item.subject || kind.label}</p>
+                              <p className="line-clamp-1 text-sm text-muted-foreground">{item.bodyMarkdown || "No message body"}</p>
+                              <div className="mt-2 flex min-w-0 items-center justify-between gap-3 text-xs text-muted-foreground">
+                                <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                                  <span className="inline-flex items-center gap-1"><status.Icon className="h-3.5 w-3.5" />{status.label}</span>
+                                  <span className="inline-flex items-center gap-1"><AudienceIcon className="h-3.5 w-3.5" />{item.audienceMode === "everyone" ? "Public" : "Restricted"}</span>
+                                </span>
+                                <DisplayDate
+                                  date={statusDate(item)}
+                                  className="shrink-0 text-xs text-muted-foreground"
+                                  interactive={false}
+                                />
+                              </div>
+                            </div>
+                          </PlainListButton>
+                        </PlainListItem>
+                      );
+                    })}
+                  </PlainList>
+                </div>
+              )}
+            </div>
+
+            <div className="hidden flex-1 overflow-auto md:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs font-medium uppercase text-muted-foreground">
+                    {["Communication", "Type", "Status", "Audience", "Priority", "Date"].map((label) => (
+                      <th
+                        key={label}
+                        className="sticky top-0 z-10 border-b bg-background/95 px-6 py-3 backdrop-blur"
+                      >
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    Array.from({ length: 8 }).map((_, index) => (
+                      <tr key={index} className="border-b last:border-0">
+                        <td className="px-6 py-4">
+                          <div className="h-4 w-48 rounded bg-muted" />
+                          <div className="mt-1 h-3 w-72 rounded bg-muted/70" />
+                        </td>
+                        {Array.from({ length: 5 }).map((__, cellIndex) => (
+                          <td key={cellIndex} className="px-6 py-4">
+                            <div className="h-4 w-24 rounded bg-muted" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : items.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">
+                        No communications yet. Create one.
+                      </td>
+                    </tr>
+                  ) : (
+                    items.map((item) => {
+                      const kind = kindMeta[item.kind];
+                      const status = getStatus(item);
+                      const AudienceIcon = item.audienceMode === "everyone" ? Users : LockKeyhole;
+                      const openItem = () => void openDetails(item);
+                      return (
+                        <tr
+                          key={item.id}
+                          tabIndex={0}
+                          role="button"
+                          className={`${communicationStyleMap[item.style].className} cursor-pointer border-b outline-none transition-[filter,box-shadow] last:border-0 hover:brightness-[0.98] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40 dark:hover:brightness-110`}
+                          onClick={openItem}
+                          onKeyDown={(event) => {
+                            if (event.key !== "Enter" && event.key !== " ") return;
+                            event.preventDefault();
+                            openItem();
+                          }}
+                        >
+                          <td className="px-6 py-4">
+                            <div className="min-w-60 max-w-xl">
+                              <p className="truncate font-medium">{item.title || item.subject || kind.label}</p>
+                              <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                                {item.bodyMarkdown || "No message body"}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-2">
+                              <kind.Icon className="h-4 w-4 shrink-0" />
+                              {kind.label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-2">
+                              <status.Icon className="h-4 w-4 shrink-0" />
+                              {status.label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-2">
+                              <AudienceIcon className="h-4 w-4 shrink-0" />
+                              {item.audienceMode === "everyone" ? "Public" : "Restricted"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">{priorityLabel(item.priority)}</td>
+                          <td className="px-6 py-4 text-muted-foreground">
+                            <DisplayDate date={statusDate(item)} interactive={false} />
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

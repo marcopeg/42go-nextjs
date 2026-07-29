@@ -410,7 +410,11 @@ describe("notification container behavior", () => {
     assert.match(admin, /<Markdown source=\{item\.bodyMarkdown\}/);
     assert.doesNotMatch(admin, /subtitle="Communicate with users in this app"/);
     assert.match(admin, /communicationStyleMap\[item\.style\]\.className/);
-    assert.match(admin, /flushMobileTop/);
+    assert.match(admin, /stickyHeader/);
+    assert.match(admin, /disablePadding/);
+    assert.match(admin, /<table className="w-full text-sm">/);
+    assert.match(admin, /sticky top-0 z-10 border-b/);
+    assert.match(admin, /\["Communication", "Type", "Status", "Audience", "Priority", "Date"\]/);
     assert.match(admin, /<PlainList flushMobileTop>/);
     assert.match(plainList, /flushMobileTop && "border-t-0 md:border-t"/);
     assert.doesNotMatch(plainList, /-mt-6/);
