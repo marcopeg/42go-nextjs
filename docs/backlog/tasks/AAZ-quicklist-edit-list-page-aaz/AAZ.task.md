@@ -4,32 +4,45 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-20T11:25:47+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# quicklist - edit list page [aaz]
+# quicklist - edit list page
 
-Implement editing functionality for a QuickList list.
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Implement editing functionality for a QuickList list.
 
-## Context
+## Retrieval Anchors
+- `AAZ`
+- `docs/backlog/tasks/AAZ-quicklist-edit-list-page-aaz`
+- `AAZ.task.md`
+- `/quicklists/[id]/edit`
+- `(app)`
+- `AppLayout`
+- `policy={{ require: { feature: "page:quicklists" } }}`
+- `PATCH /api/quicklists/:id`
 
-- Route: `/quicklists/[id]/edit` under the `(app)` group
-- Convention: client-only page using `AppLayout` for policy and UI chrome
-- Policy: `policy={{ require: { feature: "page:quicklists" } }}` via `AppLayout`
-- Data/APIs: `PATCH /api/quicklists/:id` for metadata, tasks CRUD via related endpoints (see [acg] update task, [ack] delete task)
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Context; Goals; Acceptance Criteria; Notes.
+- The source does not identify an implementation commit or independently prove a shipped change.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-## Goals
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-- [ ] Add UI for editing list (title and tasks)
-- [ ] Persist changes to database via API
-- [ ] Validate input (required title, task constraints)
+## Task Relationships
+### Supersedes
+None identified.
 
-## Acceptance Criteria
+### Superseded by
+None identified.
 
-- [ ] List can be edited from UI
-- [ ] Changes are saved in database
-- [ ] Input validation works with error display and disabled states
+### Related Tasks
+- [ACG: quicklist - API: update task (title/position/completed)](../ACG-quicklist-api-update-task-title-position-completed-acg/ACG.task.md) — explicitly referenced by the source artifacts.
+- [ACR: quicklist - API: delete project](../ACR-quicklist-api-delete-project-acr/ACR.task.md) — explicitly referenced by the source artifacts.
+- [ADD: Implement CLI Scripts](../ADD-implement-cli-scripts/ADD.task.md) — explicitly referenced by the source artifacts.
 
-## Notes
-
-- Use optimistic UI where sensible; rollback on error
-- Keep edits client-side, only persist via API calls
-- Include toolbar actions: Save, Cancel (and possibly Delete linked to [acr])
+## Compression Provenance
+- Consolidated artifacts: `AAZ.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

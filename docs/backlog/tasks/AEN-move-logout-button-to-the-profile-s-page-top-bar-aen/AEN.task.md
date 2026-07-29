@@ -2,64 +2,45 @@
 taskId: AEN
 status: archived
 createdAt: 2026-04-23T15:27:45+02:00
-updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-20T11:25:47+02:00
+compressedAt: 2026-07-29T12:00:00+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Move logout button to the profile's page top bar [aen]
+# Move logout button to the profile's page top bar
 
-Move the logout button from its current location to the top bar of the profile page. This will improve user experience by making the logout action more accessible and consistent with modern UI patterns.
+## Historical Summary
 
-The button must use the normal Button component and have an outlined style.
+Archived proposal to relocate logout from the profile session panel into the profile top bar for a consistent, accessible action surface.
 
-## Goals
+## Retrieval Anchors
 
-- [ ] Identify the current location and implementation of the logout button
-- [ ] Move the logout button to the profile page's top bar
-- [ ] Use the normal Button component with outlined style for the logout button
-- [ ] Ensure the logout functionality remains intact
-- [ ] Update any relevant tests or documentation
+- `AEN` — Move logout button to the profile's page top bar.
+- `src/app/(app)/profile/page.tsx`, `LogoutAction`, `PolicySessionPanel`.
+- `AppLayout` actions, `ToolbarActions`, `TActionItem[]`.
+- `signOut()` and `variant="outline"`.
 
-## Acceptance Criteria
+## Durable Outcome and Decisions
 
-- [ ] Logout button is visible in the profile page's top bar
-- [ ] Logout button uses the normal Button component with outlined style
-- [ ] Logout uses a small dedicated component to keep concerns isolated
-- [ ] Logout action works as before
-- [ ] No UI or functional regressions
-- [ ] Code and docs updated if needed
+The intended implementation was a small reusable `src/42go/auth/components/LogoutAction.tsx` component using the standard Button. The prior panel logout was to be removed while keeping Refresh Session.
 
-## Development Plan
+## Validation and Limitations
 
-1. Add Logout action to the Profile page top bar
+The artifact is an archived plan and supplies no implementation or test proof. Mobile and desktop behavior, plus sign-out parity, were explicit acceptance checks.
 
-   - File: `src/app/(app)/profile/page.tsx`
-   - Use `AppLayout`'s `actions` prop to render a toolbar action.
-   - Provide a `ComponentBlock` that renders a small dedicated component (e.g., `LogoutAction`) which uses the normal `Button` with `variant="outline"` and calls `signOut()` on click.
-   - Keep the button label "Logout".
+## Task Relationships
 
-2. Remove the old Logout button from the RBAC Session panel actions
+### Supersedes
 
-   - Same file: remove the destructive Logout button in `PolicySessionPanel` to avoid duplication. Keep "Refresh Session" action.
+None identified.
 
-3. Behavior parity
+### Superseded by
 
-   - Ensure `signOut()` is invoked the same way as before. A callback URL is not required unless already enforced elsewhere.
-   - Verify mobile and desktop layouts show the outlined button in the top bar.
+None identified.
 
-4. Light docs/tests
-   - If any docs reference the logout location, update accordingly.
+### Related Tasks
 
-## Files to Change
+None identified.
 
-- `src/app/(app)/profile/page.tsx` (move logout to `AppLayout` top bar actions; remove panel logout)
-- `src/42go/auth/components/LogoutAction.tsx` (new) a tiny component that renders the outlined Button and calls `signOut()`
+## Compression Provenance
 
-## Notes
-
-- Top bar actions are powered by `AppLayout` → `Toolbar` → `ToolbarActions` using `TActionItem[]` (LinkBlock or ComponentBlock).
-- Use the normal `Button` from `@/components/ui/button` with `variant="outline"`.
-- Encapsulate logout behavior in `LogoutAction` so we don't inline logic in the page and keep reuse optional without scattering logout buttons.
-
-## Next Steps
-
-execute task (k3)
+Consolidated `AEN.task.md`. Its exact version is recoverable from `compressedFromCommit` (`27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`).

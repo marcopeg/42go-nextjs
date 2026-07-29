@@ -4,71 +4,43 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-01T14:39:07+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Create Markdown Block [ach]
+# Create Markdown Block
 
-We need to create a new `@/components/Page/content/MarkdownBlock` component that can render Markdown in a page configuration.
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. We need to create a new '@/components/Page/content/MarkdownBlock' component that can render Markdown in a page configuration.
 
-The idea is to be able to take both plain markdown or a path to a markdown file to render:
+## Retrieval Anchors
+- `ACH`
+- `docs/backlog/tasks/ACH-create-markdown-block-ach`
+- `ACH.task.md`
+- `@/components/Page/content/MarkdownBlock`
+- `source`
+- `path`
+- `import MarkdownRenderer from "@/components/docs/MarkdownRenderer";`
+- `MarkdownRenderer`
 
-```js
-const config = {
-  default: {
-    public: {
-      pages: {
-        HomePage: {
-          items: [
-            {
-              type: "markdown",
-              source: "Hello **World**",
-            },
-            {
-              type: "markdown",
-              path: "/to/my/file.md",
-            },
-          ],
-        },
-      },
-    },
-  },
-};
-```
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Goals; Acceptance Criteria; Development Plan; Next Steps.
+- The source does not identify an implementation commit or independently prove a shipped change.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-The type of this component should make either `source` or `path` mandatory.
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-For this first iteration the goal is simply to build the component and apply the basic markdown redering via the `import MarkdownRenderer from "@/components/docs/MarkdownRenderer";` component. Nothing fancy.
+## Task Relationships
+### Supersedes
+None identified.
 
-The main goal is to verify that both inline content and path to file works correctly.
+### Superseded by
+None identified.
 
-This is expected to be a server side component.
+### Related Tasks
+- [ADD: Implement CLI Scripts](../ADD-implement-cli-scripts/ADD.task.md) — explicitly referenced by the source artifacts.
 
-## Goals
-
-- [x] Scaffold a reusable Markdown block component at `@/components/Page/content/MarkdownBlock`
-- [x] Render Markdown from both inline source and file path
-- [x] Document usage and update Memory Bank if needed
-
-## Acceptance Criteria
-
-- [x] Markdown block renders Markdown input from both `source` and `path`
-- [x] Component is reusable and documented
-- [x] No lint/build errors
-
-## Development Plan
-
-1. Read the Memory Bank for architectural and feature context.
-2. Review this task file for requirements.
-3. Scaffold the Markdown block component at `@/components/Page/content/MarkdownBlock`.
-4. Use the existing `MarkdownRenderer` for rendering.
-5. Implement logic to accept either `source` or `path` (one required).
-6. For `path`, load the file server-side and pass content to renderer.
-7. Add usage example in config and docs.
-8. Update documentation and Memory Bank if new best practices or dependencies are introduced.
-9. Prepare for execution: no errors, no mercy.
-
-## Next Steps
-
-- [x] Fix up the exported types
-- [x] Make sure that fs reads are kept in memory for cache so to do not hit the disk at every page load
-- [x] Separate the presentational logic from the MarkdownBlock, build a custom first level component for the pure rendering part
-- [ ] In that component, try to import the rendering functionalities that we use from the docs for styling and links rendering so to cleanup the docs part
+## Compression Provenance
+- Consolidated artifacts: `ACH.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

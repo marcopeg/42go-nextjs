@@ -4,46 +4,38 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-20T11:25:47+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# quicklist - API: create project with initial task [aby]
+# quicklist - API: create project with initial task
 
-Implement POST /api/quicklists to create a new project with a default title and an initial task.
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Implement POST /api/quicklists to create a new project with a default title and an initial task.
 
-## Context
+## Retrieval Anchors
+- `ABY`
+- `docs/backlog/tasks/ABY-quicklist-api-create-project-with-initial-task-aby`
+- `ABY.task.md`
 
-- Policy: require { feature: "api:quicklists", auth: true }
-- Defaults: title = "grocery list" (if missing), initialTaskTitle = "milk"
-- Writes: projects (owned_by/created_by/updated_by = session.user.id) and tasks (position = 1)
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Context; Goals; Acceptance Criteria; API Contract; Implementation Notes; Next Steps.
+- The source does not identify an implementation commit or independently prove a shipped change.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-## Goals
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-- [ ] Validate and sanitize input
-- [ ] Transactional insert of project and first task
-- [ ] Return created project id and title
-- [ ] Bump updated_at appropriately
+## Task Relationships
+### Supersedes
+None identified.
 
-## Acceptance Criteria
+### Superseded by
+None identified.
 
-- [ ] 201 JSON response: { id: string, title: string }
-- [ ] On error: 400 invalid input, 401 unauthenticated, 403 forbidden, 404 feature missing
-- [ ] Transaction rollback on partial failure
+### Related Tasks
+None identified.
 
-## API Contract
-
-POST /api/quicklists
-
-Body
-{ "title": "optional", "initialTaskTitle": "optional" }
-
-Response 201
-{ "id": "uuid", "title": "string" }
-
-## Implementation Notes
-
-- Use getDB() and knex.transaction
-- Schema-qualified tables: quicklist.projects, quicklist.tasks
-- Set created_by/updated_by/owned_by = session.user.id
-
-## Next Steps
-
-plan task (k2)
+## Compression Provenance
+- Consolidated artifacts: `ABY.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

@@ -4,38 +4,38 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-18T14:38:16+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# quicklist - API: delete project [acr]
+# quicklist - API: delete project
 
-Implement DELETE /api/quicklists/:projectId to remove a project and cascade related data.
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Implement DELETE /api/quicklists/:projectId to remove a project and cascade related data.
 
-## Context
+## Retrieval Anchors
+- `ACR`
+- `docs/backlog/tasks/ACR-quicklist-api-delete-project-acr`
+- `ACR.task.md`
 
-- Policy: require { feature: "api:quicklists", auth: true }
-- Permissions: owner only
-- DB has CASCADE on tasks/collabs/invites
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Context; Goals; Acceptance Criteria; API Contract; Implementation Notes; Next Steps.
+- The source does not identify an implementation commit or independently prove a shipped change.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-## Goals
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-- [ ] Verify ownership
-- [ ] Delete project
-- [ ] Return 204
+## Task Relationships
+### Supersedes
+None identified.
 
-## Acceptance Criteria
+### Superseded by
+None identified.
 
-- [ ] 204 No Content on success
-- [ ] 403 for non-owners
-- [ ] 404 when project not found or feature missing
+### Related Tasks
+None identified.
 
-## API Contract
-
-DELETE /api/quicklists/:projectId
-
-## Implementation Notes
-
-- Access check: projects.owned_by = user.id
-- Consider soft delete if needed (not in scope now)
-
-## Next Steps
-
-plan task (k2)
+## Compression Provenance
+- Consolidated artifacts: `ACR.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

@@ -4,74 +4,44 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-13T16:50:12+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Support Accent Color [aaf]
+# Support Accent Color
 
-I would like to set the accent color as part of the app's configuration:
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. I would like to set the accent color as part of the app's configuration:
 
-```tsx
-export const availableApps = {
-  default: {
-    theme: {
-      colors: {
-        accent: "oklch(0.7 0.15 180)", // Example: vibrant cyan
-      },
-    },
-  },
-  // App without accent color will use fallback
-  minimalApp: {
-    theme: {
-      // No colors defined - will use neutral blue fallback
-    },
-  },
-};
-```
+## Retrieval Anchors
+- `AAF`
+- `docs/backlog/tasks/AAF-support-accent-color-aaf`
+- `AAF.task.md`
+- `public/themes/`
+- `public/themes/app2.css`
+- `InjectAppID`
+- `src/42go/config/InjectAppID.tsx`
+- `<link rel="stylesheet" href={`
+- `} />`
 
-This should be somehow passed down to the CSS system so to be applied to stuff like:
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Implementation; Testing Notes.
+- The source does not identify an implementation commit or independently prove a shipped change.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-- hero titles
-- buttons background
-- etc
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-I expect also that the foreground OR background of items that implement the accent color should be calculated automatically.
+## Task Relationships
+### Supersedes
+None identified.
 
-# Acceptance Criteria
+### Superseded by
+None identified.
 
-- [ ] App1 defines a bright orange as accent, App2 defines a bright green
-- [ ] App1's buttons have the bright orange as background color
-- [ ] App2's buttons have the bright green as background color
+### Related Tasks
+None identified.
 
-## Implementation
-
-- Introduced optional theme sheets in `public/themes/`, e.g. `public/themes/app2.css`, containing only the CSS vars overrides like:
-  ```css
-  /* BEGIN App2 override */
-  :root {
-    --background: red;
-  }
-  .dark {
-    --background: red;
-  }
-  /* END App2 override */
-  ```
-- Updated `InjectAppID` (`src/42go/config/InjectAppID.tsx`) to emit a `<link rel="stylesheet" href={`/themes/${name}.css`} />` when `name !== 'default'`:
-  ```tsx
-  {
-    name && name !== "default" && (
-      <link
-        rel="stylesheet"
-        href={`/themes/${name}.css`}
-        onError={(e) => (e.currentTarget as HTMLLinkElement).remove()}
-      />
-    );
-  }
-  ```
-  - The `onError` handler removes the `<link>` if the file does not exist, falling back to the base `globals.css`.
-- No changes to the existing `globals.css` or build pipeline were required—purely CSS cascade and runtime `<link>` injection.
-
-## Testing Notes
-
-- Verified that visiting `app2.localhost:3000` or sending `X-42Go-AppID: app2` header applies the red background.
-- Confirmed that missing theme CSS (e.g. for apps without an override file) falls back gracefully to `globals.css` defaults.
-
-_Next step_: implement a CSS-only “base color” variable (`--accent-base`) and use native CSS `color-contrast()` or PostCSS plugins to auto-generate tints and contrast colors.
+## Compression Provenance
+- Consolidated artifacts: `AAF.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

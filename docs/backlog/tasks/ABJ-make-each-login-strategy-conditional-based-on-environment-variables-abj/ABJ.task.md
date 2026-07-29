@@ -4,48 +4,42 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-07-23T17:21:14+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Make Each Login Strategy Conditional Based on Environment Variables [abj]
+# Make Each Login Strategy Conditional Based on Environment Variables
 
-## ✅ COMPLETED BY TASK [abm]
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Implement conditional loading and availability of authentication strategies based on environment variables. This will allow deployments to enable/disable specific authentication methods without code changes, improving flexibility and security.
 
-**This task was completed as part of [abm] Support social login from different app configuration** ([🔗](../ABM-support-social-login-from-different-app-configuration-abm/ABM.task.md))
+## Retrieval Anchors
+- `ABJ`
+- `docs/backlog/tasks/ABJ-make-each-login-strategy-conditional-based-on-environment-variables-abj`
+- `ABJ.task.md`
+- `APP1_GITHUB_CLIENT_ID`
+- `getProviders()`
 
-**Implementation Achieved**:
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: ✅ COMPLETED BY TASK [abm]; Original Task Description; Acceptance Criteria.
+- Completion language appears in the source, but no implementation commit is recorded there.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-- ✅ **Environment-Based Configuration**: Each app uses specific environment variables (e.g., `APP1_GITHUB_CLIENT_ID`)
-- ✅ **Conditional Strategy Registration**: Providers only register when environment variables are available
-- ✅ **Dynamic UI Filtering**: Login UI shows only configured and available strategies
-- ✅ **Graceful Fallback**: Apps work with any combination of configured providers
-- ✅ **Validation**: Environment variable validation in provider configuration
-- ✅ **Documentation**: Complete setup guide with environment variable requirements
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-**Key Features Delivered**:
+## Task Relationships
+### Supersedes
+None identified.
 
-- Per-app environment variable mapping in AppConfig
-- Conditional provider building in `getProviders()` function
-- Frontend filtering based on available configuration
-- Production-ready environment management
-- Comprehensive setup documentation
+### Superseded by
+None identified.
 
----
+### Related Tasks
+- [ABM: Support Social Login from Different App Configuration](../ABM-support-social-login-from-different-app-configuration-abm/ABM.task.md) — explicitly referenced by the source artifacts.
+- [ABM: Support Social Login from Different App Configuration](../ABM-support-social-login-from-different-app-configuration-abm/ABM.task.md) — explicitly referenced by the source artifacts.
+- [ADD: Implement CLI Scripts](../ADD-implement-cli-scripts/ADD.task.md) — explicitly referenced by the source artifacts.
 
-## Original Task Description
-
-Implement conditional loading and availability of authentication strategies based on environment variables. This will allow deployments to enable/disable specific authentication methods without code changes, improving flexibility and security.
-
-Each authentication strategy (GitHub, Google, Facebook, X, LinkedIn, Apple, etc.) should only be available and initialized if the corresponding environment variables are properly configured.
-
-## Acceptance Criteria
-
-- [ ] Create environment variable checks for each authentication strategy
-- [ ] Implement conditional strategy registration based on env vars
-- [ ] Update authentication configuration to respect environment settings
-- [ ] Ensure UI only shows available authentication options
-- [ ] Add graceful handling when strategies are not configured
-- [ ] Update documentation with required environment variables for each strategy
-- [ ] Implement fallback behavior when no strategies are configured
-- [ ] Add validation for required environment variables on startup
-- [ ] Create helper functions to check strategy availability
-- [ ] Update existing GitHub authentication to use conditional loading
-- [ ] Test with various environment configurations
+## Compression Provenance
+- Consolidated artifacts: `ABJ.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

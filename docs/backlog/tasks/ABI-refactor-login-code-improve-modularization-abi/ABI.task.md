@@ -4,46 +4,45 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-07-23T17:21:14+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Refactor Login Code (Improve Modularization) [abi]
+# Refactor Login Code (Improve Modularization)
 
-## ✅ COMPLETED BY TASK [abm]
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Refactor the existing login code to improve modularization, making it easier to maintain and extend with new authentication strategies. The current login implementation should be broken down into smaller, more focused modules that follow single responsibility principle.
 
-**This task was completed as part of [abm] Support social login from different app configuration** ([🔗](../ABM-support-social-login-from-different-app-configuration-abm/ABM.task.md))
+## Retrieval Anchors
+- `ABI`
+- `docs/backlog/tasks/ABI-refactor-login-code-improve-modularization-abi`
+- `ABI.task.md`
+- `src/lib/auth/providers/`
+- `getProviders()`
+- `AuthProvider<T>`
+- `src/lib/auth/providers/types.ts`
+- `src/lib/auth/providers/get-providers.ts`
 
-**Implementation Achieved**:
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: ✅ COMPLETED BY TASK [abm]; Original Task Description; Acceptance Criteria.
+- Completion language appears in the source, but no implementation commit is recorded there.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-- ✅ **Modular Provider Architecture**: Created `src/lib/auth/providers/` with type-safe provider system
-- ✅ **Separation of Concerns**: Provider logic separated from UI components
-- ✅ **Centralized Authentication Service**: `getProviders()` function manages all provider configuration
-- ✅ **TypeScript Interfaces**: Complete type safety with `AuthProvider<T>` generic system
-- ✅ **Clean Architecture**: Authentication logic decoupled from NextAuth configuration
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-**Key Improvements Delivered**:
+## Task Relationships
+### Supersedes
+None identified.
 
-- Provider-specific modules in `src/lib/auth/providers/`
-- Type-safe configuration via `src/lib/auth/providers/types.ts`
-- Dynamic provider building via `src/lib/auth/providers/get-providers.ts`
-- UI/logic separation in login components
-- Extensible architecture for adding new providers
+### Superseded by
+None identified.
 
----
+### Related Tasks
+- [ABM: Support Social Login from Different App Configuration](../ABM-support-social-login-from-different-app-configuration-abm/ABM.task.md) — explicitly referenced by the source artifacts.
+- [ABM: Support Social Login from Different App Configuration](../ABM-support-social-login-from-different-app-configuration-abm/ABM.task.md) — explicitly referenced by the source artifacts.
+- [ADD: Implement CLI Scripts](../ADD-implement-cli-scripts/ADD.task.md) — explicitly referenced by the source artifacts.
 
-## Original Task Description
-
-Refactor the existing login code to improve modularization, making it easier to maintain and extend with new authentication strategies. The current login implementation should be broken down into smaller, more focused modules that follow single responsibility principle.
-
-The goal is to create a clean architecture that separates concerns between authentication providers, user management, session handling, and UI components.
-
-## Acceptance Criteria
-
-- [ ] Create separate modules for each authentication concern (providers, session, user management)
-- [ ] Extract authentication provider logic into individual modules
-- [ ] Create a centralized authentication service/manager
-- [ ] Improve separation between authentication logic and UI components
-- [ ] Ensure all existing functionality continues to work after refactoring
-- [ ] Add proper TypeScript interfaces and types for authentication modules
-- [ ] Update imports and dependencies across the codebase
-- [ ] Maintain backward compatibility with existing authentication flows
-- [ ] Document the new modular architecture
-- [ ] Run tests to ensure no regression in functionality
+## Compression Provenance
+- Consolidated artifacts: `ABI.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

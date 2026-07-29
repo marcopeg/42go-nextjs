@@ -4,101 +4,44 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-01T14:39:07+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Create Custom Landing Page for Calendar Config [aco]
+# Create Custom Landing Page for Calendar Config
 
-Create custom landing page for the calendar config
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Create custom landing page for the calendar config
 
-## Goals
+## Retrieval Anchors
+- `ACO`
+- `docs/backlog/tasks/ACO-create-custom-landing-page-for-calendar-config-aco`
+- `ACO.task.md`
+- `src/AppConfig.ts`
+- `calendar.localhost:3000`
+- `calendar.mydomain.com`
+- `contents/calendar/terms.md`
+- `src/config/calendar-home-page.ts`
 
-- [ ] Design calendar-specific landing page
-- [ ] Implement calendar-focused content and branding
-- [ ] Configure page routing for calendar app
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Goals; Acceptance Criteria; Current Analysis; Required Changes; Implementation Steps; Files to Modify/Create; Next Steps.
+- Completion language appears in the source, but no implementation commit is recorded there.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-## Acceptance Criteria
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-- [ ] Custom landing page created for calendar app
-- [ ] Calendar-specific content and design implemented
-- [ ] Landing page properly integrated with calendar config
-- [ ] Page displays correctly on calendar.localhost:3000
+## Task Relationships
+### Supersedes
+None identified.
 
-# Development Plan
+### Superseded by
+None identified.
 
-## Current Analysis
+### Related Tasks
+- [ADD: Implement CLI Scripts](../ADD-implement-cli-scripts/ADD.task.md) — explicitly referenced by the source artifacts.
+- [ADD: Implement CLI Scripts](../ADD-implement-cli-scripts/ADD.task.md) — explicitly referenced by the source artifacts.
 
-The calendar app is already configured in `src/AppConfig.ts` with:
-
-- Match URLs: `calendar.localhost:3000` and `calendar.mydomain.com`
-- Basic metadata and branding (CalendarPro with CalendarCheck icon)
-- A simple HomePage configuration with basic hero and CTA
-- Terms page already exists at `contents/calendar/terms.md`
-- Uses credentials-only authentication
-- Light theme default
-
-## Required Changes
-
-### 1. Create Calendar-Specific HomePage Configuration
-
-Need to create a calendar-focused homepage that showcases calendar features instead of the generic SaaS starter kit messaging.
-
-**File to create**: `src/config/calendar-home-page.ts`
-
-**Content structure**:
-
-- Hero section highlighting calendar/scheduling benefits
-- Features showcase for time management capabilities
-- Call-to-action focusing on calendar functionality
-- Calendar-themed messaging throughout
-
-### 2. Update AppConfig for Calendar
-
-**File to modify**: `src/AppConfig.ts`
-
-**Changes needed**:
-
-- Replace the current basic HomePage configuration with the new calendar-specific one
-- Import the new calendar homepage configuration
-- Ensure proper calendar branding is maintained
-
-### 3. Add Calendar-Specific Content Blocks (Optional Enhancement)
-
-Could add calendar-specific markdown content or additional landing page sections that highlight:
-
-- Time management benefits
-- Scheduling features
-- Calendar integration capabilities
-- Professional productivity messaging
-
-## Implementation Steps
-
-1. **Create Calendar Homepage Configuration**
-
-   - Create `src/config/calendar-home-page.ts` with calendar-focused content
-   - Include calendar-themed hero section
-   - Add relevant CTAs (Try Calendar, Schedule Demo, etc.)
-
-2. **Update AppConfig Integration**
-
-   - Import new calendar homepage in `src/AppConfig.ts`
-   - Replace generic HomePage with CalendarHomePage in calendar config
-   - Maintain existing calendar branding (CalendarPro, CalendarCheck icon)
-
-3. **Test Calendar Landing Page**
-
-   - Verify calendar.localhost:3000 displays the custom landing page
-   - Ensure all links and CTAs work properly
-   - Confirm calendar-specific branding is visible
-
-4. **Content Refinement**
-   - Polish calendar-focused messaging
-   - Ensure Chuck Norris tone is maintained
-   - Verify mobile responsiveness
-
-## Files to Modify/Create
-
-- **Create**: `src/config/calendar-home-page.ts` - Calendar-specific homepage configuration
-- **Modify**: `src/AppConfig.ts` - Update calendar app configuration to use new homepage
-
-## Next Steps
-
-Execute task (k2)
+## Compression Provenance
+- Consolidated artifacts: `ACO.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

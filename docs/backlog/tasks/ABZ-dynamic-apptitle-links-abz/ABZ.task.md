@@ -4,169 +4,44 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-06T15:28:00+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Dynamic AppTitle links [abz]
+# Dynamic AppTitle links
 
-Links on the right-side of the toolbar must be dynamic.
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Links on the right-side of the toolbar must be dynamic.
 
-```js
-const config = {
-  app1: {
-    public: {
-      toolbar: {
-        links: [
-          {
-            label: "Join Us!",
-            href: "/login",
-            style: "primary",
-            sticky: true, // if true, it is forcefully kept for small screens also, else it is hidden there
-          },
-        ],
-      },
-    },
-  },
-};
-```
+## Retrieval Anchors
+- `ABZ`
+- `docs/backlog/tasks/ABZ-dynamic-apptitle-links-abz`
+- `ABZ.task.md`
+- `@/components/layouts/public/Header.tsx`
+- `@/components/layouts/public/HeaderLinks.tsx`
+- `Header.tsx`
+- `ToolbarConfig`
+- `src/AppConfig.ts`
+- `links`
 
-This config should simply generate a list of links that should be rendered into the right-side of the public layout toolbar (`@/components/layouts/public/Header.tsx`) just before the "user menu".
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Development Plan; Files to Modify/Create; Technical Considerations; Next Steps; Progress.
+- The source does not identify an implementation commit or independently prove a shipped change.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-I think it would be best to produce this componeng as `@/components/layouts/public/HeaderLinks.tsx` so and use it in the `Header.tsx`.
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-NOTE: this must NOT be flagged as clientside.
+## Task Relationships
+### Supersedes
+None identified.
 
-## Development Plan
+### Superseded by
+None identified.
 
-### Step 1: Extend ToolbarConfig Interface
+### Related Tasks
+- [ADD: Implement CLI Scripts](../ADD-implement-cli-scripts/ADD.task.md) — explicitly referenced by the source artifacts.
 
-Extend the existing `ToolbarConfig` interface in `src/AppConfig.ts` to include a `links` array:
-
-```typescript
-export interface ToolbarLinkConfig {
-  label: string;
-  href: string;
-  style?: "primary" | "secondary" | "ghost";
-  sticky?: boolean; // Keep visible on small screens
-}
-
-export interface ToolbarConfig {
-  title?: string;
-  subtitle?: string;
-  icon?: string | ComponentType<{ className?: string }>;
-  href?: string;
-  links?: ToolbarLinkConfig[]; // New property
-}
-```
-
-### Step 2: Create HeaderLinks Component
-
-Create a new server component `@/components/layouts/public/HeaderLinks.tsx`:
-
-- Accept toolbar config as props
-- Render links using proper Link components
-- Handle `style` prop with appropriate Tailwind classes
-- Implement responsive behavior based on `sticky` property
-- Ensure server-side rendering (no client-side flags)
-
-### Step 3: Update Header Component
-
-Modify `@/components/layouts/public/Header.tsx`:
-
-- Import the new HeaderLinks component
-- Position it between AppTitle and UserMenu
-- Pass toolbar config to HeaderLinks
-
-### Step 4: Update App Configurations
-
-Add example `links` configuration to existing apps in `src/AppConfig.ts`:
-
-- Add primary/secondary link examples
-- Test sticky behavior with different configurations
-- Demonstrate various link styles
-
-### Step 5: Style Integration
-
-Ensure proper styling with:
-
-- Use shadcn/ui Button component for consistent styling
-- Implement responsive hiding/showing based on `sticky`
-- Proper spacing and alignment with existing header elements
-- Match existing toolbar styling patterns
-
-### Step 6: Testing & Validation
-
-- Test with different app configurations
-- Verify responsive behavior on small screens
-- Check server-side rendering (no hydration issues)
-- Run `yarn qa` to ensure no errors
-- Test link navigation and styling variants
-
-## Files to Modify/Create
-
-1. `src/AppConfig.ts` - Extend ToolbarConfig interface
-2. `src/components/layouts/public/HeaderLinks.tsx` - New component (create)
-3. `src/components/layouts/public/Header.tsx` - Add HeaderLinks integration
-4. Update app configurations with example links
-
-## Technical Considerations
-
-- **Server Component**: HeaderLinks must be server-side only
-- **Responsive Design**: Use Tailwind classes for screen size handling
-- **Type Safety**: Full TypeScript support for link configurations
-- **Performance**: No client-side JavaScript overhead
-- **Accessibility**: Proper semantic HTML and ARIA labels
-
-## Next Steps
-
-execute task (k2)
-
-## Progress
-
-### ✅ TASK COMPLETED
-
-**Implementation Summary:**
-
-Chuck Norris doesn't just create toolbar links. He creates a roundhouse kick of dynamic navigation.
-
-1. **Extended TypeScript Interface System**
-
-   - Added `ToolbarLinkConfig` interface with `label`, `href`, `style`, and `sticky` properties
-   - Extended existing `ToolbarConfig` with `links?: ToolbarLinkConfig[]` array
-   - Full type safety for link configurations across all apps
-
-2. **Server-Side HeaderLinks Component**
-
-   - Created `@/components/layouts/public/HeaderLinks.tsx` as pure server component
-   - Implements responsive behavior with `sticky` property (shows on small screens when true)
-   - Uses shadcn/ui Button component with proper variants: `primary` → `default`, `secondary` → `secondary`, `ghost` → `ghost`
-   - Graceful handling of empty/missing links (returns null)
-
-3. **Header Integration**
-
-   - Updated `@/components/layouts/public/Header.tsx` to include HeaderLinks
-   - Positioned between AppTitle and UserMenu with proper spacing (`gap-4`)
-   - Passes `config?.public?.toolbar?.links` to HeaderLinks component
-
-4. **Multi-App Configuration Examples**
-
-   - **Default app**: "Get Started" (secondary, not sticky) + "Sign In" (primary, sticky)
-   - **App1**: "Join Us!" (primary, sticky) + "Pricing" (ghost, not sticky)
-   - **App2**: "Dashboard" (secondary, sticky) + "About" (ghost, not sticky)
-   - **Calendar**: "Try Now" (primary, sticky) + "Features" (ghost, not sticky)
-
-5. **Production Validation**
-   - ✅ **Lint**: No ESLint warnings or errors
-   - ✅ **Build**: TypeScript compilation successful (2s build time)
-   - ✅ **Type Safety**: Full interface compliance across all configurations
-   - ✅ **Server-Side**: No client-side JavaScript overhead
-   - ✅ **Responsive**: Proper behavior based on `sticky` configuration
-
-**Key Features Delivered:**
-
-- **Dynamic Configuration**: Links rendered from app-specific toolbar config
-- **Style Variants**: Support for primary, secondary, and ghost button styles
-- **Responsive Behavior**: `sticky` links stay visible on mobile, others hide
-- **Server-Side Only**: Zero client-side JavaScript, optimal performance
-- **Type Safety**: Full TypeScript support prevents configuration errors
-- **Seamless Integration**: Works with existing toolbar and theme system
-
-The toolbar link system is now bulletproof and ready for Chuck Norris-level traffic.
+## Compression Provenance
+- Consolidated artifacts: `ABZ.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

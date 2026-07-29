@@ -4,39 +4,44 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-01T14:39:07+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Move `config.meta` to `config.public.meta` [ace]
+# Move `config.meta` to `config.public.meta`
 
-Move the `meta` property from the root of the config to the `public` section, so it becomes `config.public.meta`.
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Move the 'meta' property from the root of the config to the 'public' section, so it becomes 'config.public.meta'.
 
-## Goals
+## Retrieval Anchors
+- `ACE`
+- `docs/backlog/tasks/ACE-move-config-meta-to-config-public-meta-ace`
+- `ACE.task.md`
+- `config.meta`
+- `config.public.meta`
+- `meta`
+- `public`
+- `src/AppConfig.ts`
+- `src/config/about-page.ts`
 
-- [ ] Identify all usages of `config.meta`
-- [ ] Move `meta` property to `config.public.meta` in config files
-- [ ] Refactor codebase to use `config.public.meta` instead of `config.meta`
-- [ ] Test and verify that everything works as expected
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Goals; Acceptance Criteria; Development Plan; Next Steps.
+- The source does not identify an implementation commit or independently prove a shipped change.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-## Acceptance Criteria
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-- [ ] No references to `config.meta` remain
-- [ ] All references use `config.public.meta`
-- [ ] App builds and runs without errors
-- [ ] No broken features related to meta info
+## Task Relationships
+### Supersedes
+None identified.
 
-## Development Plan
+### Superseded by
+None identified.
 
-1. Identify all usages of `meta` in config files (`src/AppConfig.ts`, `src/config/about-page.ts`, etc.).
-2. Refactor each app config in `src/AppConfig.ts`:
-   - Move the `meta` property inside the `public` object for each app.
-   - Result: `public: { ...toolbar, meta: { ... } }`
-3. Update all code that references `config.meta` to use `config.public.meta` instead.
-   - Example: In `src/app/layout.tsx`, change `config?.meta` to `config?.public?.meta`.
-4. Update any type definitions if needed (e.g., `AppConfigItem` interface).
-5. Test the app: run `npm run lint && npm run build` to ensure no errors.
-6. Verify that all meta-related features (SEO, page titles, etc.) still work.
+### Related Tasks
+None identified.
 
-Chuck Norris would move that meta faster than a roundhouse kick.
-
-## Next Steps
-
-execute task (k2)
+## Compression Provenance
+- Consolidated artifacts: `ACE.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

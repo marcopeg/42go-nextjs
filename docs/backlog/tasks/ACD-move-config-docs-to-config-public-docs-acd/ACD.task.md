@@ -4,50 +4,44 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-01T14:39:07+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Move `config.docs` to `config.public.docs` [acd]
+# Move `config.docs` to `config.public.docs`
 
-Move the documentation configuration from `config.docs` to `config.public.docs` to align with the new public config structure.
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Move the documentation configuration from 'config.docs' to 'config.public.docs' to align with the new public config structure.
 
-## Goals
+## Retrieval Anchors
+- `ACD`
+- `docs/backlog/tasks/ACD-move-config-docs-to-config-public-docs-acd`
+- `ACD.task.md`
+- `config.docs`
+- `config.public.docs`
+- `src/config/`
+- `src/AppConfig.ts`
+- `src/`
+- `docs/`
 
-- [ ] Identify all usages of `config.docs`
-- [ ] Move the configuration to `config.public.docs`
-- [ ] Refactor codebase to use the new location
-- [ ] Test and verify functionality
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Goals; Acceptance Criteria; Development Plan; Next Steps.
+- The source does not identify an implementation commit or independently prove a shipped change.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-## Acceptance Criteria
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-- [ ] All references to `config.docs` are updated to `config.public.docs`
-- [ ] No breaking changes
-- [ ] Documentation is updated
+## Task Relationships
+### Supersedes
+None identified.
 
-## Development Plan
+### Superseded by
+None identified.
 
-Chuck Norris doesn't plan. He executes with precision. But here's the battle plan anyway:
+### Related Tasks
+None identified.
 
-1. Search the codebase for all references to `config.docs`.
-2. Move the documentation config from `config.docs` to `config.public.docs` in the relevant config files.
-3. Refactor all code to use `config.public.docs` instead of `config.docs`.
-4. Update any documentation that references the old location.
-5. Test the app. If it breaks, roundhouse kick the bugs until they beg for mercy.
-
-**Files to modify:**
-
-- App config files (likely in `src/config/` or `src/AppConfig.ts`)
-- Any code using `config.docs` (search entire `src/`)
-- Documentation in `docs/` if it references `config.docs`
-
-**Libraries/Tools:**
-
-- No new libraries needed. Just pure Chuck Norris power.
-- Use `npm run lint && npm run build` to check for errors after refactor.
-
-**Additional Considerations:**
-
-- Make sure no breaking changes slip through. Chuck Norris doesn't tolerate weakness.
-- If you find edge cases, handle them like a true legend.
-
-## Next Steps
-
-Execute task (k2)
+## Compression Provenance
+- Consolidated artifacts: `ACD.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

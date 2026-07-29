@@ -4,132 +4,44 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-07-23T17:21:14+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Use Database Users Table to Authenticate Users [aba]
+# Use Database Users Table to Authenticate Users
 
-Implement database-backed authentication by connecting the NextAuth.js credentials provider to the users table in the database. This will replace the current mock authentication with real database lookups and properly hashed password verification.
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Implement database-backed authentication by connecting the NextAuth.js credentials provider to the users table in the database. This will replace the current mock authentication with real database lookups and properly hashed password verification.
 
-## Acceptance Criteria
+## Retrieval Anchors
+- `ABA`
+- `docs/backlog/tasks/ABA-use-database-users-table-to-authenticate-users-aba`
+- `ABA.task.md`
+- `john`
+- `jane`
+- `authOptions.ts`
+- `auth.users`
+- `src/lib/auth/authOptions.ts`
+- `getDB`
 
-- [ ] Seed the database with test users (john and jane) with properly hashed passwords
-- [ ] Update the NextAuth.js credentials provider to query the database for user authentication
-- [ ] Implement proper password verification using bcrypt
-- [ ] Ensure existing login flow works with database authentication
-- [ ] Remove mock authentication logic
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Acceptance Criteria; Development Plan; Progress.
+- Completion language appears in the source, but no implementation commit is recorded there.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-## Development Plan
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-### Current State Analysis
+## Task Relationships
+### Supersedes
+None identified.
 
-**What's Already There:**
+### Superseded by
+None identified.
 
-- Database seeds are already creating `john` and `jane` users with hashed passwords ✓
-- bcrypt dependency is installed ✓
-- Database connection utilities are ready ✓
-- NextAuth is configured but using mock authentication
+### Related Tasks
+- [ADD: Implement CLI Scripts](../ADD-implement-cli-scripts/ADD.task.md) — explicitly referenced by the source artifacts.
 
-**What Needs Implementation:**
-
-- Mock authentication logic in `authOptions.ts` needs replacement
-- No database queries in the credentials provider
-- Users exist in DB but authentication doesn't use them
-
-### The Implementation Plan
-
-#### Phase 1: Database Query Implementation
-
-1. **Modify `authOptions.ts`** to query the database instead of using mock logic
-2. **Import database utilities** and bcrypt for password verification
-3. **Implement user lookup** by username/email from `auth.users` table
-4. **Add proper password verification** using bcrypt.compare()
-
-#### Phase 2: Error Handling & Security
-
-1. **Implement robust error handling** for database connection issues
-2. **Ensure password security** - no logging of sensitive data
-3. **Add case-insensitive lookup** for usernames/emails
-4. **Maintain existing session structure** and JWT handling
-
-#### Phase 3: Testing & Validation
-
-1. **Test with john/john credentials**
-2. **Test with jane/jane credentials**
-3. **Verify mock authentication is completely removed**
-4. **Test invalid credentials handling**
-
-## Progress
-
-### ✅ **Completed Implementation**
-
-**Phase 1: Database Query Implementation** - COMPLETED
-- ✅ Modified `src/lib/auth/authOptions.ts` to use database queries instead of mock logic
-- ✅ Imported database utilities (`getDB`) and bcrypt for password verification
-- ✅ Implemented user lookup by username from `auth.users` table using PostgreSQL ILIKE
-- ✅ Added proper password verification using `bcrypt.compare()`
-
-**Phase 2: Error Handling & Security** - COMPLETED
-- ✅ Implemented robust error handling for database connection issues
-- ✅ Ensured password security with no logging of sensitive data
-- ✅ Added case-insensitive lookup for usernames using PostgreSQL ILIKE operator
-- ✅ Maintained existing session structure and JWT handling
-
-**Phase 3: TypeScript Enhancement** - COMPLETED
-- ✅ Added comprehensive TypeScript type definitions using module augmentation
-- ✅ Extended NextAuth's Session and User interfaces with custom fields
-- ✅ Extended JWT interface for proper token typing
-- ✅ Removed type casting in callbacks - now using proper typed interfaces
-- ✅ Installed @types/bcrypt for proper TypeScript support
-
-### 🎯 **Final Status: MISSION ACCOMPLISHED**
-
-All acceptance criteria have been met:
-- ✅ Database seeds already exist with john/jane users and hashed passwords
-- ✅ NextAuth.js credentials provider now queries the database for authentication
-- ✅ Proper password verification implemented using bcrypt
-- ✅ Existing login flow maintained with database authentication
-- ✅ Mock authentication logic completely removed
-
-### 🔧 **Technical Implementation Details**
-
-#### Database Authentication Flow
-```
-1. User submits username/password → 
-2. Query auth.users table using ILIKE for case-insensitive lookup →
-3. If user found, verify password using bcrypt.compare() →
-4. If valid, return user object for NextAuth session →
-5. If invalid, return null (NextAuth handles error display)
-```
-
-#### Key Optimizations
-- **PostgreSQL ILIKE**: Used instead of `LOWER()` functions for better performance
-- **Module Augmentation**: Extended NextAuth types properly instead of type casting
-- **Security**: Vague error messages prevent user enumeration attacks
-- **Type Safety**: Full TypeScript support throughout the authentication flow
-
-### 🛠 **Files Modified**
-
-1. **`src/lib/auth/authOptions.ts`**:
-   - Replaced mock authentication with database queries
-   - Added comprehensive TypeScript type definitions
-   - Implemented PostgreSQL-optimized case-insensitive lookups
-   - Added proper error handling and security measures
-
-2. **`package.json`**:
-   - Added @types/bcrypt dependency for TypeScript support
-
-### 🔐 **Security Features Implemented**
-
-- **Password Hashing**: Using bcrypt for secure password verification
-- **Case-Insensitive Lookup**: PostgreSQL ILIKE for user-friendly authentication
-- **Error Handling**: Secure error messages that don't reveal user existence
-- **Database Security**: Proper connection pooling and query optimization
-- **No Password Logging**: Sensitive data never exposed in logs
-
-### 🚀 **Ready for Production**
-
-The authentication system is now production-ready with:
-- Real database-backed authentication
-- Proper TypeScript typing throughout
-- PostgreSQL-optimized queries
-- Enterprise-grade security measures
-- Existing session handling maintained
+## Compression Provenance
+- Consolidated artifacts: `ABA.history.archived.aba-task.md`, `ABA.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

@@ -4,34 +4,45 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-14T05:53:48+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Cleanup Legacy Feature Flags [ady]
+# Cleanup Legacy Feature Flags
 
-Remove `featureFlags.pages|apis` after migration, update docs and code to only use `AppConfig.features`.
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Remove 'featureFlags.pages|apis' after migration, update docs and code to only use 'AppConfig.features'.
 
-## Goals
+## Retrieval Anchors
+- `ADY`
+- `docs/backlog/tasks/ADY-cleanup-legacy-feature-flags-ady`
+- `ADY.task.md`
+- `featureFlags.pages|apis`
+- `AppConfig.features`
+- `features[]`
+- `AppConfig`
+- `appRoute`
+- `protectRoute`
 
-- [x] Remove deprecated keys from config
-- [x] Delete compatibility bridge code
-- [x] Update docs and examples
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Goals; Acceptance Criteria; Progress; Next Steps; Status.
+- Completion language appears in the source, but no implementation commit is recorded there.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-## Acceptance Criteria
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-- [x] No remaining references to legacy keys
-- [x] QA: build + lint pass
+## Task Relationships
+### Supersedes
+None identified.
 
-## Progress
+### Superseded by
+None identified.
 
-- Unified `features[]` fully adopted in `AppConfig` (legacy fields removed).
-- Bridge + `appRoute` removed.
-- API routes migrated to `protectRoute` with explicit `api:` features.
-- Feature flags article rewritten for unified list.
-- Global grep: no `featureFlags`, `appRoute`, `appPage`, `pageWithConfig` remaining.
+### Related Tasks
+- [ADR: RBAC Refactor Policies](../ADR-rbac-refactor-policies-adr/ADR.task.md) — explicitly referenced by the source artifacts.
+- [AEA: Policy & RBAC Testing Strategy](../AEA-policy-rbac-testing-strategy-aea/AEA.task.md) — explicitly referenced by the source artifacts.
 
-## Next Steps
-
-- None; task complete. ADR updated to reflect removal. Follow-up hardening tests tracked in [aea].
-
-## Status
-
-✅ COMPLETE
+## Compression Provenance
+- Consolidated artifacts: `ADY.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

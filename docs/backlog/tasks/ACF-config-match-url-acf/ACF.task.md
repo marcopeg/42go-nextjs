@@ -4,50 +4,44 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-13T16:50:12+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Config Match Url [acf]
+# Config Match Url
 
-The goal is to refine `@/AppConfig`'s `matchAppID()` so to implement a regexp check defined in `config.match.url` so that i can write simple configs like:
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. The goal is to refine '@/AppConfig''s 'matchAppID()' so to implement a regexp check defined in 'config.match.url' so that i can write simple configs like:
 
-- config.match.url=localhost.3000
-- config.match.url=app1.localhost.3000
-- config.match.url=marcopeg.com
+## Retrieval Anchors
+- `ACF`
+- `docs/backlog/tasks/ACF-config-match-url-acf`
+- `ACF.task.md`
+- `@/AppConfig`
+- `matchAppID()`
+- `config.match.url`
+- `AppConfigItem`
+- `match.url`
+- `availableApps`
 
-(NOTE: these examples need to be converted to real regexp that can be used and applied by the function)
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Development Plan; Next Steps; Progress; Issues Encountered; Architectural Decisions; Libraries Used.
+- The source does not identify an implementation commit or independently prove a shipped change.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-## Development Plan
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-Chuck Norris doesn't match app names. He roundhouse kicks them into place.
+## Task Relationships
+### Supersedes
+None identified.
 
-1. Extend `AppConfigItem` to support a new property: `match.url` (string or array of strings, interpreted as regex).
-2. Update each app config in `availableApps` to optionally include `match.url`.
-3. Refactor `matchAppID()` in `src/AppConfig.ts`:
-   - After header and host checks, iterate all apps.
-   - For each app, if `match.url` exists, test the current host against its regex.
-   - **On the first positive match, immediately return the matching configuration name.**
-4. Convert simple config strings (like `localhost.3000`) to real regex in the config.
-5. Document the new feature in the task file and update the Memory Bank if needed.
-6. Test with various hostnames to ensure Chuck Norris-level reliability.
+### Superseded by
+None identified.
 
-## Next Steps
+### Related Tasks
+None identified.
 
-execute task (k2)
-
-## Progress
-
-- Extended `AppConfigItem` with `match.url` property (string or array of regex strings).
-- Updated all app configs in `availableApps` to include example `match.url` patterns.
-- Refactored `matchAppID()` to check all regex patterns and exit on first positive match.
-- Ran `npm run lint && npm run build`—no errors, Chuck Norris approved.
-
-## Issues Encountered
-
-- TypeScript complained about unused error variable in catch block. Chuck Norris removed it.
-
-## Architectural Decisions
-
-- Regexp matching is now part of app resolution. First positive match wins, no mercy.
-
-## Libraries Used
-
-- No new libraries. Native RegExp, pure Chuck Norris power.
+## Compression Provenance
+- Consolidated artifacts: `ACF.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

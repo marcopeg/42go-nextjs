@@ -4,17 +4,38 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-01T14:39:07+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Simplify Boot [acl]
+# Simplify Boot
 
-Facilitate the adoption by a new developer.
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Facilitate the adoption by a new developer.
 
-## Goals
+## Retrieval Anchors
+- `ACL`
+- `docs/backlog/tasks/ACL-simplify-boot-acl`
+- `ACL.task.md`
 
-- [x] Document dependencies (Node18+, Docker)
-- [x] Document Docker based boot
-- [x] Document node based boot (external db, how to get one for free?)
-- [x] See if we can achieve a simple boot on GitHub CodeSpace (need to check how to upgrade node there)
-- [x] Link documentation to signup with copilot
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: Goals.
+- The source does not identify an implementation commit or independently prove a shipped change.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-NOTE: this documentation should be in the main README.md file.
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
+
+## Task Relationships
+### Supersedes
+None identified.
+
+### Superseded by
+None identified.
+
+### Related Tasks
+None identified.
+
+## Compression Provenance
+- Consolidated artifacts: `ACL.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

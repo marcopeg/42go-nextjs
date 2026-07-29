@@ -4,29 +4,41 @@ status: archived
 createdAt: 2026-04-23T15:27:45+02:00
 updatedAt: 2026-05-13T16:14:49+02:00
 completedAt: 2025-08-01T14:39:07+02:00
+compressedAt: 2026-07-29T17:51:33+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
-# Render Docs [aca]
+# Render Docs
 
-Import the rendering of Markdown based documentation from the old project.
+## Historical Summary
+This archived record consolidates the task’s retained intent and decisions. Import the rendering of Markdown based documentation from the old project.
 
-# Development Plan
+## Retrieval Anchors
+- `ACA`
+- `docs/backlog/tasks/ACA-render-docs-aca`
+- `ACA.task.md`
+- `s**t`
+- `docs`
+- `PublicLayout`
 
-## ✅ 1. Import Files
+## Durable Outcome and Decisions
+- The source preserves the task’s scope through these sections: ✅ 1. Import Files; ✅ 2. Customize Source Path; ✅ 3. Apply Feature Flag; ✅ 4. Adjust styles.
+- The source does not identify an implementation commit or independently prove a shipped change.
+- Exact historical wording, examples, and planning detail remain recoverable from the provenance commit.
 
-Imported the raw functionality by copying files over and adjusting the dependencies.
+## Validation and Limitations
+- Source status is `archived`; lifecycle timestamps were retained without inferring behavior not evidenced by the artifacts.
+- This record is a retrieval-oriented historical summary, not a substitute for comparing implementation history when delivery must be established.
 
-## ✅ 2. Customize Source Path
+## Task Relationships
+### Supersedes
+None identified.
 
-The source path for the files must be provided per single app config and acts as ground feature flag to erogate the functionality.
+### Superseded by
+None identified.
 
-NOTE: the code is a freaking mess from Cursor! I will have to spend months refactoring this `s**t`!
+### Related Tasks
+None identified.
 
-## ✅ 3. Apply Feature Flag
-
-Wrap the docs pages with the feature flag wrapper so to make it part of the whitelist pages mechanism.
-
-The functionality answers to the permission `docs`.
-
-## ✅ 4. Adjust styles
-
-I've improved the `PublicLayout` so to be wider and host the docs.
+## Compression Provenance
+- Consolidated artifacts: `ACA.task.md`.
+- The exact source artifacts are recoverable from `compressedFromCommit` `27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`.

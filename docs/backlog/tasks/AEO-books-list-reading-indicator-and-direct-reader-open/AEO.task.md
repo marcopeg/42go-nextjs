@@ -2,79 +2,45 @@
 taskId: AEO
 status: archived
 createdAt: 2026-05-01T15:26:12+00:00
-updatedAt: 2026-05-13T16:14:49+02:00
-reviewedAt: 2026-05-01T15:40:52+00:00
-plannedAt: 2026-05-01T15:52:44+00:00
-startedAt: 2026-05-01T16:04:56+00:00
 completedAt: 2026-05-02T05:20:15+02:00
+compressedAt: 2026-07-29T12:00:00+02:00
+compressedFromCommit: 27c91fcf1650c9cb49d27cb7c10a6484fbfe4329
 ---
 # Books list reading indicator and direct reader open
 
-## Elevator's Pitch
+## Historical Summary
 
-Add a visible "reading" indicator band on book covers in the books list, and make clicking covers for books currently being read jump straight into the reader page at the correct saved scroll position.
+Completed LingoCafe books-list change: in-progress cards display a green/white `READING` ribbon and open the reader resume route; other cards keep the details route.
 
-## Business Gain
+## Retrieval Anchors
 
-Readers can instantly spot in-progress books and resume without extra clicks, reducing friction and improving return engagement for active learners.
+- `AEO` — Books list reading indicator and direct reader open.
+- `readingAction`, `readingAction.kind === "resume"`, `progress_bps`.
+- `src/app/(app)/(lingocafe)/books/_components/` and `src/app/api/(lingocafe)/lingocafe/_lib/reader.ts`.
+- Reader fallback: corrupt scroll still opens a valid page; missing page opens book info.
 
-## Current State
+## Durable Outcome and Decisions
 
-Books are listed with cover cards, but the draft request indicates the reading status is not clearly overlaid as a cover band in the list and clicking a currently-reading book does not yet guarantee direct resume in the reader at the correct scroll point.
+The books-list payload includes `readingAction`, avoiding an additional request. Resume state controls both the cover ribbon and direct-open behavior. The existing reader normalization supplies the corrupt-scroll fallback.
 
-## Desired State
+## Validation and Limitations
 
-Books with status "reading" render a top-right ribbon overlay on the cover with green background and white foreground text ("READING"). Clicking those books opens the reader view directly and restores the user to the correct reading position (scroll/progress anchor). Books not in reading state continue to open the details/info page.
+Static inspection and a QA attempt were recorded. `npm run qa` could not complete because the environment failed external font fetch/Turbopack font resolution; no dedicated automated regression test was added.
 
-## Definition of Success
+## Task Relationships
 
-Users can quickly identify every in-progress book from the books list and can resume those books from one click with position restoration that matches last known progress.
+### Supersedes
 
-## Additional Context
+None identified.
 
-Operator request: "Join the list of books with the reading indicator so to show the 'reading' band as cover overlay" and "For the books that are currently 'reading' the click on the book cover from the list of books takes the user directly to the page reader and correct scroll."
+### Superseded by
 
-## Assumptions
+None identified.
 
-- A persisted reading progress signal already exists or can be derived for each book.
-- Reader routing supports deep-link or progress-based resume behavior.
-- "Correct scroll" means restoring to the most recent saved position for the current user and book.
+### Related Tasks
 
-## Constraints
+None identified.
 
-- Preserve existing books list layout quality and cover rendering behavior.
-- Keep behavior scoped to books marked as currently "reading".
-- Keep non-reading book cover click behavior on details/info navigation.
-- Avoid regressions for books not in reading state.
+## Compression Provenance
 
-## Acceptance Criteria
-
-- Books in "reading" state display a visible "reading" band overlay on their cover card in the books list.
-- Clicking a reading-state cover navigates directly to the reader page for that same book.
-- The reader opens at the correct saved reading position for that user/book when progress is valid.
-- If scroll/progress is corrupted but target page/chapter is available, open that page/chapter anyway.
-- If page/chapter target is not available, fall back to opening the book details/info page.
-- Non-reading books open the details/info page.
-
-## Dos
-
-- Reuse existing reading-progress and reader-resume mechanisms where possible.
-- Keep styling consistent with current LingoCafe visual language.
-- Validate interaction flow from books list to reader resume.
-
-## Don'ts
-
-- Do not redesign the entire books card system for this task.
-- Do not change unrelated reader features.
-- Do not introduce multi-step resume flows for books already marked as reading.
-
-## Open Questions
-
-- n/a
-
-## Related to
-
-- [PR58: Show "Read now" or "Continue reading" on Book Details](../../completed/PR58-show-read-now-or-continue-reading-on-book-details/PR58.task.md)
-- [XI31: Fix reader scroll position progress](../../completed/XI31-fix-reader-scroll-position-progress/XI31.task.md)
-- [IL68: Open book info page from books list](../../completed/IL68-open-book-info-page-from-books-list/IL68.task.md)
-- [WO85: Improve LingoCafe book card image-first design](../../completed/WO85-improve-lingocafe-book-card-image-first-design/WO85.task.md)
+Consolidated `AEO.task.md`, `AEO.plan.md`, and `AEO.notes.md`. Their exact versions are recoverable from `compressedFromCommit` (`27c91fcf1650c9cb49d27cb7c10a6484fbfe4329`).
