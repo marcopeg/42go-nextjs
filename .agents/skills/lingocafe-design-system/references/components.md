@@ -105,9 +105,10 @@ continuous list instead of separate cards.
 
 - On mobile, the list owns the standard `24px` negative horizontal margins so
   rows reach the viewport edges and use hairline dividers.
-- Set `flushMobileTop` only when the list is the first rendered page content and
-  should meet the app toolbar directly. It cancels the app shell's `24px` mobile
-  top padding while preserving normal desktop spacing.
+- Set `flushMobileTop` on both `AppLayout` and `PlainList` only when the list is
+  the first rendered page content and should meet the app toolbar directly.
+  `AppLayout` removes its mobile top padding while `PlainList` removes the
+  redundant top border; normal desktop spacing and containment remain.
 - At `md` and above, the list becomes one contained, rounded, bordered surface.
   Rows remain divided; do not turn each row back into a separate card.
 - `PlainListButton` owns row padding, full-width hit area, hover feedback, and
@@ -116,7 +117,8 @@ continuous list instead of separate cards.
 - Callers may add semantic status backgrounds or tints, but must keep
   text/icons so state is never encoded by color alone.
 - Do not recreate the `-mx-6`, divider, flush-top, or focus classes at call
-  sites.
+  sites. Do not counteract app-shell padding with a negative vertical margin;
+  that layout is unreliable in iOS WebKit.
 
 ## Book components
 

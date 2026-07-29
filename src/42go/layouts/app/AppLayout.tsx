@@ -44,6 +44,7 @@ const AppLayoutShell = ({
   footer,
   hideMobileMenu,
   disablePadding = false,
+  flushMobileTop = false,
 }: AppLayoutProps) => {
   const config = useAppConfig();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -113,7 +114,9 @@ const AppLayoutShell = ({
         <div
           className={`h-full flex flex-col ${(() => {
             // Base paddings for left/right and top
-            const base = disablePadding ? [] : ["px-6", "pt-6"];
+            const base = disablePadding
+              ? []
+              : ["px-6", flushMobileTop ? "pt-0 md:pt-6" : "pt-6"];
             // Bottom padding: always ensure content isn't hidden by footer
             let pbMobile = "";
             let pbDesktop = "";

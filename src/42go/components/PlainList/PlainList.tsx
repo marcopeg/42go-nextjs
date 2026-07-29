@@ -14,7 +14,7 @@ export const PlainList = ({
   <div
     className={cn(
       "-mx-6 divide-y border-y bg-card md:mx-0 md:overflow-hidden md:rounded-lg md:border",
-      flushMobileTop && "-mt-6 border-t-0 md:mt-0",
+      flushMobileTop && "border-t-0 md:border-t",
       className
     )}
     {...props}

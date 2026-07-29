@@ -74,6 +74,9 @@ Marketing composition:
 - Optional “More” opens a right drawer at 80% viewport width over a black 60% scrim.
 - Hide bottom navigation for immersive book detail/reader flows.
 - Account and Books are LingoCafe’s two primary mobile destinations.
+- For first-content plain lists that meet the toolbar, set `flushMobileTop` on
+  both `AppLayout` and `PlainList`; do not use a negative vertical margin to
+  cancel shell padding.
 
 ### Sticky footer
 

@@ -76,4 +76,9 @@ export interface AppLayoutProps {
    * Default is false (keep paddings: px-6 pt-6 pb-20 md:pb-6).
    */
   disablePadding?: boolean;
+  /**
+   * When true, removes only the mobile top padding while preserving the
+   * standard 24px top padding from the md breakpoint upward.
+   */
+  flushMobileTop?: boolean;
 }

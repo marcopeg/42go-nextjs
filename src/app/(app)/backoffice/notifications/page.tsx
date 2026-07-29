@@ -935,6 +935,7 @@ export default function BackofficeNotificationsPage() {
       title="Notifications"
       icon={Bell}
       actions={[{ type: "component", component: NewAction }]}
+      flushMobileTop
       policy={{ require: { feature: "page:notifications", session: true, role: "backoffice", grants: ["notifications:list"] } }}
     >
       <div className="mx-auto w-full max-w-5xl">
