@@ -49,7 +49,6 @@
 - [TO37: Add Social Login: Apple](./tasks/TO37-add-social-login-apple/TO37.task.md)
 - [XQ11: Choose Runtime-Friendly Remote Image Handling](./tasks/XQ11-choose-runtime-friendly-remote-image-handling/XQ11.task.md)
 - [YQ19: optimization epic](./tasks/YQ19-optimization-epic/YQ19.task.md)
-- [YS05: Enforce users:edit for User Updates](./tasks/YS05-enforce-users-edit-for-user-updates/YS05.task.md)
 
 ## Todo
 
@@ -206,6 +205,7 @@
 
 ## Completed
 
+- [YS05: Enforce users:edit for User Updates](./tasks/YS05-enforce-users-edit-for-user-updates/YS05.task.md)
 - [LG69: Move User Administration Under the Backoffice Namespace](./tasks/LG69-move-user-administration-under-the-backoffice-namespace/LG69.task.md)
 - [PH34: Choose a Translation Language When Reading and Fluent Languages Match](./tasks/PH34-choose-a-translation-language-when-reading-and-fluent-languages-match/PH34.task.md)
 - [OE92: Add Multi-App In-App Notifications and Admin Management](./tasks/OE92-add-multi-app-in-app-notifications-and-admin-management/OE92.task.md)

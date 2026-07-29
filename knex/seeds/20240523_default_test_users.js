@@ -92,6 +92,14 @@ exports.seed = async function seedDefaultTestUsers(knex) {
     });
 
     await upsertGrant(trx, {
+      id: "users:edit",
+      title: "Edit user",
+      description: "Let edit a user account",
+      created_at: now,
+      updated_at: now,
+    });
+
+    await upsertGrant(trx, {
       id: "users:delete",
       title: "Delete user",
       description: "Let erase a user account",
@@ -123,6 +131,12 @@ exports.seed = async function seedDefaultTestUsers(knex) {
         {
           role_id: "backoffice",
           grant_id: "users:list",
+          app_id: "default",
+          created_at: now,
+        },
+        {
+          role_id: "backoffice",
+          grant_id: "users:edit",
           app_id: "default",
           created_at: now,
         },

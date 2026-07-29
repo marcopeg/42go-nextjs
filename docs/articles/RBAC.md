@@ -43,11 +43,11 @@ Example component gate:
 
 ```tsx
 <ProtectComponent
-  policy={{ require: { anyGrant: ["users:list", "users:*"] } }}
+  policy={{ require: { grants: ["users:edit"] } }}
   renderOnLoading={() => <Spinner />}
   renderOnError={() => null}
 >
-  <UsersMenu />
+  <EditUserAction />
 </ProtectComponent>
 ```
 
@@ -73,6 +73,17 @@ filled by the JWT callback at sign-in and can be refreshed with a session update
 showing UI, but it is not the security boundary.
 
 `grants` = ALL strategy. `anyGrant` = first match wins. `role` is a single required role.
+
+Backoffice user administration uses literal, operation-specific grants:
+
+- `users:list` permits listing and reading users.
+- `users:edit` permits account-field updates plus profile and consent resets.
+- `users:delete` permits account erasure.
+
+The `/backoffice/users` page and `/api/backoffice/users` handlers also require
+their explicit features, an authenticated session, current-app scope, and the
+`backoffice` role. Client `ProtectComponent` gates only control visibility;
+the matching server route policy remains authoritative.
 
 ## Error Mapping (Global)
 

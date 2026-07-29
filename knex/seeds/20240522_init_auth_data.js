@@ -109,6 +109,14 @@ exports.seed = async function (knex) {
 
     await trx("auth.roles_grants").insert({
       role_id: backofficeRoleId,
+      grant_id: usersEditGrantId,
+      app_id: "default",
+      created_at: new Date(),
+    });
+    console.log(`Associated edit user grant with backoffice role`);
+
+    await trx("auth.roles_grants").insert({
+      role_id: backofficeRoleId,
       grant_id: usersDeleteGrantId,
       app_id: "default",
       created_at: new Date(),

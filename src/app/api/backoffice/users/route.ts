@@ -368,7 +368,7 @@ export const PATCH = protectRoute(updateUser, {
     feature: "api:users",
     session: true,
     role: "backoffice",
-    grants: ["users:list"],
+    grants: ["users:edit"],
   },
 });
 

@@ -202,7 +202,7 @@ Rationale: This avoids SSR pitfalls (e.g., getaddrinfo on inferred hosts, cookie
 
 Authenticated management surfaces live under `/backoffice/<feature>` with APIs under `/api/backoffice/<feature>`. The namespace communicates operator intent; it never replaces explicit page/API features, session checks, app scoping, roles, or exact grants. Notification management establishes this convention at `/backoffice/notifications`.
 
-User administration follows the same convention at `/backoffice/users`, with management handlers at `/api/backoffice/users`. It remains protected by the `page:users` and `api:users` features, authenticated session, current-app scope, `backoffice` role, and exact user-management grants.
+User administration follows the same convention at `/backoffice/users`, with management handlers at `/api/backoffice/users`. It remains protected by the `page:users` and `api:users` features, authenticated session, current-app scope, and the `backoffice` role. Exact grants are operation-specific: `users:list` for list/read, `users:edit` for all PATCH updates (including profile and consent resets), and `users:delete` for account erasure.
 
 ### App Communication Data
 

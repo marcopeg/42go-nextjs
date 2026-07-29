@@ -2,6 +2,7 @@
 
 import { Modal } from '@/42go/components/modal';
 import { AppLayout, type TActionItem } from '@/42go/layouts/app';
+import { ProtectComponent } from '@/42go/policy/client';
 import type { Policy } from '@/42go/policy';
 import { Button } from '@/components/ui/button';
 import {
@@ -109,6 +110,22 @@ const usersPolicy: Policy = {
     grants: ['users:list'],
   },
 };
+
+const editUsersPolicy: Policy = {
+  require: {
+    grants: ['users:edit'],
+  },
+};
+
+const EditUsersOnly = ({ children }: { children: ReactNode }) => (
+  <ProtectComponent
+    policy={editUsersPolicy}
+    renderOnLoading={() => null}
+    renderOnError={() => null}
+  >
+    {children}
+  </ProtectComponent>
+);
 
 const formatDate = (value: string | null) => {
   if (!value) return '-';
@@ -659,10 +676,12 @@ const UserDetailPanel = ({
             <Trash2 />
             Delete account
           </Button>
-          <Button type="button" variant="outline" onClick={handleEdit} disabled={!user}>
-            <Pencil />
-            Edit
-          </Button>
+          <EditUsersOnly>
+            <Button type="button" variant="outline" onClick={handleEdit} disabled={!user}>
+              <Pencil />
+              Edit
+            </Button>
+          </EditUsersOnly>
         </>
       }
     >
@@ -1074,21 +1093,23 @@ const UsersList = ({
                             <Eye />
                             View user details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => onEditUser(user)}>
-                            <Pencil />
-                            Edit user
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onSelect={() => onUserAction(user, 'reset-profile')}
-                          >
-                            Reset profile
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => onUserAction(user, 'reset-consent')}
-                          >
-                            Reset consent
-                          </DropdownMenuItem>
+                          <EditUsersOnly>
+                            <DropdownMenuItem onSelect={() => onEditUser(user)}>
+                              <Pencil />
+                              Edit user
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onSelect={() => onUserAction(user, 'reset-profile')}
+                            >
+                              Reset profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={() => onUserAction(user, 'reset-consent')}
+                            >
+                              Reset consent
+                            </DropdownMenuItem>
+                          </EditUsersOnly>
                           {canDeleteUsers ? (
                             <>
                               <DropdownMenuSeparator />
