@@ -234,7 +234,7 @@ describe("communication persistence and delivery guardrails", () => {
   });
 
   it("keeps security, rendering, tracking, and placements wired", async () => {
-    const [adminApi, userApi, markdown, displayHook, profile, books, projects, list] =
+    const [adminApi, userApi, markdown, displayHook, profile, books, projects, list, lingoConfig] =
       await Promise.all([
         readFile(
           new URL(
@@ -283,6 +283,10 @@ describe("communication persistence and delivery guardrails", () => {
           ),
           "utf8"
         ),
+        readFile(
+          new URL("../src/config/lingocafe/config.ts", import.meta.url),
+          "utf8"
+        ),
       ]);
     for (const grant of ["list", "create", "edit", "publish", "delete"]) {
       assert.match(adminApi, new RegExp(`notifications:${grant}`));
@@ -296,6 +300,12 @@ describe("communication persistence and delivery guardrails", () => {
     for (const placement of [profile, books, projects, list]) {
       assert.match(placement, /NotificationCenter/);
     }
+    assert.match(
+      lingoConfig,
+      /title: 'Users'[\s\S]+title: 'Notifications'[\s\S]+href: '\/backoffice\/notifications'/
+    );
+    assert.match(lingoConfig, /feature: 'page:notifications'/);
+    assert.match(lingoConfig, /grants: \['notifications:list'\]/);
   });
 });
 

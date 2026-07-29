@@ -1,6 +1,6 @@
 import { TAppConfigItem } from '../../AppConfig';
 import { HomePage } from './home-page';
-import { User, Users, BookOpen } from 'lucide-react';
+import { Bell, User, Users, BookOpen } from 'lucide-react';
 import { LingocafePreferences } from '@/app/(app)/(lingocafe)/_components/LingocafePreferences';
 import { hasCachedLingoCafeProfileCompletion } from '@/config/lingocafe/profile-completion-cache';
 import { lingoCafeProfileSchema } from '@/config/lingocafe/profile-options';
@@ -215,6 +215,19 @@ export default {
             icon: Users,
             policy: {
               require: { role: 'backoffice' },
+            },
+          },
+          {
+            title: 'Notifications',
+            href: '/backoffice/notifications',
+            icon: Bell,
+            policy: {
+              require: {
+                feature: 'page:notifications',
+                session: true,
+                role: 'backoffice',
+                grants: ['notifications:list'],
+              },
             },
           },
         ],
