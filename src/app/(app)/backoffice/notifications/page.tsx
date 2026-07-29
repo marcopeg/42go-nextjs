@@ -26,6 +26,11 @@ import { communicationStyleMap } from "@/42go/components/Notifications";
 import { Modal } from "@/42go/components/modal";
 import { Panel } from "@/42go/components/panel";
 import {
+  PlainList,
+  PlainListButton,
+  PlainListItem,
+} from "@/42go/components/PlainList";
+import {
   REACTION_TEMPLATES,
   type AudienceMode,
   type Communication,
@@ -47,7 +52,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 
 type AudienceUser = {
   id: string;
@@ -933,24 +937,20 @@ export default function BackofficeNotificationsPage() {
       actions={[{ type: "component", component: NewAction }]}
       policy={{ require: { feature: "page:notifications", session: true, role: "backoffice", grants: ["notifications:list"] } }}
     >
-      <div className="mx-auto w-full max-w-5xl space-y-3">
+      <div className="mx-auto w-full max-w-5xl">
         {error && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
         {loading && <LoaderCircle className="mx-auto h-6 w-6 animate-spin" aria-label="Loading notifications" />}
         {!loading && items.length === 0 && <Panel><p className="text-sm text-muted-foreground">No communications yet. Create one. Chuck Norris already approved the empty state.</p></Panel>}
         {items.length > 0 && (
-          <div className="-mx-6 divide-y border-y md:mx-0 md:space-y-3 md:divide-y-0 md:border-y-0">
+          <PlainList flushMobileTop>
             {items.map((item) => {
               const kind = kindMeta[item.kind];
               const status = getStatus(item);
               const AudienceIcon = item.audienceMode === "everyone" ? Users : LockKeyhole;
               return (
-                <div key={item.id}>
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex w-full items-start gap-3 px-6 py-3 text-left outline-none transition-[filter,box-shadow] hover:brightness-[0.98] focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:brightness-110 md:rounded-lg md:border md:px-5 md:py-4",
-                      communicationStyleMap[item.style].className
-                    )}
+                <PlainListItem key={item.id}>
+                  <PlainListButton
+                    className={communicationStyleMap[item.style].className}
                     onClick={() => void openDetails(item)}
                   >
                     <kind.Icon className="mt-0.5 h-5 w-5 shrink-0" aria-label={kind.label} />
@@ -969,11 +969,11 @@ export default function BackofficeNotificationsPage() {
                         />
                       </div>
                     </div>
-                  </button>
-                </div>
+                  </PlainListButton>
+                </PlainListItem>
               );
             })}
-          </div>
+          </PlainList>
         )}
       </div>
 

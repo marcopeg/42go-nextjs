@@ -336,7 +336,7 @@ describe("notification container behavior", () => {
   });
 
   it("keeps the full notifications page stacked and history lazy", async () => {
-    const [center, page, admin, styles] = await Promise.all([
+    const [center, page, admin, styles, plainList] = await Promise.all([
       readFile(
         new URL(
           "../src/42go/components/Notifications/NotificationCenter.tsx",
@@ -362,6 +362,13 @@ describe("notification container behavior", () => {
         ),
         "utf8"
       ),
+      readFile(
+        new URL(
+          "../src/42go/components/PlainList/PlainList.tsx",
+          import.meta.url
+        ),
+        "utf8"
+      ),
     ]);
 
     assert.match(center, /displayMode === "list"/);
@@ -382,6 +389,7 @@ describe("notification container behavior", () => {
     assert.match(admin, /<Markdown source=\{item\.bodyMarkdown\}/);
     assert.doesNotMatch(admin, /subtitle="Communicate with users in this app"/);
     assert.match(admin, /communicationStyleMap\[item\.style\]\.className/);
-    assert.match(admin, /-mx-6 divide-y border-y/);
+    assert.match(admin, /<PlainList flushMobileTop>/);
+    assert.match(plainList, /flushMobileTop && "-mt-6 border-t-0 md:mt-0"/);
   });
 });
