@@ -533,6 +533,9 @@ export const BookReaderDesktopSurface = ({
                 playbackSentenceId={playback.activeSentenceId}
                 playbackCanPlay={playback.canPlay}
                 playbackStatus={playback.status}
+                playbackTranslationPronunciationType={
+                  playback.translationPronunciationType
+                }
                 playbackAutoPauseOnTranslation={
                   playback.preferences.autoPauseOnTranslation
                 }
@@ -559,6 +562,9 @@ export const BookReaderDesktopSurface = ({
                 }
                 onSentenceCatalogChange={playback.registerSentences}
                 onSentenceActivate={playback.selectSentence}
+                onTranslationAudiobookStart={
+                  playback.startAudiobookFromTranslation
+                }
                 onTranslationSentencePlay={
                   playback.playSentenceFromTranslation
                 }
@@ -714,6 +720,9 @@ export const BookReaderMobileSurface = ({
                 playbackSentenceId={playback.activeSentenceId}
                 playbackCanPlay={playback.canPlay}
                 playbackStatus={playback.status}
+                playbackTranslationPronunciationType={
+                  playback.translationPronunciationType
+                }
                 playbackAutoPauseOnTranslation={
                   playback.preferences.autoPauseOnTranslation
                 }
@@ -740,6 +749,9 @@ export const BookReaderMobileSurface = ({
                 }
                 onSentenceCatalogChange={playback.registerSentences}
                 onSentenceActivate={playback.selectSentence}
+                onTranslationAudiobookStart={
+                  playback.startAudiobookFromTranslation
+                }
                 onTranslationSentencePlay={
                   playback.playSentenceFromTranslation
                 }

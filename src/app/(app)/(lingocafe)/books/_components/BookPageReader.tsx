@@ -30,6 +30,7 @@ import type {
   ReaderPlaybackSentence,
   ReaderPlaybackStatus,
   ReaderPlaybackWordRange,
+  ReaderTranslationPronunciationType,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 import { applyReaderPlaybackFocus } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/focus-presentation";
 import {
@@ -49,6 +50,9 @@ type BookPageReaderProps = {
   playbackSentenceId: string | null;
   playbackCanPlay: boolean;
   playbackStatus: ReaderPlaybackStatus;
+  playbackTranslationPronunciationType:
+    | ReaderTranslationPronunciationType
+    | null;
   playbackAutoPauseOnTranslation: boolean;
   playbackSentenceHighlighting: boolean;
   playbackFocusActive: boolean;
@@ -57,7 +61,8 @@ type BookPageReaderProps = {
   playbackWordRange: ReaderPlaybackWordRange | null;
   onSentenceCatalogChange: (sentences: ReaderPlaybackSentence[]) => void;
   onSentenceActivate: (sentenceId: string) => void;
-  onTranslationSentencePlay: (sentenceId: string) => void;
+  onTranslationAudiobookStart: (sentenceId: string) => void;
+  onTranslationSentencePlay: (sentence: string) => void;
   onTranslationWordPlay: (word: string) => void;
   onTranslationOpenChange: (isOpen: boolean) => void;
 };
@@ -127,6 +132,7 @@ type ProfileApiResponse = {
 const popoverMaxWidth = 360;
 const mobilePopoverBreakpointPx = 768;
 const tapMovementThresholdPx = 10;
+const audiobookStartFeedbackMs = 600;
 const fluentLanguageOptions = getLingoCafeReaderLanguages().own;
 
 type TapCandidate = {
@@ -284,93 +290,182 @@ const renderPlaybackText = (
   );
 };
 
+const ReaderTranslationAction = ({
+  label,
+  emphasis = false,
+  active,
+  onClick,
+}: {
+  label: string;
+  emphasis?: boolean;
+  active?: boolean;
+  onClick: () => void;
+}) => {
+  const [pressed, setPressed] = useState(false);
+  const highlighted = active || pressed;
+
+  return (
+    <button
+      type="button"
+      aria-pressed={active === undefined ? undefined : active}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerCancel={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") setPressed(true);
+      }}
+      onKeyUp={() => setPressed(false)}
+      onBlur={() => setPressed(false)}
+      onClick={onClick}
+      className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-xs leading-4 underline-offset-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/60 ${
+        highlighted ? "" : "hover:underline hover:opacity-70"
+      } ${emphasis ? "font-semibold" : "font-medium"}`}
+      style={{
+        backgroundColor: highlighted ? "var(--reader-fg)" : "transparent",
+        color: highlighted ? "var(--reader-bg)" : "var(--reader-fg)",
+      }}
+    >
+      <span>{label}</span>
+      <Play aria-hidden="true" className="size-3.5 fill-current" />
+    </button>
+  );
+};
+
 const ReaderTranslationPopover = ({
   state,
   scope,
   canListen,
+  pronunciationPlaying,
   languageOptions,
-  onListen,
+  onDismiss,
+  onPlaySelection,
+  onStartAudiobook,
   onLanguageSelect,
 }: {
   state: TranslationState;
   scope: ReaderTranslationScope;
   canListen: boolean;
+  pronunciationPlaying: boolean;
   languageOptions: LingoCafeLanguageOption[];
-  onListen: () => void;
+  onDismiss: () => void;
+  onPlaySelection: () => void;
+  onStartAudiobook: () => void;
   onLanguageSelect: (language: string) => void;
-}) => (
-  <div
-    data-reader-translation-popover
-    className="relative flex items-stretch overflow-hidden rounded-md border backdrop-blur"
-    style={{
-      ...getPopoverStyle(state.anchor),
-      borderColor: "var(--reader-popover-border)",
-      backgroundColor: "var(--reader-popover-bg)",
-      color: "var(--reader-fg)",
-      fontSize: "1em",
-      lineHeight: 1.45,
-    }}
-  >
-    <div className="relative min-w-0 flex-1 px-5 py-3 pb-4 md:px-4">
-      {(state.status === "choose-language" ||
-        state.status === "saving-language") && (
-        <div className="space-y-3 font-sans">
-          <p className="text-sm font-medium">
-            Which language do you want me to translate to?
-          </p>
-          <label className="block">
-            <span className="sr-only">Translate to</span>
-            <select
-              value=""
-              disabled={state.status === "saving-language"}
-              onChange={(event) => {
-                if (event.target.value) {
-                  onLanguageSelect(event.target.value);
-                }
-              }}
-              className="h-10 w-full rounded-md border bg-transparent px-3 text-base shadow-xs outline-none focus-visible:ring-ring/60 focus-visible:ring-[3px] disabled:cursor-wait disabled:opacity-60 md:text-sm"
-              style={{
-                borderColor: "var(--reader-popover-border)",
-                backgroundColor: "var(--reader-bg)",
-                color: "var(--reader-fg)",
-              }}
-            >
-              <option value="">Choose language</option>
-              {languageOptions.map((option) => (
-                <option key={option.code} value={option.code}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {state.status === "saving-language" && (
-            <p
-              className="text-xs"
-              style={{ color: "var(--reader-fg-muted)" }}
-            >
-              Saving language...
+}) => {
+  const audiobookStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const [audiobookStarting, setAudiobookStarting] = useState(false);
+  const hasLanguageForm =
+    state.status === "choose-language" || state.status === "saving-language";
+  const hasActionLine =
+    state.status === "success" && (state.source !== null || canListen);
+
+  useEffect(
+    () => () => {
+      if (audiobookStartTimerRef.current) {
+        clearTimeout(audiobookStartTimerRef.current);
+      }
+    },
+    []
+  );
+
+  const handleStartAudiobook = () => {
+    if (audiobookStartTimerRef.current) return;
+    setAudiobookStarting(true);
+    audiobookStartTimerRef.current = setTimeout(() => {
+      audiobookStartTimerRef.current = null;
+      onStartAudiobook();
+    }, audiobookStartFeedbackMs);
+  };
+
+  return (
+    <div
+      data-reader-translation-popover
+      className="relative flex flex-col overflow-hidden rounded-md border backdrop-blur"
+      style={{
+        ...getPopoverStyle(state.anchor),
+        borderColor:
+          "color-mix(in oklab, var(--reader-popover-border) 55%, var(--primary) 45%)",
+        backgroundColor:
+          "color-mix(in oklab, var(--reader-bg) 94%, var(--primary) 6%)",
+        color: "var(--reader-fg)",
+        fontSize: "1em",
+        lineHeight: 1.45,
+      }}
+    >
+      {hasLanguageForm ? (
+        <div className="min-w-0 px-5 py-3 md:px-4">
+          <div className="space-y-3 font-sans">
+            <p className="text-sm font-medium">
+              Which language do you want me to translate to?
             </p>
-          )}
-          {state.error && (
-            <p className="text-sm text-destructive">{state.error}</p>
-          )}
+            <label className="block">
+              <span className="sr-only">Translate to</span>
+              <select
+                value=""
+                disabled={state.status === "saving-language"}
+                onChange={(event) => {
+                  if (event.target.value) {
+                    onLanguageSelect(event.target.value);
+                  }
+                }}
+                className="h-10 w-full rounded-md border bg-transparent px-3 text-base shadow-xs outline-none focus-visible:ring-ring/60 focus-visible:ring-[3px] disabled:cursor-wait disabled:opacity-60 md:text-sm"
+                style={{
+                  borderColor: "var(--reader-popover-border)",
+                  backgroundColor: "var(--reader-bg)",
+                  color: "var(--reader-fg)",
+                }}
+              >
+                <option value="">Choose language</option>
+                {languageOptions.map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {state.status === "saving-language" && (
+              <p
+                className="text-xs"
+                style={{ color: "var(--reader-fg-muted)" }}
+              >
+                Saving language...
+              </p>
+            )}
+            {state.error && (
+              <p className="text-sm text-destructive">{state.error}</p>
+            )}
+          </div>
         </div>
+      ) : (
+        <button
+          type="button"
+          aria-label="Close translation"
+          onClick={onDismiss}
+          className="block min-w-0 px-5 py-3 text-left outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60 md:px-4"
+        >
+          {state.status === "loading" && (
+            <span style={{ color: "var(--reader-fg-muted)" }}>
+              Translating...
+            </span>
+          )}
+          {state.status === "error" && (
+            <span className="text-destructive">
+              {state.error || "Could not translate."}
+            </span>
+          )}
+          {state.status === "success" && <span>{state.translation}</span>}
+        </button>
       )}
-      {state.status === "loading" && (
-        <span style={{ color: "var(--reader-fg-muted)" }}>Translating...</span>
-      )}
-      {state.status === "error" && (
-        <span className="text-destructive">
-          {state.error || "Could not translate."}
-        </span>
-      )}
-      {state.status === "success" && (
-        <div>
-          <p>{state.translation}</p>
+
+      {hasActionLine && (
+        <div className="flex min-w-0 items-baseline gap-2 px-3 pb-[2px] font-sans">
           {state.source && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-1.5 right-2 uppercase tracking-normal"
+              className="mr-auto shrink-0 uppercase tracking-normal"
               style={{
                 color: "var(--reader-fg-muted)",
                 fontSize: "6px",
@@ -382,26 +477,26 @@ const ReaderTranslationPopover = ({
               {getTranslationSourceLabel(state.source)}
             </span>
           )}
+          {canListen && (
+            <div className="ml-auto flex min-w-0 items-baseline justify-end gap-4">
+              <ReaderTranslationAction
+                label={scope === "word" ? "Play word" : "Play sentence"}
+                active={pronunciationPlaying}
+                onClick={onPlaySelection}
+              />
+              <ReaderTranslationAction
+                label="Start audiobook from here"
+                emphasis
+                active={audiobookStarting}
+                onClick={handleStartAudiobook}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
-    {canListen && (
-      <button
-        type="button"
-        aria-label={scope === "word" ? "Play word" : "Listen from here"}
-        onClick={onListen}
-        className="flex w-28 shrink-0 flex-col items-center justify-center gap-1 border-l px-3 py-3 font-sans text-xs font-medium leading-tight transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/60"
-        style={{
-          borderColor: "var(--reader-popover-border)",
-          color: "var(--reader-fg)",
-        }}
-      >
-        <Play aria-hidden="true" className="size-4 fill-current" />
-        <span>{scope === "word" ? "Play word" : "Listen from here"}</span>
-      </button>
-    )}
-  </div>
-);
+  );
+};
 
 type ReaderTranslationTargetProps = {
   id: string;
@@ -708,6 +803,7 @@ export const BookPageReader = ({
   playbackSentenceId,
   playbackCanPlay,
   playbackStatus,
+  playbackTranslationPronunciationType,
   playbackAutoPauseOnTranslation,
   playbackSentenceHighlighting,
   playbackFocusActive,
@@ -716,6 +812,7 @@ export const BookPageReader = ({
   playbackWordRange,
   onSentenceCatalogChange,
   onSentenceActivate,
+  onTranslationAudiobookStart,
   onTranslationSentencePlay,
   onTranslationWordPlay,
   onTranslationOpenChange,
@@ -1157,18 +1254,26 @@ export const BookPageReader = ({
       />
       {translationState && (
         <ReaderTranslationPopover
+          key={translationState.id}
           state={translationState}
           scope={translationScope}
+          pronunciationPlaying={
+            playbackTranslationPronunciationType === translationScope
+          }
           canListen={
             canListenFromTranslation && translationState.status === "success"
           }
           languageOptions={availableTranslationLanguages}
-          onListen={() => {
+          onDismiss={() => setTranslationState(null)}
+          onPlaySelection={() => {
             if (translationScope === "word") {
               onTranslationWordPlay(translationState.text);
               return;
             }
-            onTranslationSentencePlay(translationState.sentenceId);
+            onTranslationSentencePlay(translationState.text);
+          }}
+          onStartAudiobook={() => {
+            onTranslationAudiobookStart(translationState.sentenceId);
             setTranslationState(null);
           }}
           onLanguageSelect={(language) => {

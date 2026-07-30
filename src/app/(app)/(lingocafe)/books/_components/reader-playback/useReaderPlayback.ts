@@ -32,6 +32,7 @@ import type {
   ReaderPlaybackStatus,
   ReaderPlaybackWordRange,
   ReaderSpeechProvider,
+  ReaderTranslationPronunciationType,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 
 type UseReaderPlaybackInput = {
@@ -160,7 +161,7 @@ export const useReaderPlayback = ({
   const autoPausedRef = useRef(false);
   const restartSentenceOnAutoResumeRef = useRef(false);
   const restartSentenceOnManualResumeRef = useRef(false);
-  const wordPronunciationActiveRef = useRef(false);
+  const translationPronunciationActiveRef = useRef(false);
   const [sentences, setSentences] = useState<ReaderPlaybackSentence[]>([]);
   const [catalogPageKey, setCatalogPageKey] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -172,6 +173,8 @@ export const useReaderPlayback = ({
   );
   const [status, setStatusState] = useState<ReaderPlaybackStatus>("idle");
   const statusRef = useRef<ReaderPlaybackStatus>("idle");
+  const [translationPronunciationType, setTranslationPronunciationType] =
+    useState<ReaderTranslationPronunciationType | null>(null);
   const [activeIndex, setActiveIndexState] = useState(-1);
   const [previewIndex, setPreviewIndexState] = useState<number | null>(null);
   const previewIndexRef = useRef<number | null>(null);
@@ -252,6 +255,8 @@ export const useReaderPlayback = ({
     programmaticScrollRef.current = false;
     pendingIndexRef.current = null;
     pausedFromDelayRef.current = false;
+    translationPronunciationActiveRef.current = false;
+    setTranslationPronunciationType(null);
     setActiveWordRange(null);
     providerRef.current?.cancel();
   }, [clearGuidedScrollTimer, clearParagraphTimer, clearSentenceTimer]);
@@ -671,7 +676,7 @@ export const useReaderPlayback = ({
     [cancelCurrentSpeech, togglePause]
   );
 
-  const playSentenceFromTranslation = useCallback(
+  const startAudiobookFromTranslation = useCallback(
     (sentenceId: string) => {
       if (!canPlay) return;
       if (
@@ -724,9 +729,9 @@ export const useReaderPlayback = ({
     ]
   );
 
-  const playWordFromTranslation = useCallback(
-    (word: string) => {
-      const text = word.trim();
+  const playTranslationSelection = useCallback(
+    (selection: string, type: ReaderTranslationPronunciationType) => {
+      const text = selection.trim();
       if (!canPlay || !text) return;
       if (
         (statusRef.current === "playing" || statusRef.current === "delay") &&
@@ -758,7 +763,8 @@ export const useReaderPlayback = ({
         !autoPausedRef.current;
 
       cancelCurrentSpeech();
-      wordPronunciationActiveRef.current = true;
+      translationPronunciationActiveRef.current = true;
+      setTranslationPronunciationType(type);
       const generation = generationRef.current + 1;
       generationRef.current = generation;
       const started = provider.speak({
@@ -768,7 +774,7 @@ export const useReaderPlayback = ({
         onStart: () => {
           if (generationRef.current !== generation) return;
           trackEvent("audio.play", {
-            type: "word",
+            type,
             language,
             book_id: bookId,
             page_id: pageId,
@@ -777,18 +783,21 @@ export const useReaderPlayback = ({
         onBoundary: () => undefined,
         onEnd: () => {
           if (generationRef.current !== generation) return;
-          wordPronunciationActiveRef.current = false;
+          translationPronunciationActiveRef.current = false;
+          setTranslationPronunciationType(null);
         },
         onError: (message) => {
           if (generationRef.current !== generation) return;
-          wordPronunciationActiveRef.current = false;
-          console.warn("Reader word pronunciation failed.", message);
+          translationPronunciationActiveRef.current = false;
+          setTranslationPronunciationType(null);
+          console.warn(`Reader ${type} pronunciation failed.`, message);
         },
       });
 
       if (!started) {
-        wordPronunciationActiveRef.current = false;
-        console.warn("Reader word pronunciation could not start.");
+        translationPronunciationActiveRef.current = false;
+        setTranslationPronunciationType(null);
+        console.warn(`Reader ${type} pronunciation could not start.`);
       }
     },
     [
@@ -803,11 +812,20 @@ export const useReaderPlayback = ({
     ]
   );
 
+  const playSentenceFromTranslation = useCallback(
+    (sentence: string) => playTranslationSelection(sentence, "sentence"),
+    [playTranslationSelection]
+  );
+
+  const playWordFromTranslation = useCallback(
+    (word: string) => playTranslationSelection(word, "word"),
+    [playTranslationSelection]
+  );
+
   const setTranslationPaused = useCallback(
     (isOpen: boolean) => {
-      if (!isOpen && wordPronunciationActiveRef.current) {
+      if (!isOpen && translationPronunciationActiveRef.current) {
         cancelCurrentSpeech();
-        wordPronunciationActiveRef.current = false;
       }
       translationOpenRef.current = isOpen;
       syncAutoPauseReason(
@@ -967,7 +985,6 @@ export const useReaderPlayback = ({
     autoPausedRef.current = false;
     restartSentenceOnAutoResumeRef.current = false;
     restartSentenceOnManualResumeRef.current = false;
-    wordPronunciationActiveRef.current = false;
     previewIndexRef.current = null;
     setPreviewIndexState(null);
     setIsOpen(false);
@@ -1116,6 +1133,7 @@ export const useReaderPlayback = ({
     capabilityPending,
     unavailableReason,
     status,
+    translationPronunciationType,
     activeSentenceId,
     activeWordRange: previewIndex === null ? activeWordRange : null,
     progressBps: sentenceIndexToPlaybackBps(activeIndex, sentences.length),
@@ -1125,6 +1143,7 @@ export const useReaderPlayback = ({
     registerSentences,
     selectSentence,
     start,
+    startAudiobookFromTranslation,
     playSentenceFromTranslation,
     playWordFromTranslation,
     togglePause,

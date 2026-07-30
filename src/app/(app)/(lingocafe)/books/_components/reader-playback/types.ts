@@ -22,6 +22,8 @@ export type ReaderPlaybackStatus =
   | "completed"
   | "error";
 
+export type ReaderTranslationPronunciationType = "sentence" | "word";
+
 export type ReaderSpeechBoundary = {
   charIndex: number;
   charLength: number;
@@ -60,6 +62,7 @@ export type ReaderPlaybackController = {
   capabilityPending: boolean;
   unavailableReason: string | null;
   status: ReaderPlaybackStatus;
+  translationPronunciationType: ReaderTranslationPronunciationType | null;
   activeSentenceId: string | null;
   activeWordRange: ReaderPlaybackWordRange | null;
   progressBps: number;
@@ -69,7 +72,8 @@ export type ReaderPlaybackController = {
   registerSentences: (sentences: ReaderPlaybackSentence[]) => void;
   selectSentence: (sentenceId: string) => void;
   start: (fromBeginning?: boolean) => void;
-  playSentenceFromTranslation: (sentenceId: string) => void;
+  startAudiobookFromTranslation: (sentenceId: string) => void;
+  playSentenceFromTranslation: (sentence: string) => void;
   playWordFromTranslation: (word: string) => void;
   togglePause: () => void;
   setTranslationPaused: (isOpen: boolean) => void;
