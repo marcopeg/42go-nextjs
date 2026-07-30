@@ -26,6 +26,10 @@ import {
   type ReaderPreferences,
   type ReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
+import {
+  getTranslationPronunciationAccessibleLabel,
+  getTranslationPronunciationVisibleLabel,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-playback/translation-pronunciation";
 import type {
   ReaderPlaybackSentence,
   ReaderPlaybackStatus,
@@ -290,15 +294,39 @@ const renderPlaybackText = (
   );
 };
 
+const ReaderSpeakingIndicator = () => (
+  <span
+    aria-hidden="true"
+    className="flex size-3.5 shrink-0 items-center justify-center gap-[2px]"
+  >
+    <span
+      className="h-2 w-[2px] rounded-full bg-current motion-safe:animate-pulse motion-reduce:opacity-80"
+      style={{ animationDelay: "-300ms", animationDuration: "900ms" }}
+    />
+    <span
+      className="h-3 w-[2px] rounded-full bg-current motion-safe:animate-pulse motion-reduce:opacity-80"
+      style={{ animationDelay: "-150ms", animationDuration: "900ms" }}
+    />
+    <span
+      className="h-2.5 w-[2px] rounded-full bg-current motion-safe:animate-pulse motion-reduce:opacity-80"
+      style={{ animationDuration: "900ms" }}
+    />
+  </span>
+);
+
 const ReaderTranslationAction = ({
   label,
   emphasis = false,
   active,
+  activeAriaLabel,
+  speaking = false,
   onClick,
 }: {
   label: string;
   emphasis?: boolean;
   active?: boolean;
+  activeAriaLabel?: string;
+  speaking?: boolean;
   onClick: () => void;
 }) => {
   const [pressed, setPressed] = useState(false);
@@ -307,6 +335,7 @@ const ReaderTranslationAction = ({
   return (
     <button
       type="button"
+      aria-label={active ? activeAriaLabel : undefined}
       aria-pressed={active === undefined ? undefined : active}
       onPointerDown={() => setPressed(true)}
       onPointerUp={() => setPressed(false)}
@@ -327,7 +356,14 @@ const ReaderTranslationAction = ({
       }}
     >
       <span>{label}</span>
-      <Play aria-hidden="true" className="size-3.5 fill-current" />
+      {speaking && active ? (
+        <ReaderSpeakingIndicator />
+      ) : (
+        <Play
+          aria-hidden="true"
+          className="size-3.5 shrink-0 fill-current"
+        />
+      )}
     </button>
   );
 };
@@ -480,8 +516,13 @@ const ReaderTranslationPopover = ({
           {canListen && (
             <div className="ml-auto flex min-w-0 items-baseline justify-end gap-4">
               <ReaderTranslationAction
-                label={scope === "word" ? "Play word" : "Play sentence"}
+                label={getTranslationPronunciationVisibleLabel(scope)}
                 active={pronunciationPlaying}
+                activeAriaLabel={getTranslationPronunciationAccessibleLabel(
+                  scope,
+                  true
+                )}
+                speaking
                 onClick={onPlaySelection}
               />
               <ReaderTranslationAction

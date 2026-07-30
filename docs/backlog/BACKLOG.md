@@ -204,6 +204,7 @@
 
 ## Completed
 
+- [MR94: Add Speaking Feedback and Tap-to-Stop to Reader Translation Pronunciation](./tasks/MR94-add-speaking-feedback-and-tap-to-stop-to-reader-translation-pronunciation/MR94.task.md)
 - [GC03: Refine LingoCafe Reader Translation Popover Actions and Styling](./tasks/GC03-refine-lingocafe-reader-translation-popover-actions-and-styling/GC03.task.md)
 - [XC01: Let readers mark a book as read](./tasks/XC01-let-readers-mark-a-book-as-read/XC01.task.md)
 - [YS05: Enforce users:edit for User Updates](./tasks/YS05-enforce-users-edit-for-user-updates/YS05.task.md)

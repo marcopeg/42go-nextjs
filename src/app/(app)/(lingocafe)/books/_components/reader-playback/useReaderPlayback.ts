@@ -25,6 +25,7 @@ import {
   storeReaderPlaybackPreferences,
   type ReaderPlaybackPreferences,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/playback-preferences";
+import { getTranslationPronunciationIntent } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/translation-pronunciation";
 import type {
   ReaderPlaybackController,
   ReaderPlaybackSettingsSurface,
@@ -731,6 +732,15 @@ export const useReaderPlayback = ({
 
   const playTranslationSelection = useCallback(
     (selection: string, type: ReaderTranslationPronunciationType) => {
+      const intent = getTranslationPronunciationIntent(
+        translationPronunciationActiveRef.current,
+        type
+      );
+      if (intent.action === "stop") {
+        cancelCurrentSpeech();
+        return;
+      }
+
       const text = selection.trim();
       if (!canPlay || !text) return;
       if (
