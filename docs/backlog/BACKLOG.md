@@ -74,8 +74,6 @@
 
 ## WIP
 
-- [FK40: Make QuickList Per-List Installation Explicit and Flicker-Free](./tasks/FK40-make-quicklist-per-list-installation-explicit-and-flicker-free/FK40.task.md)
-- [ZC45: QuickList Personal API Access and Agent Skill](./tasks/ZC45-quicklist-personal-api-access-and-agent-skill/ZC45.task.md)
 
 ## Blocked
 
@@ -211,6 +209,8 @@
 
 ## Completed
 
+- [FK40: Make QuickList Per-List Installation Explicit and Flicker-Free](./tasks/FK40-make-quicklist-per-list-installation-explicit-and-flicker-free/FK40.task.md)
+- [ZC45: QuickList Personal API Access and Agent Skill](./tasks/ZC45-quicklist-personal-api-access-and-agent-skill/ZC45.task.md)
 - [IP96: QuickList: Refresh Open List After Rotation to Portrait](./tasks/IP96-quicklist-refresh-open-list-after-rotation-to-portrait/IP96.task.md)
 - [MR94: Add Speaking Feedback and Tap-to-Stop to Reader Translation Pronunciation](./tasks/MR94-add-speaking-feedback-and-tap-to-stop-to-reader-translation-pronunciation/MR94.task.md)
 - [GC03: Refine LingoCafe Reader Translation Popover Actions and Styling](./tasks/GC03-refine-lingocafe-reader-translation-popover-actions-and-styling/GC03.task.md)
