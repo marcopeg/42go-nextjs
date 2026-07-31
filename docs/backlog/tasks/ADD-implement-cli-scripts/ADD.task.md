@@ -1,8 +1,8 @@
 ---
 taskId: ADD
-status: draft
+status: archived
 createdAt: 2026-04-23T15:27:45+02:00
-updatedAt: 2026-05-10T09:55:08+02:00
+updatedAt: 2026-07-30T12:18:59.058Z
 ---
 # Implement CLI Scripts
 
