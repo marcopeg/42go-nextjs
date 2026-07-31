@@ -44,6 +44,10 @@ PROGRESS_COLUMNS = [
     "progress_bps",
     "created_at",
     "updated_at",
+]
+COMPLETED_COLUMNS = [
+    "user_id",
+    "book_id",
     "completed_at",
 ]
 
@@ -63,6 +67,7 @@ class BookDataPaths:
     books_path: Path
     pages_path: Path
     progress_path: Path
+    completed_path: Path
     state_path: Path
 
 
@@ -76,6 +81,7 @@ def resolve_book_data_paths(
         books_path=root / "books.parquet",
         pages_path=root / "books_pages.parquet",
         progress_path=root / "books_progress.parquet",
+        completed_path=root / "books_completed.parquet",
         state_path=root / "_state.json",
     )
 
@@ -189,7 +195,14 @@ def normalize_progress(row: dict[str, Any]) -> dict[str, Any]:
         "progress_bps": int(row["progress_bps"]),
         "created_at": parse_utc(row["created_at"]),
         "updated_at": parse_utc(row["updated_at"]),
-        "completed_at": parse_utc(row.get("completed_at")),
+    }
+
+
+def normalize_completed(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "user_id": str(row["user_id"]),
+        "book_id": str(row["book_id"]),
+        "completed_at": parse_utc(row["completed_at"]),
     }
 
 
@@ -228,7 +241,7 @@ def fetch_pages(database_url: str) -> list[dict[str, Any]]:
 def fetch_progress(database_url: str, cursor: list[str] | None, limit: int) -> list[dict[str, Any]]:
     psycopg, dict_row = import_psycopg()
     sql = """
-        SELECT user_id, book_id, page_id, progress_bps, created_at, updated_at, completed_at
+        SELECT user_id, book_id, page_id, progress_bps, created_at, updated_at
         FROM lingocafe.books_progress
     """
     params: list[Any] = []
@@ -240,6 +253,20 @@ def fetch_progress(database_url: str, cursor: list[str] | None, limit: int) -> l
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
         with connection.cursor() as cursor_obj:
             cursor_obj.execute(sql, params)
+            return list(cursor_obj.fetchall())
+
+
+def fetch_completed(database_url: str) -> list[dict[str, Any]]:
+    psycopg, dict_row = import_psycopg()
+    with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        with connection.cursor() as cursor_obj:
+            cursor_obj.execute(
+                """
+                SELECT user_id, book_id, completed_at
+                FROM lingocafe.books_completed
+                ORDER BY user_id ASC, completed_at DESC, book_id ASC
+                """
+            )
             return list(cursor_obj.fetchall())
 
 
@@ -293,6 +320,15 @@ def progress_schema(pa: Any) -> Any:
             ("progress_bps", pa.int64()),
             ("created_at", pa.timestamp("us", tz="UTC")),
             ("updated_at", pa.timestamp("us", tz="UTC")),
+        ]
+    )
+
+
+def completed_schema(pa: Any) -> Any:
+    return pa.schema(
+        [
+            ("user_id", pa.string()),
+            ("book_id", pa.string()),
             ("completed_at", pa.timestamp("us", tz="UTC")),
         ]
     )
@@ -333,13 +369,19 @@ def sort_progress(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(rows, key=lambda row: (row["updated_at"], row["created_at"], row["user_id"], row["book_id"]))
 
 
-def build_state(books: list[dict[str, Any]], pages: list[dict[str, Any]], progress: list[dict[str, Any]]) -> dict[str, Any]:
+def build_state(
+    books: list[dict[str, Any]],
+    pages: list[dict[str, Any]],
+    progress: list[dict[str, Any]],
+    completed: list[dict[str, Any]],
+) -> dict[str, Any]:
     state: dict[str, Any] = {
         "version": 1,
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "books": {"row_count": len(books)},
         "pages": {"row_count": len(pages), "mode": "full-refresh"},
         "progress": {"row_count": len(progress)},
+        "completed": {"row_count": len(completed), "mode": "full-refresh"},
     }
     if books:
         state["books"]["cursor"] = cursor_from_row(books[-1], ["updated_at", "created_at", "id"])
@@ -357,19 +399,28 @@ def pull_books(options: PullBooksOptions) -> dict[str, Any]:
     state = read_book_state(paths, options.reset)
 
     if options.reset and not options.dry_run:
-        for path in [paths.books_path, paths.pages_path, paths.progress_path, paths.state_path, *legacy_book_state_paths(paths)]:
+        for path in [
+            paths.books_path,
+            paths.pages_path,
+            paths.progress_path,
+            paths.completed_path,
+            paths.state_path,
+            *legacy_book_state_paths(paths),
+        ]:
             path.unlink(missing_ok=True)
 
     books_cursor = None if options.reset else state.get("books", {}).get("cursor")
     progress_cursor = None if options.reset else state.get("progress", {}).get("cursor")
     try:
-        with ThreadPoolExecutor(max_workers=3, thread_name_prefix="42go-pull-lingocafe") as executor:
+        with ThreadPoolExecutor(max_workers=4, thread_name_prefix="42go-pull-lingocafe") as executor:
             books_future = executor.submit(fetch_books, database_url, books_cursor, options.limit)
             pages_future = executor.submit(fetch_pages, database_url)
             progress_future = executor.submit(fetch_progress, database_url, progress_cursor, options.limit)
+            completed_future = executor.submit(fetch_completed, database_url)
             changed_books = [normalize_book(row) for row in books_future.result()]
             pages = [normalize_page(row) for row in pages_future.result()]
             changed_progress = [normalize_progress(row) for row in progress_future.result()]
+            completed = [normalize_completed(row) for row in completed_future.result()]
     except Exception as error:
         raise RuntimeError(f"Failed to pull LingoCafe book data from configured database: {error}") from error
 
@@ -391,7 +442,14 @@ def pull_books(options: PullBooksOptions) -> dict[str, Any]:
             "progress_changed": len(changed_progress),
             "books_total": len(merged_books),
             "progress_total": len(merged_progress),
-            "would_write": bool(options.reset or changed_books or changed_progress or not paths.pages_path.exists()),
+            "completed_total": len(completed),
+            "would_write": bool(
+                options.reset
+                or changed_books
+                or changed_progress
+                or not paths.pages_path.exists()
+                or not paths.completed_path.exists()
+            ),
         }
 
     if options.reset or changed_books or not paths.books_path.exists():
@@ -403,7 +461,10 @@ def pull_books(options: PullBooksOptions) -> dict[str, Any]:
     if options.reset or changed_progress or not paths.progress_path.exists():
         write_parquet_file(paths.progress_path, merged_progress, PROGRESS_COLUMNS, progress_schema)
         smoke_read_parquet(paths.progress_path, len(merged_progress))
-    write_json_atomic(paths.state_path, build_state(merged_books, sorted_pages, merged_progress))
+    if options.reset or not paths.completed_path.exists() or completed:
+        write_parquet_file(paths.completed_path, completed, COMPLETED_COLUMNS, completed_schema)
+        smoke_read_parquet(paths.completed_path, len(completed))
+    write_json_atomic(paths.state_path, build_state(merged_books, sorted_pages, merged_progress, completed))
 
     return {
         "books_changed": len(changed_books),
@@ -411,9 +472,11 @@ def pull_books(options: PullBooksOptions) -> dict[str, Any]:
         "progress_changed": len(changed_progress),
         "books_total": len(merged_books),
         "progress_total": len(merged_progress),
+        "completed_total": len(completed),
         "books_parquet": str(paths.books_path),
         "pages_parquet": str(paths.pages_path),
         "progress_parquet": str(paths.progress_path),
+        "completed_parquet": str(paths.completed_path),
         "state": str(paths.state_path),
         "reset": options.reset,
     }

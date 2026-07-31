@@ -56,6 +56,7 @@ class ReadTipPaths:
     books_path: Path
     pages_path: Path
     progress_path: Path
+    completed_path: Path
     sent_emails_path: Path
     whitelist_path: Path
 
@@ -132,6 +133,7 @@ def resolve_paths(options: ReadTipOptions) -> ReadTipPaths:
         books_path=data_dir / "lingocafe" / "books.parquet",
         pages_path=data_dir / "lingocafe" / "books_pages.parquet",
         progress_path=data_dir / "lingocafe" / "books_progress.parquet",
+        completed_path=data_dir / "lingocafe" / "books_completed.parquet",
         sent_emails_path=options.sent_emails_path or email_root / "sent_emails.parquet",
         whitelist_path=options.whitelist_path or email_root / "whitelist.txt",
     )
@@ -204,12 +206,19 @@ def latest_progress(progress_rows: list[dict[str, Any]]) -> dict[str, Any] | Non
     return max(progress_rows, key=lambda row: normalize_datetime(row.get("updated_at")) or datetime.min.replace(tzinfo=UTC))
 
 
-def is_complete_progress(progress: dict[str, Any]) -> bool:
-    return progress.get("completed_at") is not None or int(progress.get("progress_bps") or 0) >= 10000
+def completion_keys(completed_rows: list[dict[str, Any]]) -> set[tuple[str, str]]:
+    return {(str(row["user_id"]), str(row["book_id"])) for row in completed_rows}
 
 
-def latest_incomplete_progress(progress_rows: list[dict[str, Any]]) -> dict[str, Any] | None:
-    incomplete = [row for row in progress_rows if not is_complete_progress(row)]
+def is_complete_progress(progress: dict[str, Any], completed_book_keys: set[tuple[str, str]]) -> bool:
+    return (
+        (str(progress["user_id"]), str(progress["book_id"])) in completed_book_keys
+        or int(progress.get("progress_bps") or 0) >= 10000
+    )
+
+
+def latest_incomplete_progress(progress_rows: list[dict[str, Any]], completed_book_keys: set[tuple[str, str]]) -> dict[str, Any] | None:
+    incomplete = [row for row in progress_rows if not is_complete_progress(row, completed_book_keys)]
     return latest_progress(incomplete)
 
 
@@ -238,8 +247,13 @@ def sort_books_newest(books: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(books, key=key)
 
 
-def unread_books_for_user(books: list[dict[str, Any]], progress_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def unread_books_for_user(
+    books: list[dict[str, Any]],
+    progress_rows: list[dict[str, Any]],
+    completed_book_keys: set[tuple[str, str]],
+) -> list[dict[str, Any]]:
     read_book_ids = {str(row["book_id"]) for row in progress_rows}
+    read_book_ids.update(book_id for _user_id, book_id in completed_book_keys)
     return [book for book in books if str(book["id"]) not in read_book_ids]
 
 
@@ -248,9 +262,10 @@ def choose_unread_book(
     user_profile: dict[str, Any] | None,
     books: list[dict[str, Any]],
     progress_rows: list[dict[str, Any]],
+    completed_book_keys: set[tuple[str, str]] | None = None,
     rng: random.Random,
 ) -> dict[str, Any] | None:
-    unread = unread_books_for_user(books, progress_rows)
+    unread = unread_books_for_user(books, progress_rows, completed_book_keys or set())
     target_lang = (user_profile or {}).get("target_lang")
     target_level = (user_profile or {}).get("target_level")
     if not target_lang:
@@ -284,13 +299,14 @@ def build_recommendation(
     *,
     user_profile: dict[str, Any] | None,
     user_progress: list[dict[str, Any]],
+    user_completed_book_keys: set[tuple[str, str]],
     books: list[dict[str, Any]],
     pages_by_book: dict[str, list[dict[str, Any]]],
     base_url: str,
     rng: random.Random,
 ) -> Recommendation | None:
     books_by_id = book_by_id(books)
-    active = latest_incomplete_progress(user_progress)
+    active = latest_incomplete_progress(user_progress, user_completed_book_keys)
     if active is not None:
         book_id = str(active["book_id"])
         book = books_by_id.get(book_id)
@@ -317,7 +333,13 @@ def build_recommendation(
             ),
         )
 
-    unread = choose_unread_book(user_profile=user_profile, books=books, progress_rows=user_progress, rng=rng)
+    unread = choose_unread_book(
+        user_profile=user_profile,
+        books=books,
+        progress_rows=user_progress,
+        completed_book_keys=user_completed_book_keys,
+        rng=rng,
+    )
     if unread is None:
         return None
     book_id = str(unread["id"])
@@ -367,6 +389,7 @@ def build_decisions(
     books: list[dict[str, Any]],
     pages: list[dict[str, Any]],
     progress: list[dict[str, Any]],
+    completed: list[dict[str, Any]],
     sent_rows: list[dict[str, Any]],
     whitelist_mode: str,
     whitelist: set[str],
@@ -378,6 +401,7 @@ def build_decisions(
 ) -> list[Decision]:
     profiles = {str(row["user_id"]): row for row in lingocafe_users}
     progress_by_user = group_by_user(progress)
+    completed_keys = completion_keys(completed)
     pages_by_book = page_maps(pages)
     rng = random.Random(random_seed)
     decisions: list[Decision] = []
@@ -410,6 +434,7 @@ def build_decisions(
         recommendation = build_recommendation(
             user_profile=profiles.get(user_id),
             user_progress=user_progress,
+            user_completed_book_keys={key for key in completed_keys if key[0] == user_id},
             books=books,
             pages_by_book=pages_by_book,
             base_url=base_url,
@@ -519,6 +544,7 @@ def run_read_tip(
     books = read_parquet_rows(paths.books_path)
     pages = read_parquet_rows(paths.pages_path)
     progress = read_parquet_rows(paths.progress_path)
+    completed = read_parquet_rows(paths.completed_path)
     sent_rows = read_parquet_rows(paths.sent_emails_path, required=False)
     decisions = build_decisions(
         users=users,
@@ -526,6 +552,7 @@ def run_read_tip(
         books=books,
         pages=pages,
         progress=progress,
+        completed=completed,
         sent_rows=sent_rows,
         whitelist_mode=whitelist_mode,
         whitelist=whitelist,

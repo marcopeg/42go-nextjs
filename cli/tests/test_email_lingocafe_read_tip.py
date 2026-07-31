@@ -106,6 +106,15 @@ def progress_schema() -> pa.Schema:
             ("progress_bps", pa.int64()),
             ("created_at", pa.timestamp("us", tz="UTC")),
             ("updated_at", pa.timestamp("us", tz="UTC")),
+        ]
+    )
+
+
+def completed_schema() -> pa.Schema:
+    return pa.schema(
+        [
+            ("user_id", pa.string()),
+            ("book_id", pa.string()),
             ("completed_at", pa.timestamp("us", tz="UTC")),
         ]
     )
@@ -197,7 +206,7 @@ def page_row(book_id: str, page_id: str, position: int) -> dict:
     }
 
 
-def progress_row(user_id: str, book_id: str, page_id: str, *, bps: int, updated_hours_ago: int, complete: bool = False) -> dict:
+def progress_row(user_id: str, book_id: str, page_id: str, *, bps: int, updated_hours_ago: int) -> dict:
     return {
         "user_id": user_id,
         "book_id": book_id,
@@ -205,7 +214,14 @@ def progress_row(user_id: str, book_id: str, page_id: str, *, bps: int, updated_
         "progress_bps": bps,
         "created_at": NOW - timedelta(days=3),
         "updated_at": NOW - timedelta(hours=updated_hours_ago),
-        "completed_at": NOW - timedelta(hours=updated_hours_ago) if complete else None,
+    }
+
+
+def completed_row(user_id: str, book_id: str, *, completed_hours_ago: int = 80) -> dict:
+    return {
+        "user_id": user_id,
+        "book_id": book_id,
+        "completed_at": NOW - timedelta(hours=completed_hours_ago),
     }
 
 
@@ -214,6 +230,7 @@ def write_dataset(
     *,
     whitelist: str = "john@example.com\n",
     progress: list[dict] | None = None,
+    completed: list[dict] | None = None,
     sent: list[dict] | None = None,
     extra_users: list[tuple[str, str]] | None = None,
 ) -> tuple[Path, Path, Path]:
@@ -241,6 +258,7 @@ def write_dataset(
         pages_schema(),
     )
     write_parquet(data_dir / "lingocafe" / "books_progress.parquet", progress or [], progress_schema())
+    write_parquet(data_dir / "lingocafe" / "books_completed.parquet", completed or [], completed_schema())
     if sent is not None:
         write_parquet(data_dir / "lingocafe_daily_email" / "sent_emails.parquet", sent, sent_schema())
     whitelist_path = data_dir / "lingocafe_daily_email" / "whitelist.txt"
@@ -355,12 +373,26 @@ def test_unread_fallback_uses_higher_level_before_random(tmp_path: Path) -> None
     chosen = choose_unread_book(
         user_profile={"target_lang": "sv", "target_level": "a2"},
         books=books,
-        progress_rows=[progress_row("u1", "read", "p1", bps=10000, updated_hours_ago=80, complete=True)],
+        progress_rows=[progress_row("u1", "read", "p1", bps=10000, updated_hours_ago=80)],
         rng=__import__("random").Random(1),
     )
 
     assert chosen is not None
     assert chosen["id"] == "higher"
+
+
+def test_completed_book_is_not_treated_as_active_reading(tmp_path: Path) -> None:
+    result = run_with_dataset(
+        tmp_path,
+        progress=[progress_row("u1", "active", "p1", bps=500, updated_hours_ago=30)],
+        completed=[completed_row("u1", "active")],
+    )
+
+    decision = result.decisions[0]
+    assert decision.status == "selected"
+    assert decision.recommendation is not None
+    assert decision.recommendation.recommendation_type == "pick_unread"
+    assert decision.recommendation.book_id == "same"
 
 
 def test_send_mode_writes_sent_email_log(tmp_path: Path) -> None:

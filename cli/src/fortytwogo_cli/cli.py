@@ -136,7 +136,8 @@ def update(
         "pull lingocafe: "
         f"books={lingocafe_pull_result.get('books_changed', 0)}/{lingocafe_pull_result.get('books_total', 0)} "
         f"pages={lingocafe_pull_result.get('pages_total', 0)} "
-        f"progress={lingocafe_pull_result.get('progress_changed', 0)}/{lingocafe_pull_result.get('progress_total', 0)}"
+        f"progress={lingocafe_pull_result.get('progress_changed', 0)}/{lingocafe_pull_result.get('progress_total', 0)} "
+        f"completed={lingocafe_pull_result.get('completed_total', 0)}"
     )
 
     typer.echo("")

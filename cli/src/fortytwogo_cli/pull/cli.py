@@ -93,6 +93,8 @@ def format_pull_all_result(result: dict[str, Any]) -> str:
             f"    {format_count_line(None, lingocafe.get('pages_total'))}",
             "  books_progress",
             f"    {format_count_line(lingocafe.get('progress_changed'), lingocafe.get('progress_total'))}",
+            "  books_completed",
+            f"    {format_count_line(None, lingocafe.get('completed_total'))}",
         ]
     )
 

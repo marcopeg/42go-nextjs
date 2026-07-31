@@ -32,6 +32,7 @@ LingoCafe wrapper or a backoffice repository.
 - Do not use `42go events` or `42go users`; those roots were removed.
 - Raw pulled data lives under `.local/42go-data/`.
 - Raw pulled rows that mirror a source table use `.local/42go-data/{schema}/{table}.parquet`.
+- LingoCafe reading position and explicit completion are separate: `lingocafe/books_progress.parquet` mirrors `lingocafe.books_progress`, while `lingocafe/books_completed.parquet` mirrors `lingocafe.books_completed`.
 - Query aggregate data lives under `.local/42go-query/`.
 - Email automation logs and local whitelists live under `.local/42go-data/<automation>/`.
 - Do not commit `.local/42go-data`, `.local/42go-query`, `.local/42go-stats`, or `.local/42go-backups`.
@@ -86,6 +87,7 @@ LingoCafe wrapper or a backoffice repository.
   - `--max <n>` caps selected contacts; default is `1`.
   - `42go email lingocafe read-tip --dry` previews planned emails without sending.
   - `42go email lingocafe read-tip` refreshes data with `pull all` and `query all` unless `--skip-refresh` is passed.
+  - It treats a user as actively reading a book only when `books_progress` has current progress and `books_completed` does not mark that same user/book completed.
   - It writes sent-email history to `.local/42go-data/lingocafe_daily_email/sent_emails.parquet`.
   - It uses `.local/42go-data/lingocafe_daily_email/whitelist.txt`; exact one-line `send to all` disables the whitelist gate.
   - If the whitelist file starts with exact first line `send to all but skip`, remaining lines are treated as blacklisted emails and skipped before `--max` recipient selection.

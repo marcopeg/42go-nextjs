@@ -58,6 +58,8 @@ def sample_pull_all_result() -> dict[str, object]:
             "progress_changed": 2,
             "progress_total": 109,
             "progress_parquet": ".local/42go-data/lingocafe/books_progress.parquet",
+            "completed_total": 14,
+            "completed_parquet": ".local/42go-data/lingocafe/books_completed.parquet",
             "state": ".local/42go-data/lingocafe/_state.json",
         },
     }
@@ -723,7 +725,7 @@ def test_update_runs_pull_all_then_query_all(monkeypatch, tmp_path: Path) -> Non
         return {
             "auth": {"users_changed": 1, "users_total": 2, "accounts_changed": 3, "accounts_total": 4},
             "events": {"rows": 5},
-            "lingocafe": {"books_changed": 6, "books_total": 7, "pages_total": 8, "progress_changed": 9, "progress_total": 10},
+            "lingocafe": {"books_changed": 6, "books_total": 7, "pages_total": 8, "progress_changed": 9, "progress_total": 10, "completed_total": 11},
         }
 
     def fake_run_all_queries(**kwargs):
@@ -741,7 +743,7 @@ def test_update_runs_pull_all_then_query_all(monkeypatch, tmp_path: Path) -> Non
     assert calls == ["pull", "query"]
     assert "pull auth: users=1/2 accounts=3/4" in result.output
     assert "pull events: 5 rows" in result.output
-    assert "pull lingocafe: books=6/7 pages=8 progress=9/10" in result.output
+    assert "pull lingocafe: books=6/7 pages=8 progress=9/10 completed=11" in result.output
     assert "query sessions: 11 sessions from 22 events" in result.output
     assert "query users: 33 users from 11 sessions" in result.output
     assert "query lingocafe: users=44 growth_rows=55 reads_rows=66" in result.output
@@ -794,7 +796,7 @@ def test_update_passes_reset_to_pull_all(monkeypatch) -> None:
         return {
             "auth": {"users_changed": 1, "users_total": 2, "accounts_changed": 1, "accounts_total": 1},
             "events": {"rows": 3},
-            "lingocafe": {"books_changed": 2, "books_total": 2, "pages_total": 3, "progress_changed": 1, "progress_total": 1},
+            "lingocafe": {"books_changed": 2, "books_total": 2, "pages_total": 3, "progress_changed": 1, "progress_total": 1, "completed_total": 1},
         }
 
     monkeypatch.setattr(cli_module, "run_all_pulls", fake_run_all_pulls)
@@ -819,7 +821,7 @@ def test_update_does_not_reset_by_default(monkeypatch) -> None:
         or {
             "auth": {"users_changed": 0, "users_total": 0, "accounts_changed": 0, "accounts_total": 0},
             "events": {"rows": 0, "message": "No new events to export."},
-            "lingocafe": {"books_changed": 0, "books_total": 0, "pages_total": 0, "progress_changed": 0, "progress_total": 0},
+            "lingocafe": {"books_changed": 0, "books_total": 0, "pages_total": 0, "progress_changed": 0, "progress_total": 0, "completed_total": 0},
         },
     )
     monkeypatch.setattr(cli_module, "run_all_queries", lambda **kwargs: sample_query_all_result())
