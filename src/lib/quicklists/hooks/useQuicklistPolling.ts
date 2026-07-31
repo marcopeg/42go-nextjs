@@ -10,7 +10,12 @@ import {
   fetchProjectConditional,
   type ProjectData,
 } from "@/lib/quicklists/hooks/useQuicklists";
-import { shouldCoalesceQuicklistResumeSignal } from "@/lib/quicklists/polling";
+import {
+  QUICKLIST_PHONE_LANDSCAPE_QUERY,
+  QUICKLIST_PORTRAIT_QUERY,
+  shouldCoalesceQuicklistResumeSignal,
+  shouldRunQuicklistPortraitRefresh,
+} from "@/lib/quicklists/polling";
 
 const MUTATION_RETRY_MS = 500;
 
@@ -52,13 +57,18 @@ export const useQuicklistPolling = ({
     : null;
 
   useEffect(() => {
-    if (!projectId || intervalMs === null) return;
+    if (!projectId) return;
 
     let disposed = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     let controller: AbortController | null = null;
     let inFlight = false;
     let lastResumeAt = 0;
+    const phoneLandscapeQuery = window.matchMedia(
+      QUICKLIST_PHONE_LANDSCAPE_QUERY
+    );
+    const portraitQuery = window.matchMedia(QUICKLIST_PORTRAIT_QUERY);
+    let wasPhoneLandscape = phoneLandscapeQuery.matches;
 
     const clearTimer = () => {
       if (timer) clearTimeout(timer);
@@ -68,9 +78,9 @@ export const useQuicklistPolling = ({
     const isHidden = () =>
       typeof document !== "undefined" && document.visibilityState === "hidden";
 
-    const schedule = (delayMs = intervalMs) => {
+    const schedule = (delayMs: number | null = intervalMs) => {
       clearTimer();
-      if (disposed || isHidden()) return;
+      if (disposed || delayMs === null || isHidden()) return;
       timer = setTimeout(() => {
         void runCheck();
       }, delayMs);
@@ -133,15 +143,43 @@ export const useQuicklistPolling = ({
       runForegroundCheck();
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("pageshow", runForegroundCheck);
-    window.addEventListener("focus", runForegroundCheck);
-    schedule();
+    const handlePhoneLandscapeChange = (event: MediaQueryListEvent) => {
+      const isPhoneLandscape = event.matches;
+      const shouldRefresh = shouldRunQuicklistPortraitRefresh({
+        wasPhoneLandscape,
+        isPhoneLandscape,
+        isPortrait: portraitQuery.matches,
+        isBusy: inFlight || latestRef.current.hasPendingMutation(),
+        isHidden: isHidden(),
+      });
+      wasPhoneLandscape = isPhoneLandscape;
+
+      if (!shouldRefresh || disposed) return;
+
+      clearTimer();
+      void runCheck();
+    };
+
+    phoneLandscapeQuery.addEventListener(
+      "change",
+      handlePhoneLandscapeChange
+    );
+
+    if (intervalMs !== null) {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      window.addEventListener("pageshow", runForegroundCheck);
+      window.addEventListener("focus", runForegroundCheck);
+      schedule();
+    }
 
     return () => {
       disposed = true;
       clearTimer();
       controller?.abort();
+      phoneLandscapeQuery.removeEventListener(
+        "change",
+        handlePhoneLandscapeChange
+      );
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pageshow", runForegroundCheck);
       window.removeEventListener("focus", runForegroundCheck);

@@ -13,8 +13,10 @@ import {
   matchesIfNoneMatch,
 } from "../src/lib/quicklists/server/etag.ts";
 import {
+  QUICKLIST_PHONE_LANDSCAPE_QUERY,
   shouldCoalesceQuicklistResumeSignal,
   shouldRunQuicklistAutoRefresh,
+  shouldRunQuicklistPortraitRefresh,
 } from "../src/lib/quicklists/polling.ts";
 import {
   isQuicklistMode,
@@ -132,6 +134,76 @@ describe("QuickList polling decisions", () => {
   it("coalesces clustered mobile foreground signals", () => {
     assert.equal(shouldCoalesceQuicklistResumeSignal(1_000, 1_749), true);
     assert.equal(shouldCoalesceQuicklistResumeSignal(1_000, 1_750), false);
+  });
+
+  it("uses the established smartphone landscape boundary", () => {
+    assert.match(QUICKLIST_PHONE_LANDSCAPE_QUERY, /orientation: landscape/);
+    assert.match(QUICKLIST_PHONE_LANDSCAPE_QUERY, /hover: none/);
+    assert.match(QUICKLIST_PHONE_LANDSCAPE_QUERY, /pointer: coarse/);
+    assert.match(QUICKLIST_PHONE_LANDSCAPE_QUERY, /max-width: 960px/);
+    assert.match(QUICKLIST_PHONE_LANDSCAPE_QUERY, /max-height: 540px/);
+  });
+
+  it("refreshes only after a qualifying phone landscape becomes portrait", () => {
+    assert.equal(
+      shouldRunQuicklistPortraitRefresh({
+        wasPhoneLandscape: true,
+        isPhoneLandscape: false,
+        isPortrait: true,
+        isBusy: false,
+        isHidden: false,
+      }),
+      true
+    );
+
+    const rejectedTransitions = [
+      {
+        wasPhoneLandscape: false,
+        isPhoneLandscape: false,
+        isPortrait: true,
+        isBusy: false,
+        isHidden: false,
+      },
+      {
+        wasPhoneLandscape: false,
+        isPhoneLandscape: true,
+        isPortrait: false,
+        isBusy: false,
+        isHidden: false,
+      },
+      {
+        wasPhoneLandscape: true,
+        isPhoneLandscape: true,
+        isPortrait: false,
+        isBusy: false,
+        isHidden: false,
+      },
+      {
+        wasPhoneLandscape: true,
+        isPhoneLandscape: false,
+        isPortrait: false,
+        isBusy: false,
+        isHidden: false,
+      },
+      {
+        wasPhoneLandscape: true,
+        isPhoneLandscape: false,
+        isPortrait: true,
+        isBusy: true,
+        isHidden: false,
+      },
+      {
+        wasPhoneLandscape: true,
+        isPhoneLandscape: false,
+        isPortrait: true,
+        isBusy: false,
+        isHidden: true,
+      },
+    ];
+
+    for (const transition of rejectedTransitions) {
+      assert.equal(shouldRunQuicklistPortraitRefresh(transition), false);
+    }
   });
 });
 
