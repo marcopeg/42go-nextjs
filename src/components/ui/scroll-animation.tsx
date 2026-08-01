@@ -8,6 +8,8 @@ interface ScrollAnimationProps {
   type?: "fade" | "scale" | "slideUp";
   delay?: number;
   className?: string;
+  /** Keep above-the-fold content visible before client hydration. */
+  initiallyVisible?: boolean;
 }
 
 export function ScrollAnimation({
@@ -15,8 +17,9 @@ export function ScrollAnimation({
   type = "fade",
   delay = 0,
   className,
+  initiallyVisible = false,
 }: ScrollAnimationProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(initiallyVisible);
   const elementRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

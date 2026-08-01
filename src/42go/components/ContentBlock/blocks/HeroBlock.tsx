@@ -117,7 +117,7 @@ export const HeroBlock = ({ data }: { data: THeroBlock }) => {
 
         <div className="relative z-10">
           {hasTitle && (
-            <ScrollAnimation type="fade" delay={0.1}>
+            <ScrollAnimation type="fade" delay={0.1} initiallyVisible>
               <h1
                 className={cn(
                   "text-4xl md:text-6xl font-bold tracking-tight mb-4 max-w-4xl",
@@ -133,7 +133,7 @@ export const HeroBlock = ({ data }: { data: THeroBlock }) => {
 
           {!hasTitle && hasSubtitle && (
             // Escalate subtitle to h1 semantics if no title provided
-            <ScrollAnimation type="fade" delay={0.1}>
+            <ScrollAnimation type="fade" delay={0.1} initiallyVisible>
               <h1
                 className={cn(
                   "text-3xl md:text-5xl font-semibold tracking-tight mb-4 max-w-3xl",
@@ -148,7 +148,7 @@ export const HeroBlock = ({ data }: { data: THeroBlock }) => {
           )}
 
           {hasTitle && hasSubtitle && (
-            <ScrollAnimation type="fade" delay={0.2}>
+            <ScrollAnimation type="fade" delay={0.2} initiallyVisible>
               <p
                 className={cn(
                   "text-xl text-muted-foreground mb-8 max-w-2xl",
@@ -166,6 +166,7 @@ export const HeroBlock = ({ data }: { data: THeroBlock }) => {
             <ScrollAnimation
               type={hasTitle || hasSubtitle ? "scale" : "fade"}
               delay={0.3}
+              initiallyVisible
             >
               <div
                 className={cn(

@@ -10,7 +10,7 @@ export function ToolbarActions({ actions }: ToolbarActionsProps) {
     return null;
   }
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex shrink-0 items-center gap-4">
       <ContentBlock items={actions} />
     </div>
   );

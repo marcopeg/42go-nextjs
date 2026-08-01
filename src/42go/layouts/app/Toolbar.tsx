@@ -51,16 +51,16 @@ export const Toolbar = ({
 
   return (
     <div
-      className={`flex items-center justify-between px-6 h-16 py-4 ${
+      className={`flex h-16 items-center justify-between gap-3 px-4 py-4 md:px-6 ${
         className || ""
       }`}
     >
       {/* Left: optional mobile back + icon + title */}
-      <div className="flex items-center gap-3 min-h-0">
+      <div className="flex min-w-0 items-center gap-3">
         {hasBack && <BackButton backBtn={backBtn!} />}
         {renderIcon()}
-        <div className="flex flex-col gap-1 min-h-0">
-          <h1 className="text-lg font-semibold leading-tight">{title}</h1>
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 className="truncate text-lg font-semibold leading-tight">{title}</h1>
           {subtitle && (
             <p className="text-sm text-muted-foreground leading-tight">
               {subtitle}

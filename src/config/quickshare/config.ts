@@ -1,6 +1,7 @@
 import { User, Share2 } from "lucide-react";
 
 import type { TAppConfigItem } from "@/AppConfig";
+import { QuickShareHomePage } from "@/config/quickshare/home-page";
 import { QuickShareAccountPreferences } from "@/lib/quickshare/components/QuickShareAccountPreferences";
 import { QuickShareApiAccessPreferences } from "@/lib/quickshare/components/QuickShareApiAccessPreferences";
 
@@ -15,11 +16,26 @@ export default {
   },
   theme: { default: "system" },
   public: {
-    toolbar: { disabled: true },
-    footer: { disabled: true },
+    toolbar: {
+      title: "QuickShare",
+      subtitle: "Publish on your terms",
+      href: "/",
+      actions: [
+        {
+          type: "link",
+          label: "Sign in",
+          href: "/login",
+          variant: "default",
+          size: "sm",
+        },
+      ],
+    },
     meta: {
       title: "QuickShare",
       description: "Create, publish, and control your shared information.",
+    },
+    pages: {
+      HomePage: QuickShareHomePage,
     },
   },
   app: {

@@ -16,9 +16,7 @@ import {
   type QuickShareLinksPageConfig,
 } from '@/lib/quickshare/templates/links-page';
 import {
-  ChevronDown,
   FileCode2,
-  FileText,
   Globe2,
   ImagePlus,
   LoaderCircle,
@@ -29,9 +27,9 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
-import * as RadixPopover from '@radix-ui/react-popover';
 import ReactMarkdown from 'react-markdown';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { QuickShareCreateSplitButton } from '@/lib/quickshare/components/QuickShareCreateSplitButton';
 
 type Account = { handle: string } | null;
 type Resource = {
@@ -119,7 +117,6 @@ export const QuickShareHome = () => {
   const [customId, setCustomId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [newOpen, setNewOpen] = useState(false);
   const [unpublishOpen, setUnpublishOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -199,7 +196,6 @@ export const QuickShareHome = () => {
   const create = async (definition: QuickShareResourceDefinition) => {
     setBusy(true);
     setError(null);
-    setNewOpen(false);
     try {
       const title =
         definition.id === 'text'
@@ -457,11 +453,20 @@ export const QuickShareHome = () => {
     }
   };
 
+  const CreateShareAction = () => (
+    <QuickShareCreateSplitButton
+      definitions={quickShareResourceCatalog}
+      disabled={busy}
+      onCreate={create}
+    />
+  );
+
   return (
     <AppLayout
       icon={Share2}
       title="QuickShare"
       subtitle="Publish when you are ready"
+      actions={[{ type: 'component', component: CreateShareAction }]}
       policy={{ require: { feature: 'page:quickshare' } }}
     >
       <main className="mx-auto w-full max-w-6xl space-y-6 p-4 pb-24 md:p-6">
@@ -837,60 +842,11 @@ export const QuickShareHome = () => {
         ) : (
           <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.6fr)]">
             <section className="min-w-0 space-y-3">
-              <div className="flex items-center justify-between gap-3">
+              <div>
                 <div>
                   <h2 className="text-lg font-semibold">Your shares</h2>
                   <p className="text-xs text-muted-foreground">{account.handle}</p>
                 </div>
-                <RadixPopover.Root open={newOpen} onOpenChange={setNewOpen}>
-                  <div className="flex overflow-hidden rounded-md border border-primary shadow-xs">
-                    <RadixPopover.Trigger asChild>
-                      <Button
-                        type="button"
-                        className="rounded-r-none border-0 shadow-none"
-                        onClick={() => setNewOpen(true)}
-                      >
-                        <Plus className="size-4" /> New Share
-                      </Button>
-                    </RadixPopover.Trigger>
-                    <RadixPopover.Trigger asChild>
-                      <Button
-                        type="button"
-                        aria-label="Choose share type"
-                        className="rounded-l-none border-0 border-l border-primary-foreground/30 px-2 shadow-none"
-                      >
-                        <ChevronDown className="size-4" />
-                      </Button>
-                    </RadixPopover.Trigger>
-                  </div>
-                  <RadixPopover.Content
-                    align="end"
-                    sideOffset={8}
-                    className="z-[650] w-72 rounded-md border bg-popover p-1 text-popover-foreground shadow-lg"
-                  >
-                    {quickShareResourceCatalog.map(definition => (
-                      <button
-                        key={definition.choiceId}
-                        type="button"
-                        className="flex w-full items-start gap-3 rounded px-3 py-3 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        onClick={() => void create(definition)}
-                      >
-                        <FileText className="mt-0.5 size-4 text-primary" />
-                        <span>
-                          <span className="block text-sm font-medium">{definition.label}</span>
-                          <span className="block text-xs text-muted-foreground">
-                            {definition.description}
-                          </span>
-                          {definition.template && (
-                            <span className="mt-1 block text-[11px] text-muted-foreground">
-                              Maintained template · v{definition.template.version}
-                            </span>
-                          )}
-                        </span>
-                      </button>
-                    ))}
-                  </RadixPopover.Content>
-                </RadixPopover.Root>
               </div>
               {resources.length === 0 ? (
                 <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
