@@ -27,6 +27,22 @@ exports.seed = async function (knex) {
       console.log("lingocafe cleanup skipped:", e.message || e);
     }
 
+    // QuickShare revisions intentionally retain an auditable creator reference,
+    // so clear its dependent graph before resetting auth.users for local seeds.
+    try {
+      await trx.withSchema("quickshare").from("api_tokens").del();
+      await trx.withSchema("quickshare").from("release_assets").del();
+      await trx.withSchema("quickshare").from("release_manifests").del();
+      await trx.withSchema("quickshare").from("release_versions").del();
+      await trx.withSchema("quickshare").from("draft_revisions").del();
+      await trx.withSchema("quickshare").from("resource_route_claims").del();
+      await trx.withSchema("quickshare").from("resources").del();
+      await trx.withSchema("quickshare").from("accounts").del();
+    } catch (e) {
+      // Keep the seed usable before QuickShare migrations have been applied.
+      console.log("quickshare cleanup skipped:", e.message || e);
+    }
+
     await trx("auth.roles_grants").del();
     await trx("auth.roles_users").del();
     await trx("auth.grants").del();
