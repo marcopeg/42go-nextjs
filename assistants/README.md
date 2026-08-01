@@ -9,6 +9,7 @@ The reusable core of every integration is an [Agent Skill](https://agentskills.i
 | Name | Type | Description |
 | --- | --- | --- |
 | [QuickList](plugins/quicklist/skills/quicklist/SKILL.md) | Skill and plugin | Manage API-enabled QuickList lists and items from natural-language requests. |
+| [QuickShare](plugins/quickshare/skills/quickshare/SKILL.md) | Skill and plugin | Create, edit, publish, and safely manage QuickShare resources from natural-language requests. |
 
 ## Install QuickList
 
@@ -94,6 +95,16 @@ Paste the connection code copied from QuickList profile settings into the hidden
 
 Credentials are stored outside this repository in `~/.config/quicklist/credentials.json` with user-only permissions. Set `QUICKLIST_CREDENTIALS_FILE` to use another location.
 
+## Install and configure QuickShare
+
+Install `quickshare` with the same marketplace or direct-skill commands shown for QuickList, replacing the skill name. Then run this in a user-controlled terminal:
+
+```bash
+python3 <installed-skill-directory>/scripts/quickshare.py configure
+```
+
+The command collects the QuickShare API origin and personal token through hidden prompts and stores them outside the repository in `~/.config/quickshare/credentials.json` with user-only permissions. Do not paste the token into chat, a command argument, URL, or tracked file. The client fetches live API discovery before every operation, so the resource types and request shapes remain current.
+
 ## Repository structure
 
 ```text
@@ -105,6 +116,10 @@ Credentials are stored outside this repository in `~/.config/quicklist/credentia
 │       ├── .codex-plugin/plugin.json      # Codex adapter
 │       ├── .claude-plugin/plugin.json     # Claude Code adapter
 │       └── skills/quicklist/              # Portable Agent Skill
+│   └── quickshare/
+│       ├── .codex-plugin/plugin.json      # Codex adapter
+│       ├── .claude-plugin/plugin.json     # Claude Code adapter
+│       └── skills/quickshare/             # Portable Agent Skill
 ├── scripts/
 │   ├── install_skill.py                   # Direct skill installer
 │   └── validate_repository.py             # Repository validator

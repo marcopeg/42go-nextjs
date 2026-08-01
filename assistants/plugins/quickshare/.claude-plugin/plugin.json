@@ -1,0 +1,12 @@
+{
+  "name": "quickshare",
+  "version": "0.1.0",
+  "description": "Create, edit, publish, and safely manage QuickShare resources with an agent.",
+  "author": {
+    "name": "marcopeg"
+  },
+  "homepage": "https://github.com/marcopeg/42go-assistants/tree/main/plugins/quickshare",
+  "repository": "https://github.com/marcopeg/42go-assistants",
+  "license": "MIT",
+  "keywords": ["quickshare", "publishing", "static-sites", "automation"]
+}

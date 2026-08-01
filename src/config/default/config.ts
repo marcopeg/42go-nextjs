@@ -10,8 +10,11 @@ import {
   User,
   BookOpen,
   Layers,
+  Share2,
 } from 'lucide-react';
 import QuicklistIcon from '@/config/quicklist/QuicklistIcon';
+import { QuickShareAccountPreferences } from '@/lib/quickshare/components/QuickShareAccountPreferences';
+import { QuickShareApiAccessPreferences } from '@/lib/quickshare/components/QuickShareApiAccessPreferences';
 import { TAppConfigItem } from '../../AppConfig';
 
 import { HomePage } from './home-page';
@@ -40,11 +43,13 @@ export default {
     'api:notes',
     'api:lingocafe',
     'api:profile',
+    'api:quickshare',
     'page:quicklists',
     'page:books',
     'page:demo-panel',
     'page:demo-modal',
     'page:notifications',
+    'page:quickshare',
     'api:notifications',
   ],
   theme: {
@@ -159,6 +164,8 @@ export default {
         { type: 'AccountInfo' },
         { type: 'Consent', source: 'profile', method: 'checkbox-submit' },
         { type: 'TestRBAC' },
+        { type: 'component', component: QuickShareAccountPreferences },
+        { type: 'component', component: QuickShareApiAccessPreferences },
         { type: 'Logout' },
       ],
     },
@@ -220,6 +227,14 @@ export default {
             icon: QuicklistIcon,
             policy: {
               require: { feature: 'page:quicklists' },
+            },
+          },
+          {
+            title: 'QuickShare',
+            href: '/quickshare',
+            icon: Share2,
+            policy: {
+              require: { feature: 'page:quickshare' },
             },
           },
           {

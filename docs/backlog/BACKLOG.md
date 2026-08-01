@@ -53,14 +53,6 @@
 
 ## Todo
 
-- [XO00: QuickShare: Establish isolated app, account onboarding, and data model](./tasks/XO00-quickshare-establish-isolated-app-account-onboarding-and-data-model/XO00.task.md)
-- [IF14: QuickShare: Publish atomic artifacts to an isolated Nginx static origin](./tasks/IF14-quickshare-publish-atomic-artifacts-to-an-isolated-nginx-static-origin/IF14.task.md)
-- [YW90: QuickShare: Build durable text and Markdown draft authoring](./tasks/YW90-quickshare-build-durable-text-and-markdown-draft-authoring/YW90.task.md)
-- [QU22: QuickShare: Add plain web-page authoring and versioned asset-bundle compiler](./tasks/QU22-quickshare-add-monaco-web-page-studio-and-self-contained-publish-compiler/QU22.task.md)
-- [HZ42: QuickShare: Add extensible mini-app templates and an initial links page](./tasks/HZ42-quickshare-add-extensible-mini-app-templates-and-an-initial-links-page/HZ42.task.md)
-- [KQ66: QuickShare: Establish personal API token lifecycle and authentication boundary](./tasks/KQ66-quickshare-provide-personal-api-tokens-crud-automation-api-and-maintained-skill/KQ66.task.md)
-- [ZA41: QuickShare: Provide versioned automation API and live capability discovery](./tasks/ZA41-quickshare-provide-versioned-automation-api-and-live-capability-discovery/ZA41.task.md)
-- [VG23: QuickShare: Package maintained automation skill and deterministic client](./tasks/VG23-quickshare-package-maintained-automation-skill-and-deterministic-client/VG23.task.md)
 
 ## Someday
 
@@ -71,7 +63,6 @@
 
 ## Refined
 
-- [QW95: QuickShare: Isolated authoring and static publishing control plane](./tasks/QW95-quickshare-isolated-authoring-and-static-publishing-control-plane/QW95.task.md)
 
 ## Planned
 
@@ -213,6 +204,15 @@
 
 ## Completed
 
+- [QW95: QuickShare: Isolated authoring and static publishing control plane](./tasks/QW95-quickshare-isolated-authoring-and-static-publishing-control-plane/QW95.task.md)
+- [VG23: QuickShare: Package maintained automation skill and deterministic client](./tasks/VG23-quickshare-package-maintained-automation-skill-and-deterministic-client/VG23.task.md)
+- [ZA41: QuickShare: Provide versioned automation API and live capability discovery](./tasks/ZA41-quickshare-provide-versioned-automation-api-and-live-capability-discovery/ZA41.task.md)
+- [KQ66: QuickShare: Establish personal API token lifecycle and authentication boundary](./tasks/KQ66-quickshare-provide-personal-api-tokens-crud-automation-api-and-maintained-skill/KQ66.task.md)
+- [HZ42: QuickShare: Add extensible mini-app templates and an initial links page](./tasks/HZ42-quickshare-add-extensible-mini-app-templates-and-an-initial-links-page/HZ42.task.md)
+- [QU22: QuickShare: Add plain web-page authoring and versioned asset-bundle compiler](./tasks/QU22-quickshare-add-monaco-web-page-studio-and-self-contained-publish-compiler/QU22.task.md)
+- [YW90: QuickShare: Build durable text and Markdown draft authoring](./tasks/YW90-quickshare-build-durable-text-and-markdown-draft-authoring/YW90.task.md)
+- [IF14: QuickShare: Publish atomic artifacts to an isolated Nginx static origin](./tasks/IF14-quickshare-publish-atomic-artifacts-to-an-isolated-nginx-static-origin/IF14.task.md)
+- [XO00: QuickShare: Establish isolated app, account onboarding, and data model](./tasks/XO00-quickshare-establish-isolated-app-account-onboarding-and-data-model/XO00.task.md)
 - [LI48: Add a Floating Reader Action Bar with Translation Mode Switch](./tasks/LI48-add-a-floating-reader-action-bar-with-translation-mode-switch/LI48.task.md)
 - [FK40: Make QuickList Per-List Installation Explicit and Flicker-Free](./tasks/FK40-make-quicklist-per-list-installation-explicit-and-flicker-free/FK40.task.md)
 - [ZC45: QuickList Personal API Access and Agent Skill](./tasks/ZC45-quicklist-personal-api-access-and-agent-skill/ZC45.task.md)

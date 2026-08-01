@@ -2,12 +2,14 @@ import "server-only";
 
 import { accountErasureHandlers as lingoCafeHandlers } from "@/config/lingocafe/account-erasure.server";
 import { accountErasureHandlers as quicklistHandlers } from "@/config/quicklist/account-erasure.server";
+import { accountErasureHandlers as quickshareHandlers } from "@/config/quickshare/account-erasure.server";
 import type { AccountErasureHandler } from "./types";
 
 const handlersByAppId: Record<string, AccountErasureHandler[]> = {
-  default: quicklistHandlers,
+  default: [...quicklistHandlers, ...quickshareHandlers],
   lingocafe: lingoCafeHandlers,
   quicklist: quicklistHandlers,
+  quickshare: quickshareHandlers,
 };
 
 export const getAccountErasureHandlers = (appId: string) =>

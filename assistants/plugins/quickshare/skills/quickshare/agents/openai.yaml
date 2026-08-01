@@ -1,0 +1,4 @@
+interface:
+  display_name: "QuickShare"
+  short_description: "Create and safely publish QuickShare resources"
+  default_prompt: "Use $quickshare to show my QuickShare resources."

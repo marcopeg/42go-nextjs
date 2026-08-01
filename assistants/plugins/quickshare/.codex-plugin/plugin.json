@@ -1,0 +1,29 @@
+{
+  "name": "quickshare",
+  "version": "0.1.0",
+  "description": "Create, edit, publish, and safely manage QuickShare resources with an agent.",
+  "author": {
+    "name": "marcopeg",
+    "url": "https://github.com/marcopeg"
+  },
+  "homepage": "https://github.com/marcopeg/42go-assistants/tree/main/plugins/quickshare",
+  "repository": "https://github.com/marcopeg/42go-assistants",
+  "license": "MIT",
+  "keywords": ["quickshare", "publishing", "static-sites", "automation"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "QuickShare",
+    "shortDescription": "Create and safely publish shares with an agent.",
+    "longDescription": "Create, edit, publish, unpublish, and delete only the QuickShare resources owned by your personal API token.",
+    "developerName": "marcopeg",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/marcopeg/42go-assistants",
+    "defaultPrompt": [
+      "Show my QuickShare resources.",
+      "Create a draft from the currently available QuickShare types.",
+      "Publish my prepared QuickShare draft."
+    ],
+    "brandColor": "#0E7490"
+  }
+}

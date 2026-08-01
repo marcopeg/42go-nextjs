@@ -9,6 +9,7 @@ services:
       - .env
     volumes:
       - ./contents:/app/contents
+      - quickshare_publications:/app/.quickshare-public
     environment:
       - NODE_ENV=production
       - AUTH_TRUST_HOST=true
@@ -19,6 +20,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      quickshare-publication-init:
+        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - app-network
@@ -64,8 +67,46 @@ services:
         reservations:
           memory: 128M
 
+  quickshare-static:
+    build:
+      context: ./infra/quickshare-nginx
+    environment:
+      - NGINX_ENTRYPOINT_QUIET_LOGS=1
+    volumes:
+      - quickshare_publications:/srv/quickshare-public:ro
+    ports:
+      - '8088:8080'
+    depends_on:
+      quickshare-publication-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - app-network
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:8080/does-not-exist || test $$? -eq 8']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  quickshare-publication-init:
+    image: alpine:3.21
+    volumes:
+      - quickshare_publications:/publication
+    command: ['sh', '-c', 'mkdir -p /publication && chown -R 1001:1001 /publication && chmod 0755 /publication']
+    restart: 'no'
+    networks:
+      - app-network
+
 volumes:
   pgdata:
+    driver: local
+  quickshare_publications:
     driver: local
 
 networks:

@@ -134,6 +134,16 @@ NextAuth session snapshot stamped with the authenticated app ID.
 **Benefits**: One mental model, zero wrapper magic, transparent errors, easier testing.
 **Usage guide**: See FEATURE FLAGS article at `../articles/FEATURE_FLAGS.md`.
 
+### QuickShare Automation Discovery
+
+**Capability**: Token-authenticated agents can discover and run the full
+QuickShare draft and publication lifecycle without browser sessions.
+**Implementation**: `/api/quickshare/v1/discovery` serializes the same
+resource, template, and validation contracts used by the editor and v1 routes.
+**Security**: Bearer token scope derives the app and owner; API callers cannot
+choose either, and discovery exposes no filesystem or deployment internals.
+**Usage guide**: See `docs/articles/QUICKSHARE_AUTOMATION.md`.
+
 ## UI & Development
 
 ### Component Architecture
