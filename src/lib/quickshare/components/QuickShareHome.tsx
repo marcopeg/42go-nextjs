@@ -503,6 +503,63 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
     />
   );
 
+  const editorFooter =
+    resourceId && selected ? (
+      <div
+        className={`grid w-full gap-2 ${
+          selected.publishedUrl ? 'grid-cols-4' : 'grid-cols-3'
+        } md:flex md:justify-end`}
+      >
+        <Button
+          type="button"
+          size="sm"
+          className="min-w-0 px-2 md:px-3"
+          disabled={busy || !dirty}
+          onClick={() => void save()}
+        >
+          {busy ? <LoaderCircle className="size-4 animate-spin" /> : null}
+          Save
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-w-0 px-2 md:px-3"
+          disabled={busy || dirty}
+          onClick={() =>
+            void action(
+              { action: 'publish', expectedDraftRevision: selected.currentDraftRevision },
+              'Could not publish this draft.'
+            )
+          }
+        >
+          Publish
+        </Button>
+        {selected.publishedUrl ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="destructiveOutline"
+            className="min-w-0 px-2 md:px-3"
+            disabled={busy}
+            onClick={() => setUnpublishOpen(true)}
+          >
+            Unpublish
+          </Button>
+        ) : null}
+        <Button
+          type="button"
+          size="sm"
+          variant="destructiveGhost"
+          className="min-w-0 px-2 md:px-3"
+          disabled={busy}
+          onClick={() => setDeleteOpen(true)}
+        >
+          Delete
+        </Button>
+      </div>
+    ) : undefined;
+
   const confirmationDialogs = selected ? (
     <>
       <Modal
@@ -603,7 +660,8 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
           ? [{ type: 'component', component: CreateShareAction }]
           : undefined
       }
-      backBtn={resourceId ? { to: '/quickshare', label: 'All shares' } : undefined}
+      backBtn={resourceId ? { to: '/quickshare' } : undefined}
+      footer={editorFooter}
       disablePadding
       hideMobileMenu={Boolean(resourceId)}
       policy={{ require: { feature: 'page:quickshare' } }}
@@ -611,48 +669,12 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
       <main className="w-full min-w-0 space-y-6 p-4 pb-24 md:p-6">
         {resourceId && selected?.type === 'template' && (
           <section className="mx-auto w-full max-w-7xl rounded-lg border bg-card p-4 shadow-sm md:p-6">
-            <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b pb-4">
+            <div className="mb-6 border-b pb-4">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-muted-foreground">
                   Maintained template v{template.templateVersion} · {selected.lifecycle}
                 </p>
                 <h2 className="text-lg font-semibold">Edit Links Page</h2>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" disabled={busy || !dirty} onClick={() => void save()}>
-                  {busy ? 'Saving…' : 'Save draft'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={busy || dirty}
-                  onClick={() =>
-                    void action(
-                      { action: 'publish', expectedDraftRevision: selected.currentDraftRevision },
-                      'Could not publish this draft.'
-                    )
-                  }
-                >
-                  Publish
-                </Button>
-                {selected.publishedUrl && (
-                  <Button
-                    type="button"
-                    variant="destructiveOutline"
-                    disabled={busy}
-                    onClick={() => setUnpublishOpen(true)}
-                  >
-                    Unpublish
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="destructiveGhost"
-                  disabled={busy}
-                  onClick={() => setDeleteOpen(true)}
-                >
-                  Delete
-                </Button>
               </div>
             </div>
             <div className="space-y-4">
@@ -1164,14 +1186,16 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
                           className="h-[32rem] font-mono"
                         />
                       </label>
-                      <aside className="min-h-[32rem] min-w-0 rounded-md border bg-muted/20 p-4 lg:sticky lg:top-20 lg:self-start">
-                        <p className="text-xs font-medium text-muted-foreground">
-                          Draft preview — not the published version
-                        </p>
-                        <div className="prose prose-sm mt-4 max-w-none break-words dark:prose-invert">
-                          {preview}
-                        </div>
-                      </aside>
+                      {selected.type === 'markdown' ? (
+                        <aside className="min-h-[32rem] min-w-0 rounded-md border bg-muted/20 p-4 lg:sticky lg:top-20 lg:self-start">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Draft preview — not the published version
+                          </p>
+                          <div className="prose prose-sm mt-4 max-w-none break-words dark:prose-invert">
+                            {preview}
+                          </div>
+                        </aside>
+                      ) : null}
                     </div>
                   )}
                   <div className="space-y-2 rounded-md border p-3">
@@ -1198,45 +1222,6 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
                       Use this URL
                     </Button>
                     {urlState(selected)}
-                  </div>
-                  <div className="flex flex-wrap gap-2 border-t pt-4">
-                    <Button type="button" disabled={busy || !dirty} onClick={() => void save()}>
-                      {busy ? <LoaderCircle className="size-4 animate-spin" /> : null} Save draft
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={busy || dirty}
-                      onClick={() =>
-                        void action(
-                          {
-                            action: 'publish',
-                            expectedDraftRevision: selected.currentDraftRevision,
-                          },
-                          'Could not publish this draft.'
-                        )
-                      }
-                    >
-                      Publish
-                    </Button>
-                    {selected.publishedUrl && (
-                      <Button
-                        type="button"
-                        variant="destructiveOutline"
-                        disabled={busy}
-                        onClick={() => setUnpublishOpen(true)}
-                      >
-                        Unpublish
-                      </Button>
-                    )}
-                    <Button
-                      type="button"
-                      variant="destructiveGhost"
-                      disabled={busy}
-                      onClick={() => setDeleteOpen(true)}
-                    >
-                      Delete
-                    </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {dirty

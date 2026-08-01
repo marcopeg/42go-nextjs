@@ -29,14 +29,32 @@ const readDraft = (content: unknown): QuickShareTextDraft => {
   return { source };
 };
 
-const bundle = (html: string): QuickShareReleaseBundle => {
-  const entry = Buffer.from(html, "utf8");
-  return { manifest: { version: QUICKSHARE_RELEASE_MANIFEST_VERSION, entry: "index.html", files: [{ path: "index.html", contentType: "text/html; charset=utf-8", sha256: createHash("sha256").update(entry).digest("hex"), byteSize: entry.byteLength }] }, files: { "index.html": entry } };
+const bundle = (
+  path: 'index.html' | 'index.txt',
+  contentType: 'text/html; charset=utf-8' | 'text/plain; charset=utf-8',
+  source: string
+): QuickShareReleaseBundle => {
+  const entry = Buffer.from(source, 'utf8');
+  return {
+    manifest: {
+      version: QUICKSHARE_RELEASE_MANIFEST_VERSION,
+      entry: path,
+      files: [
+        {
+          path,
+          contentType,
+          sha256: createHash('sha256').update(entry).digest('hex'),
+          byteSize: entry.byteLength,
+        },
+      ],
+    },
+    files: { [path]: entry },
+  };
 };
 
 export const compileQuickShareText = (input: { title: string; content: unknown }) => {
   const draft = readDraft(input.content);
-  return bundle(documentShell(input.title, `<pre>${escapeHtml(draft.source)}</pre>`));
+  return bundle('index.txt', 'text/plain; charset=utf-8', draft.source);
 };
 
 export const compileQuickShareMarkdown = (input: { title: string; content: unknown }) => {
@@ -44,7 +62,7 @@ export const compileQuickShareMarkdown = (input: { title: string; content: unkno
   // Raw HTML is not parsed without remark-rehype's allowDangerousHtml option.
   // Sanitization is deliberate defense in depth for generated HTML.
   const rendered = String(unified().use(remarkParse).use(remarkRehype).use(rehypeSanitize).use(rehypeStringify).processSync(draft.source));
-  return bundle(documentShell(input.title, rendered));
+  return bundle('index.html', 'text/html; charset=utf-8', documentShell(input.title, rendered));
 };
 
 export const compileQuickShareTextOrMarkdown = (input: { type: string; title: string; content: unknown }) => {

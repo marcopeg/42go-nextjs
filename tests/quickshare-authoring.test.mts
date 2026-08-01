@@ -19,12 +19,13 @@ describe("QuickShare text and Markdown authoring", () => {
     assert.deepEqual(quickShareResourceCatalog.map(({ id }) => id), ["text", "markdown", "web-page", "template"]);
   });
 
-  it("compiles text as escaped minimal static HTML", () => {
-    const compiled = compileQuickShareText({ title: "<title>", content: { source: "<script>alert(1)</script>\nplain" } });
-    const html = compiled.files["index.html"].toString();
-    assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
-    assert.doesNotMatch(html, /<script>alert/);
-    assert.equal(validateQuickShareReleaseBundle(compiled).manifest.entry, "index.html");
+  it("compiles text as an exact plain-text entry", () => {
+    const source = "<script>alert(1)</script>\nplain";
+    const compiled = compileQuickShareText({ title: "<title>", content: { source } });
+    assert.equal(compiled.files["index.txt"].toString(), source);
+    const checked = validateQuickShareReleaseBundle(compiled);
+    assert.equal(checked.manifest.entry, "index.txt");
+    assert.equal(checked.manifest.files[0]?.contentType, "text/plain; charset=utf-8");
   });
 
   it("renders Markdown without accepting raw HTML and leaves source input untouched", () => {

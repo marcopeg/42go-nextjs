@@ -15,6 +15,7 @@ import {
   purgeQuickShareFilesystemResource,
   renameQuickShareFilesystemHandle,
 } from "../src/lib/quickshare/server/filesystem-publisher.ts";
+import { compileQuickShareText } from "../src/lib/quickshare/server/text-markdown-compiler-core.ts";
 
 const sha256 = (value: Buffer) => createHash("sha256").update(value).digest("hex");
 
@@ -75,6 +76,29 @@ describe("QuickShare publication contract", () => {
     assert.match(compose, /quickshare-static/);
     assert.match(compose, /quickshare-publication-init/);
     assert.match(compose, /quickshare_publications:\/srv\/quickshare-public:ro/);
+  });
+
+  it("projects a plain-text entry without converting it to HTML", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "quickshare-publisher-text-"));
+    const previousRoot = process.env.QUICKSHARE_PUBLICATION_ROOT;
+    process.env.QUICKSHARE_PUBLICATION_ROOT = root;
+    try {
+      await activateQuickShareFilesystemRelease({
+        appId: "quickshare",
+        accountId: "account-42",
+        resourceId: "resource-text",
+        releaseId: "release-text",
+        bundle: compileQuickShareText({ title: "Plain", content: { source: "plain\ntext" } }),
+        nextIdentifier: { kind: "short", shortCode: "plain42" },
+        previousIdentifier: null,
+      });
+      assert.equal(await readFile(path.join(root, "plain42", "index.txt"), "utf8"), "plain\ntext");
+      await assert.rejects(lstat(path.join(root, "plain42", "index.html")));
+    } finally {
+      if (previousRoot === undefined) delete process.env.QUICKSHARE_PUBLICATION_ROOT;
+      else process.env.QUICKSHARE_PUBLICATION_ROOT = previousRoot;
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it("stages, switches, rolls back, and purges real fixture output under a temporary root", async () => {

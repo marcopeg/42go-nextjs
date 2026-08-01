@@ -11,7 +11,7 @@ const contentTypePattern = /^[a-z][a-z0-9!#$&^_.+-]*\/[a-z0-9!#$&^_.+-]+(?:;\s*c
 
 export const quickShareReleaseManifestSchema = z.object({
   version: z.literal(QUICKSHARE_RELEASE_MANIFEST_VERSION),
-  entry: z.literal("index.html"),
+  entry: z.enum(["index.html", "index.txt"]),
   files: z.array(z.object({
     path: z.string().regex(safePathPattern, "File paths must be relative and traversal-free."),
     contentType: z.string().regex(contentTypePattern, "A valid MIME type is required."),
@@ -67,11 +67,11 @@ export const validateQuickShareReleaseBundle = (bundle: QuickShareReleaseBundle)
     if (manifestPaths.has(file.path)) throw new QuickShareBundleError("duplicate_manifest_path", `Duplicate manifest file: ${file.path}`);
     manifestPaths.add(file.path);
     if (path.posix.normalize(file.path) !== file.path) throw new QuickShareBundleError("non_normalized_path", `File path is not normalized: ${file.path}`);
-    if (file.path !== "index.html" && !contentHashPattern.test(file.path)) {
+    if (file.path !== manifest.entry && !contentHashPattern.test(file.path)) {
       throw new QuickShareBundleError("unhashed_sidecar", `Sidecar file must be content-hashed: ${file.path}`);
     }
   }
-  if (!manifestPaths.has("index.html")) throw new QuickShareBundleError("missing_entry", "Bundle manifest must include index.html.");
+  if (!manifestPaths.has(manifest.entry)) throw new QuickShareBundleError("missing_entry", `Bundle manifest must include ${manifest.entry}.`);
   if (sourcePaths.length !== manifestPaths.size || sourcePaths.some((filePath) => !manifestPaths.has(filePath))) {
     throw new QuickShareBundleError("manifest_file_mismatch", "Manifest files must exactly match supplied bundle files.");
   }
@@ -89,7 +89,7 @@ export const validateQuickShareReleaseBundle = (bundle: QuickShareReleaseBundle)
     const source = normalizeFile(bundle.files[file.path]).toString("utf8");
     for (const reference of localReferences(source, file.path, file.contentType)) {
       if (!manifestPaths.has(reference)) throw new QuickShareBundleError("missing_reference", `${file.path} references a file not in the manifest: ${reference}`);
-      if (reference === "index.html") throw new QuickShareBundleError("recursive_entry_reference", "Published files cannot reference index.html as an asset.");
+      if (reference === manifest.entry) throw new QuickShareBundleError("recursive_entry_reference", "Published files cannot reference their entry as an asset.");
       references.add(reference);
     }
   }

@@ -139,16 +139,21 @@ const writeRelease = async (input: PublicationIdentity & { bundle: QuickShareRel
     await rename(staging, paths.releases);
     await syncDirectory(path.dirname(paths.releases));
 
-    const sourceEntry = Buffer.isBuffer(input.bundle.files["index.html"])
-      ? (input.bundle.files["index.html"] as Buffer).toString("utf8")
-      : input.bundle.files["index.html"] as string;
-    const rewritten = rewriteQuickShareEntryReferences(sourceEntry, {
-      appId: input.appId,
-      resourceId: input.resourceId,
-      releaseId: input.releaseId,
-      knownPaths: new Set(checked.manifest.files.map((file) => file.path)),
-    });
-    await writeNoFollow(path.join(paths.entry, "index.html"), Buffer.from(rewritten));
+    const entryPath = checked.manifest.entry;
+    const sourceEntry = input.bundle.files[entryPath];
+    const entryBytes = Buffer.isBuffer(sourceEntry) ? sourceEntry : Buffer.from(sourceEntry, 'utf8');
+    const entryDefinition = checked.manifest.files.find(file => file.path === entryPath)!;
+    const projectedEntry = entryDefinition.contentType.startsWith('text/html')
+      ? Buffer.from(
+          rewriteQuickShareEntryReferences(entryBytes.toString('utf8'), {
+            appId: input.appId,
+            resourceId: input.resourceId,
+            releaseId: input.releaseId,
+            knownPaths: new Set(checked.manifest.files.map(file => file.path)),
+          })
+        )
+      : entryBytes;
+    await writeNoFollow(path.join(paths.entry, entryPath), projectedEntry);
     await syncDirectory(paths.entry);
     return { ...paths, manifest: checked.manifest };
   } catch (error) {
