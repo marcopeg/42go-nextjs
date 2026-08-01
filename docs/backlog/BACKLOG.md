@@ -48,16 +48,19 @@
 - [DV28: optimize: public asset cache headers](./tasks/DV28-optimize-public-asset-cache-headers/DV28.task.md)
 - [IJ10: optimize: reader cache split](./tasks/IJ10-optimize-reader-cache-split/IJ10.task.md)
 - [YQ19: optimization epic](./tasks/YQ19-optimization-epic/YQ19.task.md)
+- [ZD75: QuickShare: Add a rich web-page editing experience](./tasks/ZD75-quickshare-add-a-rich-web-page-editing-experience/ZD75.task.md)
+- [YB50: QuickShare: Add CSS and JavaScript transpilation to web-page publishing](./tasks/YB50-quickshare-add-css-and-javascript-transpilation-to-web-page-publishing/YB50.task.md)
 
 ## Todo
 
-- [QW95: QuickShare: Isolated authoring and static publishing control plane](./tasks/QW95-quickshare-isolated-authoring-and-static-publishing-control-plane/QW95.task.md)
 - [XO00: QuickShare: Establish isolated app, account onboarding, and data model](./tasks/XO00-quickshare-establish-isolated-app-account-onboarding-and-data-model/XO00.task.md)
-- [YW90: QuickShare: Build durable text and Markdown draft authoring](./tasks/YW90-quickshare-build-durable-text-and-markdown-draft-authoring/YW90.task.md)
 - [IF14: QuickShare: Publish atomic artifacts to an isolated Nginx static origin](./tasks/IF14-quickshare-publish-atomic-artifacts-to-an-isolated-nginx-static-origin/IF14.task.md)
-- [QU22: QuickShare: Add Monaco web-page studio and versioned asset-bundle compiler](./tasks/QU22-quickshare-add-monaco-web-page-studio-and-self-contained-publish-compiler/QU22.task.md)
+- [YW90: QuickShare: Build durable text and Markdown draft authoring](./tasks/YW90-quickshare-build-durable-text-and-markdown-draft-authoring/YW90.task.md)
+- [QU22: QuickShare: Add plain web-page authoring and versioned asset-bundle compiler](./tasks/QU22-quickshare-add-monaco-web-page-studio-and-self-contained-publish-compiler/QU22.task.md)
 - [HZ42: QuickShare: Add extensible mini-app templates and an initial links page](./tasks/HZ42-quickshare-add-extensible-mini-app-templates-and-an-initial-links-page/HZ42.task.md)
-- [KQ66: QuickShare: Provide personal API tokens, CRUD automation API, and maintained skill](./tasks/KQ66-quickshare-provide-personal-api-tokens-crud-automation-api-and-maintained-skill/KQ66.task.md)
+- [KQ66: QuickShare: Establish personal API token lifecycle and authentication boundary](./tasks/KQ66-quickshare-provide-personal-api-tokens-crud-automation-api-and-maintained-skill/KQ66.task.md)
+- [ZA41: QuickShare: Provide versioned automation API and live capability discovery](./tasks/ZA41-quickshare-provide-versioned-automation-api-and-live-capability-discovery/ZA41.task.md)
+- [VG23: QuickShare: Package maintained automation skill and deterministic client](./tasks/VG23-quickshare-package-maintained-automation-skill-and-deterministic-client/VG23.task.md)
 
 ## Someday
 
@@ -68,6 +71,7 @@
 
 ## Refined
 
+- [QW95: QuickShare: Isolated authoring and static publishing control plane](./tasks/QW95-quickshare-isolated-authoring-and-static-publishing-control-plane/QW95.task.md)
 
 ## Planned
 
@@ -209,11 +213,11 @@
 
 ## Completed
 
+- [LI48: Add a Floating Reader Action Bar with Translation Mode Switch](./tasks/LI48-add-a-floating-reader-action-bar-with-translation-mode-switch/LI48.task.md)
 - [FK40: Make QuickList Per-List Installation Explicit and Flicker-Free](./tasks/FK40-make-quicklist-per-list-installation-explicit-and-flicker-free/FK40.task.md)
 - [ZC45: QuickList Personal API Access and Agent Skill](./tasks/ZC45-quicklist-personal-api-access-and-agent-skill/ZC45.task.md)
 - [IP96: QuickList: Refresh Open List After Rotation to Portrait](./tasks/IP96-quicklist-refresh-open-list-after-rotation-to-portrait/IP96.task.md)
 - [MR94: Add Speaking Feedback and Tap-to-Stop to Reader Translation Pronunciation](./tasks/MR94-add-speaking-feedback-and-tap-to-stop-to-reader-translation-pronunciation/MR94.task.md)
-- [LI48: Add a Floating Reader Action Bar with Translation Mode Switch](./tasks/LI48-add-a-floating-reader-action-bar-with-translation-mode-switch/LI48.task.md)
 - [GC03: Refine LingoCafe Reader Translation Popover Actions and Styling](./tasks/GC03-refine-lingocafe-reader-translation-popover-actions-and-styling/GC03.task.md)
 - [XC01: Let readers mark a book as read](./tasks/XC01-let-readers-mark-a-book-as-read/XC01.task.md)
 - [YS05: Enforce users:edit for User Updates](./tasks/YS05-enforce-users-edit-for-user-updates/YS05.task.md)
