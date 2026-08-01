@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { Pause, Play, Volume2, X } from "lucide-react";
+import { Pause, Play, X } from "lucide-react";
 
 import {
   BookReaderPlaybackSettings,
@@ -18,12 +18,6 @@ export const BookReaderPlaybackControls = ({
 }) => {
   const [draftProgress, setDraftProgress] = useState<number | null>(null);
   const [seeking, setSeeking] = useState(false);
-  const floatingFabStyle: CSSProperties = {
-    position: "fixed",
-    right: "calc(env(safe-area-inset-right) + 1.25rem)",
-    bottom: "calc(env(safe-area-inset-bottom) + 1.25rem)",
-    zIndex: 1000,
-  };
   const floatingPlayerStyle: CSSProperties = {
     position: "fixed",
     left: "0.75rem",
@@ -32,28 +26,8 @@ export const BookReaderPlaybackControls = ({
     zIndex: 1000,
   };
 
-  if (!playback.isOpen && !playback.canPlay) {
-    return null;
-  }
-
   if (!playback.isOpen) {
-    return (
-      <div
-        className="pointer-events-auto flex max-w-[min(22rem,calc(100vw-2.5rem))] touch-manipulation flex-col items-end gap-2"
-        style={floatingFabStyle}
-      >
-        <Button
-          type="button"
-          size="icon"
-          onClick={() => playback.start()}
-          aria-label="Play page aloud"
-          title="Play page aloud"
-          className="h-14 w-14 rounded-full shadow-xl"
-        >
-          <Volume2 className="h-6 w-6" />
-        </Button>
-      </div>
-    );
+    return null;
   }
 
   const isActivelyAdvancing =

@@ -51,6 +51,49 @@ Semantic rules:
 - Destructive actions must remain red on hover and focus.
 - Avoid multiple filled primary buttons in one action group.
 
+### Expandable FAB
+
+Use `ExpandableFab` when one persistent 56 px primary floating action needs to
+perform a direct action or reveal a small set of closely related actions.
+
+- Keep the main FAB circular, solid primary, icon-only, and explicitly labelled
+  for assistive technology.
+- In multi-action mode, activating the FAB only expands or collapses the actions;
+  it must not also invoke a default action. Touch devices use tap. Desktop may
+  opt into mouse-hover opening while retaining click and keyboard activation.
+- Expose placement as side plus start/center/end alignment. Choose the placement
+  that keeps every action inside safe viewport edges.
+- Render expanded actions as separate minimum-44 px labelled buttons with no
+  enclosing card. Use semantic neutral popover surfaces, borders, foregrounds,
+  and restrained elevation so the primary FAB remains dominant.
+- For mutually exclusive actions, show a check and expose the selected state
+  semantically. Update that check optimistically on selection, then wait about
+  300 ms before committing the action and closing so the state change is
+  perceptible. Do not make users infer state from color or icons alone.
+- Without `selectedActionId`, treat actions as ordinary menu commands: do not
+  reserve selection feedback or delay their callbacks. This keeps the same FAB
+  suitable for both switchable options and simple action submenus.
+- Reveal and dismiss actions with a simple 150–200 ms fade. Avoid directional
+  slide, scale, stagger, or spring effects. Disable animation under
+  `prefers-reduced-motion`.
+- When `openOnHover` is enabled, keep the menu open while the mouse is over the
+  trigger or action cluster. Require about 300 ms of trigger hover before
+  opening so incidental pointer travel does not flicker the menu, and allow a
+  short close delay to bridge the trigger/action gap. Ignore touch and pen
+  hover signals so mobile behavior stays tap-driven.
+- Use a non-modal Radix menu for keyboard order, Escape, outside dismissal, and
+  focus return. A speed dial is not a dialog and must not trap focus or add a
+  scrim.
+- Suppress focus rings on the transparent menu container. Keep the visible
+  focus ring on the actual action item so first-open focus never outlines the
+  entire action cluster. Reset the container border, outline, box shadow, and
+  WebKit tap highlight directly on the portaled element because mobile Safari
+  may paint first-focus chrome before utility focus styles settle.
+- Close the action list after selection and whenever its owning surface goes
+  away. Keep disabled actions visible only when that helps explain capability.
+
+The portable starter is `assets/starter/expandable-fab.tsx`.
+
 ## Inputs and selection
 
 Text input:

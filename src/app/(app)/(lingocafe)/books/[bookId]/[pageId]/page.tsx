@@ -966,6 +966,7 @@ const BookReadPage = () => {
           headerTitleMode={headerTitleMode}
           preferences={readerPreferences}
           translationScope={readerTranslationScope}
+          onTranslationScopeChange={updateReaderTranslationScope}
           playback={playback}
           forceScrollTop={shouldForcePlaybackTop}
           pageTurnPending={pageTurnPending}
@@ -988,6 +989,7 @@ const BookReadPage = () => {
           headerTitleMode={headerTitleMode}
           preferences={readerPreferences}
           translationScope={readerTranslationScope}
+          onTranslationScopeChange={updateReaderTranslationScope}
           playback={playback}
           forceScrollTop={shouldForcePlaybackTop}
           pageTurnPending={pageTurnPending}

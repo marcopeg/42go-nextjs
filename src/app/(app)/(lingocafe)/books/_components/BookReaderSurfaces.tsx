@@ -19,6 +19,7 @@ import {
 
 import { useTheme } from "@/42go/config/ThemeProvider";
 import { BookPageReader } from "@/app/(app)/(lingocafe)/books/_components/BookPageReader";
+import { BookReaderFloatingActionBar } from "@/app/(app)/(lingocafe)/books/_components/BookReaderFloatingActionBar";
 import { BookReaderPlaybackControls } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPlaybackControls";
 import { BookReaderPreferencesTrigger } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
 import type { ReaderBookPage } from "@/app/(app)/(lingocafe)/books/_components/book-types";
@@ -40,6 +41,7 @@ type ReaderSurfaceProps = {
   headerTitleMode: ReaderHeaderTitleMode;
   preferences: ReaderPreferences;
   translationScope: ReaderTranslationScope;
+  onTranslationScopeChange: (scope: ReaderTranslationScope) => void;
   playback: ReaderPlaybackController;
   forceScrollTop: boolean;
   pageTurnPending: boolean;
@@ -445,6 +447,7 @@ export const BookReaderDesktopSurface = ({
   headerTitleMode,
   preferences,
   translationScope,
+  onTranslationScopeChange,
   playback,
   forceScrollTop,
   pageTurnPending,
@@ -588,6 +591,16 @@ export const BookReaderDesktopSurface = ({
             </>
           )}
         </div>
+        <BookReaderFloatingActionBar
+          key={`reader-actions-desktop:${bookPage?.page.pageId || "loading"}`}
+          playback={playback}
+          translationAvailable={Boolean(
+            bookPage?.translation.enabled && bookPage.translation.to
+          )}
+          translationScope={translationScope}
+          onTranslationScopeChange={onTranslationScopeChange}
+          readerThemeStyle={readerThemeStyle}
+        />
         <BookReaderPlaybackControls playback={playback} />
       </section>
     </div>
@@ -604,6 +617,7 @@ export const BookReaderMobileSurface = ({
   headerTitleMode,
   preferences,
   translationScope,
+  onTranslationScopeChange,
   playback,
   forceScrollTop,
   pageTurnPending,
@@ -776,6 +790,16 @@ export const BookReaderMobileSurface = ({
             </>
           )}
         </div>
+        <BookReaderFloatingActionBar
+          key={`reader-actions-mobile:${bookPage?.page.pageId || "loading"}`}
+          playback={playback}
+          translationAvailable={Boolean(
+            bookPage?.translation.enabled && bookPage.translation.to
+          )}
+          translationScope={translationScope}
+          onTranslationScopeChange={onTranslationScopeChange}
+          readerThemeStyle={readerThemeStyle}
+        />
         <BookReaderPlaybackControls playback={playback} />
       </div>
     </div>
