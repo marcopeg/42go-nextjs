@@ -30,6 +30,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { QuickShareCreateSplitButton } from '@/lib/quickshare/components/QuickShareCreateSplitButton';
+import { QuickShareCreateFab } from '@/lib/quickshare/components/QuickShareCreateFab';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -1233,6 +1234,13 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
           </section>
         )}
         {confirmationDialogs}
+        {!resourceId && account ? (
+          <QuickShareCreateFab
+            definitions={quickShareResourceCatalog}
+            disabled={busy}
+            onCreate={create}
+          />
+        ) : null}
       </main>
     </AppLayout>
   );
