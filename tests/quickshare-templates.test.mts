@@ -69,7 +69,10 @@ describe('QuickShare maintained templates', () => {
       readFile('src/lib/quickshare/server/resource-service.ts', 'utf8'),
       readFile('src/lib/quickshare/server/publication-service.ts', 'utf8'),
       readFile('src/lib/quickshare/server/resource-compiler.ts', 'utf8'),
-      readFile('src/lib/quickshare/components/QuickShareHome.tsx', 'utf8'),
+      readFile(
+        'src/app/(app)/(quickshare)/quickshare/_components/QuickShareHome.tsx',
+        'utf8'
+      ),
     ]);
     assert.match(service, /template_id:/);
     assert.match(service, /template_version:/);

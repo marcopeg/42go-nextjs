@@ -1,16 +1,24 @@
-import { User, Share2 } from "lucide-react";
+import { Bell, Share2, User, Users } from "lucide-react";
 
 import type { TAppConfigItem } from "@/AppConfig";
 import { QuickShareHomePage } from "@/config/quickshare/home-page";
-import { QuickShareAccountPreferences } from "@/lib/quickshare/components/QuickShareAccountPreferences";
-import { QuickShareApiAccessPreferences } from "@/lib/quickshare/components/QuickShareApiAccessPreferences";
+import { QuickShareAccountPreferences } from "@/config/quickshare/components/QuickShareAccountPreferences";
+import { QuickShareApiAccessPreferences } from "@/config/quickshare/components/QuickShareApiAccessPreferences";
 
 export default {
   name: "QuickShare",
   match: {
     url: ["^quickshare\\.42go\\.dev$"],
   },
-  features: ["page:quickshare", "api:quickshare", "api:profile"],
+  features: [
+    "page:quickshare",
+    "page:users",
+    "page:notifications",
+    "api:quickshare",
+    "api:profile",
+    "api:users",
+    "api:notifications",
+  ],
   auth: {
     providers: [{ type: "credentials" as const, config: {} }],
   },
@@ -51,6 +59,36 @@ export default {
     menu: {
       top: {
         items: [{ title: "Shares", href: "/quickshare", icon: Share2 }],
+      },
+      bottom: {
+        items: [
+          {
+            title: "Users",
+            href: "/backoffice/users",
+            icon: Users,
+            policy: {
+              require: {
+                feature: "page:users",
+                session: true,
+                role: "backoffice",
+                grants: ["users:list"],
+              },
+            },
+          },
+          {
+            title: "Notifications",
+            href: "/backoffice/notifications",
+            icon: Bell,
+            policy: {
+              require: {
+                feature: "page:notifications",
+                session: true,
+                role: "backoffice",
+                grants: ["notifications:list"],
+              },
+            },
+          },
+        ],
       },
       mobile: {
         disableMore: true,

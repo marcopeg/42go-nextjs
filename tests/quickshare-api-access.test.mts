@@ -76,8 +76,11 @@ describe("QuickShare API credential boundaries", () => {
       readFile("src/lib/quickshare/server/session-principal.ts", "utf8"),
       readFile("src/lib/quickshare/server/api-token-store.ts", "utf8"),
       readFile("src/lib/quickshare/server/api-context.ts", "utf8"),
-      readFile("src/app/api/quickshare/api-access/route.ts", "utf8"),
-      readFile("src/lib/quickshare/components/QuickShareApiAccessPreferences.tsx", "utf8"),
+      readFile("src/app/api/(quickshare)/quickshare/api-access/route.ts", "utf8"),
+      readFile(
+        "src/config/quickshare/components/QuickShareApiAccessPreferences.tsx",
+        "utf8"
+      ),
     ]);
 
     assert.match(sessionPrincipal, /session\.user\.appId !== appId/);

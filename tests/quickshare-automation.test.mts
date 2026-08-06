@@ -11,6 +11,7 @@ import quickShareDatabase from '../src/42go/db/index.ts';
 import quickShareAutomationContract from '../src/lib/quickshare/server/automation-contract.ts';
 import quickShareAutomationService from '../src/lib/quickshare/server/automation-service.ts';
 import quickShareApiTokenStore from '../src/lib/quickshare/server/api-token-store.ts';
+import quickShareResourceService from '../src/lib/quickshare/server/resource-service.ts';
 
 const { getDB } = quickShareDatabase;
 const { getQuickShareAutomationDiscovery, getQuickShareAutomationOperationIds } = quickShareAutomationContract;
@@ -26,6 +27,7 @@ const {
 } = quickShareAutomationService;
 const db = getDB();
 const { authenticateQuickShareApiToken, createQuickShareApiTokenCredential } = quickShareApiTokenStore;
+const { checkQuickShareResourceCustomIdAvailability } = quickShareResourceService;
 
 const sourceFor = (value: unknown) =>
   value && typeof value === 'object' && !Array.isArray(value) && 'source' in value
@@ -66,7 +68,7 @@ describe('QuickShare automation discovery and lifecycle', () => {
 
   it('routes discovery through the bearer-only context and never reads browser sessions', async () => {
     const [route, context] = await Promise.all([
-      readFile('src/app/api/quickshare/v1/discovery/route.ts', 'utf8'),
+      readFile('src/app/api/(quickshare)/quickshare/v1/discovery/route.ts', 'utf8'),
       readFile('src/lib/quickshare/server/api-context.ts', 'utf8'),
     ]);
     assert.match(route, /withQuickShareAutomationContext/);
@@ -155,6 +157,41 @@ describe('QuickShare automation discovery and lifecycle', () => {
       ]) {
         assert.ok(operationIds.has(operation));
       }
+
+      const claimedCustomId = `availability-${suffix.slice(0, 16)}`;
+      const claimOwner = await createQuickShareAutomationResource(principal, {
+        type: 'text',
+        title: 'Availability owner',
+        content: { source: '' },
+        customId: claimedCustomId,
+      });
+      const otherResource = await createQuickShareAutomationResource(principal, {
+        type: 'text',
+        title: 'Availability peer',
+        content: { source: '' },
+      });
+      assert.deepEqual(
+        await checkQuickShareResourceCustomIdAvailability(
+          principal,
+          claimOwner.id,
+          claimedCustomId
+        ),
+        { available: true, customId: claimedCustomId }
+      );
+      assert.deepEqual(
+        await checkQuickShareResourceCustomIdAvailability(
+          principal,
+          otherResource.id,
+          claimedCustomId
+        ),
+        { available: false, customId: claimedCustomId }
+      );
+      await deleteQuickShareAutomationResource(principal, claimOwner.id, {
+        confirmation: 'delete-draft',
+      });
+      await deleteQuickShareAutomationResource(principal, otherResource.id, {
+        confirmation: 'delete-draft',
+      });
 
       // The test derives type, template version, and default payload solely
       // from discovery. It deliberately does not maintain an alternate list.

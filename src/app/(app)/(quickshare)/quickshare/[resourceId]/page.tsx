@@ -1,6 +1,6 @@
 'use client';
 
-import { QuickShareHome } from '@/lib/quickshare/components/QuickShareHome';
+import { QuickShareHome } from '@/app/(app)/(quickshare)/quickshare/_components/QuickShareHome';
 import { useParams } from 'next/navigation';
 
 const QuickShareResourcePage = () => {

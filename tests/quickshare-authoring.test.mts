@@ -11,7 +11,7 @@ import {
   compileQuickShareWebPage,
   parseQuickShareWebPageDraft,
 } from "../src/lib/quickshare/server/web-page-compiler-core.ts";
-import { buildQuickShareWebPagePreview } from "../src/lib/quickshare/web-page-preview.ts";
+import { buildQuickShareWebPagePreview } from "../src/app/(app)/(quickshare)/quickshare/_lib/web-page-preview.ts";
 import { validateQuickShareReleaseBundle } from "../src/lib/quickshare/server/release-bundle.ts";
 
 describe("QuickShare text and Markdown authoring", () => {
@@ -40,7 +40,7 @@ describe("QuickShare text and Markdown authoring", () => {
   it("locks compiler input to the persisted draft revision and serializes destructive lifecycle work", async () => {
     const [publication, route, migration] = await Promise.all([
       readFile("src/lib/quickshare/server/publication-service.ts", "utf8"),
-      readFile("src/app/api/quickshare/[resourceId]/route.ts", "utf8"),
+      readFile("src/app/api/(quickshare)/quickshare/[resourceId]/route.ts", "utf8"),
       readFile("knex/migrations/20260801180000_quickshare_yw90_authoring.js", "utf8"),
     ]);
     assert.match(publication, /forUpdate\(\)/);
@@ -89,7 +89,10 @@ describe("QuickShare text and Markdown authoring", () => {
   });
 
   it("keeps executable preview opaque to the authenticated editor", async () => {
-    const editor = await readFile("src/lib/quickshare/components/QuickShareHome.tsx", "utf8");
+    const editor = await readFile(
+      "src/app/(app)/(quickshare)/quickshare/_components/QuickShareHome.tsx",
+      "utf8"
+    );
     assert.match(editor, /sandbox="allow-scripts"/);
     assert.doesNotMatch(editor, /allow-same-origin/);
     assert.match(editor, /referrerPolicy="no-referrer"/);

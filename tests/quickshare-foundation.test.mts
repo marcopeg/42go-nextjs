@@ -33,7 +33,7 @@ describe("QuickShare foundation contracts", () => {
   it("keeps default-app rows distinct and uses server-derived context", async () => {
     const [registry, route, config] = await Promise.all([
       readFile("src/42go/users/account-erasure/registry.server.ts", "utf8"),
-      readFile("src/app/api/quickshare/route.ts", "utf8"),
+      readFile("src/app/api/(quickshare)/quickshare/route.ts", "utf8"),
       readFile("src/config/default/config.ts", "utf8"),
     ]);
     assert.match(registry, /default: \[\.\.\.quicklistHandlers, \.\.\.quickshareHandlers\]/);

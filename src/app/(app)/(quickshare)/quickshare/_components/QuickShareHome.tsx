@@ -1,6 +1,6 @@
 'use client';
 
-import { AppLayout } from '@/42go/layouts/app/AppLayout';
+import { AppLayout, Page } from '@/42go/layouts/app';
 import { Modal } from '@/42go/components/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import {
   quickShareResourceCatalog,
   type QuickShareResourceDefinition,
 } from '@/lib/quickshare/resource-catalog';
-import { buildQuickShareWebPagePreview } from '@/lib/quickshare/web-page-preview';
+import { buildQuickShareWebPagePreview } from '@/app/(app)/(quickshare)/quickshare/_lib/web-page-preview';
 import {
   createQuickShareLinksPageCss,
   renderQuickShareLinksPageDocument,
@@ -28,9 +28,12 @@ import {
   Upload,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { QuickShareCreateSplitButton } from '@/lib/quickshare/components/QuickShareCreateSplitButton';
-import { QuickShareCreateFab } from '@/lib/quickshare/components/QuickShareCreateFab';
+import { FormEvent, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { QuickShareCreateFab } from '@/app/(app)/(quickshare)/quickshare/_components/QuickShareCreateFab';
+import { QuickShareHeaderTitle } from '@/app/(app)/(quickshare)/quickshare/_components/QuickShareHeaderTitle';
+import { QuickShareMobileTitlePanel } from '@/app/(app)/(quickshare)/quickshare/_components/QuickShareMobileTitlePanel';
+import { QuickShareUrl } from '@/app/(app)/(quickshare)/quickshare/_components/QuickShareUrl';
+import { getQuickShareResourceIcon } from '@/app/(app)/(quickshare)/quickshare/_components/quickshare-resource-icon';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -85,29 +88,6 @@ const messageFrom = async (response: Response, fallback: string) => {
   return response.ok ? payload : Promise.reject(new Error(payload.message ?? fallback));
 };
 
-const urlState = (resource: Resource) => {
-  if (!resource.publishedUrl)
-    return (
-      <p className="mt-2 break-all text-xs text-muted-foreground">
-        Next public URL (not published): {resource.nextPublicUrl}
-      </p>
-    );
-  if (resource.publishedUrl !== resource.nextPublicUrl)
-    return (
-      <div className="mt-2 space-y-1 break-all text-xs">
-        <p className="text-foreground">Published URL: {resource.publishedUrl}</p>
-        <p className="text-muted-foreground">
-          Next public URL after Publish: {resource.nextPublicUrl}
-        </p>
-      </div>
-    );
-  return (
-    <p className="mt-2 break-all text-xs text-muted-foreground">
-      Published URL: {resource.publishedUrl}
-    </p>
-  );
-};
-
 type QuickShareHomeProps = {
   resourceId?: string;
 };
@@ -119,10 +99,11 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
   const [selected, setSelected] = useState<ResourceDetail | null>(null);
   const [handle, setHandle] = useState('');
   const [title, setTitle] = useState('');
+  const [draftShareTitle, setDraftShareTitle] = useState('');
+  const [editingShareTitle, setEditingShareTitle] = useState(false);
   const [source, setSource] = useState('');
   const [webPage, setWebPage] = useState<WebPageDraft>(defaultWebPageDraft);
   const [template, setTemplate] = useState<TemplateDraft>(defaultTemplateDraft);
-  const [customId, setCustomId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(Boolean(resourceId));
@@ -169,6 +150,7 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
       const detail = payload.resource as ResourceDetail;
       setSelected(detail);
       setTitle(detail.title);
+      setDraftShareTitle(detail.title);
       setSource(
         isWebPageDraft(detail.content) || isTemplateDraft(detail.content)
           ? ''
@@ -176,7 +158,6 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
       );
       setWebPage(isWebPageDraft(detail.content) ? detail.content : defaultWebPageDraft());
       setTemplate(isTemplateDraft(detail.content) ? detail.content : defaultTemplateDraft());
-      setCustomId(detail.nextIdentifierKind === 'custom' ? (detail.nextCustomId ?? '') : '');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not open this share.');
     } finally {
@@ -194,6 +175,7 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
         const detail = payload.resource as ResourceDetail;
         setSelected(detail);
         setTitle(detail.title);
+        setDraftShareTitle(detail.title);
         setSource(
           isWebPageDraft(detail.content) || isTemplateDraft(detail.content)
             ? ''
@@ -201,7 +183,6 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
         );
         setWebPage(isWebPageDraft(detail.content) ? detail.content : defaultWebPageDraft());
         setTemplate(isTemplateDraft(detail.content) ? detail.content : defaultTemplateDraft());
-        setCustomId(detail.nextIdentifierKind === 'custom' ? (detail.nextCustomId ?? '') : '');
       })
       .catch((reason: unknown) => {
         if (active)
@@ -305,6 +286,7 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
       setWebPage(isWebPageDraft(next.content) ? next.content : defaultWebPageDraft());
       setTemplate(isTemplateDraft(next.content) ? next.content : defaultTemplateDraft());
       replaceResource(next);
+      setDraftShareTitle(next.title);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not save this draft.');
     } finally {
@@ -312,7 +294,106 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
     }
   };
 
-  const setIdentifier = async () => {
+  const saveShareTitle = async () => {
+    const next = draftShareTitle.trim();
+    if (!selected || !next || next === selected.title) {
+      setEditingShareTitle(false);
+      setDraftShareTitle(selected?.title ?? next);
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    try {
+      const content =
+        selected.type === 'web-page'
+          ? webPage
+          : selected.type === 'template'
+            ? template
+            : { source };
+      const response = await fetch(`/api/quickshare/${selected.id}`, {
+        method: 'PATCH',
+        credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save',
+          title: next,
+          content,
+          expectedRevision: selected.revision,
+        }),
+      });
+      const payload = await messageFrom(response, 'Could not save this share title.');
+      const nextResource = payload.resource as ResourceDetail;
+      setSelected(nextResource);
+      setTitle(nextResource.title);
+      setDraftShareTitle(nextResource.title);
+      setSource(
+        isWebPageDraft(nextResource.content) || isTemplateDraft(nextResource.content)
+          ? ''
+          : nextResource.content.source
+      );
+      setWebPage(
+        isWebPageDraft(nextResource.content) ? nextResource.content : defaultWebPageDraft()
+      );
+      setTemplate(
+        isTemplateDraft(nextResource.content) ? nextResource.content : defaultTemplateDraft()
+      );
+      replaceResource(nextResource);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not save this share title.');
+    } finally {
+      setBusy(false);
+      setEditingShareTitle(false);
+    }
+  };
+
+  const startShareTitleEdit = () => {
+    if (!selected) return;
+    setDraftShareTitle(title);
+    setEditingShareTitle(true);
+  };
+
+  const cancelShareTitleEdit = () => {
+    setEditingShareTitle(false);
+    setDraftShareTitle(selected?.title ?? '');
+  };
+
+  const titleKbInset = useSyncExternalStore(
+    onChange => {
+      if (
+        !selected ||
+        !editingShareTitle ||
+        typeof window === 'undefined' ||
+        !window.visualViewport
+      ) {
+        return () => {};
+      }
+
+      const vv = window.visualViewport;
+      vv.addEventListener('resize', onChange);
+      vv.addEventListener('scroll', onChange);
+      return () => {
+        vv.removeEventListener('resize', onChange);
+        vv.removeEventListener('scroll', onChange);
+      };
+    },
+    () => {
+      if (
+        !selected ||
+        !editingShareTitle ||
+        typeof window === 'undefined' ||
+        !window.visualViewport
+      ) {
+        return 0;
+      }
+
+      const vv = window.visualViewport;
+      return Math.round(Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)));
+    },
+    () => 0
+  );
+
+  const setIdentifier = async (customId: string | null) => {
     if (!selected) return;
     setBusy(true);
     setError(null);
@@ -323,7 +404,7 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           action: 'set-identifier',
-          customId: customId.trim() || null,
+          customId,
           expectedRevision: selected.revision,
         }),
       });
@@ -331,7 +412,7 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
       const next = payload.resource as Resource;
       replaceResource(next);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'This custom ID is unavailable.');
+      throw reason instanceof Error ? reason : new Error('This custom ID is unavailable.');
     } finally {
       setBusy(false);
     }
@@ -496,14 +577,6 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
     }
   };
 
-  const CreateShareAction = () => (
-    <QuickShareCreateSplitButton
-      definitions={quickShareResourceCatalog}
-      disabled={busy}
-      onCreate={create}
-    />
-  );
-
   const editorFooter =
     resourceId && selected ? (
       <div
@@ -571,11 +644,7 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
         size="sm"
         footer={
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="neutralLink"
-              onClick={() => setUnpublishOpen(false)}
-            >
+            <Button type="button" variant="neutralLink" onClick={() => setUnpublishOpen(false)}>
               Cancel
             </Button>
             <Button
@@ -603,9 +672,7 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title={
-          selected.everPublished
-            ? 'Permanently delete published information'
-            : 'Delete this draft'
+          selected.everPublished ? 'Permanently delete published information' : 'Delete this draft'
         }
         subtitle={
           selected.everPublished
@@ -615,11 +682,7 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
         size="sm"
         footer={
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="neutralLink"
-              onClick={() => setDeleteOpen(false)}
-            >
+            <Button type="button" variant="neutralLink" onClick={() => setDeleteOpen(false)}>
               Cancel
             </Button>
             <Button
@@ -647,20 +710,33 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
     </>
   ) : null;
 
+  const headerTitle =
+    resourceId && selected ? (
+      <QuickShareHeaderTitle
+        shareTitle={selected.title}
+        editingTitle={editingShareTitle}
+        draftShareTitle={draftShareTitle}
+        onStartEdit={startShareTitleEdit}
+        onChangeDraft={setDraftShareTitle}
+        onSave={() => {
+          void saveShareTitle();
+        }}
+        onCancel={cancelShareTitleEdit}
+      />
+    ) : (
+      'QuickShare'
+    );
+
   return (
     <AppLayout
       icon={Share2}
-      title={resourceId ? (selected?.title ?? 'Share') : 'QuickShare'}
+      title={headerTitle}
       subtitle={
         resourceId && selected
           ? `${selected.type} · ${selected.lifecycle}`
           : 'Publish when you are ready'
       }
-      actions={
-        !resourceId && account
-          ? [{ type: 'component', component: CreateShareAction }]
-          : undefined
-      }
+      actions={undefined}
       backBtn={resourceId ? { to: '/quickshare' } : undefined}
       footer={editorFooter}
       disablePadding
@@ -669,7 +745,7 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
     >
       <main className="w-full min-w-0 space-y-6 p-4 pb-24 md:p-6">
         {resourceId && selected?.type === 'template' && (
-          <section className="mx-auto w-full max-w-7xl rounded-lg border bg-card p-4 shadow-sm md:p-6">
+          <section className="mx-auto w-full max-w-7xl">
             <div className="mb-6 border-b pb-4">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-muted-foreground">
@@ -692,34 +768,16 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
               >
                 No template upgrade available
               </Button>
-              <label className="block space-y-1 text-sm font-medium">
-                Share title
-                <Input value={title} onChange={event => setTitle(event.target.value)} />
-              </label>
-              <div className="space-y-2 rounded-md border p-3">
-                <label className="block text-sm font-medium">
-                  Custom ID <span className="font-normal text-muted-foreground">(optional)</span>
-                  <Input
-                    value={customId}
-                    onChange={event => setCustomId(event.target.value)}
-                    placeholder="my-links"
-                  />
-                </label>
-                <p className="text-xs text-muted-foreground">
-                  Changing an identifier removes the old URL on the next Publish. There are no
-                  redirects.
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => void setIdentifier()}
-                >
-                  Use this URL
-                </Button>
-                {urlState(selected)}
-              </div>
+              <QuickShareUrl
+                resourceId={selected.id}
+                handle={account?.handle ?? ''}
+                publishedUrl={selected.publishedUrl}
+                nextPublicUrl={selected.nextPublicUrl}
+                nextIdentifierKind={selected.nextIdentifierKind}
+                nextCustomId={selected.nextCustomId}
+                disabled={busy}
+                onChange={setIdentifier}
+              />
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block space-y-1 text-sm font-medium">
                   Display name
@@ -980,34 +1038,59 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
             <LoaderCircle className="mr-2 inline size-4 animate-spin" /> Loading QuickShare…
           </div>
         ) : !account ? (
-          <section className="rounded-xl border bg-card p-5 shadow-sm">
-            <h2 className="text-lg font-semibold">Choose your QuickShare handle</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              It names custom share URLs. Changing it later changes every custom link.
-            </p>
-            <form onSubmit={submitHandle} className="mt-4 flex flex-col gap-3 sm:flex-row">
-              <Input
-                value={handle}
-                onChange={event => setHandle(event.target.value)}
-                aria-label="QuickShare handle"
-                placeholder="your-handle"
-                required
-              />
-              <Button type="submit" disabled={busy}>
-                {busy ? 'Claiming…' : 'Claim handle'}
-              </Button>
-            </form>
-          </section>
+          <Page>
+            <section className="rounded-xl border bg-card p-5 shadow-sm md:p-6">
+              <h2 className="text-lg font-semibold">Choose your QuickShare handle</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                It names custom share URLs. Changing it later changes every custom link.
+              </p>
+              <form onSubmit={submitHandle} className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <Input
+                  value={handle}
+                  onChange={event => setHandle(event.target.value)}
+                  aria-label="QuickShare handle"
+                  placeholder="your-handle"
+                  required
+                />
+                <Button type="submit" disabled={busy}>
+                  {busy ? 'Claiming…' : 'Claim handle'}
+                </Button>
+              </form>
+            </section>
+          </Page>
         ) : !resourceId ? (
           <section className="min-w-0 space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold">Your shares</h2>
-              <p className="text-sm text-muted-foreground">{account.handle}</p>
-            </div>
             {resources.length === 0 ? (
-              <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
-                No shares yet. Create a draft. Nothing is public until you Publish.
-              </div>
+              <Page className="py-4 md:py-10">
+                <h3 className="text-center text-lg font-semibold">Start sharing!</h3>
+                <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {quickShareResourceCatalog.map(definition => {
+                    const CreateIcon = getQuickShareResourceIcon(definition);
+                    return (
+                      <button
+                        key={definition.choiceId}
+                        type="button"
+                        disabled={busy}
+                        aria-label={`Create ${definition.label}`}
+                        onClick={() => void create(definition)}
+                        className="group flex min-h-24 min-w-0 items-center gap-4 rounded-lg border bg-card p-4 text-left shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 xl:min-h-44 xl:flex-col xl:justify-center xl:gap-0 xl:text-center"
+                      >
+                        <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary xl:size-14">
+                          <CreateIcon aria-hidden="true" className="size-5 xl:size-7" />
+                        </span>
+                        <span className="min-w-0 xl:mt-4">
+                          <span className="block font-semibold group-hover:text-primary">
+                            {definition.label}
+                          </span>
+                          <span className="mt-1 block text-sm text-muted-foreground">
+                            {definition.description}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Page>
             ) : (
               <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
                 {resources.map(resource => {
@@ -1042,195 +1125,156 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
             )}
           </section>
         ) : selected?.type === 'template' ? null : (
-          <section className="mx-auto w-full max-w-[96rem] min-w-0 rounded-lg border bg-card p-4 shadow-sm md:p-6">
-              {!selected ? (
-                <div className="py-12 text-center text-sm text-muted-foreground">
-                  {busy ? <LoaderCircle className="mx-auto mb-3 size-6 animate-spin" /> : null}
-                  {busy ? 'Loading share…' : 'This share could not be opened.'}
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">
-                        {selected.type === 'web-page'
-                          ? 'Web page draft'
-                          : selected.type === 'markdown'
-                            ? 'Markdown draft'
-                            : 'Text draft'}
-                      </p>
-                      <h2 className="text-lg font-semibold">Edit your share</h2>
-                    </div>
-                    <span className="rounded-full border px-2 py-1 text-xs">
-                      {selected.lifecycle}
-                    </span>
-                  </div>
-                  <label className="block space-y-1 text-sm font-medium">
-                    Title
-                    <Input value={title} onChange={event => setTitle(event.target.value)} />
-                  </label>
-                  {selected.type === 'web-page' ? (
-                    <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-                      <div className="min-w-0 space-y-4">
-                        <label className="block space-y-1 text-sm font-medium">
-                          HTML
-                          <Textarea
-                            value={webPage.html}
-                            onChange={event =>
-                              setWebPage(current => ({ ...current, html: event.target.value }))
-                            }
-                            className="h-56 font-mono"
-                            spellCheck={false}
-                          />
-                        </label>
-                        <label className="block space-y-1 text-sm font-medium">
-                          CSS
-                          <Textarea
-                            value={webPage.css}
-                            onChange={event =>
-                              setWebPage(current => ({ ...current, css: event.target.value }))
-                            }
-                            className="h-44 font-mono"
-                            spellCheck={false}
-                          />
-                        </label>
-                        <label className="block space-y-1 text-sm font-medium">
-                          JavaScript
-                          <Textarea
-                            value={webPage.javascript}
-                            onChange={event =>
-                              setWebPage(current => ({ ...current, javascript: event.target.value }))
-                            }
-                            className="h-44 font-mono"
-                            spellCheck={false}
-                          />
-                        </label>
-                        <div className="space-y-3 rounded-md border p-3">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div>
-                              <p className="text-sm font-medium">Managed assets</p>
-                              <p className="text-xs text-muted-foreground">
-                                Use paths such as assets/photo.png in HTML or CSS. Files are private
-                                until Publish.
-                              </p>
-                            </div>
-                            <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10">
-                              <Upload className="size-4" /> Add asset
-                              <input
-                                type="file"
-                                className="sr-only"
-                                onChange={event => {
-                                  void addAsset(event.target.files?.[0] ?? null);
-                                  event.currentTarget.value = '';
-                                }}
-                              />
-                            </label>
-                          </div>
-                          {webPage.assets.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">No managed assets.</p>
-                          ) : (
-                            <ul className="divide-y rounded border">
-                              {webPage.assets.map(asset => (
-                                <li
-                                  key={asset.path}
-                                  className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
-                                >
-                                  <span className="min-w-0 truncate font-mono">{asset.path}</span>
-                                  <Button
-                                    type="button"
-                                    size="icon"
-                                    variant="destructiveGhost"
-                                    aria-label={`Remove ${asset.path}`}
-                                    onClick={() =>
-                                      setWebPage(current => ({
-                                        ...current,
-                                        assets: current.assets.filter(
-                                          item => item.path !== asset.path
-                                        ),
-                                      }))
-                                    }
-                                  >
-                                    <Trash2 className="size-4" />
-                                  </Button>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-                      <aside className="min-w-0 rounded-md border bg-muted/20 p-3 xl:sticky xl:top-20 xl:self-start">
-                        <p className="text-xs font-medium text-muted-foreground">
-                          Sandboxed draft preview — it has no QuickShare account authority
-                        </p>
-                        <iframe
-                          title="Sandboxed web-page draft preview"
-                          sandbox="allow-scripts"
-                          referrerPolicy="no-referrer"
-                          srcDoc={webPreview}
-                          className="mt-2 h-[min(58rem,calc(100dvh-12rem))] min-h-[32rem] w-full rounded border bg-background"
-                        />
-                      </aside>
-                    </div>
-                  ) : (
-                    <div
-                      className={
-                        selected.type === 'markdown'
-                          ? 'grid min-w-0 gap-4 lg:grid-cols-2'
-                          : 'space-y-4'
-                      }
-                    >
+          <section className="mx-auto w-full max-w-[96rem] min-w-0">
+            {!selected ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                {busy ? <LoaderCircle className="mx-auto mb-3 size-6 animate-spin" /> : null}
+                {busy ? 'Loading share…' : 'This share could not be opened.'}
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {selected.type === 'web-page' ? (
+                  <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+                    <div className="min-w-0 space-y-4">
                       <label className="block space-y-1 text-sm font-medium">
-                        {selected.type === 'markdown' ? 'Markdown source' : 'Text source'}
+                        HTML
                         <Textarea
-                          value={source}
-                          onChange={event => setSource(event.target.value)}
-                          className="h-[32rem] font-mono"
+                          value={webPage.html}
+                          onChange={event =>
+                            setWebPage(current => ({ ...current, html: event.target.value }))
+                          }
+                          className="h-56 font-mono"
+                          spellCheck={false}
                         />
                       </label>
-                      {selected.type === 'markdown' ? (
-                        <aside className="min-h-[32rem] min-w-0 rounded-md border bg-muted/20 p-4 lg:sticky lg:top-20 lg:self-start">
-                          <p className="text-xs font-medium text-muted-foreground">
-                            Draft preview — not the published version
-                          </p>
-                          <div className="prose prose-sm mt-4 max-w-none break-words dark:prose-invert">
-                            {preview}
+                      <label className="block space-y-1 text-sm font-medium">
+                        CSS
+                        <Textarea
+                          value={webPage.css}
+                          onChange={event =>
+                            setWebPage(current => ({ ...current, css: event.target.value }))
+                          }
+                          className="h-44 font-mono"
+                          spellCheck={false}
+                        />
+                      </label>
+                      <label className="block space-y-1 text-sm font-medium">
+                        JavaScript
+                        <Textarea
+                          value={webPage.javascript}
+                          onChange={event =>
+                            setWebPage(current => ({ ...current, javascript: event.target.value }))
+                          }
+                          className="h-44 font-mono"
+                          spellCheck={false}
+                        />
+                      </label>
+                      <div className="space-y-3 rounded-md border p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-medium">Managed assets</p>
+                            <p className="text-xs text-muted-foreground">
+                              Use paths such as assets/photo.png in HTML or CSS. Files are private
+                              until Publish.
+                            </p>
                           </div>
-                        </aside>
-                      ) : null}
+                          <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10">
+                            <Upload className="size-4" /> Add asset
+                            <input
+                              type="file"
+                              className="sr-only"
+                              onChange={event => {
+                                void addAsset(event.target.files?.[0] ?? null);
+                                event.currentTarget.value = '';
+                              }}
+                            />
+                          </label>
+                        </div>
+                        {webPage.assets.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">No managed assets.</p>
+                        ) : (
+                          <ul className="divide-y rounded border">
+                            {webPage.assets.map(asset => (
+                              <li
+                                key={asset.path}
+                                className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                              >
+                                <span className="min-w-0 truncate font-mono">{asset.path}</span>
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="destructiveGhost"
+                                  aria-label={`Remove ${asset.path}`}
+                                  onClick={() =>
+                                    setWebPage(current => ({
+                                      ...current,
+                                      assets: current.assets.filter(
+                                        item => item.path !== asset.path
+                                      ),
+                                    }))
+                                  }
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  <div className="space-y-2 rounded-md border p-3">
-                    <label className="block text-sm font-medium">
-                      Custom ID{' '}
-                      <span className="font-normal text-muted-foreground">(optional)</span>
-                      <Input
-                        value={customId}
-                        onChange={event => setCustomId(event.target.value)}
-                        placeholder="my-share"
+                    <aside className="min-w-0 rounded-md border bg-muted/20 p-3 xl:sticky xl:top-20 xl:self-start">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Sandboxed draft preview — it has no QuickShare account authority
+                      </p>
+                      <iframe
+                        title="Sandboxed web-page draft preview"
+                        sandbox="allow-scripts"
+                        referrerPolicy="no-referrer"
+                        srcDoc={webPreview}
+                        className="mt-2 h-[min(58rem,calc(100dvh-12rem))] min-h-[32rem] w-full rounded border bg-background"
+                      />
+                    </aside>
+                  </div>
+                ) : (
+                  <div
+                    className={
+                      selected.type === 'markdown'
+                        ? 'grid min-w-0 gap-4 lg:grid-cols-2'
+                        : 'space-y-4'
+                    }
+                  >
+                    <label className="block space-y-1 text-sm font-medium">
+                      {selected.type === 'markdown' ? 'Markdown source' : 'Text source'}
+                      <Textarea
+                        value={source}
+                        onChange={event => setSource(event.target.value)}
+                        className="h-[32rem] font-mono"
                       />
                     </label>
-                    <p className="text-xs text-muted-foreground">
-                      Changing an identifier after publishing removes the old URL on the next
-                      Publish. There are no redirects.
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={busy}
-                      onClick={() => void setIdentifier()}
-                    >
-                      Use this URL
-                    </Button>
-                    {urlState(selected)}
+                    {selected.type === 'markdown' ? (
+                      <aside className="min-h-[32rem] min-w-0 rounded-md border bg-muted/20 p-4 lg:sticky lg:top-20 lg:self-start">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Draft preview — not the published version
+                        </p>
+                        <div className="prose prose-sm mt-4 max-w-none break-words dark:prose-invert">
+                          {preview}
+                        </div>
+                      </aside>
+                    ) : null}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {dirty
-                      ? 'Save this draft before publishing. Saving never changes the public page.'
-                      : 'Publishing is explicit. Saving never changes the public page.'}
-                  </p>
-                </div>
-              )}
+                )}
+                <QuickShareUrl
+                  resourceId={selected.id}
+                  handle={account?.handle ?? ''}
+                  publishedUrl={selected.publishedUrl}
+                  nextPublicUrl={selected.nextPublicUrl}
+                  nextIdentifierKind={selected.nextIdentifierKind}
+                  nextCustomId={selected.nextCustomId}
+                  disabled={busy}
+                  onChange={setIdentifier}
+                />
+              </div>
+            )}
           </section>
         )}
         {confirmationDialogs}
@@ -1239,6 +1283,19 @@ export const QuickShareHome = ({ resourceId }: QuickShareHomeProps) => {
             definitions={quickShareResourceCatalog}
             disabled={busy}
             onCreate={create}
+          />
+        ) : null}
+        {resourceId ? (
+          <QuickShareMobileTitlePanel
+            isOpen={editingShareTitle}
+            draftTitle={draftShareTitle}
+            onChangeDraft={setDraftShareTitle}
+            onSave={() => {
+              void saveShareTitle();
+            }}
+            onCancel={cancelShareTitleEdit}
+            saving={busy}
+            kbInset={titleKbInset}
           />
         ) : null}
       </main>

@@ -2,6 +2,7 @@ import { getAppID } from '@/42go/config/app-config';
 import { protectRoute } from '@/42go/policy';
 import { getSessionUserId } from '@/42go/policy/access';
 import {
+  checkQuickShareResourceCustomIdAvailability,
   getQuickShareResource,
   saveQuickShareResourceDraft,
   upgradeQuickShareResourceTemplate,
@@ -81,10 +82,21 @@ const fail = (error: unknown) => {
 };
 
 export const GET = protectRoute(
-  async (_request: Request, context: { params: Promise<{ resourceId: string }> }) => {
+  async (request: Request, context: { params: Promise<{ resourceId: string }> }) => {
     try {
+      const resourceId = (await context.params).resourceId;
+      const owner = await principal();
+      const customId = new URL(request.url).searchParams.get('customId');
+      if (customId !== null)
+        return Response.json({
+          availability: await checkQuickShareResourceCustomIdAvailability(
+            owner,
+            resourceId,
+            customId
+          ),
+        });
       return Response.json({
-        resource: await getQuickShareResource(await principal(), (await context.params).resourceId),
+        resource: await getQuickShareResource(owner, resourceId),
       });
     } catch (error) {
       return fail(error);

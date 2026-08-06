@@ -1,19 +1,14 @@
 'use client';
 
 import { ExpandableFab } from '@/components/ui/expandable-fab';
+import { getQuickShareResourceIcon } from '@/app/(app)/(quickshare)/quickshare/_components/quickshare-resource-icon';
 import type { QuickShareResourceDefinition } from '@/lib/quickshare/resource-catalog';
-import { FileCode2, FileText, Globe2, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 type QuickShareCreateFabProps = {
   definitions: readonly QuickShareResourceDefinition[];
   disabled?: boolean;
   onCreate: (definition: QuickShareResourceDefinition) => Promise<void> | void;
-};
-
-const iconFor = (definition: QuickShareResourceDefinition) => {
-  if (definition.id === 'web-page') return Globe2;
-  if (definition.id === 'template') return FileCode2;
-  return FileText;
 };
 
 export const QuickShareCreateFab = ({
@@ -33,7 +28,7 @@ export const QuickShareCreateFab = ({
       disabled={disabled}
       placement="top-end"
       actions={definitions.map(definition => {
-        const Icon = iconFor(definition);
+        const Icon = getQuickShareResourceIcon(definition);
         return {
           id: definition.choiceId,
           label: definition.label,

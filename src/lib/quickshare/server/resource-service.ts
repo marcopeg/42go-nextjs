@@ -516,6 +516,32 @@ export const updateQuickShareResourceIdentifier = async (
   }
 };
 
+export const checkQuickShareResourceCustomIdAvailability = async (
+  principal: QuickSharePrincipal,
+  resourceId: string,
+  customId: string
+) => {
+  const account = await getQuickShareAccount(principal);
+  if (!account)
+    throw new QuickShareDomainError('handle_required', 'Complete handle onboarding first.', 409);
+  const parsedCustomId = parseCustomId(customId);
+  const db = getDB();
+  const resource = await db('quickshare.resources')
+    .where({ id: resourceId, app_id: principal.appId, account_id: account.id })
+    .first('id');
+  if (!resource) throw new QuickShareDomainError('resource_missing', 'Share not found.', 404);
+  const conflictingClaim = await db('quickshare.resource_route_claims')
+    .where({
+      app_id: principal.appId,
+      account_id: account.id,
+      kind: 'custom',
+      custom_id: parsedCustomId,
+    })
+    .whereNot({ resource_id: resourceId })
+    .first('id');
+  return { available: !conflictingClaim, customId: parsedCustomId };
+};
+
 export const deleteQuickShareResourceRecord = async (
   principal: QuickSharePrincipal,
   resourceId: string,

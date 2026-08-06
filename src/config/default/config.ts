@@ -13,8 +13,8 @@ import {
   Share2,
 } from 'lucide-react';
 import QuicklistIcon from '@/config/quicklist/QuicklistIcon';
-import { QuickShareAccountPreferences } from '@/lib/quickshare/components/QuickShareAccountPreferences';
-import { QuickShareApiAccessPreferences } from '@/lib/quickshare/components/QuickShareApiAccessPreferences';
+import { QuickShareAccountPreferences } from '@/config/quickshare/components/QuickShareAccountPreferences';
+import { QuickShareApiAccessPreferences } from '@/config/quickshare/components/QuickShareApiAccessPreferences';
 import { TAppConfigItem } from '../../AppConfig';
 
 import { HomePage } from './home-page';
