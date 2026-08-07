@@ -36,9 +36,7 @@ import type {
   ReaderTranslationPronunciationType,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 
-type UseReaderPlaybackInput = {
-  bookId: string;
-  pageId: string;
+type UseReaderPlaybackCommonInput = {
   language: string;
   getScrollContainer: () => HTMLElement | null;
   trackEvent: (name: string, data?: TEventJson) => void;
@@ -48,6 +46,22 @@ type UseReaderPlaybackInput = {
   restoredPageKey?: string;
   restoreLastPlayedSentence?: boolean;
 };
+
+export type UseReaderPlaybackInput = UseReaderPlaybackCommonInput &
+  (
+    | {
+        contentType?: "book-page";
+        contentId?: never;
+        bookId: string;
+        pageId: string;
+      }
+    | {
+        contentType: "conversation";
+        contentId: string;
+        bookId?: never;
+        pageId?: never;
+      }
+  );
 
 const getSentenceElement = (container: HTMLElement, sentenceId: string) =>
   container.querySelector<HTMLElement>(getReaderSentenceSelector(sentenceId));
@@ -59,7 +73,8 @@ const isElementInContainerViewport = (
   const elementRect = element.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
   return (
-    elementRect.bottom > containerRect.top && elementRect.top < containerRect.bottom
+    elementRect.bottom > containerRect.top &&
+    elementRect.top < containerRect.bottom
   );
 };
 
@@ -102,11 +117,16 @@ const getBoundaryWordRange = (
   charIndex: number,
   charLength: number
 ): ReaderPlaybackWordRange | null => {
-  if (!Number.isFinite(charIndex) || charIndex < 0 || charIndex >= sentence.length) {
+  if (
+    !Number.isFinite(charIndex) ||
+    charIndex < 0 ||
+    charIndex >= sentence.length
+  ) {
     return null;
   }
 
-  const fallbackLength = sentence.slice(charIndex).match(/^\S+/)?.[0].length ?? 0;
+  const fallbackLength =
+    sentence.slice(charIndex).match(/^\S+/)?.[0].length ?? 0;
   const length = charLength > 0 ? charLength : fallbackLength;
   if (length <= 0) return null;
   return {
@@ -115,18 +135,26 @@ const getBoundaryWordRange = (
   };
 };
 
-export const useReaderPlayback = ({
-  bookId,
-  pageId,
-  language,
-  getScrollContainer,
-  trackEvent,
-  onPageEnd,
-  autoStartPageKey = null,
-  onAutoStart,
-  restoredPageKey = "",
-  restoreLastPlayedSentence = true,
-}: UseReaderPlaybackInput): ReaderPlaybackController => {
+export const useReaderPlayback = (
+  input: UseReaderPlaybackInput
+): ReaderPlaybackController => {
+  const {
+    language,
+    getScrollContainer,
+    trackEvent,
+    onPageEnd,
+    autoStartPageKey = null,
+    onAutoStart,
+    restoredPageKey = "",
+    restoreLastPlayedSentence = true,
+  } = input;
+  const isConversation = input.contentType === "conversation";
+  const conversationId = isConversation ? input.contentId : null;
+  const bookId = isConversation ? null : input.bookId;
+  const pageId = isConversation ? null : input.pageId;
+  const memoryNamespace = isConversation ? "conversation" : input.bookId;
+  const memoryItemId = isConversation ? input.contentId : input.pageId;
+  const playbackContentKey = `${memoryNamespace}:${memoryItemId}`;
   const providerRef = useRef<ReaderSpeechProvider | null>(null);
   const sentencesRef = useRef<ReaderPlaybackSentence[]>([]);
   const selectedSentenceIdRef = useRef<string | null>(null);
@@ -154,9 +182,7 @@ export const useReaderPlayback = ({
   const restoredSentencePageKeyRef = useRef("");
   const lastPlayedSentenceIdRef = useRef<string | null>(null);
   const onAutoStartRef = useRef(onAutoStart);
-  const settingsSurfacesRef = useRef(
-    new Set<ReaderPlaybackSettingsSurface>()
-  );
+  const settingsSurfacesRef = useRef(new Set<ReaderPlaybackSettingsSurface>());
   const translationOpenRef = useRef(false);
   const autoPauseReasonsRef = useRef(new Set<"settings" | "translation">());
   const autoPausedRef = useRef(false);
@@ -279,7 +305,11 @@ export const useReaderPlayback = ({
     setCapabilityPending(false);
     if (!language.trim()) {
       setCanPlay(false);
-      setUnavailableReason("This book has no playback language.");
+      setUnavailableReason(
+        isConversation
+          ? "This conversation has no playback language."
+          : "This book has no playback language."
+      );
       return;
     }
     if (!provider.getMatchingVoice(language)) {
@@ -289,12 +319,16 @@ export const useReaderPlayback = ({
     }
     if (sentencesRef.current.length === 0) {
       setCanPlay(false);
-      setUnavailableReason("This page has no readable sentences.");
+      setUnavailableReason(
+        isConversation
+          ? "This conversation has no readable sentences."
+          : "This page has no readable sentences."
+      );
       return;
     }
     setCanPlay(true);
     setUnavailableReason(null);
-  }, [language]);
+  }, [isConversation, language]);
 
   useEffect(() => {
     const provider = createDeviceSpeechProvider();
@@ -312,17 +346,19 @@ export const useReaderPlayback = ({
   const registerSentences = useCallback(
     (nextSentences: ReaderPlaybackSentence[]) => {
       sentencesRef.current = nextSentences;
-      const pageKey = `${bookId}:${pageId}`;
-      catalogPageKeyRef.current = pageKey;
-      lastPlayedSentenceIdRef.current = readLastPlayedSentenceId(bookId, pageId);
-      setCatalogPageKey(pageKey);
+      catalogPageKeyRef.current = playbackContentKey;
+      lastPlayedSentenceIdRef.current = readLastPlayedSentenceId(
+        memoryNamespace,
+        memoryItemId
+      );
+      setCatalogPageKey(playbackContentKey);
       setSentences((current) => {
         if (areSentenceCatalogsEqual(current, nextSentences)) return current;
         return nextSentences;
       });
       refreshAvailability();
     },
-    [bookId, pageId, refreshAvailability]
+    [memoryItemId, memoryNamespace, playbackContentKey, refreshAvailability]
   );
 
   const selectSentence = useCallback((sentenceId: string) => {
@@ -363,7 +399,10 @@ export const useReaderPlayback = ({
         const provider = providerRef.current;
         const sentence = sentencesRef.current[index];
         if (!provider) {
-          reportPlaybackError("provider", "Speech provider is not initialized.");
+          reportPlaybackError(
+            "provider",
+            "Speech provider is not initialized."
+          );
           return;
         }
         if (!sentence) {
@@ -400,12 +439,17 @@ export const useReaderPlayback = ({
           onStart: () => {
             if (generationRef.current !== generation) return;
             lastPlayedSentenceIdRef.current = sentence.id;
-            storeLastPlayedSentenceId(bookId, pageId, sentence.id);
+            storeLastPlayedSentenceId(
+              memoryNamespace,
+              memoryItemId,
+              sentence.id
+            );
             trackEvent("audio.play", {
               type: "sentence",
               language,
-              book_id: bookId,
-              page_id: pageId,
+              ...(isConversation
+                ? { conversation_id: conversationId }
+                : { book_id: bookId, page_id: pageId }),
             });
           },
           onBoundary: (boundary) => {
@@ -443,11 +487,15 @@ export const useReaderPlayback = ({
       }
     },
     [
-      bookId,
       centerSentence,
       clearParagraphTimer,
       clearSentenceTimer,
+      bookId,
+      conversationId,
+      isConversation,
       language,
+      memoryItemId,
+      memoryNamespace,
       pageId,
       reportPlaybackError,
       setActiveIndex,
@@ -473,8 +521,8 @@ export const useReaderPlayback = ({
         : null;
       guidedScrollRef.current = Boolean(
         container &&
-          currentElement &&
-          isElementInContainerViewport(currentElement, container)
+        currentElement &&
+        isElementInContainerViewport(currentElement, container)
       );
 
       const pauseMs =
@@ -482,8 +530,8 @@ export const useReaderPlayback = ({
           ? next.isSummary && !current.isSummary
             ? READER_TITLE_SUMMARY_PAUSE_MS
             : current.isSummary
-            ? READER_SUMMARY_PAUSE_MS
-            : READER_PARAGRAPH_PAUSE_MS
+              ? READER_SUMMARY_PAUSE_MS
+              : READER_PARAGRAPH_PAUSE_MS
           : READER_SENTENCE_PAUSE_MS;
 
       pendingIndexRef.current = next.index;
@@ -503,71 +551,77 @@ export const useReaderPlayback = ({
     advanceRef.current = advance;
   }, [advance, speakIndex]);
 
-  const start = useCallback((fromBeginning = false) => {
-    try {
-      if (!canPlay) {
-        reportPlaybackError(
-          "start-availability",
-          unavailableReason || "Playback is unavailable."
-        );
-        return;
-      }
-      if (sentencesRef.current.length === 0) {
-        reportPlaybackError("start-catalog", "No readable sentences were found.");
-        return;
-      }
-      cancelCurrentSpeech();
-      setIsOpen(true);
-      guidedScrollRef.current = true;
-      const selectedIndex = selectedSentenceIdRef.current
-        ? sentencesRef.current.findIndex(
-            (sentence) => sentence.id === selectedSentenceIdRef.current
-          )
-        : -1;
-      const container = getScrollContainer();
-      const atTop = !container || container.scrollTop <= 8;
-      const lastPlayedIndex = lastPlayedSentenceIdRef.current
-        ? sentencesRef.current.findIndex(
-            (sentence) => sentence.id === lastPlayedSentenceIdRef.current
-          )
-        : -1;
-      const lastPlayedElement =
-        container && lastPlayedIndex >= 0
-          ? getSentenceElement(
-              container,
-              sentencesRef.current[lastPlayedIndex].id
+  const start = useCallback(
+    (fromBeginning = false) => {
+      try {
+        if (!canPlay) {
+          reportPlaybackError(
+            "start-availability",
+            unavailableReason || "Playback is unavailable."
+          );
+          return;
+        }
+        if (sentencesRef.current.length === 0) {
+          reportPlaybackError(
+            "start-catalog",
+            "No readable sentences were found."
+          );
+          return;
+        }
+        cancelCurrentSpeech();
+        setIsOpen(true);
+        guidedScrollRef.current = true;
+        const selectedIndex = selectedSentenceIdRef.current
+          ? sentencesRef.current.findIndex(
+              (sentence) => sentence.id === selectedSentenceIdRef.current
             )
-          : null;
-      const lastPlayedIsVisible = Boolean(
-        container &&
+          : -1;
+        const container = getScrollContainer();
+        const atTop = !container || container.scrollTop <= 8;
+        const lastPlayedIndex = lastPlayedSentenceIdRef.current
+          ? sentencesRef.current.findIndex(
+              (sentence) => sentence.id === lastPlayedSentenceIdRef.current
+            )
+          : -1;
+        const lastPlayedElement =
+          container && lastPlayedIndex >= 0
+            ? getSentenceElement(
+                container,
+                sentencesRef.current[lastPlayedIndex].id
+              )
+            : null;
+        const lastPlayedIsVisible = Boolean(
+          container &&
           lastPlayedElement &&
           isElementInContainerViewport(lastPlayedElement, container)
-      );
-      const index =
-        selectedIndex >= 0
-          ? selectedIndex
-          : fromBeginning
-            ? 0
-            : lastPlayedIsVisible
-              ? lastPlayedIndex
-              : atTop
-                ? 0
-                : getFirstViewportSentenceIndex(
-                    sentencesRef.current,
-                    container
-                  );
-      if (fromBeginning && container) container.scrollTop = 0;
-      speakIndexRef.current(index);
-    } catch (error) {
-      reportPlaybackError("start", error);
-    }
-  }, [
-    canPlay,
-    cancelCurrentSpeech,
-    getScrollContainer,
-    reportPlaybackError,
-    unavailableReason,
-  ]);
+        );
+        const index =
+          selectedIndex >= 0
+            ? selectedIndex
+            : fromBeginning
+              ? 0
+              : lastPlayedIsVisible
+                ? lastPlayedIndex
+                : atTop
+                  ? 0
+                  : getFirstViewportSentenceIndex(
+                      sentencesRef.current,
+                      container
+                    );
+        if (fromBeginning && container) container.scrollTop = 0;
+        speakIndexRef.current(index);
+      } catch (error) {
+        reportPlaybackError("start", error);
+      }
+    },
+    [
+      canPlay,
+      cancelCurrentSpeech,
+      getScrollContainer,
+      reportPlaybackError,
+      unavailableReason,
+    ]
+  );
 
   /*
    * Keep the explicit sentence delay independent from speech rate. Paragraph
@@ -722,12 +776,7 @@ export const useReaderPlayback = ({
       guidedScrollRef.current = true;
       speakIndexRef.current(sentenceIndex);
     },
-    [
-      canPlay,
-      cancelCurrentSpeech,
-      reportPlaybackError,
-      syncAutoPauseReason,
-    ]
+    [canPlay, cancelCurrentSpeech, reportPlaybackError, syncAutoPauseReason]
   );
 
   const playTranslationSelection = useCallback(
@@ -786,8 +835,9 @@ export const useReaderPlayback = ({
           trackEvent("audio.play", {
             type,
             language,
-            book_id: bookId,
-            page_id: pageId,
+            ...(isConversation
+              ? { conversation_id: conversationId }
+              : { book_id: bookId, page_id: pageId }),
           });
         },
         onBoundary: () => undefined,
@@ -814,7 +864,9 @@ export const useReaderPlayback = ({
       bookId,
       canPlay,
       cancelCurrentSpeech,
+      conversationId,
       isOpen,
+      isConversation,
       language,
       pageId,
       syncAutoPauseReason,
@@ -920,18 +972,14 @@ export const useReaderPlayback = ({
   );
 
   const setDimPreviousSentences = useCallback(
-    (enabled: boolean) =>
-      commitPreferences({ dimPreviousSentences: enabled }),
+    (enabled: boolean) => commitPreferences({ dimPreviousSentences: enabled }),
     [commitPreferences]
   );
 
   const setAutoPauseOnTranslation = useCallback(
     (enabled: boolean) => {
       commitPreferences({ autoPauseOnTranslation: enabled });
-      syncAutoPauseReason(
-        "translation",
-        enabled && translationOpenRef.current
-      );
+      syncAutoPauseReason("translation", enabled && translationOpenRef.current);
     },
     [commitPreferences, syncAutoPauseReason]
   );
@@ -1004,7 +1052,7 @@ export const useReaderPlayback = ({
   }, [cancelCurrentSpeech, setActiveIndex, setStatus]);
 
   useEffect(() => {
-    const pageKey = `${bookId}:${pageId}`;
+    const pageKey = playbackContentKey;
     if (resetPageKeyRef.current === pageKey) return;
     resetPageKeyRef.current = pageKey;
     selectedSentenceIdRef.current = null;
@@ -1013,22 +1061,17 @@ export const useReaderPlayback = ({
 
     const resetTimer = setTimeout(close, 0);
     return () => clearTimeout(resetTimer);
-  }, [
-    autoStartPageKey,
-    bookId,
-    close,
-    pageId,
-  ]);
+  }, [autoStartPageKey, close, playbackContentKey]);
 
   useEffect(() => {
-    const pageKey = `${bookId}:${pageId}`;
+    const pageKey = playbackContentKey;
     if (!restoreLastPlayedSentence || autoStartPageKey === pageKey) return;
     if (restoredPageKey !== pageKey || catalogPageKey !== pageKey) return;
     if (catalogPageKeyRef.current !== pageKey) return;
     if (restoredSentencePageKeyRef.current === pageKey) return;
 
     restoredSentencePageKeyRef.current = pageKey;
-    const sentenceId = readLastPlayedSentenceId(bookId, pageId);
+    const sentenceId = readLastPlayedSentenceId(memoryNamespace, memoryItemId);
     lastPlayedSentenceIdRef.current = sentenceId;
     if (!sentenceId) return;
 
@@ -1051,20 +1094,22 @@ export const useReaderPlayback = ({
     );
   }, [
     autoStartPageKey,
-    bookId,
     catalogPageKey,
     getScrollContainer,
-    pageId,
+    memoryItemId,
+    memoryNamespace,
+    playbackContentKey,
     restoreLastPlayedSentence,
     restoredPageKey,
   ]);
 
   useEffect(() => {
-    const pageKey = `${bookId}:${pageId}`;
+    const pageKey = playbackContentKey;
     if (autoStartPageKey !== pageKey || !canPlay) return;
     if (autoStartedPageKeyRef.current === pageKey) return;
     if (sentencesRef.current.length === 0) return;
-    if (catalogPageKey !== pageKey || catalogPageKeyRef.current !== pageKey) return;
+    if (catalogPageKey !== pageKey || catalogPageKeyRef.current !== pageKey)
+      return;
 
     autoStartedPageKeyRef.current = pageKey;
     const container = getScrollContainer();
@@ -1083,17 +1128,15 @@ export const useReaderPlayback = ({
     }, READER_PAGE_TRANSITION_PAUSE_MS);
   }, [
     autoStartPageKey,
-    bookId,
     canPlay,
     catalogPageKey,
     getScrollContainer,
-    pageId,
+    playbackContentKey,
     setActiveIndex,
     setStatus,
   ]);
 
-  const activeSentenceId =
-    sentences[previewIndex ?? activeIndex]?.id ?? null;
+  const activeSentenceId = sentences[previewIndex ?? activeIndex]?.id ?? null;
 
   useEffect(() => {
     if (!isOpen || !activeSentenceId) return;
@@ -1118,8 +1161,12 @@ export const useReaderPlayback = ({
     };
     syncGuidedState();
     container.addEventListener("scroll", schedule, { passive: true });
-    container.addEventListener("pointerdown", markManualScroll, { passive: true });
-    container.addEventListener("touchstart", markManualScroll, { passive: true });
+    container.addEventListener("pointerdown", markManualScroll, {
+      passive: true,
+    });
+    container.addEventListener("touchstart", markManualScroll, {
+      passive: true,
+    });
     container.addEventListener("wheel", markManualScroll, { passive: true });
     window.addEventListener("resize", schedule);
     return () => {
@@ -1130,12 +1177,7 @@ export const useReaderPlayback = ({
       container.removeEventListener("wheel", markManualScroll);
       window.removeEventListener("resize", schedule);
     };
-  }, [
-    activeSentenceId,
-    clearGuidedScrollTimer,
-    getScrollContainer,
-    isOpen,
-  ]);
+  }, [activeSentenceId, clearGuidedScrollTimer, getScrollContainer, isOpen]);
 
   return {
     isOpen,

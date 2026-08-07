@@ -312,12 +312,14 @@ export const getSessionUserId = async (): Promise<string | null> => {
   if (!sessionUserId) return null;
 
   const db = getDB();
-  const user = await db("auth.users").where({ id: sessionUserId }).first();
+  const appId = (await getAppID()) || "default";
+  const user = await db("auth.users")
+    .where({ id: sessionUserId, app_id: appId })
+    .first();
   if (user?.id) return user.id as string;
 
   if (!sessionEmail) return null;
 
-  const appId = (await getAppID()) || "default";
   const userByEmail = await db("auth.users")
     .where("app_id", appId)
     .andWhere("email", "ilike", sessionEmail)

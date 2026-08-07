@@ -213,6 +213,8 @@
 
 ## Completed
 
+- [QT31: Build the complete LingoCafe conversation experience](./tasks/QT31-build-the-complete-lingocafe-conversation-experience/QT31.task.md)
+- [AS82: Add the LingoCafe conversation database foundation](./tasks/AS82-add-the-lingocafe-conversation-library-user-state-and-reader-experience/AS82.task.md)
 - [LI48: Add a Floating Reader Action Bar with Translation Mode Switch](./tasks/LI48-add-a-floating-reader-action-bar-with-translation-mode-switch/LI48.task.md)
 - [FK40: Make QuickList Per-List Installation Explicit and Flicker-Free](./tasks/FK40-make-quicklist-per-list-installation-explicit-and-flicker-free/FK40.task.md)
 - [ZC45: QuickList Personal API Access and Agent Skill](./tasks/ZC45-quicklist-personal-api-access-and-agent-skill/ZC45.task.md)

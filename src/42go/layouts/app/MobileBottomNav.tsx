@@ -29,13 +29,15 @@ export const MobileBottomNav = ({ onMoreClick }: MobileBottomNavProps) => {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border h-16 flex items-center z-40 md:hidden">
       {mobileBottomItems.slice(0, visibleItemsCount).map((item) => {
-        const isActive = pathname === item.href;
+        const isActive =
+          pathname === item.href || pathname.startsWith(`${item.href}/`);
         const itemKey = item.id || `${item.href}-${item.title}`;
 
         const node = (
           <Link
             key={itemKey}
             href={item.href}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
               "flex flex-col items-center justify-center h-full transition-colors duration-200",
               isActive

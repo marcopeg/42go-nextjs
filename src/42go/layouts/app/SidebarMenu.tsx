@@ -34,13 +34,15 @@ export const SidebarMenu = ({
 
   // Function to render a single menu link body
   const renderSingleItem = (item: TAppLayoutNavItem) => {
-    const isActive = pathname === item.href;
+    const isActive =
+      pathname === item.href || pathname.startsWith(`${item.href}/`);
     const itemKey = item.id || `${item.href}-${item.title}`;
 
     return (
       <Link
         key={itemKey}
         href={item.href}
+        aria-current={isActive ? "page" : undefined}
         onClick={closeMobileMenu}
         className={cn(
           "flex items-center px-3 py-2 text-sm transition-all duration-200 cursor-pointer relative group rounded-md border border-transparent",

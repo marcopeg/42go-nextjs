@@ -25,6 +25,8 @@ export type ReaderPreferenceOption = {
 
 export const READER_PREFERENCES_STORAGE_KEY =
   "lingocafe.reader.preferences.v1";
+export const READER_TRANSLATION_SCOPE_EVENT =
+  "lingocafe:reader-translation-scope";
 export const READER_APP_BACKGROUND_KEY = "app-background";
 export const READER_APP_FOREGROUND_KEY = "app-foreground";
 export const DEFAULT_READER_TRANSLATION_SCOPE: ReaderTranslationScope =
@@ -416,6 +418,21 @@ export const readStoredReaderPreferencesStore = () => {
   } catch {
     return {};
   }
+};
+
+export const writeStoredReaderTranslationScope = (
+  scope: ReaderTranslationScope
+) => {
+  const next = {
+    ...readStoredReaderPreferencesStore(),
+    translationScope: sanitizeReaderTranslationScope(scope),
+  };
+  localStorage.setItem(READER_PREFERENCES_STORAGE_KEY, JSON.stringify(next));
+  window.dispatchEvent(
+    new CustomEvent(READER_TRANSLATION_SCOPE_EVENT, {
+      detail: next.translationScope,
+    })
+  );
 };
 
 export const getReaderThemeStyle = (

@@ -1,6 +1,6 @@
 import { TAppConfigItem } from '../../AppConfig';
 import { HomePage } from './home-page';
-import { Bell, User, Users, BookOpen } from 'lucide-react';
+import { Bell, User, Users, BookOpen, MessagesSquare } from 'lucide-react';
 import { LingocafePreferences } from '@/app/(app)/(lingocafe)/_components/LingocafePreferences';
 import { hasCachedLingoCafeProfileCompletion } from '@/config/lingocafe/profile-completion-cache';
 import { lingoCafeProfileSchema } from '@/config/lingocafe/profile-options';
@@ -25,7 +25,7 @@ export default {
       },
     },
   },
-  features: ['page:books', 'page:users', 'page:notifications', 'api:lingocafe', 'api:events', 'api:profile', 'api:users', 'api:notifications'],
+  features: ['page:books', 'page:conversations', 'page:users', 'page:notifications', 'api:lingocafe', 'api:events', 'api:profile', 'api:users', 'api:notifications'],
   theme: {
     default: 'system',
   },
@@ -205,6 +205,14 @@ export default {
             href: '/books',
             icon: BookOpen,
           },
+          {
+            title: 'Conversations',
+            href: '/conversations',
+            icon: MessagesSquare,
+            policy: {
+              require: { feature: 'page:conversations', session: true },
+            },
+          },
         ],
       },
       bottom: {
@@ -239,6 +247,14 @@ export default {
             title: 'Books',
             href: '/books',
             icon: BookOpen,
+          },
+          {
+            title: 'Conversations',
+            href: '/conversations',
+            icon: MessagesSquare,
+            policy: {
+              require: { feature: 'page:conversations', session: true },
+            },
           },
           {
             title: 'Account',

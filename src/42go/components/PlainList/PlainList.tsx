@@ -4,16 +4,19 @@ import { cn } from "@/lib/utils";
 
 type PlainListProps = ComponentPropsWithoutRef<"div"> & {
   flushMobileTop?: boolean;
+  bleedMobile?: boolean;
 };
 
 export const PlainList = ({
   className,
   flushMobileTop = false,
+  bleedMobile = true,
   ...props
 }: PlainListProps) => (
   <div
     className={cn(
-      "-mx-6 divide-y border-y bg-card md:mx-0 md:overflow-hidden md:rounded-lg md:border",
+      "divide-y border-y bg-card md:mx-0 md:overflow-hidden md:rounded-lg md:border",
+      bleedMobile ? "-mx-6" : "mx-0",
       flushMobileTop && "border-t-0 md:border-t",
       className
     )}

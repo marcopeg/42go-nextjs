@@ -6,8 +6,11 @@ import { useSession } from "next-auth/react";
 import { AppLayout } from "@/42go/layouts/app";
 import type { TComponentBlock } from "@/42go/components/ContentBlock/blocks/ComponentBlock";
 import type { Policy } from "@/42go/policy/types";
+import {
+  LanguagePreferencesMenu,
+  type LanguagePreferenceBand,
+} from "@/app/(app)/(lingocafe)/_components/LanguagePreferencesMenu";
 import { BookCard } from "@/app/(app)/(lingocafe)/books/_components/BookCard";
-import { BooksHeaderLanguageFlag } from "@/app/(app)/(lingocafe)/books/_components/BooksHeaderLanguageFlag";
 import { buildBookshelfSections } from "@/app/(app)/(lingocafe)/books/_components/bookshelf";
 import type { ReaderBook } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 import { preloadDeviceSpeechVoices } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/device-speech-provider";
@@ -234,15 +237,22 @@ const BooksPage = () => {
       (option) => option.code === data.profile?.targetLang
     )?.label || data?.profile?.targetLang;
   const showProfileIncomplete = !!data && !data.profile?.isComplete;
+  const preferenceBand: LanguagePreferenceBand =
+    data?.profile?.targetLevel === "a1"
+      ? "beginner"
+      : data?.profile?.targetLevel === "b2"
+        ? "advanced"
+        : "intermediate";
   const headerActions: TComponentBlock[] =
     !showProfileIncomplete && data?.profile?.targetLang
       ? [
           {
             type: "component",
-            component: BooksHeaderLanguageFlag,
+            component: LanguagePreferencesMenu,
             props: {
-              code: data.profile.targetLang,
-              label: targetLabel,
+              targetLanguage: data.profile.targetLang,
+              band: preferenceBand,
+              onSaved: () => void loadBooks(),
             },
           },
         ]
