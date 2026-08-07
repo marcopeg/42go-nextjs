@@ -84,6 +84,11 @@ test("books and conversations share the anchored reader translation popover", as
 
   assert.match(popover, /export const getReaderTranslationAnchor/);
   assert.match(popover, /export const ReaderTranslationPopover/);
+  assert.match(popover, /rounded-md border font-sans backdrop-blur/);
+  assert.match(popover, /fontSize: "1rem"/);
+  assert.match(popover, /fontWeight: 400/);
+  assert.match(popover, /letterSpacing: "normal"/);
+  assert.doesNotMatch(popover, /fontSize: "1em"/);
   assert.match(popover, /data-reader-translation-popover/);
   assert.match(popover, /Start audiobook from here/);
   assert.match(bookReader, /<ReaderTranslationPopover/);

@@ -78,6 +78,19 @@ const CategoryPage = () => {
     ? requestedBand
     : data?.selection.band ?? "intermediate";
   const returnTo = buildBandHref(pathname, band);
+  const conversationChoices = useMemo(
+    () =>
+      data?.scenarios.flatMap((scenario) =>
+        scenario.variants.flatMap((variant) =>
+          [...variant.choices].sort(
+            (a, b) =>
+              ["a1", "a2", "b1", "b2"].indexOf(a.cefrLevel) -
+              ["a1", "a2", "b1", "b2"].indexOf(b.cefrLevel)
+          )
+        )
+      ) ?? [],
+    [data?.scenarios]
+  );
 
   const preferenceSaved = (patch: LanguagePreferencePatch) => {
     if ("targetLevel" in patch) {
@@ -108,6 +121,7 @@ const CategoryPage = () => {
         ? `/conversations/categories/${categoryPath.slice(0, -1).map(encodeURIComponent).join("/")}?${new URLSearchParams({ band })}`
         : buildBandHref("/conversations", band) }}
       stickyHeader
+      flushMobileTop={Boolean(data)}
       containedMobileScroll
       policy={CONVERSATIONS_POLICY}
     >
@@ -117,70 +131,32 @@ const CategoryPage = () => {
 
         {data ? (
           <>
-            {data.category.goal || data.category.description ? (
-            <header className="space-y-2">
-              {data.category.goal ? (
-                <p className="font-medium text-foreground">{data.category.goal}</p>
-              ) : null}
-              {data.category.description ? (
-                <p className="text-sm leading-6 text-muted-foreground">
-                  {data.category.description}
-                </p>
-              ) : null}
-            </header>
-            ) : null}
-
             {data.children.length > 0 ? (
-              <section aria-labelledby="subcategories-heading" className="space-y-3">
-                <h2 id="subcategories-heading" className="text-lg font-semibold">Explore further</h2>
+              <section aria-label="Subcategories">
                 <CategoryList
                   categories={data.children}
+                  flushMobileTop
                   bottomMargin={0}
                   getHref={(child) => `/conversations/categories/${[...categoryPath, child.id].map(encodeURIComponent).join("/")}?${new URLSearchParams({ band })}`}
                 />
               </section>
             ) : null}
 
-            {data.scenarios.length > 0 || data.children.length === 0 ? (
-              <section aria-labelledby="practice-heading" className="space-y-4">
-                <div>
-                  <h2 id="practice-heading" className="text-lg font-semibold">Choose a conversation</h2>
-                  <p className="text-sm text-muted-foreground">Choose the exact level you want to open.</p>
-                </div>
-                {data.scenarios.length === 0 ? (
-                  <ConversationEmpty title="No conversations at this level" description="Try another practice level. Conversations from another language or level are never substituted automatically." />
-                ) : (
-                  <div className="space-y-6">
-                    {data.scenarios.map((scenario) => {
-                      return (
-                      <article key={scenario.id} className="space-y-3">
-                        <h3 className="font-semibold">
-                          {scenario.canonicalTitle ?? scenario.title}
-                        </h3>
-                        {scenario.variants.map((variant) => (
-                          <div key={variant.id} className="space-y-2">
-                            <h4 className="text-sm font-medium text-muted-foreground">
-                              {variant.canonicalTitle ?? variant.title}
-                            </h4>
-                            <PlainList>
-                              {[...variant.choices]
-                                .sort((a, b) => ["a1", "a2", "b1", "b2"].indexOf(a.cefrLevel) - ["a1", "a2", "b1", "b2"].indexOf(b.cefrLevel))
-                                .map((choice) => (
-                                  <PlainListItem key={choice.id}>
-                                    <ConversationChoiceRow
-                                      choice={choice}
-                                      href={buildConversationHref({ id: choice.id, band, returnTo })}
-                                    />
-                                  </PlainListItem>
-                                ))}
-                            </PlainList>
-                          </div>
-                        ))}
-                      </article>
-                    )})}
-                  </div>
-                )}
+            {conversationChoices.length > 0 ? (
+              <section aria-label="Conversations">
+                <PlainList flushMobileTop={data.children.length === 0}>
+                  {conversationChoices.map((choice) => (
+                    <PlainListItem key={choice.id}>
+                      <ConversationChoiceRow
+                        choice={choice}
+                        href={buildConversationHref({ id: choice.id, band, returnTo })}
+                      />
+                    </PlainListItem>
+                  ))}
+                </PlainList>
               </section>
+            ) : data.children.length === 0 ? (
+              <ConversationEmpty title="No conversations at this level" description="Try another practice level. Conversations from another language or level are never substituted automatically." />
             ) : null}
           </>
         ) : null}

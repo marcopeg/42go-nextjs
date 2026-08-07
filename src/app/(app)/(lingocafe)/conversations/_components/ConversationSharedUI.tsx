@@ -75,16 +75,19 @@ export const CategoryList = ({
   categories,
   getHref,
   flush = false,
+  flushMobileTop = false,
   bottomMargin = "30vw",
 }: {
   categories: ConversationCategory[];
   getHref: (category: ConversationCategory) => string;
   flush?: boolean;
+  flushMobileTop?: boolean;
   bottomMargin?: CSSProperties["marginBottom"];
 }) => (
   <>
     <PlainList
       bleedMobile={!flush}
+      flushMobileTop={flushMobileTop}
       className={cn(flush && "border-t-0 md:rounded-none md:border-x-0")}
     >
       {categories.map((category) => (
@@ -135,36 +138,38 @@ export const ConversationChoiceRow = ({
   starPending?: boolean;
 }) => (
   <div className="flex min-w-0 items-stretch">
-    <div className="min-w-0 flex-1 space-y-1 px-5 py-4">
-      <p className="font-medium text-foreground">{choice.title}</p>
-      {choice.description ? (
-        <p className="line-clamp-2 text-sm text-muted-foreground">
-          {choice.description}
-        </p>
-      ) : null}
-      {showContext && (choice.scenarioTitle || choice.variantTitle) ? (
-        <div className="flex min-w-0 flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
-          {choice.scenarioTitle ? (
-            <span>{choice.scenarioTitle}</span>
-          ) : null}
-          {choice.scenarioTitle && choice.variantTitle ? <span aria-hidden="true">·</span> : null}
-          {choice.variantTitle ? (
-            <span>{choice.variantTitle}</span>
-          ) : null}
-        </div>
-      ) : null}
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <ConversationBadge>{choice.language}</ConversationBadge>
-        <ConversationBadge>{choice.cefrLevel}</ConversationBadge>
-        <ConversationState isRead={choice.isRead} />
-      </div>
-    </div>
     <Link
       href={href}
       aria-label={`Open ${choice.title}`}
-      className="my-2 flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className="flex min-w-0 flex-1 items-center outline-none hover:bg-muted/50 focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
-      <ChevronRight aria-hidden="true" className="size-4" />
+      <div className="min-w-0 flex-1 space-y-1 px-5 py-4">
+        <p className="font-medium text-foreground">{choice.title}</p>
+        {choice.description ? (
+          <p className="line-clamp-2 text-sm text-muted-foreground">
+            {choice.description}
+          </p>
+        ) : null}
+        {showContext && (choice.scenarioTitle || choice.variantTitle) ? (
+          <div className="flex min-w-0 flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
+            {choice.scenarioTitle ? (
+              <span>{choice.scenarioTitle}</span>
+            ) : null}
+            {choice.scenarioTitle && choice.variantTitle ? <span aria-hidden="true">·</span> : null}
+            {choice.variantTitle ? (
+              <span>{choice.variantTitle}</span>
+            ) : null}
+          </div>
+        ) : null}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <ConversationBadge>{choice.language}</ConversationBadge>
+          <ConversationBadge>{choice.cefrLevel}</ConversationBadge>
+          <ConversationState isRead={choice.isRead} />
+        </div>
+      </div>
+      <span className="my-2 flex size-11 shrink-0 items-center justify-center text-muted-foreground">
+        <ChevronRight aria-hidden="true" className="size-4" />
+      </span>
     </Link>
     {onStarChange ? (
       <button

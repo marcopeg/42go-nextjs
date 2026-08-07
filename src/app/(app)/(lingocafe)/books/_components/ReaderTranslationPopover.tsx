@@ -184,14 +184,19 @@ export const ReaderTranslationPopover = ({
   return (
     <div
       data-reader-translation-popover
-      className="relative flex flex-col overflow-hidden rounded-md border backdrop-blur"
+      className="relative flex flex-col overflow-hidden rounded-md border font-sans backdrop-blur"
       style={{
         ...getPopoverStyle(state.anchor),
         borderColor: "color-mix(in oklab, var(--reader-popover-border) 55%, var(--primary) 45%)",
         backgroundColor: "color-mix(in oklab, var(--reader-bg) 94%, var(--primary) 6%)",
         color: "var(--reader-fg)",
-        fontSize: "1em",
-        lineHeight: 1.45,
+        fontSize: "1rem",
+        fontStyle: "normal",
+        fontWeight: 400,
+        letterSpacing: "normal",
+        lineHeight: 1.5,
+        textAlign: "left",
+        textTransform: "none",
       }}
     >
       {hasLanguageForm ? (
