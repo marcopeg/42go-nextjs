@@ -60,12 +60,14 @@ test("data access enforces visibility, materialized membership, language scope, 
   assert.match(source, /v\.is_visible/);
   assert.match(source, /s\.is_visible/);
   assert.match(source, /eligible_round\.conversation_id = c\.id/);
-  assert.match(source, /withRecursive\(\s*"descendant_categories"/);
-  assert.match(source, /rootsQuery\.whereExists\(eligibleRootQuery\)/);
-  assert.match(
-    source,
-    /applyEligibleConversation\(\s*eligibleRootQuery,\s*profile\.targetLanguage,\s*levels/
-  );
+  assert.match(source, /conversation_category_availability as availability/);
+  assert.match(source, /availability\.language/);
+  assert.match(source, /availability\.level_key/);
+  assert.match(source, /availability\.conversation_count", ">", 0/);
+  assert.match(source, /availableCount: Number\(row\.conversation_count\)/);
+  assert.doesNotMatch(source, /withRecursive\(\s*"descendant_categories"/);
+  assert.doesNotMatch(source, /eligibleRootQuery/);
+  assert.doesNotMatch(source, /count\s*\(/i);
   assert.match(source, /ANY\(\?\?\.\?\?\)/);
   assert.match(source, /WHEN 'a2' THEN 2 WHEN 'b1' THEN 3/);
   assert.match(source, /Number\(round\.position\) !== index \+ 1/);
@@ -77,6 +79,23 @@ test("data access enforces visibility, materialized membership, language scope, 
     source,
     /trx\("lingocafe\.conversations"\)[\s\S]*?Conversation not found/
   );
+});
+
+test("category rows render precomputed availability without shrinking their tap target", async () => {
+  const [types, sharedUi] = await Promise.all([
+    readSource(
+      "src/app/(app)/(lingocafe)/conversations/_components/types.ts"
+    ),
+    readSource(
+      "src/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI.tsx"
+    ),
+  ]);
+
+  assert.match(types, /availableCount: number/);
+  assert.match(sharedUi, /category\.availableCount/);
+  assert.match(sharedUi, /conversations?" : "conversations"} available/);
+  assert.match(sharedUi, /<ChevronRight/);
+  assert.match(sharedUi, /className="flex min-h-16 w-full/);
 });
 
 test("conversation JSON responses are explicitly non-cacheable", async () => {
@@ -96,10 +115,11 @@ test("reader sessions resolve users inside the active app before email fallback"
   assert.match(source, /\.andWhere\("email", "ilike", sessionEmail\)/);
 });
 
-test("conversation UI preserves localization provenance for every translatable content field", async () => {
-  const [dataSource, sharedUi, categoryPage, detailPage, translationRoute] =
+test("conversation traversal stays English and only detail exposes translation controls", async () => {
+  const [dataSource, discoveryPage, sharedUi, categoryPage, detailPage, translationRoute] =
     await Promise.all([
       readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"),
+      readSource("src/app/(app)/(lingocafe)/conversations/page.tsx"),
       readSource(
         "src/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI.tsx"
       ),
@@ -112,18 +132,40 @@ test("conversation UI preserves localization provenance for every translatable c
       readSource("src/app/api/(lingocafe)/lingocafe/translate/route.ts"),
     ]);
 
-  assert.match(dataSource, /scenarioLocalization: mapLocalization\(/);
-  assert.match(dataSource, /variantLocalization: mapLocalization\(/);
+  assert.ok(
+    (dataSource.match(/function joinEnglishConversation/g) || []).length >= 2,
+    "starred and category lists both join their English conversation sibling"
+  );
+  assert.match(dataSource, /COALESCE\(base\.title, v\.title\) as list_title/);
+  assert.match(dataSource, /COALESCE\(base\.description, v\.description\) as list_description/);
+  assert.match(dataSource, /title: row\.list_title/);
+  assert.match(dataSource, /description: row\.list_description/);
+  assert.match(dataSource, /scenarioTitle: row\.scenario_title/);
+  assert.match(dataSource, /variantTitle: row\.variant_title/);
   assert.match(dataSource, /starred: starred\.map\(mapConversationChoice\)/);
-  assert.match(sharedUi, /text=\{choice\.title\}/);
-  assert.match(sharedUi, /text=\{choice\.description\}/);
-  assert.match(sharedUi, /choice\.scenarioLocalization\?\.language/);
-  assert.match(sharedUi, /choice\.scenarioCanonicalLanguage \?\? "en"/);
-  assert.match(categoryPage, /firstChoice\?\.scenarioLocalization\?\.language/);
-  assert.match(categoryPage, /variant\.choices\[0\]\?\.variantLocalization\?\.language/);
+  assert.match(sharedUi, /<p className="font-medium text-foreground">\{choice\.title\}<\/p>/);
+  assert.match(sharedUi, /bottomMargin = "30vw"/);
+  assert.match(sharedUi, /style=\{\{ height: bottomMargin \}\}/);
+  assert.doesNotMatch(sharedUi, /ConversationTranslatableText/);
+  assert.match(categoryPage, /scenario\.canonicalTitle \?\? scenario\.title/);
+  assert.match(categoryPage, /variant\.canonicalTitle \?\? variant\.title/);
+  assert.match(categoryPage, /data\.scenarios\.length > 0 \|\| data\.children\.length === 0/);
+  assert.doesNotMatch(discoveryPage, /ConversationActionFab|ConversationTranslatableText/);
+  assert.doesNotMatch(categoryPage, /ConversationActionFab|ConversationTranslatableText/);
   assert.match(detailPage, /text=\{data\.conversation\.title\}/);
-  assert.match(detailPage, /data\.scenario\.localization\?\.language \?\? data\.scenario\.canonicalLanguage/);
-  assert.match(detailPage, /data\.variant\.localization\?\.language \?\? data\.variant\.canonicalLanguage/);
+  assert.match(detailPage, /<BookReaderFloatingActionBar/);
+  assert.match(detailPage, /<BookReaderPreferencesPanel/);
+  assert.match(detailPage, /useReaderPreferences/);
+  assert.doesNotMatch(detailPage, /data\.scenario\.canonicalTitle/);
+  assert.doesNotMatch(detailPage, /data\.variant\.canonicalTitle/);
+  assert.doesNotMatch(detailPage, /\{actor\?\.role \?/);
+  assert.doesNotMatch(detailPage, />Turn \{round\.position\}<\/span>/);
+  assert.match(detailPage, /aria-label=\{`Turn \$\{round\.position\}, \$\{actor\?\.name \|\| round\.actorId\}`\}/);
+  assert.match(detailPage, /<ConversationBadge>\{data\.conversation\.language\}<\/ConversationBadge>/);
+  assert.match(detailPage, /<ConversationBadge>\{data\.conversation\.cefrLevel\}<\/ConversationBadge>/);
+  assert.match(detailPage, /<Check className="size-3\.5" \/> Read/);
+  assert.match(detailPage, /absolute inset-x-24 min-w-0 text-center/);
+  assert.doesNotMatch(detailPage, /sticky top-0 z-50/);
   assert.match(translationRoute, /scenario\.canonical_language as scenario_canonical_language/);
   assert.match(translationRoute, /variant\.canonical_language as variant_canonical_language/);
   assert.match(translationRoute, /requestedSourceLanguage: payload\.from/);

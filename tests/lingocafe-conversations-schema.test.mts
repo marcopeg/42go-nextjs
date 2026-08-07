@@ -6,12 +6,14 @@ import test from "node:test";
 const require = createRequire(import.meta.url);
 const migrationPath =
   "knex/migrations/20260806223000_lingocafe_conversations.js";
+const availabilityMigrationPath =
+  "knex/migrations/20260807120000_lingocafe_conversation_category_availability.js";
 const seedPath = "knex/seeds/20260806224000.lingocafe.conversations.js";
 
 const readSource = (path: string) =>
   readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-const contentTables = [
+const foundationContentTables = [
   "conversation_categories",
   "conversation_category_parents",
   "conversation_scenarios",
@@ -23,12 +25,16 @@ const contentTables = [
   "conversations",
   "conversation_rounds",
 ];
+const contentTables = [
+  ...foundationContentTables,
+  "conversation_category_availability",
+];
 
 test("conversation migration creates the normalized model additively", async () => {
   const migration = await readSource(migrationPath);
 
   for (const table of [
-    ...contentTables,
+    ...foundationContentTables,
     "conversation_reads",
     "conversation_stars",
   ]) {
@@ -49,6 +55,36 @@ test("conversation migration creates the normalized model additively", async () 
   assert.match(migration, /conversations_cefr_check/);
   assert.match(migration, /conversation_rounds_position_check/);
   assert.match(migration, /conversation_rounds_text_check/);
+});
+
+test("additive migration stores exact-level and band category availability", async () => {
+  const migration = await readSource(availabilityMigrationPath);
+
+  assert.match(migration, /createTable\("conversation_category_availability"/);
+  assert.match(
+    migration,
+    /table\.primary\(\["category_id", "language", "level_key"\]\)/
+  );
+  assert.match(migration, /conversation_category_availability_level_key_check/);
+  for (const levelKey of [
+    "a1",
+    "a2",
+    "b1",
+    "b2",
+    "beginner",
+    "intermediate",
+    "advanced",
+  ]) {
+    assert.match(migration, new RegExp(`'${levelKey}'`));
+  }
+  assert.match(migration, /conversation_category_availability_count_check/);
+  assert.match(migration, /CHECK \(conversation_count >= 0\)/);
+  assert.match(migration, /idx_lc_conv_cat_availability_selection/);
+  assert.doesNotMatch(migration, /DROP SCHEMA/i);
+  assert.match(
+    migration.slice(migration.indexOf("exports.down")),
+    /dropTable\("conversation_category_availability"\)/
+  );
 });
 
 test("migration enforces scenario-scoped variants, actors, and ordered rounds", async () => {
@@ -115,7 +151,7 @@ test("migration rollback drops only conversation tables in dependency-safe order
   const migration = await readSource(migrationPath);
   const down = migration.slice(migration.indexOf("exports.down"));
   const positions = Object.fromEntries(
-    [...contentTables, "conversation_reads", "conversation_stars"].map(
+    [...foundationContentTables, "conversation_reads", "conversation_stars"].map(
       (table) => [table, down.indexOf(`dropTable("${table}")`)]
     )
   );
@@ -261,6 +297,25 @@ test("development fixture is fixed, complete, and exercises plural category path
     ?.rows.map((row) => row.position);
   assert.deepEqual(actorPositions, [1, 2]);
   assert.deepEqual(roundPositions, [1, 2, 3, 4]);
+
+  const availability = byTable.get(
+    "lingocafe.conversation_category_availability"
+  )?.rows;
+  assert.equal(availability?.length, 105);
+  assert.deepEqual(
+    new Set(availability?.map((row) => row.language)),
+    new Set(["en", "es", "it", "de", "sv"])
+  );
+  assert.ok(
+    availability?.every(
+      (row) =>
+        row.conversation_count ===
+        (row.language === "sv" &&
+        (row.level_key === "a1" || row.level_key === "beginner")
+          ? 1
+          : 0)
+    )
+  );
 
   for (const table of [
     "conversation_categories",

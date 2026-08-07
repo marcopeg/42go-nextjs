@@ -2,18 +2,27 @@
 
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { ChevronLeft, Check, Star } from "lucide-react";
+import { Check, ChevronLeft, Star } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Modal } from "@/42go/components/modal";
 import { useEventTracker } from "@/42go/events/use-events";
 import { AppLayout } from "@/42go/layouts/app";
+import { BookReaderFloatingActionBar } from "@/app/(app)/(lingocafe)/books/_components/BookReaderFloatingActionBar";
 import { BookReaderPlaybackControls } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPlaybackControls";
-import { useReaderPlayback } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/useReaderPlayback";
 import {
-  ConversationActionFab,
+  BookReaderPreferencesPanel,
+  BookReaderPreferencesTrigger,
+} from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
+import {
+  getReaderFont,
+  getReaderFontSize,
+  type ReaderTranslationScope,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
+import { useReaderPlayback } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/useReaderPlayback";
+import { useReaderPreferences } from "@/app/(app)/(lingocafe)/books/_components/useReaderPreferences";
+import {
   ConversationTranslatableText,
-  useConversationTranslationScope,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationTranslation";
 import {
   ConversationBadge,
@@ -69,7 +78,6 @@ const ConversationReaderPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [mutationMessage, setMutationMessage] = useState<string | null>(null);
   const [starPending, setStarPending] = useState(false);
-  const [translationScope, setTranslationScope] = useConversationTranslationScope();
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -137,7 +145,43 @@ const ConversationReaderPage = () => {
     trackEvent,
     restoreLastPlayedSentence: false,
   });
+  const {
+    preferences: readerPreferences,
+    translationScope,
+    readerThemeStyle,
+    canResetPreferences,
+    isOpen: isPreferencesOpen,
+    open: openPreferences,
+    onOpenChange: handlePreferencesOpenChange,
+    updatePreferences,
+    updateTranslationScope,
+    resetPreferences,
+  } = useReaderPreferences({
+    trackEvent,
+    eventContext: data?.conversation.id
+      ? { conversation_id: data.conversation.id }
+      : {},
+    setSettingsSurfaceOpen: playback.setSettingsSurfaceOpen,
+  });
+  const readerFont = getReaderFont(readerPreferences);
+  const readerFontSize = getReaderFontSize(readerPreferences);
+  const titleSize = Math.round(readerFontSize * 1.7);
+  const summarySize = Math.max(14, Math.round(readerFontSize * 0.9));
   const registerPlaybackSentences = playback.registerSentences;
+  const translationPlaybackProps = {
+    pronunciationPlaying:
+      playback.translationPronunciationType === translationScope,
+    onPlaySelection: playback.canPlay
+      ? (text: string, scope: ReaderTranslationScope) => {
+          if (scope === "word") {
+            playback.playWordFromTranslation(text);
+            return;
+          }
+          playback.playSentenceFromTranslation(text);
+        }
+      : undefined,
+    onTranslationOpenChange: playback.setTranslationPaused,
+  };
 
   useEffect(() => {
     registerPlaybackSentences(playbackCatalog);
@@ -187,41 +231,62 @@ const ConversationReaderPage = () => {
         className="!transform-none md:!w-screen md:!max-w-none md:!border-l-0"
         bodyClassName="flex min-h-0 !overflow-hidden p-0"
       >
-        <div className="flex h-[100dvh] min-h-0 w-full flex-col bg-background text-foreground">
-          <header className="relative flex h-16 shrink-0 items-center justify-between gap-3 border-b px-3 md:h-[68px] md:px-8">
+        <div
+          className="flex h-[100dvh] min-h-0 w-full flex-col"
+          style={{
+            ...readerThemeStyle,
+            backgroundColor: "var(--reader-bg)",
+            color: "var(--reader-fg)",
+          }}
+        >
+          <header
+            className="relative flex h-16 shrink-0 items-center justify-between gap-3 border-b px-3 md:h-[68px] md:px-8"
+            style={{ borderColor: "var(--reader-border)" }}
+          >
             <Button variant="neutralGhost" size="icon" asChild>
               <Link href={returnHref} aria-label="Back to conversations"><ChevronLeft className="size-5" /></Link>
             </Button>
-            <div className="pointer-events-none absolute inset-x-16 min-w-0 text-center">
+            <div className="pointer-events-none absolute inset-x-24 min-w-0 text-center">
               <p className="truncate text-sm font-semibold md:text-base">{data?.conversation.title || "Conversation"}</p>
             </div>
-            {data ? (
-              <button
-                type="button"
-                aria-label={data.state.isStarred ? "Unstar conversation" : "Star conversation"}
-                aria-pressed={data.state.isStarred}
-                disabled={starPending}
-                onClick={() => void toggleStar()}
-                className="relative z-10 flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50"
-              >
-                <Star aria-hidden="true" className={cn("size-5", data.state.isStarred && "fill-primary text-primary")} />
-              </button>
-            ) : <span className="size-11" />}
+            <div className="relative z-10 flex items-center gap-1">
+              <BookReaderPreferencesTrigger onClick={openPreferences} />
+              {data ? (
+                <button
+                  type="button"
+                  aria-label={data.state.isStarred ? "Unstar conversation" : "Star conversation"}
+                  aria-pressed={data.state.isStarred}
+                  disabled={starPending}
+                  onClick={() => void toggleStar()}
+                  className="flex size-11 items-center justify-center rounded-md hover:bg-black/10 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50 dark:hover:bg-white/10"
+                  style={{ color: data.state.isStarred ? "var(--primary)" : "var(--reader-fg-muted)" }}
+                >
+                  <Star aria-hidden="true" className={cn("size-5", data.state.isStarred && "fill-current")} />
+                </button>
+              ) : null}
+            </div>
           </header>
 
-          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-6 md:px-8 md:py-12">
-            <main className="mx-auto w-full max-w-[680px] pb-28">
+          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 md:px-8">
+            <main
+              className="mx-auto w-full max-w-[680px] pb-28 pt-10 md:pb-32 md:pt-24"
+              style={{ fontFamily: readerFont.family, fontSize: `${readerFontSize}px` }}
+            >
               {loading && !data ? <ConversationLoading label="Loading conversation…" /> : null}
               {error ? <ConversationError message={error} onRetry={() => void load()} /> : null}
               {mutationMessage ? <div role="status" aria-live="polite" className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">{mutationMessage}</div> : null}
 
               {data ? (
                 <>
-                  <header className="mx-auto mb-10 max-w-xl space-y-4 text-center">
+                  <header className="mb-12 text-center">
                     <div className="flex flex-wrap justify-center gap-2">
                       <ConversationBadge>{data.conversation.language}</ConversationBadge>
                       <ConversationBadge>{data.conversation.cefrLevel}</ConversationBadge>
-                      {data.state.isRead ? <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Check className="size-3.5" /> Read</span> : null}
+                      {data.state.isRead ? (
+                        <span className="inline-flex items-center gap-1 text-xs" style={{ color: "var(--reader-fg-muted)" }}>
+                          <Check className="size-3.5" /> Read
+                        </span>
+                      ) : null}
                     </div>
                     <ConversationTranslatableText
                       text={data.conversation.title}
@@ -231,8 +296,18 @@ const ConversationReaderPage = () => {
                       scope={translationScope}
                       idPrefix={`conversation:${data.conversation.id}:title`}
                       headingLevel={1}
-                      className="text-3xl font-semibold tracking-tight md:text-4xl"
+                      className="mx-auto mt-4 max-w-2xl break-words font-semibold leading-[1.02] tracking-[-0.03em]"
+                      style={{ fontFamily: readerFont.family, fontSize: `${titleSize}px` }}
+                      {...translationPlaybackProps}
                     />
+                    <div
+                      className="mx-auto mt-8 flex w-52 items-center justify-center gap-3"
+                      style={{ color: "var(--reader-fg-muted)" }}
+                    >
+                      <span className="h-px flex-1" style={{ backgroundColor: "var(--reader-border)" }} />
+                      <span className="text-lg leading-none">*</span>
+                      <span className="h-px flex-1" style={{ backgroundColor: "var(--reader-border)" }} />
+                    </div>
                     {data.conversation.description ? (
                       <ConversationTranslatableText
                         text={data.conversation.description}
@@ -241,28 +316,15 @@ const ConversationReaderPage = () => {
                         context={{ kind: "conversation", conversationId: data.conversation.id }}
                         scope={translationScope}
                         idPrefix={`conversation:${data.conversation.id}:description`}
-                        className="text-base leading-7 text-muted-foreground"
+                        className="mx-auto mt-8 max-w-xl break-words italic leading-7"
+                        style={{
+                          color: "var(--reader-fg-muted)",
+                          fontFamily: readerFont.family,
+                          fontSize: `${summarySize}px`,
+                        }}
+                        {...translationPlaybackProps}
                       />
                     ) : null}
-                    <div className="flex flex-wrap justify-center gap-x-1 text-sm text-muted-foreground">
-                      <ConversationTranslatableText
-                        text={data.scenario.localization?.title ?? data.scenario.canonicalTitle}
-                        sourceLanguage={data.scenario.localization?.language ?? data.scenario.canonicalLanguage}
-                        targetLanguage={data.translation.to}
-                        context={{ kind: "conversation", conversationId: data.conversation.id }}
-                        scope={translationScope}
-                        idPrefix={`conversation:${data.conversation.id}:scenario:title`}
-                      />
-                      <span aria-hidden="true">·</span>
-                      <ConversationTranslatableText
-                        text={data.variant.localization?.title ?? data.variant.canonicalTitle}
-                        sourceLanguage={data.variant.localization?.language ?? data.variant.canonicalLanguage}
-                        targetLanguage={data.translation.to}
-                        context={{ kind: "conversation", conversationId: data.conversation.id }}
-                        scope={translationScope}
-                        idPrefix={`conversation:${data.conversation.id}:variant:title`}
-                      />
-                    </div>
                   </header>
 
                   <ol aria-label="Conversation turns" className="space-y-5">
@@ -275,11 +337,15 @@ const ConversationReaderPage = () => {
                           className={cn("flex", roundIndex % 2 === 1 && "justify-end")}
                           aria-label={`Turn ${round.position}, ${actor?.name || round.actorId}`}
                         >
-                          <article className={cn("w-full max-w-[92%] rounded-2xl border bg-card px-4 py-3 shadow-sm md:max-w-[85%]", active && "border-primary bg-primary/5")}>
-                            <header className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                          <article
+                            className={cn("w-full max-w-[92%] rounded-2xl border px-4 py-3 shadow-sm md:max-w-[85%]", active && "border-primary")}
+                            style={{
+                              borderColor: active ? "var(--primary)" : "var(--reader-border)",
+                              backgroundColor: active ? "var(--reader-hover-bg)" : "var(--reader-fg-soft)",
+                            }}
+                          >
+                            <header className="mb-2">
                               <h2 className="text-sm font-semibold">{actor?.name || round.actorId}</h2>
-                              {actor?.role ? <span className="text-xs text-muted-foreground">{actor.role}</span> : null}
-                              <span className="ml-auto text-[11px] text-muted-foreground">Turn {round.position}</span>
                             </header>
                             <ConversationTranslatableText
                               text={round.text}
@@ -290,7 +356,11 @@ const ConversationReaderPage = () => {
                               idPrefix={`conversation:${data.conversation.id}:round:${round.position}`}
                               activeSentenceId={playback.activeSentenceId}
                               activeWordRange={playback.activeWordRange}
-                              className="text-[17px] leading-7"
+                              className="leading-7"
+                              onStartFromHere={playback.canPlay
+                                ? playback.startAudiobookFromTranslation
+                                : undefined}
+                              {...translationPlaybackProps}
                             />
                           </article>
                         </li>
@@ -305,17 +375,27 @@ const ConversationReaderPage = () => {
             </main>
           </div>
 
-          {!playback.isOpen && data && (data.translation.enabled || playback.canPlay) ? (
-            <ConversationActionFab
-              scope={translationScope}
-              onScopeChange={setTranslationScope}
-              canPlay={playback.canPlay}
+          {data ? (
+            <BookReaderFloatingActionBar
+              playback={playback}
               translationAvailable={data.translation.enabled}
-              onPlay={() => playback.start(true)}
-              immersive
+              translationScope={translationScope}
+              onTranslationScopeChange={updateTranslationScope}
+              readerThemeStyle={readerThemeStyle}
             />
           ) : null}
           <BookReaderPlaybackControls playback={playback} />
+          <BookReaderPreferencesPanel
+            open={isPreferencesOpen}
+            onOpenChange={handlePreferencesOpenChange}
+            preferences={readerPreferences}
+            onPreferencesChange={updatePreferences}
+            translationScope={translationScope}
+            onTranslationScopeChange={updateTranslationScope}
+            canResetPreferences={canResetPreferences}
+            onResetPreferences={resetPreferences}
+            playback={playback}
+          />
         </div>
       </Modal>
     </AppLayout>

@@ -1,13 +1,19 @@
 "use client";
 
-import { Languages, X } from "lucide-react";
+import { Languages } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
 import {
   readCachedReaderTranslation,
   writeCachedReaderTranslation,
+  type ReaderTranslationCacheEntry,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-translation-cache";
+import {
+  getReaderTranslationAnchor,
+  ReaderTranslationPopover,
+  type ReaderTranslationAnchor,
+} from "@/app/(app)/(lingocafe)/books/_components/ReaderTranslationPopover";
 import {
   DEFAULT_READER_TRANSLATION_SCOPE,
   READER_TRANSLATION_SCOPE_EVENT,
@@ -24,7 +30,14 @@ type TranslationContext =
   | { kind: "conversation"; conversationId: string }
   | { kind: "category"; categoryId: string };
 
-type Selection = { id: string; sentenceId: string; text: string };
+type Selection = {
+  id: string;
+  sentenceId: string;
+  text: string;
+  anchor: ReaderTranslationAnchor;
+};
+
+const conversationTranslationOpenEvent = "lingocafe:conversation-translation-open";
 
 export const useConversationTranslationScope = () => {
   const [scope, setScope] = useState<ReaderTranslationScope>(
@@ -119,6 +132,16 @@ const inlineMarkdownComponents = {
   a: ({ children }: { children?: React.ReactNode }) => <span className="underline">{children}</span>,
 };
 
+const getTranslationSelectionStyle = (selected: boolean): CSSProperties => ({
+  backgroundColor: selected ? "var(--reader-fg-soft)" : undefined,
+  color: selected ? "var(--reader-highlight-fg)" : undefined,
+  boxShadow: selected
+    ? "inset 0 0 0 9999px var(--reader-fg-soft)"
+    : undefined,
+  position: selected ? "relative" : undefined,
+  zIndex: selected ? 50 : undefined,
+});
+
 export const ConversationTranslatableText = ({
   text,
   sourceLanguage,
@@ -129,8 +152,13 @@ export const ConversationTranslatableText = ({
   activeSentenceId,
   activeWordRange,
   onSentenceCatalog,
+  pronunciationPlaying = false,
+  onPlaySelection,
+  onStartFromHere,
+  onTranslationOpenChange,
   headingLevel,
   className,
+  style,
 }: {
   text: string;
   sourceLanguage: string;
@@ -141,25 +169,58 @@ export const ConversationTranslatableText = ({
   activeSentenceId?: string | null;
   activeWordRange?: { start: number; end: number } | null;
   onSentenceCatalog?: (items: Array<{ id: string; text: string }>) => void;
+  pronunciationPlaying?: boolean;
+  onPlaySelection?: (text: string, scope: ReaderTranslationScope) => void;
+  onStartFromHere?: (sentenceId: string) => void;
+  onTranslationOpenChange?: (isOpen: boolean) => void;
   headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
   className?: string;
+  style?: CSSProperties;
 }) => {
   const sentences = splitLingoCafeSentences(text).filter((item) => item.trim());
   const [selection, setSelection] = useState<Selection | null>(null);
   const [translation, setTranslation] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
-  const selectionTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const translationStatusId = `${idPrefix}:translation-status`;
+  const [translationSource, setTranslationSource] =
+    useState<ReaderTranslationCacheEntry["source"] | null>(null);
+  const selectionTriggerRef = useRef<HTMLElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const reportedOpenRef = useRef(false);
 
   const closeTranslation = useCallback((restoreFocus = true) => {
     const trigger = selectionTriggerRef.current;
     setSelection(null);
     setTranslation(null);
+    setTranslationSource(null);
     setStatus("idle");
     if (restoreFocus) {
       queueMicrotask(() => trigger?.focus());
     }
   }, []);
+
+  useEffect(() => {
+    const isOpen = selection !== null;
+    if (isOpen === reportedOpenRef.current) return;
+    reportedOpenRef.current = isOpen;
+    onTranslationOpenChange?.(isOpen);
+  }, [onTranslationOpenChange, selection]);
+
+  useEffect(() => () => {
+    if (reportedOpenRef.current) onTranslationOpenChange?.(false);
+  }, [onTranslationOpenChange]);
+
+  useEffect(() => {
+    const closeOtherTranslation = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== idPrefix) {
+        closeTranslation(false);
+      }
+    };
+    window.addEventListener(conversationTranslationOpenEvent, closeOtherTranslation);
+    return () => window.removeEventListener(
+      conversationTranslationOpenEvent,
+      closeOtherTranslation
+    );
+  }, [closeTranslation, idPrefix]);
 
   useEffect(() => {
     if (!selection) return;
@@ -170,6 +231,37 @@ export const ConversationTranslatableText = ({
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [closeTranslation, selection]);
+
+  useEffect(() => {
+    if (!selection) return;
+    const syncAnchor = () => {
+      const container = containerRef.current;
+      const trigger = selectionTriggerRef.current;
+      if (!container || !trigger) return;
+      const anchor = getReaderTranslationAnchor(trigger, container);
+      setSelection((current) => current?.id === selection.id
+        ? { ...current, anchor }
+        : current);
+    };
+    window.addEventListener("resize", syncAnchor);
+    return () => window.removeEventListener("resize", syncAnchor);
+  }, [selection]);
+
+  useEffect(() => {
+    if (!selection) return;
+    const closeOnOutsidePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest("[data-reader-translation-id], [data-reader-translation-popover]")
+      ) {
+        return;
+      }
+      closeTranslation(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointerDown);
+    return () => document.removeEventListener("pointerdown", closeOnOutsidePointerDown);
   }, [closeTranslation, selection]);
 
   useEffect(() => {
@@ -184,23 +276,32 @@ export const ConversationTranslatableText = ({
   }, [idPrefix, text]);
 
   const translate = async (
-    next: Selection,
-    trigger: HTMLButtonElement
+    next: Omit<Selection, "anchor">,
+    trigger: HTMLElement
   ) => {
     if (!targetLanguage || sourceLanguage === targetLanguage) return;
     if (selection?.id === next.id) {
       closeTranslation(false);
       return;
     }
+    if (!containerRef.current) return;
     selectionTriggerRef.current = trigger;
-    setSelection(next);
+    setSelection({
+      ...next,
+      anchor: getReaderTranslationAnchor(trigger, containerRef.current),
+    });
+    window.dispatchEvent(new CustomEvent(conversationTranslationOpenEvent, {
+      detail: idPrefix,
+    }));
     setTranslation(null);
+    setTranslationSource(null);
     setStatus("loading");
     const input = { text: next.text, from: sourceLanguage, to: targetLanguage };
     try {
       const cached = await readCachedReaderTranslation(input);
       if (cached) {
         setTranslation(cached.translation);
+        setTranslationSource(cached.source);
         setStatus("idle");
         return;
       }
@@ -233,6 +334,7 @@ export const ConversationTranslatableText = ({
       }
       writeCachedReaderTranslation(payload.translation);
       setTranslation(payload.translation.translation);
+      setTranslationSource(payload.translation.source);
       setStatus("idle");
     } catch {
       setStatus("error");
@@ -259,70 +361,91 @@ export const ConversationTranslatableText = ({
           data-reader-sentence-id={sentenceId}
           className={cn("rounded-sm", active && "bg-primary/15")}
         >
-          {playbackText ?? sentence.split(/(\p{L}[\p{L}\p{M}'’\-]*|\p{N}+)/gu).map((part, wordIndex) =>
-            /^(\p{L}|\p{N})/u.test(part) ? (
-              <button
-                key={`${sentenceId}:word:${wordIndex}`}
-                type="button"
-                aria-controls={selection?.id === `${sentenceId}:word:${wordIndex}` ? translationStatusId : undefined}
-                aria-expanded={selection?.id === `${sentenceId}:word:${wordIndex}`}
-                onClick={(event) => void translate({ id: `${sentenceId}:word:${wordIndex}`, sentenceId, text: part }, event.currentTarget)}
-                className="rounded-[3px] text-left outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring"
-              >{part}</button>
-            ) : part
-          )}
+          {playbackText ?? sentence.split(/(\p{L}[\p{L}\p{M}'’\-]*|\p{N}+)/gu).map((part, wordIndex) => {
+            if (!/^(\p{L}|\p{N})/u.test(part)) return part;
+            const wordId = `${sentenceId}:word:${wordIndex}`;
+            const selected = selection?.id === wordId;
+            return (
+              <span
+                key={wordId}
+                role="button"
+                tabIndex={0}
+                data-reader-translation-id={wordId}
+                aria-pressed={selected}
+                onClick={(event) => void translate({ id: wordId, sentenceId, text: part }, event.currentTarget)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  event.preventDefault();
+                  void translate({ id: wordId, sentenceId, text: part }, event.currentTarget);
+                }}
+                className="rounded-[3px] text-left outline-none transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:ring-2 focus-visible:ring-ring/60"
+                style={getTranslationSelectionStyle(selected)}
+              >{part}</span>
+            );
+          })}
         </span>
       );
     }
     return (
-      <button
+      <span
         key={sentenceId}
-        type="button"
+        role="button"
+        tabIndex={0}
         data-reader-sentence-id={sentenceId}
-        aria-controls={selection?.id === sentenceId ? translationStatusId : undefined}
-        aria-expanded={selection?.id === sentenceId}
+        data-reader-translation-id={sentenceId}
+        aria-pressed={selection?.id === sentenceId}
         onClick={(event) => void translate({ id: sentenceId, sentenceId, text: sentence.trim() }, event.currentTarget)}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          void translate({ id: sentenceId, sentenceId, text: sentence.trim() }, event.currentTarget);
+        }}
         className={cn(
-          "rounded-[3px] text-left outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring",
+          "rounded-[3px] text-left outline-none transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:ring-2 focus-visible:ring-ring/60",
           active && "bg-primary/15"
         )}
+        style={getTranslationSelectionStyle(selection?.id === sentenceId)}
       >
         {playbackText ?? <ReactMarkdown components={inlineMarkdownComponents}>{sentence}</ReactMarkdown>}
-      </button>
+      </span>
     );
   };
 
   return (
-    <div className={cn("relative", className)}>
+    <div ref={containerRef} className={cn("relative", className)} style={style}>
       <div
         role={headingLevel ? "heading" : undefined}
         aria-level={headingLevel}
       >
-        {sentences.map(renderSentence)}
+        {sentences.map((sentence, sentenceIndex) =>
+          renderSentence(sentence, sentenceIndex)
+        )}
       </div>
       {selection ? (
-        <div
-          className="mt-2 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground shadow-lg"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">{selection.text}</p>
-              <div
-                id={translationStatusId}
-                role="status"
-                aria-live="polite"
-                aria-atomic="true"
-              >
-                <p className="mt-1 font-medium">
-                  {status === "loading" ? "Translating…" : status === "error" ? "Could not translate. Select the text again to retry." : translation}
-                </p>
-              </div>
-            </div>
-            <button type="button" aria-label="Close translation" onClick={() => closeTranslation()} className="flex size-9 shrink-0 items-center justify-center rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <X aria-hidden="true" className="size-4" />
-            </button>
-          </div>
-        </div>
+        <ReaderTranslationPopover
+          state={{
+            anchor: selection.anchor,
+            status: status === "idle" ? "success" : status,
+            translation,
+            source: translationSource,
+            error: status === "error"
+              ? "Could not translate. Select the text again to retry."
+              : null,
+          }}
+          scope={scope}
+          canListen={Boolean(onPlaySelection)}
+          pronunciationPlaying={pronunciationPlaying}
+          onDismiss={() => closeTranslation()}
+          onPlaySelection={onPlaySelection
+            ? () => onPlaySelection(selection.text, scope)
+            : undefined}
+          onStartAudiobook={onStartFromHere
+            ? () => {
+                onStartFromHere(selection.sentenceId);
+                closeTranslation(false);
+              }
+            : undefined}
+        />
       ) : null}
     </div>
   );

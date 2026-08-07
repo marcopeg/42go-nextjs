@@ -169,6 +169,7 @@ type CategoryRow = {
   title: string;
   description: string;
   goal: string;
+  conversation_count: number | string;
 };
 
 const mapCategory = (row: CategoryRow) => ({
@@ -176,7 +177,22 @@ const mapCategory = (row: CategoryRow) => ({
   title: row.title,
   description: row.description,
   goal: row.goal,
+  availableCount: Number(row.conversation_count),
 });
+
+const joinCategoryAvailability = (
+  query: Knex.QueryBuilder,
+  language: string,
+  levelKey: ConversationBand
+) =>
+  query.join(
+    "lingocafe.conversation_category_availability as availability",
+    function joinAvailability() {
+      this.on("availability.category_id", "=", "category.id")
+        .andOnVal("availability.language", "=", language)
+        .andOnVal("availability.level_key", "=", levelKey);
+    }
+  );
 
 type ConversationSummaryRow = {
   id: string;
@@ -254,51 +270,31 @@ export const loadConversationDiscovery = async ({
   const db = getDB();
 
   const rootsQuery = db("lingocafe.conversation_categories as category")
-    .select("category.id", "category.title", "category.description", "category.goal")
+    .select(
+      "category.id",
+      "category.title",
+      "category.description",
+      "category.goal",
+      "availability.conversation_count"
+    )
     .where("category.is_visible", true)
+    .andWhere("availability.conversation_count", ">", 0)
     .whereNotExists(function rootHasNoParent() {
       this.select(db.raw("1"))
         .from("lingocafe.conversation_category_parents as parent_edge")
         .whereRaw("parent_edge.category_id = category.id");
     })
     .orderBy([{ column: "category.title", order: "asc" }, { column: "category.id", order: "asc" }]);
+  joinCategoryAvailability(rootsQuery, profile.targetLanguage, band);
   applyLanguageScope(rootsQuery, "category", profile.targetLanguage);
 
-  const eligibleRootQuery = conversationChain(db)
-    .join(
-      "lingocafe.conversation_category_scenarios as membership",
-      "membership.scenario_id",
-      "s.id"
-    )
-    .select(db.raw("1"))
-    .whereIn("membership.category_id", function descendantCategoryIds() {
-      this.withRecursive(
-        "descendant_categories",
-        ["id"],
-        (descendants) => {
-          descendants.union([
-            db.select(db.raw("category.id")),
-            db("lingocafe.conversation_category_parents as descendant_edge")
-              .select("descendant_edge.category_id")
-              .join(
-                "descendant_categories as descendant",
-                "descendant.id",
-                "descendant_edge.parent_category_id"
-              ),
-          ]);
-        }
-      )
-        .select("id")
-        .from("descendant_categories");
-    });
-  applyEligibleConversation(
-    eligibleRootQuery,
-    profile.targetLanguage,
-    levels
-  );
-  rootsQuery.whereExists(eligibleRootQuery);
-
   const starsQuery = conversationChain(db)
+    .leftJoin("lingocafe.conversations as base", function joinEnglishConversation() {
+      this.on("base.scenario_id", "=", "c.scenario_id")
+        .andOn("base.variant_id", "=", "c.variant_id")
+        .andOn("base.cefr_level", "=", "c.cefr_level")
+        .andOnVal("base.language", "=", "en");
+    })
     .join("lingocafe.conversation_stars as star", function joinStar() {
       this.on("star.conversation_id", "=", "c.id").andOnVal(
         "star.user_id",
@@ -326,6 +322,8 @@ export const loadConversationDiscovery = async ({
     })
     .select(
       "c.id",
+      db.raw("COALESCE(base.title, v.title) as list_title"),
+      db.raw("COALESCE(base.description, v.description) as list_description"),
       "c.title",
       "c.description",
       "c.language",
@@ -369,6 +367,8 @@ export const loadConversationDiscovery = async ({
 };
 
 type CategoryConversationRow = ConversationSummaryRow & {
+  list_title: string;
+  list_description: string;
   scenario_id: string;
   scenario_title: string;
   scenario_description: string;
@@ -396,10 +396,11 @@ const mapLocalization = (
 
 const mapConversationChoice = (row: CategoryConversationRow) => ({
   ...mapConversationSummary(row),
+  title: row.list_title,
+  description: row.list_description,
   scenarioId: row.scenario_id,
-  scenarioTitle: row.scenario_localized_title ?? row.scenario_title,
-  scenarioDescription:
-    row.scenario_localized_description ?? row.scenario_description,
+  scenarioTitle: row.scenario_title,
+  scenarioDescription: row.scenario_description,
   scenarioCanonicalLanguage: row.scenario_canonical_language,
   scenarioLocalization: mapLocalization(
     row.scenario_localized_title,
@@ -408,9 +409,8 @@ const mapConversationChoice = (row: CategoryConversationRow) => ({
     row.cefr_level
   ),
   variantId: row.variant_id,
-  variantTitle: row.variant_localized_title ?? row.variant_title,
-  variantDescription:
-    row.variant_localized_description ?? row.variant_description,
+  variantTitle: row.variant_title,
+  variantDescription: row.variant_description,
   variantCanonicalLanguage: row.variant_canonical_language,
   variantLocalization: mapLocalization(
     row.variant_localized_title,
@@ -511,9 +511,16 @@ export const loadConversationCategory = async ({
   const db = getDB();
 
   const pathQuery = db("lingocafe.conversation_categories as category")
-    .select("category.id", "category.title", "category.description", "category.goal")
+    .select(
+      "category.id",
+      "category.title",
+      "category.description",
+      "category.goal",
+      "availability.conversation_count"
+    )
     .whereIn("category.id", pathIds)
     .andWhere("category.is_visible", true);
+  joinCategoryAvailability(pathQuery, profile.targetLanguage, band);
   applyLanguageScope(pathQuery, "category", profile.targetLanguage);
   const pathRows = (await pathQuery) as CategoryRow[];
   const byId = new Map(pathRows.map((row) => [row.id, row]));
@@ -557,13 +564,27 @@ export const loadConversationCategory = async ({
       "category.id",
       "edge.category_id"
     )
-    .select("category.id", "category.title", "category.description", "category.goal")
+    .select(
+      "category.id",
+      "category.title",
+      "category.description",
+      "category.goal",
+      "availability.conversation_count"
+    )
     .where("edge.parent_category_id", categoryId)
     .andWhere("category.is_visible", true)
+    .andWhere("availability.conversation_count", ">", 0)
     .orderBy([{ column: "category.title", order: "asc" }, { column: "category.id", order: "asc" }]);
+  joinCategoryAvailability(childrenQuery, profile.targetLanguage, band);
   applyLanguageScope(childrenQuery, "category", profile.targetLanguage);
 
   const choicesQuery = conversationChain(db)
+    .leftJoin("lingocafe.conversations as base", function joinEnglishConversation() {
+      this.on("base.scenario_id", "=", "c.scenario_id")
+        .andOn("base.variant_id", "=", "c.variant_id")
+        .andOn("base.cefr_level", "=", "c.cefr_level")
+        .andOnVal("base.language", "=", "en");
+    })
     .join(
       "lingocafe.conversation_category_scenarios as membership",
       "membership.scenario_id",
@@ -588,6 +609,8 @@ export const loadConversationCategory = async ({
     })
     .select(
       "c.id", "c.title", "c.description", "c.language", "c.cefr_level",
+      db.raw("COALESCE(base.title, v.title) as list_title"),
+      db.raw("COALESCE(base.description, v.description) as list_description"),
       "reader_state.read_at", "star.starred_at",
       "s.id as scenario_id", "s.title as scenario_title",
       "s.description as scenario_description", "s.learner_promise",

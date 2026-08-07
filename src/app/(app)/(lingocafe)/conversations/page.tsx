@@ -20,10 +20,6 @@ import {
   ConversationLoading,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
 import {
-  ConversationActionFab,
-  useConversationTranslationScope,
-} from "@/app/(app)/(lingocafe)/conversations/_components/ConversationTranslation";
-import {
   CONVERSATIONS_POLICY,
   buildBandHref,
   buildConversationHref,
@@ -43,7 +39,6 @@ const ConversationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [starPendingId, setStarPendingId] = useState<string | null>(null);
-  const [translationScope, setTranslationScope] = useConversationTranslationScope();
 
   const apiHref = useMemo(() => {
     const query = new URLSearchParams();
@@ -180,8 +175,6 @@ const ConversationsPage = () => {
                       <ConversationChoiceRow
                         choice={choice}
                         href={buildConversationHref({ id: choice.id, band, returnTo: currentHref })}
-                        targetLanguage={data.profile.ownLanguage}
-                        scope={translationScope}
                         showContext
                         onStarChange={toggleStar}
                         starPending={starPendingId === choice.id}
@@ -208,10 +201,6 @@ const ConversationsPage = () => {
                 />
               )}
             </section>
-            <ConversationActionFab
-              scope={translationScope}
-              onScopeChange={setTranslationScope}
-            />
           </>
         ) : null}
       </div>

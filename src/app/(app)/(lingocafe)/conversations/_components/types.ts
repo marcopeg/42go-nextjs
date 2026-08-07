@@ -41,6 +41,7 @@ export type ConversationCategory = {
   title: string;
   description: string;
   goal: string;
+  availableCount: number;
 };
 
 export type ConversationPathItem = ConversationCategory;

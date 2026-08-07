@@ -17,11 +17,6 @@ import {
   ConversationLoading,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
 import {
-  ConversationActionFab,
-  ConversationTranslatableText,
-  useConversationTranslationScope,
-} from "@/app/(app)/(lingocafe)/conversations/_components/ConversationTranslation";
-import {
   CONVERSATIONS_POLICY,
   buildBandHref,
   buildConversationHref,
@@ -40,7 +35,6 @@ const CategoryPage = () => {
   const [data, setData] = useState<ConversationCategoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [translationScope, setTranslationScope] = useConversationTranslationScope();
   const categoryPath = useMemo(
     () => (Array.isArray(params.categoryPath) ? params.categoryPath : []),
     [params.categoryPath]
@@ -125,26 +119,12 @@ const CategoryPage = () => {
             {data.category.goal || data.category.description ? (
             <header className="space-y-2">
               {data.category.goal ? (
-                <ConversationTranslatableText
-                  text={data.category.goal}
-                  sourceLanguage="en"
-                  targetLanguage={data.profile.ownLanguage}
-                  context={{ kind: "category", categoryId: data.category.id }}
-                  scope={translationScope}
-                  idPrefix={`category:${data.category.id}:goal`}
-                  className="font-medium text-foreground"
-                />
+                <p className="font-medium text-foreground">{data.category.goal}</p>
               ) : null}
               {data.category.description ? (
-                <ConversationTranslatableText
-                  text={data.category.description}
-                  sourceLanguage="en"
-                  targetLanguage={data.profile.ownLanguage}
-                  context={{ kind: "category", categoryId: data.category.id }}
-                  scope={translationScope}
-                  idPrefix={`category:${data.category.id}:description`}
-                  className="text-sm leading-6 text-muted-foreground"
-                />
+                <p className="text-sm leading-6 text-muted-foreground">
+                  {data.category.description}
+                </p>
               ) : null}
             </header>
             ) : null}
@@ -154,76 +134,53 @@ const CategoryPage = () => {
                 <h2 id="subcategories-heading" className="text-lg font-semibold">Explore further</h2>
                 <CategoryList
                   categories={data.children}
+                  bottomMargin={0}
                   getHref={(child) => `/conversations/categories/${[...categoryPath, child.id].map(encodeURIComponent).join("/")}?${new URLSearchParams({ band })}`}
                 />
               </section>
             ) : null}
 
-            <section aria-labelledby="practice-heading" className="space-y-4">
-              <div>
-                <h2 id="practice-heading" className="text-lg font-semibold">Choose a conversation</h2>
-                <p className="text-sm text-muted-foreground">Choose the exact level you want to open.</p>
-              </div>
-              {data.scenarios.length === 0 ? (
-                <ConversationEmpty title="No conversations at this level" description="Try another practice level. Conversations from another language or level are never substituted automatically." />
-              ) : (
-                <div className="space-y-6">
-                  {data.scenarios.map((scenario) => {
-                    const firstChoice = scenario.variants.flatMap((variant) => variant.choices)[0];
-                    const scenarioTitle = firstChoice?.scenarioTitle ?? scenario.canonicalTitle ?? scenario.title;
-                    const scenarioSource = firstChoice?.scenarioLocalization?.language
-                      ?? firstChoice?.scenarioCanonicalLanguage
-                      ?? scenario.canonicalLanguage
-                      ?? "en";
-                    return (
-                    <article key={scenario.id} className="space-y-3">
-                      <ConversationTranslatableText
-                        text={scenarioTitle}
-                        sourceLanguage={scenarioSource}
-                        targetLanguage={data.profile.ownLanguage}
-                        context={{ kind: "conversation", conversationId: firstChoice.id }}
-                        scope={translationScope}
-                        idPrefix={`scenario:${scenario.id}:title`}
-                        headingLevel={3}
-                        className="font-semibold"
-                      />
-                      {scenario.variants.map((variant) => (
-                        <div key={variant.id} className="space-y-2">
-                          <ConversationTranslatableText
-                            text={variant.choices[0]?.variantTitle || variant.title}
-                            sourceLanguage={variant.choices[0]?.variantLocalization?.language
-                              ?? variant.choices[0]?.variantCanonicalLanguage
-                              ?? variant.canonicalLanguage
-                              ?? "en"}
-                            targetLanguage={data.profile.ownLanguage}
-                            context={{ kind: "conversation", conversationId: variant.choices[0].id }}
-                            scope={translationScope}
-                            idPrefix={`scenario:${scenario.id}:variant:${variant.id}:title`}
-                            headingLevel={4}
-                            className="text-sm font-medium text-muted-foreground"
-                          />
-                          <PlainList>
-                            {[...variant.choices]
-                              .sort((a, b) => ["a1", "a2", "b1", "b2"].indexOf(a.cefrLevel) - ["a1", "a2", "b1", "b2"].indexOf(b.cefrLevel))
-                              .map((choice) => (
-                                <PlainListItem key={choice.id}>
-                                  <ConversationChoiceRow
-                                    choice={choice}
-                                    href={buildConversationHref({ id: choice.id, band, returnTo })}
-                                    targetLanguage={data.profile.ownLanguage}
-                                    scope={translationScope}
-                                  />
-                                </PlainListItem>
-                              ))}
-                          </PlainList>
-                        </div>
-                      ))}
-                    </article>
-                  )})}
+            {data.scenarios.length > 0 || data.children.length === 0 ? (
+              <section aria-labelledby="practice-heading" className="space-y-4">
+                <div>
+                  <h2 id="practice-heading" className="text-lg font-semibold">Choose a conversation</h2>
+                  <p className="text-sm text-muted-foreground">Choose the exact level you want to open.</p>
                 </div>
-              )}
-            </section>
-            <ConversationActionFab scope={translationScope} onScopeChange={setTranslationScope} />
+                {data.scenarios.length === 0 ? (
+                  <ConversationEmpty title="No conversations at this level" description="Try another practice level. Conversations from another language or level are never substituted automatically." />
+                ) : (
+                  <div className="space-y-6">
+                    {data.scenarios.map((scenario) => {
+                      return (
+                      <article key={scenario.id} className="space-y-3">
+                        <h3 className="font-semibold">
+                          {scenario.canonicalTitle ?? scenario.title}
+                        </h3>
+                        {scenario.variants.map((variant) => (
+                          <div key={variant.id} className="space-y-2">
+                            <h4 className="text-sm font-medium text-muted-foreground">
+                              {variant.canonicalTitle ?? variant.title}
+                            </h4>
+                            <PlainList>
+                              {[...variant.choices]
+                                .sort((a, b) => ["a1", "a2", "b1", "b2"].indexOf(a.cefrLevel) - ["a1", "a2", "b1", "b2"].indexOf(b.cefrLevel))
+                                .map((choice) => (
+                                  <PlainListItem key={choice.id}>
+                                    <ConversationChoiceRow
+                                      choice={choice}
+                                      href={buildConversationHref({ id: choice.id, band, returnTo })}
+                                    />
+                                  </PlainListItem>
+                                ))}
+                            </PlainList>
+                          </div>
+                        ))}
+                      </article>
+                    )})}
+                  </div>
+                )}
+              </section>
+            ) : null}
           </>
         ) : null}
       </div>

@@ -292,5 +292,37 @@ exports.seed = async function seed(knex) {
       ],
       ["conversation_id", "position"]
     );
+
+    const fixtureLanguages = ["en", "es", "it", "de", "sv"];
+    const availabilityLevelKeys = [
+      "a1",
+      "a2",
+      "b1",
+      "b2",
+      "beginner",
+      "intermediate",
+      "advanced",
+    ];
+    await upsert(
+      trx,
+      "conversation_category_availability",
+      ["fixture-everyday-life", "fixture-social-life", "fixture-cafe-visits"].flatMap(
+        (categoryId) =>
+          fixtureLanguages.flatMap((language) =>
+            availabilityLevelKeys.map((levelKey) => ({
+              category_id: categoryId,
+              language,
+              level_key: levelKey,
+              conversation_count:
+                language === "sv" &&
+                (levelKey === "a1" || levelKey === "beginner")
+                  ? 1
+                  : 0,
+              updated_at: FIXTURE_TIMESTAMP,
+            }))
+          )
+      ),
+      ["category_id", "language", "level_key"]
+    );
   });
 };

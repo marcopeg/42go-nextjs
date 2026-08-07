@@ -11,7 +11,9 @@ source of truth. Importers must evaluate that history rather than copying this
 document or one create migration as executable DDL. This document explains the
 accumulated model and the safe publication protocol. The additive foundation
 described here is migration
-`20260806223000_lingocafe_conversations.js`.
+`20260806223000_lingocafe_conversations.js`, with export-time category
+availability added by
+`20260807120000_lingocafe_conversation_category_availability.js`.
 
 All conversation tables are in the PostgreSQL `lingocafe` schema. PostgreSQL is
 the only supported target.
@@ -25,6 +27,7 @@ Content publication owns these tables:
 - `conversation_scenarios`
 - `conversation_scenario_localizations`
 - `conversation_category_scenarios`
+- `conversation_category_availability`
 - `conversation_scenario_actors`
 - `conversation_variants`
 - `conversation_variant_localizations`
@@ -152,6 +155,38 @@ they never evaluate YAML tag queries.
 
 `(category_id, scenario_id)` is the primary key. Both foreign keys cascade on
 content deletion. A scenario lookup index supports reverse inspection.
+
+### `lingocafe.conversation_category_availability`
+
+Export-time materialized availability for category navigation. Runtime APIs
+read this table directly; they do not recursively traverse the category graph
+or aggregate eligible conversations to render category badges.
+
+| Column | Meaning |
+| --- | --- |
+| `category_id` | Category whose self-and-descendant availability was measured. |
+| `language` | Exact normalized conversation language. |
+| `level_key` | Exact CEFR (`a1`, `a2`, `b1`, `b2`) or UI band (`beginner`, `intermediate`, `advanced`). |
+| `conversation_count` | Count of distinct exported, runtime-visible exact conversations. |
+| `updated_at` | Time this materialized value was last published. |
+
+`(category_id, language, level_key)` is the primary key. Category deletion
+cascades. Counts are non-negative, and the selection index on
+`(language, level_key, category_id)` supports category discovery.
+
+The publisher emits the complete category × supported-language matrix for all
+seven level keys, including rows whose count is zero. Exact CEFR values are the
+canonical counts. Band rows are derived before publication: `beginner` is A1,
+`intermediate` is A2 plus B1, and `advanced` is B2. The application therefore
+never aggregates counts while serving a request.
+
+For every category, a count includes distinct eligible conversations attached
+to that category or to any descendant reached through visible,
+language-applicable category paths. A conversation reached through multiple
+paths in the category DAG is counted once. Here, eligible/final means the exact
+conversation is exported and visible in the app: the scenario, variant, and
+conversation are visible and language-applicable, and the conversation has at
+least one valid exported round.
 
 ### `lingocafe.conversation_scenario_actors`
 
@@ -297,6 +332,10 @@ above. Its additional named constraints and indexes are:
 | `uq_lc_conversations_realization` | `conversations` | `(scenario_id, variant_id, language, cefr_level)` is unique. |
 | `idx_lc_conv_cat_parents_parent` | `conversation_category_parents` | `(parent_category_id, category_id)`. |
 | `idx_lc_conv_cat_scenarios_scenario` | `conversation_category_scenarios` | `(scenario_id, category_id)`. |
+| `conversation_category_availability_language_check` | `conversation_category_availability` | Language matches the normalized-code expression. |
+| `conversation_category_availability_level_key_check` | `conversation_category_availability` | Level key is an exact CEFR or supported UI band. |
+| `conversation_category_availability_count_check` | `conversation_category_availability` | Materialized count is non-negative. |
+| `idx_lc_conv_cat_availability_selection` | `conversation_category_availability` | `(language, level_key, category_id)`. |
 | `idx_lc_conversations_discovery` | `conversations` | `(language, cefr_level, is_visible)`. |
 | `idx_lc_conversation_reads_user_time` | `conversation_reads` | `(user_id, read_at DESC)`. |
 | `idx_lc_conversation_stars_user_time` | `conversation_stars` | `(user_id, starred_at DESC)`. |
@@ -313,6 +352,7 @@ The canonical source paths are relative to `books/content/conversations/`.
 | Source | Runtime rows |
 | --- | --- |
 | `categories/records/<category>.yaml` | One category, its outbound parent edges, and its materialized scenario memberships. |
+| Complete validated publication graph | The zero-inclusive category availability matrix for supported languages, exact CEFR levels, and UI bands. |
 | `scenarios/<scenario>/scenario.yaml` | One scenario, all explicit scenario localizations, and its authoritative actor set. |
 | `scenarios/<scenario>/variants/<variant>/variant.yaml` | One scenario-scoped variant and all explicit variant localizations. |
 | `scenarios/<scenario>/variants/<variant>/<lang>-<level>.yaml` | One exact conversation and its complete ordered round set. |
@@ -321,6 +361,11 @@ Category queries, explicit category-ID tags, inherited blacklists, and language
 applicability are resolved by the source-side validator/importer. Only final
 membership plus useful provenance is stored. Runtime code must not reproduce
 the YAML query evaluator.
+
+After resolving category membership and runtime visibility, the publisher also
+replaces `conversation_category_availability` for every explicitly
+authoritative category. The replacement is computed from the complete
+validated publication snapshot, not from the pre-publication database state.
 
 Source status is copied verbatim. The publisher supplies `is_visible`
 deliberately. At minimum, deprecated categories and retired scenarios,
@@ -347,6 +392,7 @@ protocol:
 5. Replace child or relationship sets only under an explicit authoritative
    parent scope:
    - outbound parent edges and category memberships for named categories;
+   - category availability rows for named categories;
    - scenario localizations and actors for named authoritative scenarios;
    - variant localizations for named authoritative variants;
    - rounds for named authoritative exact conversations.

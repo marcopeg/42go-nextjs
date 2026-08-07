@@ -64,3 +64,36 @@ test("reader playback supports namespaced conversation identity without changing
   assert.match(playback, /conversation_id: conversationId/);
   assert.match(playback, /memoryNamespace = isConversation \? ['"]conversation['"]/);
 });
+
+test("books and conversations share the anchored reader translation popover", async () => {
+  const [popover, bookReader, conversationText, conversationPage] =
+    await Promise.all([
+      readSource(
+        "src/app/(app)/(lingocafe)/books/_components/ReaderTranslationPopover.tsx"
+      ),
+      readSource(
+        "src/app/(app)/(lingocafe)/books/_components/BookPageReader.tsx"
+      ),
+      readSource(
+        "src/app/(app)/(lingocafe)/conversations/_components/ConversationTranslation.tsx"
+      ),
+      readSource(
+        "src/app/(app)/(lingocafe)/conversations/[conversationId]/page.tsx"
+      ),
+    ]);
+
+  assert.match(popover, /export const getReaderTranslationAnchor/);
+  assert.match(popover, /export const ReaderTranslationPopover/);
+  assert.match(popover, /data-reader-translation-popover/);
+  assert.match(popover, /Start audiobook from here/);
+  assert.match(bookReader, /<ReaderTranslationPopover/);
+  assert.match(conversationText, /<ReaderTranslationPopover/);
+  assert.match(conversationText, /onTranslationOpenChange/);
+  assert.match(conversationText, /backgroundColor: selected \? "var\(--reader-fg-soft\)"/);
+  assert.match(conversationText, /inset 0 0 0 9999px var\(--reader-fg-soft\)/);
+  assert.match(conversationText, /var\(--reader-highlight-fg\)/);
+  assert.match(conversationText, /aria-pressed=\{selected\}/);
+  assert.match(conversationPage, /playSentenceFromTranslation/);
+  assert.match(conversationPage, /playWordFromTranslation/);
+  assert.match(conversationPage, /startAudiobookFromTranslation/);
+});

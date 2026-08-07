@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Check, ChevronRight, MessageCircle, Star } from "lucide-react";
+import type { CSSProperties } from "react";
 
 import {
   PlainList,
@@ -13,8 +14,6 @@ import type {
 } from "@/app/(app)/(lingocafe)/conversations/_components/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ConversationTranslatableText } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationTranslation";
-import type { ReaderTranslationScope } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 
 export const ConversationBadge = ({ children }: { children: React.ReactNode }) => (
   <span className="inline-flex min-h-6 items-center rounded-full border bg-muted/30 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -76,98 +75,81 @@ export const CategoryList = ({
   categories,
   getHref,
   flush = false,
+  bottomMargin = "30vw",
 }: {
   categories: ConversationCategory[];
   getHref: (category: ConversationCategory) => string;
   flush?: boolean;
+  bottomMargin?: CSSProperties["marginBottom"];
 }) => (
-  <PlainList
-    bleedMobile={!flush}
-    className={cn(flush && "border-t-0 md:rounded-none md:border-x-0")}
-  >
-    {categories.map((category) => (
-      <PlainListItem key={category.id}>
-        <Link
-          href={getHref(category)}
-          className="flex min-h-16 w-full items-start gap-3 px-6 py-3 text-left outline-none transition-[filter,box-shadow] hover:brightness-[0.98] focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:brightness-110 md:py-4"
-        >
-          <MessageCircle aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
-          <span className="min-w-0 flex-1">
-            <span className="block font-medium text-foreground">{category.title}</span>
-            {category.goal || category.description ? (
-              <span className="mt-0.5 line-clamp-2 block text-sm text-muted-foreground">
-                {category.goal || category.description}
-              </span>
-            ) : null}
-          </span>
-          <ChevronRight aria-hidden="true" className="mt-1 size-4 shrink-0 text-muted-foreground" />
-        </Link>
-      </PlainListItem>
-    ))}
-  </PlainList>
+  <>
+    <PlainList
+      bleedMobile={!flush}
+      className={cn(flush && "border-t-0 md:rounded-none md:border-x-0")}
+    >
+      {categories.map((category) => (
+        <PlainListItem key={category.id}>
+          <Link
+            href={getHref(category)}
+            className="flex min-h-16 w-full items-start gap-3 px-6 py-3 text-left outline-none transition-[filter,box-shadow] hover:brightness-[0.98] focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:brightness-110 md:py-4"
+          >
+            <MessageCircle aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
+            <span className="min-w-0 flex-1">
+              <span className="block font-medium text-foreground">{category.title}</span>
+              {category.goal || category.description ? (
+                <span className="mt-0.5 line-clamp-2 block text-sm text-muted-foreground">
+                  {category.goal || category.description}
+                </span>
+              ) : null}
+            </span>
+            <span
+              aria-label={`${category.availableCount} ${category.availableCount === 1 ? "conversation" : "conversations"} available`}
+              className="mt-0.5 inline-flex min-w-6 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground"
+            >
+              {category.availableCount}
+            </span>
+            <ChevronRight aria-hidden="true" className="mt-1 size-4 shrink-0 text-muted-foreground" />
+          </Link>
+        </PlainListItem>
+      ))}
+    </PlainList>
+    <div
+      aria-hidden="true"
+      className="shrink-0 md:hidden"
+      style={{ height: bottomMargin }}
+    />
+  </>
 );
 
 export const ConversationChoiceRow = ({
   choice,
   href,
-  targetLanguage,
-  scope,
   showContext = false,
   onStarChange,
   starPending = false,
 }: {
   choice: ConversationChoice;
   href: string;
-  targetLanguage: string | null;
-  scope: ReaderTranslationScope;
   showContext?: boolean;
   onStarChange?: (choice: ConversationChoice) => void;
   starPending?: boolean;
 }) => (
   <div className="flex min-w-0 items-stretch">
     <div className="min-w-0 flex-1 space-y-1 px-5 py-4">
-      <ConversationTranslatableText
-        text={choice.title}
-        sourceLanguage={choice.language}
-        targetLanguage={targetLanguage}
-        context={{ kind: "conversation", conversationId: choice.id }}
-        scope={scope}
-        idPrefix={`conversation:${choice.id}:title`}
-        className="font-medium text-foreground"
-      />
+      <p className="font-medium text-foreground">{choice.title}</p>
       {choice.description ? (
-        <ConversationTranslatableText
-          text={choice.description}
-          sourceLanguage={choice.language}
-          targetLanguage={targetLanguage}
-          context={{ kind: "conversation", conversationId: choice.id }}
-          scope={scope}
-          idPrefix={`conversation:${choice.id}:description`}
-          className="line-clamp-2 text-sm text-muted-foreground"
-        />
+        <p className="line-clamp-2 text-sm text-muted-foreground">
+          {choice.description}
+        </p>
       ) : null}
       {showContext && (choice.scenarioTitle || choice.variantTitle) ? (
         <div className="flex min-w-0 flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
           {choice.scenarioTitle ? (
-            <ConversationTranslatableText
-              text={choice.scenarioTitle}
-              sourceLanguage={choice.scenarioLocalization?.language ?? choice.scenarioCanonicalLanguage ?? "en"}
-              targetLanguage={targetLanguage}
-              context={{ kind: "conversation", conversationId: choice.id }}
-              scope={scope}
-              idPrefix={`conversation:${choice.id}:scenario:title`}
-            />
+            <span>{choice.scenarioTitle}</span>
           ) : null}
           {choice.scenarioTitle && choice.variantTitle ? <span aria-hidden="true">·</span> : null}
           {choice.variantTitle ? (
-            <ConversationTranslatableText
-              text={choice.variantTitle}
-              sourceLanguage={choice.variantLocalization?.language ?? choice.variantCanonicalLanguage ?? "en"}
-              targetLanguage={targetLanguage}
-              context={{ kind: "conversation", conversationId: choice.id }}
-              scope={scope}
-              idPrefix={`conversation:${choice.id}:variant:title`}
-            />
+            <span>{choice.variantTitle}</span>
           ) : null}
         </div>
       ) : null}

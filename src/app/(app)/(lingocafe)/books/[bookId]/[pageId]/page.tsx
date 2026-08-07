@@ -5,7 +5,6 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 import { Modal } from "@/42go/components/modal";
-import { useTheme } from "@/42go/config/ThemeProvider";
 import { useEventTracker } from "@/42go/events/use-events";
 import { AppLayout } from "@/42go/layouts/app";
 import type { Policy } from "@/42go/policy/types";
@@ -19,25 +18,12 @@ import { BookReaderTableOfContents } from "@/app/(app)/(lingocafe)/books/_compon
 import { useReaderPlayback } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/useReaderPlayback";
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
 import { useBookCompletionMutation } from "@/app/(app)/(lingocafe)/books/_components/useBookCompletionMutation";
+import { useReaderPreferences } from "@/app/(app)/(lingocafe)/books/_components/useReaderPreferences";
 import type {
   ReaderBookPage,
   ReaderBookPageNeighbor,
   ReaderBookPageSummary,
 } from "@/app/(app)/(lingocafe)/books/_components/book-types";
-import {
-  READER_PREFERENCES_STORAGE_KEY,
-  DEFAULT_READER_TRANSLATION_SCOPE,
-  getDefaultReaderPreferences,
-  readStoredReaderPreferencesStore,
-  sanitizeReaderPreferences,
-  sanitizeReaderFontSizeIndex,
-  sanitizeReaderTranslationScope,
-  type ReaderPreferencesStore,
-  type ReaderThemeMode,
-  type ReaderThemeProfileKey,
-  type ReaderPreferences,
-  type ReaderTranslationScope,
-} from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 
 type BookPageResponse = {
   bookPage: ReaderBookPage;
@@ -58,14 +44,6 @@ const BOOK_READER_PAGE_POLICY: Policy = {
 };
 
 type ReaderSurfaceKey = "desktop" | "mobile";
-type ReaderPreferenceKey = keyof ReaderPreferences;
-
-const READER_SETTING_KEYS: ReaderPreferenceKey[] = [
-  "fontSizeIndex",
-  "fontFamilyKey",
-  "backgroundKey",
-  "foregroundKey",
-];
 
 const clampProgressBps = (value: number) =>
   Math.min(10000, Math.max(0, Math.round(value)));
@@ -309,14 +287,6 @@ const getHeaderTitleModeForScroll = (
   return currentMode;
 };
 
-const getInitialReaderPreferences = () => {
-  if (typeof window === "undefined") {
-    return {};
-  }
-
-  return readStoredReaderPreferencesStore();
-};
-
 const BookReadPage = () => {
   const params = useParams<{
     bookId: string | string[];
@@ -325,7 +295,6 @@ const BookReadPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { status } = useSession();
-  const { resolvedTheme, theme } = useTheme();
   const { trackEvent } = useEventTracker();
   const bookId = parseParam(params?.bookId);
   const pageId = parseParam(params?.pageId);
@@ -379,9 +348,6 @@ const BookReadPage = () => {
   const [readingProgressBps, setReadingProgressBps] = useState(0);
   const [headerTitleMode, setHeaderTitleMode] =
     useState<ReaderHeaderTitleMode>("book");
-  const [readerPreferencesStore, setReaderPreferencesStore] =
-    useState<ReaderPreferencesStore>(getInitialReaderPreferences);
-  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
   const showLoading = useLingocafeRouteLoading({
     isLoading: loading,
@@ -390,25 +356,6 @@ const BookReadPage = () => {
   const visibleError = showLoading ? null : error;
   const readerSurfaceLoading = !bookPage && showLoading;
   const readerSurfaceError = bookPage ? null : visibleError;
-  const readerThemeMode: ReaderThemeMode =
-    resolvedTheme === "dark" ? "dark" : "light";
-  const activeReaderThemeProfile: ReaderThemeProfileKey =
-    theme === "light" || theme === "dark" ? theme : "system";
-  const storedReaderPreferences =
-    readerPreferencesStore[activeReaderThemeProfile] ?? null;
-  const canResetReaderPreferences = Boolean(storedReaderPreferences);
-  const baseReaderPreferences =
-    storedReaderPreferences ?? getDefaultReaderPreferences(readerThemeMode);
-  const readerPreferences = {
-    ...baseReaderPreferences,
-    fontSizeIndex:
-      sanitizeReaderFontSizeIndex(readerPreferencesStore.sharedFontSizeIndex) ??
-      baseReaderPreferences.fontSizeIndex,
-  };
-  const readerTranslationScope = sanitizeReaderTranslationScope(
-    readerPreferencesStore.translationScope ?? DEFAULT_READER_TRANSLATION_SCOPE
-  );
-
   const apiHref = readerRoute?.apiHref || "";
   const loadedBookPageApiHref = bookPage
     ? buildBookPageApiHref(bookPage.page.bookId, bookPage.page.pageId)
@@ -467,17 +414,28 @@ const BookReadPage = () => {
       setPlaybackContinuationHref(null);
     },
   });
+  const {
+    preferences: readerPreferences,
+    translationScope: readerTranslationScope,
+    canResetPreferences: canResetReaderPreferences,
+    isOpen: isPreferencesOpen,
+    open: openPreferences,
+    onOpenChange: handlePreferencesOpenChange,
+    updatePreferences: updateReaderPreferences,
+    updateTranslationScope: updateReaderTranslationScope,
+    resetPreferences: resetReaderPreferences,
+  } = useReaderPreferences({
+    trackEvent,
+    eventContext: {
+      ...(activeBookId ? { book_id: activeBookId } : {}),
+      ...(activePageId ? { page_id: activePageId } : {}),
+    },
+    setSettingsSurfaceOpen: playback.setSettingsSurfaceOpen,
+  });
   const bookInfoHref = activeBookId
     ? `/books/${encodeURIComponent(activeBookId)}`
     : bookshelfHref;
   const { setSettingsSurfaceOpen } = playback;
-  const handlePreferencesOpenChange = useCallback(
-    (next: boolean) => {
-      setIsPreferencesOpen(next);
-      setSettingsSurfaceOpen("preferences", next);
-    },
-    [setSettingsSurfaceOpen]
-  );
   const handleTableOfContentsOpenChange = useCallback(
     (next: boolean) => {
       setIsTableOfContentsOpen(next);
@@ -523,106 +481,8 @@ const BookReadPage = () => {
     navigateToReaderPageRef.current = navigateToReaderPage;
   }, [navigateToReaderPage]);
 
-  const getReaderSettingsEventData = () => ({
-    ...(activeBookId ? { book_id: activeBookId } : {}),
-    ...(activePageId ? { page_id: activePageId } : {}),
-    theme_profile: activeReaderThemeProfile,
-    theme_mode: readerThemeMode,
-  });
-
-  const getChangedReaderPreferenceKeys = (
-    next: Partial<ReaderPreferences>
-  ): ReaderPreferenceKey[] =>
-    (Object.keys(next) as ReaderPreferenceKey[]).filter(
-      (key) => readerPreferences[key] !== next[key]
-    );
-
-  const openPreferences = () => {
-    if (!isPreferencesOpen) {
-      trackEvent("read.settings.opened", getReaderSettingsEventData());
-    }
-    handlePreferencesOpenChange(true);
-  };
-
   const openTableOfContents = () => {
     handleTableOfContentsOpenChange(true);
-  };
-
-  useEffect(() => {
-    if (Object.keys(readerPreferencesStore).length === 0) {
-      localStorage.removeItem(READER_PREFERENCES_STORAGE_KEY);
-      return;
-    }
-
-    localStorage.setItem(
-      READER_PREFERENCES_STORAGE_KEY,
-      JSON.stringify(readerPreferencesStore)
-    );
-  }, [readerPreferencesStore]);
-
-  const updateReaderPreferences = (next: Partial<ReaderPreferences>) => {
-    const changedKeys = getChangedReaderPreferenceKeys(next);
-    if (changedKeys.length > 0) {
-      const nextValues = changedKeys.reduce<Record<string, unknown>>(
-        (acc, key) => {
-          acc[key] = next[key];
-          return acc;
-        },
-        {}
-      );
-      trackEvent("read.settings.changed", {
-        ...getReaderSettingsEventData(),
-        action: "update",
-        changed_fields: changedKeys,
-        next_values: nextValues,
-      });
-    }
-
-    setReaderPreferencesStore((current) => {
-      const nextStore: ReaderPreferencesStore = {
-        ...current,
-        [activeReaderThemeProfile]: sanitizeReaderPreferences({
-          ...readerPreferences,
-          ...current[activeReaderThemeProfile],
-          ...next,
-        }),
-      };
-
-      const sharedFontSizeIndex = sanitizeReaderFontSizeIndex(next.fontSizeIndex);
-      if (sharedFontSizeIndex !== null) {
-        nextStore.sharedFontSizeIndex = sharedFontSizeIndex;
-      }
-
-      return nextStore;
-    });
-  };
-  const updateReaderTranslationScope = (next: ReaderTranslationScope) => {
-    if (readerTranslationScope === next) return;
-
-    trackEvent("read.settings.changed", {
-      ...getReaderSettingsEventData(),
-      action: "update",
-      changed_fields: ["translationScope"],
-      next_values: { translationScope: next },
-    });
-
-    setReaderPreferencesStore((current) => ({
-      ...current,
-      translationScope: sanitizeReaderTranslationScope(next),
-    }));
-  };
-  const resetReaderPreferences = () => {
-    trackEvent("read.settings.changed", {
-      ...getReaderSettingsEventData(),
-      action: "reset",
-      changed_fields: READER_SETTING_KEYS,
-    });
-
-    setReaderPreferencesStore((current) => {
-      const next = { ...current };
-      delete next[activeReaderThemeProfile];
-      return next;
-    });
   };
 
   useEffect(() => {
