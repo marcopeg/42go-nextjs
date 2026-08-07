@@ -116,21 +116,24 @@ test("reader sessions resolve users inside the active app before email fallback"
 });
 
 test("conversation traversal stays English and only detail exposes translation controls", async () => {
-  const [dataSource, discoveryPage, sharedUi, categoryPage, detailPage, translationRoute, appLayout] =
+  const [dataSource, discoveryPage, sharedUi, categoryPage, detailPage, translationRoute, appLayout, libraryShell] =
     await Promise.all([
       readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"),
-      readSource("src/app/(app)/(lingocafe)/conversations/page.tsx"),
+      readSource("src/app/(app)/(lingocafe)/conversations/(library)/page.tsx"),
       readSource(
         "src/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI.tsx"
       ),
       readSource(
-        "src/app/(app)/(lingocafe)/conversations/categories/[...categoryPath]/page.tsx"
+        "src/app/(app)/(lingocafe)/conversations/(library)/categories/[...categoryPath]/page.tsx"
       ),
       readSource(
-        "src/app/(app)/(lingocafe)/conversations/[conversationId]/page.tsx"
+        "src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"
       ),
       readSource("src/app/api/(lingocafe)/lingocafe/translate/route.ts"),
       readSource("src/42go/layouts/app/AppLayout.tsx"),
+      readSource(
+        "src/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell.tsx"
+      ),
     ]);
 
   assert.ok(
@@ -164,18 +167,22 @@ test("conversation traversal stays English and only detail exposes translation c
     (sharedUi.match(/active:bg-muted/g) || []).length >= 3,
     "category and conversation rows expose a pressed state"
   );
-  assert.match(categoryPage, /<PlainList flushMobileTop=\{data\.children\.length === 0\}>/);
+  assert.match(categoryPage, /<PlainList bleedMobile=\{false\}/);
   assert.doesNotMatch(categoryPage, /Choose a conversation|practice-heading/);
   assert.doesNotMatch(categoryPage, /Explore further|subcategories-heading/);
   assert.doesNotMatch(categoryPage, /scenario\.canonicalTitle|variant\.canonicalTitle/);
   assert.doesNotMatch(categoryPage, /data\.category\.(goal|description)/);
-  assert.match(categoryPage, /flushMobileTop=\{Boolean\(data\)\}/);
-  assert.match(categoryPage, /<CategoryList[^]*flushMobileTop/);
+  assert.match(categoryPage, /<CategoryList[^]*flush/);
   assert.match(sharedUi, /className="flex min-w-0 flex-1 items-center/);
   assert.doesNotMatch(discoveryPage, /ConversationActionFab|ConversationTranslatableText/);
   assert.doesNotMatch(categoryPage, /ConversationActionFab|ConversationTranslatableText/);
-  assert.match(discoveryPage, /containedMobileScroll/);
-  assert.match(categoryPage, /containedMobileScroll/);
+  assert.doesNotMatch(discoveryPage, /<AppLayout/);
+  assert.doesNotMatch(categoryPage, /<AppLayout/);
+  assert.match(libraryShell, /<AppLayout/);
+  assert.match(libraryShell, /containedMobileScroll/);
+  assert.match(libraryShell, /component: LanguagePreferencesMenu/);
+  assert.match(libraryShell, /slide-in-from-right-4/);
+  assert.match(libraryShell, /motion-reduce:animate-none/);
   assert.match(appLayout, /h-\[100dvh\].*overflow-hidden/);
   assert.match(appLayout, /overflow-y-auto overscroll-contain/);
   assert.match(detailPage, /text=\{data\.conversation\.title\}/);
@@ -197,15 +204,18 @@ test("conversation traversal stays English and only detail exposes translation c
 });
 
 test("shared language preferences stage choices and save them explicitly", async () => {
-  const [preferences, discoveryPage, categoryPage, booksPage] = await Promise.all([
+  const [preferences, discoveryPage, categoryPage, booksPage, libraryShell] = await Promise.all([
     readSource(
       "src/app/(app)/(lingocafe)/_components/LanguagePreferencesMenu.tsx"
     ),
-    readSource("src/app/(app)/(lingocafe)/conversations/page.tsx"),
+    readSource("src/app/(app)/(lingocafe)/conversations/(library)/page.tsx"),
     readSource(
-      "src/app/(app)/(lingocafe)/conversations/categories/[...categoryPath]/page.tsx"
+      "src/app/(app)/(lingocafe)/conversations/(library)/categories/[...categoryPath]/page.tsx"
     ),
     readSource("src/app/(app)/(lingocafe)/books/page.tsx"),
+    readSource(
+      "src/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell.tsx"
+    ),
   ]);
 
   assert.match(preferences, /const hasChanges =/);
@@ -226,8 +236,9 @@ test("shared language preferences stage choices and save them explicitly", async
   assert.doesNotMatch(categoryPage, /<ConversationBandFilter/);
   assert.match(preferences, /Translation selection/);
   assert.match(preferences, /writeStoredReaderTranslationScope/);
-  assert.match(discoveryPage, /component: LanguagePreferencesMenu/);
-  assert.match(categoryPage, /component: LanguagePreferencesMenu/);
+  assert.doesNotMatch(discoveryPage, /component: LanguagePreferencesMenu/);
+  assert.doesNotMatch(categoryPage, /component: LanguagePreferencesMenu/);
+  assert.match(libraryShell, /component: LanguagePreferencesMenu/);
   assert.match(booksPage, /component: LanguagePreferencesMenu/);
   assert.doesNotMatch(booksPage, /BooksHeaderLanguageFlag/);
 });

@@ -1,17 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
-import { AppLayout } from "@/42go/layouts/app";
 import {
   PlainList,
   PlainListItem,
 } from "@/42go/components/PlainList";
-import {
-  LanguagePreferencesMenu,
-  type LanguagePreferencePatch,
-} from "@/app/(app)/(lingocafe)/_components/LanguagePreferencesMenu";
+import { useConversationLibraryShell } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell";
 import {
   ConversationChoiceRow,
   CategoryList,
@@ -20,7 +16,6 @@ import {
   ConversationLoading,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
 import {
-  CONVERSATIONS_POLICY,
   buildBandHref,
   buildConversationHref,
   getResponseMessage,
@@ -32,8 +27,8 @@ import {
 
 const ConversationsPage = () => {
   const pathname = usePathname();
-  const router = useRouter();
   const searchParams = useSearchParams();
+  const { preferenceRevision, reportProfile } = useConversationLibraryShell();
   const requestedBand = searchParams.get("band");
   const [data, setData] = useState<ConversationDiscoveryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,13 +56,14 @@ const ConversationsPage = () => {
       }
       const payload = (await response.json()) as ConversationDiscoveryResponse;
       setData(payload);
+      reportProfile(payload.profile);
     } catch (caught) {
       if (caught instanceof DOMException && caught.name === "AbortError") return;
       setError(caught instanceof Error ? caught.message : "Could not load conversations.");
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, [apiHref]);
+  }, [apiHref, reportProfile]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -75,25 +71,12 @@ const ConversationsPage = () => {
       if (!controller.signal.aborted) void load(controller.signal);
     });
     return () => controller.abort();
-  }, [load]);
+  }, [load, preferenceRevision]);
 
   const band: ConversationBand = isConversationBand(requestedBand)
     ? requestedBand
     : data?.selection.band ?? "intermediate";
   const currentHref = buildBandHref(pathname, band);
-
-  const preferenceSaved = (patch: LanguagePreferencePatch) => {
-    if ("targetLevel" in patch) {
-      const nextBand: ConversationBand = patch.targetLevel === "a1"
-        ? "beginner"
-        : patch.targetLevel === "b2"
-          ? "advanced"
-          : "intermediate";
-      router.replace(buildBandHref(pathname, nextBand));
-      return;
-    }
-    void load();
-  };
 
   const toggleStar = async (choice: ConversationChoice) => {
     if (starPendingId) return;
@@ -137,32 +120,23 @@ const ConversationsPage = () => {
   };
 
   return (
-    <AppLayout
-      title="Conversations"
-      subtitle="Pick an everyday situation to practice."
-      actions={data ? [{
-        type: "component",
-        component: LanguagePreferencesMenu,
-        props: {
-          targetLanguage: data.profile.targetLanguage,
-          band,
-          onSaved: preferenceSaved,
-        },
-      }] : []}
-      stickyHeader
-      disablePadding
-      containedMobileScroll
-      policy={CONVERSATIONS_POLICY}
-    >
-      <div className="mx-auto w-full max-w-4xl space-y-8">
-        {error ? <ConversationError message={error} onRetry={() => void load()} /> : null}
-        {loading && !data ? <ConversationLoading /> : null}
+      <div className="mx-auto w-full max-w-4xl space-y-8 pb-[30vw] md:px-6 md:pb-6">
+        {error ? (
+          <div className="px-6 pt-6 md:px-0">
+            <ConversationError message={error} onRetry={() => void load()} />
+          </div>
+        ) : null}
+        {loading && !data ? (
+          <div className="px-6 pt-6 md:px-0">
+            <ConversationLoading />
+          </div>
+        ) : null}
 
         {data ? (
           <>
             {data.starred.length > 0 ? (
-              <section aria-labelledby="starred-conversations-heading" className="space-y-3">
-                <div>
+              <section aria-labelledby="starred-conversations-heading" className="space-y-3 pt-6">
+                <div className="px-6 md:px-0">
                   <h2 id="starred-conversations-heading" className="text-lg font-semibold">
                     Starred
                   </h2>
@@ -191,6 +165,7 @@ const ConversationsPage = () => {
                 <CategoryList
                   categories={data.roots}
                   flush
+                  bottomMargin={0}
                   getHref={(category) =>
                     `/conversations/categories/${encodeURIComponent(category.id)}?${new URLSearchParams({ band }).toString()}`
                   }
@@ -205,7 +180,6 @@ const ConversationsPage = () => {
           </>
         ) : null}
       </div>
-    </AppLayout>
   );
 };
 

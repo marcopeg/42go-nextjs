@@ -1,14 +1,12 @@
 "use client";
 
-import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useParams, usePathname, useSearchParams } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { AppLayout } from "@/42go/layouts/app";
 import { PlainList, PlainListItem } from "@/42go/components/PlainList";
-import {
-  LanguagePreferencesMenu,
-  type LanguagePreferencePatch,
-} from "@/app/(app)/(lingocafe)/_components/LanguagePreferencesMenu";
+import { useConversationLibraryShell } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell";
 import {
   ConversationChoiceGroupRow,
   CategoryList,
@@ -17,7 +15,6 @@ import {
   ConversationLoading,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
 import {
-  CONVERSATIONS_POLICY,
   buildBandHref,
   buildConversationHref,
   getResponseMessage,
@@ -29,8 +26,8 @@ import {
 const CategoryPage = () => {
   const params = useParams<{ categoryPath: string[] }>();
   const pathname = usePathname();
-  const router = useRouter();
   const searchParams = useSearchParams();
+  const { preferenceRevision, reportProfile } = useConversationLibraryShell();
   const requestedBand = searchParams.get("band");
   const [data, setData] = useState<ConversationCategoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,14 +54,16 @@ const CategoryPage = () => {
         signal,
       });
       if (!response.ok) throw new Error(await getResponseMessage(response, "Could not load this category."));
-      setData((await response.json()) as ConversationCategoryResponse);
+      const payload = (await response.json()) as ConversationCategoryResponse;
+      setData(payload);
+      reportProfile(payload.profile);
     } catch (caught) {
       if (caught instanceof DOMException && caught.name === "AbortError") return;
       setError(caught instanceof Error ? caught.message : "Could not load this category.");
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, [apiHref]);
+  }, [apiHref, reportProfile]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -72,7 +71,7 @@ const CategoryPage = () => {
       if (!controller.signal.aborted) void load(controller.signal);
     });
     return () => controller.abort();
-  }, [load]);
+  }, [load, preferenceRevision]);
 
   const band: ConversationBand = isConversationBand(requestedBand)
     ? requestedBand
@@ -95,50 +94,43 @@ const CategoryPage = () => {
     [data?.scenarios]
   );
 
-  const preferenceSaved = (patch: LanguagePreferencePatch) => {
-    if ("targetLevel" in patch) {
-      const nextBand: ConversationBand = patch.targetLevel === "a1"
-        ? "beginner"
-        : patch.targetLevel === "b2"
-          ? "advanced"
-          : "intermediate";
-      router.replace(buildBandHref(pathname, nextBand));
-      return;
-    }
-    void load();
-  };
+  const parentHref = categoryPath.length > 1
+    ? `/conversations/categories/${categoryPath.slice(0, -1).map(encodeURIComponent).join("/")}?${new URLSearchParams({ band })}`
+    : buildBandHref("/conversations", band);
 
   return (
-    <AppLayout
-      title={data?.category.title ?? "Conversations"}
-      actions={data ? [{
-        type: "component",
-        component: LanguagePreferencesMenu,
-        props: {
-          targetLanguage: data.profile.targetLanguage,
-          band,
-          onSaved: preferenceSaved,
-        },
-      }] : []}
-      backBtn={{ to: categoryPath.length > 1
-        ? `/conversations/categories/${categoryPath.slice(0, -1).map(encodeURIComponent).join("/")}?${new URLSearchParams({ band })}`
-        : buildBandHref("/conversations", band) }}
-      stickyHeader
-      flushMobileTop={Boolean(data)}
-      containedMobileScroll
-      policy={CONVERSATIONS_POLICY}
-    >
-      <div className="mx-auto w-full max-w-4xl space-y-8">
-        {error ? <ConversationError message={error} onRetry={() => void load()} /> : null}
-        {loading && !data ? <ConversationLoading label="Loading category…" /> : null}
+      <div className="mx-auto w-full max-w-4xl pb-[30vw] md:px-6 md:pb-6">
+        {error ? (
+          <div className="px-6 pt-6 md:px-0">
+            <ConversationError message={error} onRetry={() => void load()} />
+          </div>
+        ) : null}
+        {loading && !data ? (
+          <div className="px-6 pt-6 md:px-0">
+            <ConversationLoading label="Loading category…" />
+          </div>
+        ) : null}
 
         {data ? (
           <>
+            <div className="flex min-h-16 items-center gap-2 px-3 md:px-0 md:pt-4">
+              <Link
+                href={parentHref}
+                aria-label="Back to parent category"
+                className="flex size-11 touch-manipulation items-center justify-center rounded-md outline-none transition-colors duration-75 hover:bg-muted active:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                <ChevronLeft aria-hidden="true" className="size-5" />
+              </Link>
+              <h2 className="min-w-0 flex-1 text-lg font-semibold leading-tight">
+                {data.category.title}
+              </h2>
+            </div>
+
             {data.children.length > 0 ? (
               <section aria-label="Subcategories">
                 <CategoryList
                   categories={data.children}
-                  flushMobileTop
+                  flush
                   bottomMargin={0}
                   getHref={(child) => `/conversations/categories/${[...categoryPath, child.id].map(encodeURIComponent).join("/")}?${new URLSearchParams({ band })}`}
                 />
@@ -147,7 +139,7 @@ const CategoryPage = () => {
 
             {conversationGroups.length > 0 ? (
               <section aria-label="Conversations">
-                <PlainList flushMobileTop={data.children.length === 0}>
+                <PlainList bleedMobile={false} className="md:rounded-none md:border-x-0">
                   {conversationGroups.map((group) => (
                     <PlainListItem key={group.id}>
                       <ConversationChoiceGroupRow
@@ -164,7 +156,6 @@ const CategoryPage = () => {
           </>
         ) : null}
       </div>
-    </AppLayout>
   );
 };
 
