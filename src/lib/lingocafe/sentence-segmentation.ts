@@ -98,6 +98,36 @@ export const splitLingoCafeSentences = (text: string) => {
   return segments.length > 0 ? segments : [text];
 };
 
+export type LingoCafeSentenceDisplaySegment = {
+  text: string;
+  separatorBefore: string;
+};
+
+export const splitLingoCafeSentenceDisplaySegments = (
+  text: string
+): LingoCafeSentenceDisplaySegment[] => {
+  const rawSegments = splitLingoCafeSentences(text);
+  const contentSegments = rawSegments
+    .map((segment, rawIndex) => ({ segment, rawIndex }))
+    .filter(({ segment }) => segment.trim());
+
+  return contentSegments.map(({ segment, rawIndex }, index) => {
+    const previous = contentSegments[index - 1];
+    const hasSourceWhitespace = previous
+      ? /\s$/u.test(previous.segment) ||
+        /^\s/u.test(segment) ||
+        rawSegments
+          .slice(previous.rawIndex + 1, rawIndex)
+          .some((between) => /\s/u.test(between))
+      : false;
+
+    return {
+      text: segment.trim(),
+      separatorBefore: hasSourceWhitespace ? " " : "",
+    };
+  });
+};
+
 export const hasExactlyOneLingoCafeSentence = (text: string) => {
   const sentences = splitLingoCafeSentences(text).filter((segment) =>
     segment.trim()

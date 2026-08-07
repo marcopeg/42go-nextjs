@@ -151,6 +151,7 @@ const ConversationsPage = () => {
       }] : []}
       stickyHeader
       disablePadding
+      containedMobileScroll
       policy={CONVERSATIONS_POLICY}
     >
       <div className="mx-auto w-full max-w-4xl space-y-8">

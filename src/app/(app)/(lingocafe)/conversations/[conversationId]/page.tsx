@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Check, ChevronLeft, Star } from "lucide-react";
+import { ChevronLeft, Star } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Modal } from "@/42go/components/modal";
@@ -25,7 +25,6 @@ import {
   ConversationTranslatableText,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationTranslation";
 import {
-  ConversationBadge,
   ConversationError,
   ConversationLoading,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
@@ -35,6 +34,7 @@ import {
   isConversationBand,
   type ConversationDetailResponse,
 } from "@/app/(app)/(lingocafe)/conversations/_components/types";
+import { buildConversationThreadLayout } from "@/app/(app)/(lingocafe)/conversations/_components/thread-layout";
 import { Button } from "@/components/ui/button";
 import { splitLingoCafeSentences } from "@/lib/lingocafe/sentence-segmentation";
 import { cn } from "@/lib/utils";
@@ -191,6 +191,10 @@ const ConversationReaderPage = () => {
     () => new Map(data?.actors.map((actor) => [actor.id, actor]) ?? []),
     [data]
   );
+  const threadLayout = useMemo(
+    () => buildConversationThreadLayout(data?.rounds ?? []),
+    [data?.rounds]
+  );
 
   const toggleStar = async () => {
     if (!data || starPending) return;
@@ -248,6 +252,11 @@ const ConversationReaderPage = () => {
             </Button>
             <div className="pointer-events-none absolute inset-x-24 min-w-0 text-center">
               <p className="truncate text-sm font-semibold md:text-base">{data?.conversation.title || "Conversation"}</p>
+              {data ? (
+                <p className="mt-0.5 text-xs" style={{ color: "var(--reader-fg-muted)" }}>
+                  {data.conversation.cefrLevel.toUpperCase()} · {data.state.isRead ? "Read" : "Unread"}
+                </p>
+              ) : null}
             </div>
             <div className="relative z-10 flex items-center gap-1">
               <BookReaderPreferencesTrigger onClick={openPreferences} />
@@ -279,15 +288,6 @@ const ConversationReaderPage = () => {
               {data ? (
                 <>
                   <header className="mb-12 text-center">
-                    <div className="flex flex-wrap justify-center gap-2">
-                      <ConversationBadge>{data.conversation.language}</ConversationBadge>
-                      <ConversationBadge>{data.conversation.cefrLevel}</ConversationBadge>
-                      {data.state.isRead ? (
-                        <span className="inline-flex items-center gap-1 text-xs" style={{ color: "var(--reader-fg-muted)" }}>
-                          <Check className="size-3.5" /> Read
-                        </span>
-                      ) : null}
-                    </div>
                     <ConversationTranslatableText
                       text={data.conversation.title}
                       sourceLanguage={data.conversation.language}
@@ -327,42 +327,65 @@ const ConversationReaderPage = () => {
                     ) : null}
                   </header>
 
-                  <ol aria-label="Conversation turns" className="space-y-5">
+                  <ol aria-label="Conversation turns">
                     {data.rounds.map((round, roundIndex) => {
                       const actor = actorMap.get(round.actorId);
+                      const placement = threadLayout[roundIndex];
+                      const isRight = placement?.side === "right";
+                      const startsActorRun = placement?.startsActorRun ?? true;
                       const active = playback.activeSentenceId?.startsWith(`conversation:${data.conversation.id}:round:${round.position}:`) ?? false;
                       return (
                         <li
                           key={round.position}
-                          className={cn("flex", roundIndex % 2 === 1 && "justify-end")}
+                          className={cn(
+                            "flex",
+                            roundIndex > 0 && (startsActorRun ? "mt-5" : "mt-2"),
+                            isRight && "justify-end"
+                          )}
                           aria-label={`Turn ${round.position}, ${actor?.name || round.actorId}`}
                         >
-                          <article
-                            className={cn("w-full max-w-[92%] rounded-2xl border px-4 py-3 shadow-sm md:max-w-[85%]", active && "border-primary")}
-                            style={{
-                              borderColor: active ? "var(--primary)" : "var(--reader-border)",
-                              backgroundColor: active ? "var(--reader-hover-bg)" : "var(--reader-fg-soft)",
-                            }}
+                          <div
+                            className={cn(
+                              "flex w-full max-w-[92%] flex-col md:max-w-[85%]",
+                              isRight ? "items-end" : "items-start"
+                            )}
                           >
-                            <header className="mb-2">
-                              <h2 className="text-sm font-semibold">{actor?.name || round.actorId}</h2>
-                            </header>
-                            <ConversationTranslatableText
-                              text={round.text}
-                              sourceLanguage={data.translation.from}
-                              targetLanguage={data.translation.to}
-                              context={{ kind: "conversation", conversationId: data.conversation.id }}
-                              scope={translationScope}
-                              idPrefix={`conversation:${data.conversation.id}:round:${round.position}`}
-                              activeSentenceId={playback.activeSentenceId}
-                              activeWordRange={playback.activeWordRange}
-                              className="leading-7"
-                              onStartFromHere={playback.canPlay
-                                ? playback.startAudiobookFromTranslation
-                                : undefined}
-                              {...translationPlaybackProps}
-                            />
-                          </article>
+                            {startsActorRun ? (
+                              <p
+                                className={cn("mb-1 px-2 text-xs font-medium", isRight && "text-right")}
+                                style={{ color: "var(--reader-fg-muted)" }}
+                              >
+                                {actor?.name || round.actorId}
+                              </p>
+                            ) : null}
+                            <article
+                              className={cn(
+                                "w-fit max-w-full rounded-2xl border px-4 py-3 shadow-sm",
+                                isRight && "text-right",
+                                active && "border-primary"
+                              )}
+                              style={{
+                                borderColor: active ? "var(--primary)" : "var(--reader-border)",
+                                backgroundColor: active ? "var(--reader-hover-bg)" : "var(--reader-fg-soft)",
+                              }}
+                            >
+                              <ConversationTranslatableText
+                                text={round.text}
+                                sourceLanguage={data.translation.from}
+                                targetLanguage={data.translation.to}
+                                context={{ kind: "conversation", conversationId: data.conversation.id }}
+                                scope={translationScope}
+                                idPrefix={`conversation:${data.conversation.id}:round:${round.position}`}
+                                activeSentenceId={playback.activeSentenceId}
+                                activeWordRange={playback.activeWordRange}
+                                className="leading-7"
+                                onStartFromHere={playback.canPlay
+                                  ? playback.startAudiobookFromTranslation
+                                  : undefined}
+                                {...translationPlaybackProps}
+                              />
+                            </article>
+                          </div>
                         </li>
                       );
                     })}

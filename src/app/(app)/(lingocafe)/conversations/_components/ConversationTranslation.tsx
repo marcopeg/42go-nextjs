@@ -2,7 +2,7 @@
 
 import { Languages } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
 import {
   readCachedReaderTranslation,
@@ -23,7 +23,7 @@ import {
   writeStoredReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import { ExpandableFab } from "@/components/ui/expandable-fab";
-import { splitLingoCafeSentences } from "@/lib/lingocafe/sentence-segmentation";
+import { splitLingoCafeSentenceDisplaySegments } from "@/lib/lingocafe/sentence-segmentation";
 import { cn } from "@/lib/utils";
 
 type TranslationContext =
@@ -177,7 +177,7 @@ export const ConversationTranslatableText = ({
   className?: string;
   style?: CSSProperties;
 }) => {
-  const sentences = splitLingoCafeSentences(text).filter((item) => item.trim());
+  const sentences = splitLingoCafeSentenceDisplaySegments(text);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [translation, setTranslation] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
@@ -268,7 +268,7 @@ export const ConversationTranslatableText = ({
     onSentenceCatalog?.(
       sentences.map((sentence, index) => ({
         id: `${idPrefix}:sentence:${index + 1}`,
-        text: sentence.trim(),
+        text: sentence.text,
       }))
     );
   // Sentence catalogs are derived from stable loaded content.
@@ -417,9 +417,12 @@ export const ConversationTranslatableText = ({
         role={headingLevel ? "heading" : undefined}
         aria-level={headingLevel}
       >
-        {sentences.map((sentence, sentenceIndex) =>
-          renderSentence(sentence, sentenceIndex)
-        )}
+        {sentences.map((sentence, sentenceIndex) => (
+          <Fragment key={`${idPrefix}:display:${sentenceIndex + 1}`}>
+            {sentence.separatorBefore}
+            {renderSentence(sentence.text, sentenceIndex)}
+          </Fragment>
+        ))}
       </div>
       {selection ? (
         <ReaderTranslationPopover

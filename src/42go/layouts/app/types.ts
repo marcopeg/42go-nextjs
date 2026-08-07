@@ -81,4 +81,10 @@ export interface AppLayoutProps {
    * standard 24px top padding from the md breakpoint upward.
    */
   flushMobileTop?: boolean;
+  /**
+   * When true, mobile scrolling is contained inside the page content viewport
+   * so the toolbar and bottom navigation never join document-level scrolling.
+   * Desktop keeps the standard document scroll model.
+   */
+  containedMobileScroll?: boolean;
 }

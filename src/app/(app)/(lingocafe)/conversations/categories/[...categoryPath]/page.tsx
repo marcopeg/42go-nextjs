@@ -108,6 +108,7 @@ const CategoryPage = () => {
         ? `/conversations/categories/${categoryPath.slice(0, -1).map(encodeURIComponent).join("/")}?${new URLSearchParams({ band })}`
         : buildBandHref("/conversations", band) }}
       stickyHeader
+      containedMobileScroll
       policy={CONVERSATIONS_POLICY}
     >
       <div className="mx-auto w-full max-w-4xl space-y-8">

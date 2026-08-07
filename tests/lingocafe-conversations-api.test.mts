@@ -116,7 +116,7 @@ test("reader sessions resolve users inside the active app before email fallback"
 });
 
 test("conversation traversal stays English and only detail exposes translation controls", async () => {
-  const [dataSource, discoveryPage, sharedUi, categoryPage, detailPage, translationRoute] =
+  const [dataSource, discoveryPage, sharedUi, categoryPage, detailPage, translationRoute, appLayout] =
     await Promise.all([
       readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"),
       readSource("src/app/(app)/(lingocafe)/conversations/page.tsx"),
@@ -130,6 +130,7 @@ test("conversation traversal stays English and only detail exposes translation c
         "src/app/(app)/(lingocafe)/conversations/[conversationId]/page.tsx"
       ),
       readSource("src/app/api/(lingocafe)/lingocafe/translate/route.ts"),
+      readSource("src/42go/layouts/app/AppLayout.tsx"),
     ]);
 
   assert.ok(
@@ -152,6 +153,10 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.match(categoryPage, /data\.scenarios\.length > 0 \|\| data\.children\.length === 0/);
   assert.doesNotMatch(discoveryPage, /ConversationActionFab|ConversationTranslatableText/);
   assert.doesNotMatch(categoryPage, /ConversationActionFab|ConversationTranslatableText/);
+  assert.match(discoveryPage, /containedMobileScroll/);
+  assert.match(categoryPage, /containedMobileScroll/);
+  assert.match(appLayout, /h-\[100dvh\].*overflow-hidden/);
+  assert.match(appLayout, /overflow-y-auto overscroll-contain/);
   assert.match(detailPage, /text=\{data\.conversation\.title\}/);
   assert.match(detailPage, /<BookReaderFloatingActionBar/);
   assert.match(detailPage, /<BookReaderPreferencesPanel/);
@@ -161,9 +166,8 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.doesNotMatch(detailPage, /\{actor\?\.role \?/);
   assert.doesNotMatch(detailPage, />Turn \{round\.position\}<\/span>/);
   assert.match(detailPage, /aria-label=\{`Turn \$\{round\.position\}, \$\{actor\?\.name \|\| round\.actorId\}`\}/);
-  assert.match(detailPage, /<ConversationBadge>\{data\.conversation\.language\}<\/ConversationBadge>/);
-  assert.match(detailPage, /<ConversationBadge>\{data\.conversation\.cefrLevel\}<\/ConversationBadge>/);
-  assert.match(detailPage, /<Check className="size-3\.5" \/> Read/);
+  assert.match(detailPage, /data\.conversation\.cefrLevel\.toUpperCase\(\)\} · \{data\.state\.isRead \? "Read" : "Unread"\}/);
+  assert.doesNotMatch(detailPage, /<ConversationBadge>/);
   assert.match(detailPage, /absolute inset-x-24 min-w-0 text-center/);
   assert.doesNotMatch(detailPage, /sticky top-0 z-50/);
   assert.match(translationRoute, /scenario\.canonical_language as scenario_canonical_language/);

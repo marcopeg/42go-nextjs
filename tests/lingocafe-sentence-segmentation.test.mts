@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   hasExactlyOneLingoCafeSentence,
+  splitLingoCafeSentenceDisplaySegments,
   splitLingoCafeSentences,
 } from "../src/lib/lingocafe/sentence-segmentation.ts";
 
@@ -61,6 +62,25 @@ describe("LingoCafe sentence segmentation", () => {
     assert.equal(
       hasExactlyOneLingoCafeSentence("First sentence. Second sentence."),
       false
+    );
+  });
+
+  it("preserves source sentence spacing for separately rendered translation targets", () => {
+    assert.deepEqual(
+      splitLingoCafeSentenceDisplaySegments(
+        "Vanligtvis till klassrummet. I dag till biblioteket."
+      ),
+      [
+        { text: "Vanligtvis till klassrummet.", separatorBefore: "" },
+        { text: "I dag till biblioteket.", separatorBefore: " " },
+      ]
+    );
+    assert.deepEqual(
+      splitLingoCafeSentenceDisplaySegments("これは文です。次の文です。"),
+      [
+        { text: "これは文です。", separatorBefore: "" },
+        { text: "次の文です。", separatorBefore: "" },
+      ]
     );
   });
 });

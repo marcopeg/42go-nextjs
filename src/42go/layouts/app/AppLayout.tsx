@@ -45,6 +45,7 @@ const AppLayoutShell = ({
   hideMobileMenu,
   disablePadding = false,
   flushMobileTop = false,
+  containedMobileScroll = false,
 }: AppLayoutProps) => {
   const config = useAppConfig();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -71,7 +72,13 @@ const AppLayoutShell = ({
   }, [isMobileMenuOpen]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className={
+        containedMobileScroll
+          ? "flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background md:block md:h-auto md:min-h-screen md:overflow-visible"
+          : "min-h-screen bg-background"
+      }
+    >
       {/* Desktop Sidebar */}
       <aside
         className={`fixed top-0 left-0 z-50 h-full transition-all duration-300 ease-in-out hidden md:block ${
@@ -91,7 +98,7 @@ const AppLayoutShell = ({
 
       {/* Header - Full Width */}
       <header
-        className={`w-full bg-background border-b transition-all duration-300 ease-in-out ${
+        className={`w-full shrink-0 bg-background border-b transition-all duration-300 ease-in-out ${
           isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
         } ${stickyHeader ? "sticky top-0 z-30" : ""}`}
       >
@@ -106,7 +113,11 @@ const AppLayoutShell = ({
 
       {/* Main Content */}
       <main
-        className={`min-h-[calc(100vh-4rem)] transition-all duration-300 ease-in-out ${
+        className={`${
+          containedMobileScroll
+            ? "min-h-0 flex-1 overflow-y-auto overscroll-contain md:min-h-[calc(100vh-4rem)] md:overflow-visible"
+            : "min-h-[calc(100vh-4rem)]"
+        } transition-all duration-300 ease-in-out ${
           isSidebarCollapsed ? "md:ml-20" : "md:ml-64"
         }`}
       >
