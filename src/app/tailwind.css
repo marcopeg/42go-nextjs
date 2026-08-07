@@ -75,7 +75,7 @@
       select,
       summary,
       [role="button"],
-      [tabindex]
+      [tabindex]:not([tabindex="-1"])
     ):focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }

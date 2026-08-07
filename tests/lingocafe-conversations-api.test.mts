@@ -150,8 +150,20 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.match(sharedUi, /flushMobileTop=\{flushMobileTop\}/);
   assert.doesNotMatch(sharedUi, /ConversationTranslatableText/);
   assert.match(categoryPage, /data\?\.scenarios\.flatMap\(\(scenario\)/);
-  assert.match(categoryPage, /scenario\.variants\.flatMap\(\(variant\)/);
-  assert.match(categoryPage, /conversationChoices\.map\(\(choice\)/);
+  assert.match(categoryPage, /scenario\.variants[^]*\.map\(\(variant\)/);
+  assert.match(categoryPage, /conversationGroups\.map\(\(group\)/);
+  assert.match(categoryPage, /id: `\$\{scenario\.id\}:\$\{variant\.id\}`/);
+  assert.match(categoryPage, /<ConversationChoiceGroupRow/);
+  assert.doesNotMatch(sharedUi, /<ConversationBadge>\{choice\.language\}<\/ConversationBadge>/);
+  assert.match(sharedUi, /Choose a level for \$\{firstChoice\.title\}/);
+  assert.ok(
+    (sharedUi.match(/touch-manipulation/g) || []).length >= 3,
+    "category and conversation rows expose immediate touch feedback"
+  );
+  assert.ok(
+    (sharedUi.match(/active:bg-muted/g) || []).length >= 3,
+    "category and conversation rows expose a pressed state"
+  );
   assert.match(categoryPage, /<PlainList flushMobileTop=\{data\.children\.length === 0\}>/);
   assert.doesNotMatch(categoryPage, /Choose a conversation|practice-heading/);
   assert.doesNotMatch(categoryPage, /Explore further|subcategories-heading/);
@@ -201,7 +213,9 @@ test("shared language preferences stage choices and save them explicitly", async
   assert.match(preferences, /hasChanges \? "Save" : "Close"/);
   assert.match(preferences, /LoaderCircle[^]*animate-spin/);
   assert.match(preferences, /flex flex-nowrap gap-1 overflow-x-auto/);
-  assert.match(preferences, /option\.code === selectedLanguage/);
+  assert.match(preferences, /lingoCafeProfileOptions\.targetLang\.map\(\(option\)/);
+  assert.doesNotMatch(preferences, /orderedLanguages|targetLang\.filter/);
+  assert.match(preferences, /selectedLanguage === option\.code/);
   assert.match(preferences, /window\.matchMedia\("\(min-width: 768px\)"\)/);
   assert.match(preferences, /title="Language Preferences"/);
   assert.match(preferences, /hasChanges \? "Save" : "Done"/);

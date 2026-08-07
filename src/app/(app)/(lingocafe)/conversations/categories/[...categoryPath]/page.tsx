@@ -10,7 +10,7 @@ import {
   type LanguagePreferencePatch,
 } from "@/app/(app)/(lingocafe)/_components/LanguagePreferencesMenu";
 import {
-  ConversationChoiceRow,
+  ConversationChoiceGroupRow,
   CategoryList,
   ConversationEmpty,
   ConversationError,
@@ -78,16 +78,19 @@ const CategoryPage = () => {
     ? requestedBand
     : data?.selection.band ?? "intermediate";
   const returnTo = buildBandHref(pathname, band);
-  const conversationChoices = useMemo(
+  const conversationGroups = useMemo(
     () =>
       data?.scenarios.flatMap((scenario) =>
-        scenario.variants.flatMap((variant) =>
-          [...variant.choices].sort(
-            (a, b) =>
-              ["a1", "a2", "b1", "b2"].indexOf(a.cefrLevel) -
-              ["a1", "a2", "b1", "b2"].indexOf(b.cefrLevel)
-          )
-        )
+        scenario.variants
+          .map((variant) => ({
+            id: `${scenario.id}:${variant.id}`,
+            choices: [...variant.choices].sort(
+              (a, b) =>
+                ["a1", "a2", "b1", "b2"].indexOf(a.cefrLevel) -
+                ["a1", "a2", "b1", "b2"].indexOf(b.cefrLevel)
+            ),
+          }))
+          .filter((group) => group.choices.length > 0)
       ) ?? [],
     [data?.scenarios]
   );
@@ -142,14 +145,14 @@ const CategoryPage = () => {
               </section>
             ) : null}
 
-            {conversationChoices.length > 0 ? (
+            {conversationGroups.length > 0 ? (
               <section aria-label="Conversations">
                 <PlainList flushMobileTop={data.children.length === 0}>
-                  {conversationChoices.map((choice) => (
-                    <PlainListItem key={choice.id}>
-                      <ConversationChoiceRow
-                        choice={choice}
-                        href={buildConversationHref({ id: choice.id, band, returnTo })}
+                  {conversationGroups.map((group) => (
+                    <PlainListItem key={group.id}>
+                      <ConversationChoiceGroupRow
+                        choices={group.choices}
+                        getHref={(choice) => buildConversationHref({ id: choice.id, band, returnTo })}
                       />
                     </PlainListItem>
                   ))}

@@ -77,11 +77,6 @@ export const LanguagePreferencesMenu = ({
     selectedLanguage !== targetLanguage ||
     selectedBand !== band ||
     selectedTranslationScope !== savedTranslationScope;
-  const orderedLanguages = [
-    ...lingoCafeProfileOptions.targetLang.filter((option) => option.code === selectedLanguage),
-    ...lingoCafeProfileOptions.targetLang.filter((option) => option.code !== selectedLanguage),
-  ];
-
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen && saving) return;
     if (nextOpen) {
@@ -161,7 +156,7 @@ export const LanguagePreferencesMenu = ({
           role="group"
           aria-label="Learning language"
         >
-          {orderedLanguages.map((option) => {
+          {lingoCafeProfileOptions.targetLang.map((option) => {
             const selected = selectedLanguage === option.code;
             return (
               <button

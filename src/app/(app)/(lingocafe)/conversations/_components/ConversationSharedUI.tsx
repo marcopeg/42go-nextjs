@@ -1,5 +1,6 @@
 "use client";
 
+import * as PopoverPrimitive from "@radix-ui/react-popover";
 import Link from "next/link";
 import { Check, ChevronRight, MessageCircle, Star } from "lucide-react";
 import type { CSSProperties } from "react";
@@ -94,7 +95,7 @@ export const CategoryList = ({
         <PlainListItem key={category.id}>
           <Link
             href={getHref(category)}
-            className="flex min-h-16 w-full items-start gap-3 px-6 py-3 text-left outline-none transition-[filter,box-shadow] hover:brightness-[0.98] focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:brightness-110 md:py-4"
+            className="flex min-h-16 w-full touch-manipulation items-start gap-3 px-6 py-3 text-left outline-none transition-[background-color,filter,box-shadow] duration-75 hover:brightness-[0.98] active:bg-muted active:brightness-95 focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:brightness-110 dark:active:brightness-110 md:py-4"
           >
             <MessageCircle aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
             <span className="min-w-0 flex-1">
@@ -141,7 +142,7 @@ export const ConversationChoiceRow = ({
     <Link
       href={href}
       aria-label={`Open ${choice.title}`}
-      className="flex min-w-0 flex-1 items-center outline-none hover:bg-muted/50 focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className="flex min-w-0 flex-1 items-center touch-manipulation outline-none transition-colors duration-75 hover:bg-muted/50 active:bg-muted focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       <div className="min-w-0 flex-1 space-y-1 px-5 py-4">
         <p className="font-medium text-foreground">{choice.title}</p>
@@ -162,7 +163,6 @@ export const ConversationChoiceRow = ({
           </div>
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <ConversationBadge>{choice.language}</ConversationBadge>
           <ConversationBadge>{choice.cefrLevel}</ConversationBadge>
           <ConversationState isRead={choice.isRead} />
         </div>
@@ -178,7 +178,7 @@ export const ConversationChoiceRow = ({
         aria-pressed={choice.isStarred}
         disabled={starPending}
         onClick={() => onStarChange(choice)}
-        className="m-2 flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50"
+        className="m-2 flex size-11 touch-manipulation shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-75 hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50"
       >
         <Star
           aria-hidden="true"
@@ -188,3 +188,91 @@ export const ConversationChoiceRow = ({
     ) : null}
   </div>
 );
+
+const ConversationGroupState = ({ choices }: { choices: ConversationChoice[] }) => {
+  const readCount = choices.filter((choice) => choice.isRead).length;
+
+  if (readCount === 0) return <ConversationState isRead={false} />;
+  if (readCount === choices.length) return <ConversationState isRead />;
+
+  return (
+    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+      <Check aria-hidden="true" className="size-3.5" />
+      {readCount}/{choices.length} read
+    </span>
+  );
+};
+
+export const ConversationChoiceGroupRow = ({
+  choices,
+  getHref,
+}: {
+  choices: ConversationChoice[];
+  getHref: (choice: ConversationChoice) => string;
+}) => {
+  const firstChoice = choices[0];
+  if (!firstChoice) return null;
+
+  if (choices.length === 1) {
+    return <ConversationChoiceRow choice={firstChoice} href={getHref(firstChoice)} />;
+  }
+
+  return (
+    <PopoverPrimitive.Root>
+      <PopoverPrimitive.Trigger asChild>
+        <button
+          type="button"
+          aria-label={`Choose a level for ${firstChoice.title}`}
+          className="flex min-w-0 w-full touch-manipulation items-center text-left outline-none transition-colors duration-75 hover:bg-muted/50 active:bg-muted focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        >
+          <span className="min-w-0 flex-1 space-y-1 px-5 py-4">
+            <span className="block font-medium text-foreground">{firstChoice.title}</span>
+            {firstChoice.description ? (
+              <span className="line-clamp-2 block text-sm text-muted-foreground">
+                {firstChoice.description}
+              </span>
+            ) : null}
+            <span className="mt-2 flex flex-wrap items-center gap-2">
+              {choices.map((choice) => (
+                <ConversationBadge key={choice.id}>{choice.cefrLevel}</ConversationBadge>
+              ))}
+              <ConversationGroupState choices={choices} />
+            </span>
+          </span>
+          <span className="my-2 flex size-11 shrink-0 items-center justify-center text-muted-foreground">
+            <ChevronRight aria-hidden="true" className="size-4" />
+          </span>
+        </button>
+      </PopoverPrimitive.Trigger>
+      <PopoverPrimitive.Portal>
+        <PopoverPrimitive.Content
+          align="end"
+          side="bottom"
+          sideOffset={8}
+          collisionPadding={12}
+          className="z-[80] w-[min(20rem,calc(100vw-2rem))] rounded-xl border bg-popover p-2 text-popover-foreground shadow-lg outline-none"
+        >
+          <div className="px-3 pb-2 pt-1">
+            <p className="text-sm font-semibold">Choose a level</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Which version would you like to read?
+            </p>
+          </div>
+          <div className="space-y-1">
+            {choices.map((choice) => (
+              <PopoverPrimitive.Close asChild key={choice.id}>
+                <Link
+                  href={getHref(choice)}
+                  className="flex min-h-12 items-center justify-between gap-4 rounded-lg px-3 py-2 outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                >
+                  <span className="font-semibold uppercase">{choice.cefrLevel}</span>
+                  <ConversationState isRead={choice.isRead} />
+                </Link>
+              </PopoverPrimitive.Close>
+            ))}
+          </div>
+        </PopoverPrimitive.Content>
+      </PopoverPrimitive.Portal>
+    </PopoverPrimitive.Root>
+  );
+};

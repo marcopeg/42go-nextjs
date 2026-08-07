@@ -39,7 +39,7 @@ export const PlainListButton = ({
   <button
     type={type}
     className={cn(
-      "flex w-full items-start gap-3 px-6 py-3 text-left outline-none transition-[filter,box-shadow] hover:brightness-[0.98] focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:brightness-110 md:px-5 md:py-4",
+      "flex w-full touch-manipulation items-start gap-3 px-6 py-3 text-left outline-none transition-[background-color,filter,box-shadow] duration-75 hover:brightness-[0.98] active:bg-muted active:brightness-95 focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:brightness-110 dark:active:brightness-110 md:px-5 md:py-4",
       className
     )}
     {...props}
