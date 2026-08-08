@@ -231,6 +231,26 @@ exports.seed = async function seed(knex) {
 
     await upsert(
       trx,
+      "conversation_variant_cast",
+      [
+        {
+          scenario_id: "fixture-ordering-coffee",
+          variant_id: "fixture-ordering-filter-coffee",
+          actor_id: "customer",
+          persona_id: "fixture-learner",
+        },
+        {
+          scenario_id: "fixture-ordering-coffee",
+          variant_id: "fixture-ordering-filter-coffee",
+          actor_id: "barista",
+          persona_id: null,
+        },
+      ],
+      ["scenario_id", "variant_id", "actor_id"]
+    );
+
+    await upsert(
+      trx,
       "conversations",
       [
         {

@@ -6,16 +6,14 @@ This document is the standalone publication contract for scenario-based
 LingoCafe conversations. The `books` repository owns the editorial YAML.
 `42go-nextjs` owns the PostgreSQL runtime model, learner state, and migrations.
 
-The complete ordered migration history under `knex/migrations/` is the schema
-source of truth. Importers must evaluate that history rather than copying this
-document or one create migration as executable DDL. This document explains the
-accumulated model and the safe publication protocol. The additive foundation
-described here is migration
-`20260806223000_lingocafe_conversations.js`, with export-time category
-availability added by
-`20260807120000_lingocafe_conversation_category_availability.js`, and browse
-cache versioning added by
-`20260807170000_lingocafe_conversation_cache_versions.js`.
+The schema source of truth is the clean pre-release baseline in
+`knex/migrations/20260806223000_lingocafe_conversations.js`. Personas are a
+generic prerequisite supplied by
+`knex/migrations/20260806220000_lingocafe_personas.js` and documented in
+`PERSONAS_DATA_MODEL.md`. The conversation baseline includes content,
+materialized availability, exhaustive variant cast, publication/cache state,
+and all learner state. It replaces the earlier development-only sequence of
+incremental conversation migrations.
 
 All conversation tables are in the PostgreSQL `lingocafe` schema. PostgreSQL is
 the only supported target.
@@ -33,6 +31,7 @@ Content publication owns these tables:
 - `conversation_scenario_actors`
 - `conversation_variants`
 - `conversation_variant_localizations`
+- `conversation_variant_cast`
 - `conversations`
 - `conversation_rounds`
 - `conversation_publication_state`
@@ -40,8 +39,14 @@ Content publication owns these tables:
 The application and its learners own these tables:
 
 - `conversation_reads`
+- `conversation_progress`
 - `conversation_stars`
 - `conversation_user_state_versions`
+
+Reusable persona rows and persona publication state are owned exclusively by
+the prerequisite persona publisher. Conversation publication may validate and
+reference `lingocafe.personas.id`; it must not create, update, hide, or delete
+personas.
 
 An importer must never insert, update, delete, truncate, replace, or derive rows
 in the learner-owned tables. The publisher updates only the singleton
@@ -244,6 +249,34 @@ The four columns form the primary key. A composite foreign key proves the
 variant belongs to the named scenario and cascades on variant deletion.
 Language must match `^[a-z]{2,3}(-[a-z0-9]+)*$`.
 
+### `lingocafe.conversation_variant_cast`
+
+The exhaustive assignment of every scenario actor used by one semantic
+variant.
+
+| Column | Meaning |
+| --- | --- |
+| `scenario_id`, `variant_id` | Owning scenario-scoped variant. |
+| `actor_id` | Scenario actor slot used by rounds. |
+| `persona_id` | Stable reusable persona, or `NULL` for an explicit scenario-local identity. |
+
+`(scenario_id, variant_id, actor_id)` is the primary key. Composite foreign
+keys prove that both the variant and actor belong to the named scenario. A
+variant deletion cascades its cast, while actor and persona deletion are
+restricted.
+
+Every authoritative variant must have exactly one cast row for every actor in
+its scenario actor set. PostgreSQL validates the individual references; the
+publisher validates exhaustiveness before writing. A missing cast row is an
+invalid publication. `persona_id = NULL` is not missing data: it deliberately
+keeps the scenario actor's authored name and role.
+
+Rounds continue to reference only `actor_id`. At read time the application
+joins the conversation's variant cast. A non-null persona resolves display
+name, avatar, and public-safe profile information using the learner's own
+language presentation with `default` fallback. Scenario role and description
+remain authoritative for the part being played.
+
 ### `lingocafe.conversations`
 
 One exact language-and-CEFR realization.
@@ -300,8 +333,7 @@ deletion. The `idx_lc_conversation_reads_user_time` index on
 
 Opening a conversation does not create this row. The reader first persists
 scroll progress and creates the read row only after progress reaches 9500 basis
-points (95%). Existing read rows are backfilled to 10000 basis points when the
-progress table is introduced.
+points (95%).
 
 ### `lingocafe.conversation_progress`
 
@@ -366,6 +398,7 @@ above. Its additional named constraints and indexes are:
 | `conversation_variants_language_scope_check` | `conversation_variants` | Variant language scope and array are coherent. |
 | `conversation_variant_localizations_cefr_check` | `conversation_variant_localizations` | CEFR is A1-B2 in lowercase. |
 | `conversation_variant_localizations_language_check` | `conversation_variant_localizations` | Language matches the normalized-code expression. |
+| `idx_lc_conversation_variant_cast_persona` | `conversation_variant_cast` | Persona reverse lookup for retirement and inspection. |
 | `conversations_status_check` | `conversations` | Exact-conversation status uses its documented five-value set. |
 | `conversations_cefr_check` | `conversations` | CEFR is A1-B2 in lowercase. |
 | `conversations_language_check` | `conversations` | Language matches the normalized-code expression. |
@@ -381,7 +414,11 @@ above. Its additional named constraints and indexes are:
 | `idx_lc_conv_cat_availability_selection` | `conversation_category_availability` | `(language, level_key, category_id)`. |
 | `idx_lc_conversations_discovery` | `conversations` | `(language, cefr_level, is_visible)`. |
 | `idx_lc_conversation_reads_user_time` | `conversation_reads` | `(user_id, read_at DESC)`. |
+| `conversation_progress_bps_range` | `conversation_progress` | Progress is 0 through 10000 basis points. |
+| `idx_lc_conversation_progress_user_time` | `conversation_progress` | `(user_id, updated_at DESC)`. |
 | `idx_lc_conversation_stars_user_time` | `conversation_stars` | `(user_id, starred_at DESC)`. |
+| `conversation_publication_state_singleton_check` | `conversation_publication_state` | Only the `current` row is valid. |
+| `conversation_publication_state_digest_check` | `conversation_publication_state` | Digest is lowercase SHA-256. |
 
 The actor table also has an unnamed unique constraint on
 `(scenario_id, position)`. Knex/PostgreSQL supplies implementation names for
@@ -397,7 +434,7 @@ The canonical source paths are relative to `books/content/conversations/`.
 | `categories/records/<category>.yaml` | One category, its outbound parent edges, and its materialized scenario memberships. |
 | Complete validated publication graph | The zero-inclusive category availability matrix for supported languages, exact CEFR levels, and UI bands. |
 | `scenarios/<scenario>/scenario.yaml` | One scenario, all explicit scenario localizations, and its authoritative actor set. |
-| `scenarios/<scenario>/variants/<variant>/variant.yaml` | One scenario-scoped variant and all explicit variant localizations. |
+| `scenarios/<scenario>/variants/<variant>/variant.yaml` | One scenario-scoped variant, all explicit variant localizations, and one exhaustive cast row per scenario actor. |
 | `scenarios/<scenario>/variants/<variant>/<lang>-<level>.yaml` | One exact conversation and its complete ordered round set. |
 
 Category queries, explicit category-ID tags, inherited blacklists, and language
@@ -423,8 +460,9 @@ protocol:
 
 1. Load and validate the complete requested source scope before opening writes.
    Validate IDs, references, the category DAG, visible-root reachability,
-   language applicability, statuses, localizations, unique realizations, actor
-   references, positive ordering, and non-empty round text.
+   language applicability, statuses, localizations, unique realizations,
+   exhaustive actor cast, persona references, positive ordering, and non-empty
+   round text.
 2. Acquire a transaction-scoped PostgreSQL advisory lock dedicated to
    conversation publication. Concurrent importers must not interleave.
 3. Check source schema-version compatibility. Abort before mutation when an
@@ -437,20 +475,21 @@ protocol:
    - outbound parent edges and category memberships for named categories;
    - category availability rows for named categories;
    - scenario localizations and actors for named authoritative scenarios;
-   - variant localizations for named authoritative variants;
+   - variant localizations and exhaustive cast for named authoritative variants;
    - rounds for named authoritative exact conversations.
 6. Treat an empty replacement set as authoritative only when the invocation
    declares that parent scope explicitly. A missing section or omitted parent
    is never a deletion request.
 7. Before deleting an actor from an authoritative actor set, prove no retained
-   or out-of-scope round references it. Refuse the import instead of cascading
-   dialogue loss.
+   or out-of-scope round or cast row references it. Refuse the import instead
+   of cascading dialogue or identity loss.
 8. Never hard-delete a top-level content row merely because it is absent from a
    full or partial input. Withdraw normal content by changing status and
    `is_visible`. Hard deletion is a separate future operator workflow because
    exact-conversation deletion cascades learner state.
-9. Never touch `conversation_reads` or `conversation_stars`. Commit only after
-   the complete scoped import succeeds.
+9. Never touch `conversation_reads`, `conversation_progress`,
+   `conversation_stars`, or `conversation_user_state_versions`. Commit only
+   after the complete scoped import succeeds.
 
 Reapplying identical input must be idempotent. Source hashes may be used to skip
 unchanged record updates, but they do not relax validation or ownership rules.
@@ -490,8 +529,9 @@ full-corpus content or mutate learner state.
 
 - Apply the complete migration history successfully.
 - Confirm the target database is PostgreSQL and the conversation tables match
-  this accumulated contract.
+  this baseline contract.
 - Reject an unsupported source schema version before writing.
+- Refuse conversation publication until every referenced persona exists and is visible.
 - Validate the complete requested graph and acquire the advisory lock.
 - Dry-run or generate SQL without opening a database when requested.
 - Show the exact authoritative replacement scopes before executing writes.

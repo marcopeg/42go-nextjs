@@ -9,6 +9,7 @@ import { loadProfile } from "@/42go/profile/server";
 import type { TProfileLoadResult } from "@/42go/profile";
 import { getAppConfig } from "@/42go/config/app-config";
 import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
+import { resolveLingoCafeAssetUrl } from "@/lib/lingocafe/assets";
 
 type BookRow = {
   id: string;
@@ -132,7 +133,6 @@ export type BookPageDetail = {
   };
 };
 
-const defaultAssetsBasePath = "https://assets.lingocafe.app";
 const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
 
 export const getReaderLanguages = getLingoCafeReaderLanguages;
@@ -166,16 +166,10 @@ const normalizeBookInfo = (info: unknown): Record<string, unknown> => {
   return info as Record<string, unknown>;
 };
 
-const getLingoCafeAssetsBasePath = () => {
-  const basePath =
-    process.env.LC_ASSETS_BASE_PATH?.trim() || defaultAssetsBasePath;
-  return basePath.replace(/\/+$/, "");
-};
-
 const resolveBookCover = (book: Pick<BookRow, "project">) => {
   const project = book.project.trim().replace(/^\/+|\/+$/g, "");
   if (!project) return null;
-  return `${getLingoCafeAssetsBasePath()}/${project}/reader`;
+  return resolveLingoCafeAssetUrl(`${project}/reader`);
 };
 
 const buildReadPageHref = (

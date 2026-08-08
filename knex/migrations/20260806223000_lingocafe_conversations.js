@@ -113,6 +113,27 @@ exports.up = async function up(knex) {
 
   await knex.schema
     .withSchema("lingocafe")
+    .createTable("conversation_category_availability", (table) => {
+      table.text("category_id").notNullable();
+      table.text("language").notNullable();
+      table.text("level_key").notNullable();
+      table.integer("conversation_count").notNullable();
+      table.timestamp("updated_at").notNullable().defaultTo(knex.fn.now());
+
+      table.primary(["category_id", "language", "level_key"]);
+      table
+        .foreign("category_id")
+        .references("id")
+        .inTable("lingocafe.conversation_categories")
+        .onDelete("CASCADE");
+      table.index(
+        ["language", "level_key", "category_id"],
+        "idx_lc_conv_cat_availability_selection"
+      );
+    });
+
+  await knex.schema
+    .withSchema("lingocafe")
     .createTable("conversation_scenario_actors", (table) => {
       table.text("scenario_id").notNullable();
       table.text("id").notNullable();
@@ -175,6 +196,36 @@ exports.up = async function up(knex) {
         .references(["scenario_id", "id"])
         .inTable("lingocafe.conversation_variants")
         .onDelete("CASCADE");
+    });
+
+  await knex.schema
+    .withSchema("lingocafe")
+    .createTable("conversation_variant_cast", (table) => {
+      table.text("scenario_id").notNullable();
+      table.text("variant_id").notNullable();
+      table.text("actor_id").notNullable();
+      table.text("persona_id").nullable();
+
+      table.primary(["scenario_id", "variant_id", "actor_id"]);
+      table
+        .foreign(["scenario_id", "variant_id"])
+        .references(["scenario_id", "id"])
+        .inTable("lingocafe.conversation_variants")
+        .onDelete("CASCADE");
+      table
+        .foreign(["scenario_id", "actor_id"])
+        .references(["scenario_id", "id"])
+        .inTable("lingocafe.conversation_scenario_actors")
+        .onDelete("RESTRICT");
+      table
+        .foreign("persona_id")
+        .references("id")
+        .inTable("lingocafe.personas")
+        .onDelete("RESTRICT");
+      table.index(
+        ["persona_id"],
+        "idx_lc_conversation_variant_cast_persona"
+      );
     });
 
   await knex.schema
@@ -259,6 +310,27 @@ exports.up = async function up(knex) {
 
   await knex.schema
     .withSchema("lingocafe")
+    .createTable("conversation_progress", (table) => {
+      table
+        .text("user_id")
+        .notNullable()
+        .references("id")
+        .inTable("auth.users")
+        .onDelete("CASCADE");
+      table
+        .text("conversation_id")
+        .notNullable()
+        .references("id")
+        .inTable("lingocafe.conversations")
+        .onDelete("CASCADE");
+      table.integer("progress_bps").notNullable().defaultTo(0);
+      table.timestamp("updated_at").notNullable().defaultTo(knex.fn.now());
+
+      table.primary(["user_id", "conversation_id"]);
+    });
+
+  await knex.schema
+    .withSchema("lingocafe")
     .createTable("conversation_stars", (table) => {
       table
         .text("user_id")
@@ -277,9 +349,42 @@ exports.up = async function up(knex) {
       table.primary(["user_id", "conversation_id"]);
     });
 
+  await knex.schema
+    .withSchema("lingocafe")
+    .createTable("conversation_publication_state", (table) => {
+      table.text("id").primary().notNullable();
+      table.text("source_digest").notNullable();
+      table.timestamp("published_at").notNullable().defaultTo(knex.fn.now());
+    });
+
+  await knex.schema
+    .withSchema("lingocafe")
+    .createTable("conversation_user_state_versions", (table) => {
+      table.text("user_id").primary().notNullable();
+      table.bigInteger("version").notNullable().defaultTo(0);
+      table.timestamp("updated_at").notNullable().defaultTo(knex.fn.now());
+
+      table
+        .foreign("user_id")
+        .references("id")
+        .inTable("auth.users")
+        .onDelete("CASCADE");
+    });
+
+  await knex("lingocafe.conversation_publication_state").insert({
+    id: "current",
+    source_digest:
+      "0000000000000000000000000000000000000000000000000000000000000000",
+  });
+
   await knex.raw(`
     CREATE INDEX idx_lc_conversation_reads_user_time
     ON lingocafe.conversation_reads (user_id, read_at DESC)
+  `);
+
+  await knex.raw(`
+    CREATE INDEX idx_lc_conversation_progress_user_time
+    ON lingocafe.conversation_progress (user_id, updated_at DESC)
   `);
 
   await knex.raw(`
@@ -305,6 +410,19 @@ exports.up = async function up(knex) {
     ALTER TABLE lingocafe.conversation_category_parents
     ADD CONSTRAINT conversation_category_parents_no_self_check
     CHECK (category_id <> parent_category_id)
+  `);
+
+  await knex.raw(`
+    ALTER TABLE lingocafe.conversation_category_availability
+    ADD CONSTRAINT conversation_category_availability_language_check
+      CHECK (language ~ '^[a-z]{2,3}(-[a-z0-9]+)*$'),
+    ADD CONSTRAINT conversation_category_availability_level_key_check
+      CHECK (level_key IN (
+        'a1', 'a2', 'b1', 'b2',
+        'beginner', 'intermediate', 'advanced'
+      )),
+    ADD CONSTRAINT conversation_category_availability_count_check
+      CHECK (conversation_count >= 0)
   `);
 
   await knex.raw(`
@@ -374,7 +492,21 @@ exports.up = async function up(knex) {
     ADD CONSTRAINT conversation_rounds_position_check
     CHECK (position >= 1),
     ADD CONSTRAINT conversation_rounds_text_check
-    CHECK (btrim(text) <> '')
+      CHECK (btrim(text) <> '')
+  `);
+
+  await knex.raw(`
+    ALTER TABLE lingocafe.conversation_progress
+    ADD CONSTRAINT conversation_progress_bps_range
+      CHECK (progress_bps >= 0 AND progress_bps <= 10000)
+  `);
+
+  await knex.raw(`
+    ALTER TABLE lingocafe.conversation_publication_state
+    ADD CONSTRAINT conversation_publication_state_singleton_check
+      CHECK (id = 'current'),
+    ADD CONSTRAINT conversation_publication_state_digest_check
+      CHECK (source_digest ~ '^[a-f0-9]{64}$')
   `);
 };
 
@@ -383,10 +515,20 @@ exports.up = async function up(knex) {
  * @returns { Promise<void> }
  */
 exports.down = async function down(knex) {
+  await knex.schema
+    .withSchema("lingocafe")
+    .dropTable("conversation_user_state_versions");
+  await knex.schema
+    .withSchema("lingocafe")
+    .dropTable("conversation_publication_state");
   await knex.schema.withSchema("lingocafe").dropTable("conversation_stars");
+  await knex.schema.withSchema("lingocafe").dropTable("conversation_progress");
   await knex.schema.withSchema("lingocafe").dropTable("conversation_reads");
   await knex.schema.withSchema("lingocafe").dropTable("conversation_rounds");
   await knex.schema.withSchema("lingocafe").dropTable("conversations");
+  await knex.schema
+    .withSchema("lingocafe")
+    .dropTable("conversation_variant_cast");
   await knex.schema
     .withSchema("lingocafe")
     .dropTable("conversation_variant_localizations");
@@ -397,6 +539,9 @@ exports.down = async function down(knex) {
   await knex.schema
     .withSchema("lingocafe")
     .dropTable("conversation_category_scenarios");
+  await knex.schema
+    .withSchema("lingocafe")
+    .dropTable("conversation_category_availability");
   await knex.schema
     .withSchema("lingocafe")
     .dropTable("conversation_scenario_localizations");

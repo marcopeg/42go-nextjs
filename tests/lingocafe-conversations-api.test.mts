@@ -161,7 +161,7 @@ test("conversation reader persists scroll progress and marks read near the end",
     readSource("src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"),
     readSource("src/app/api/(lingocafe)/lingocafe/conversations/[conversationId]/route.ts"),
     readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"),
-    readSource("knex/migrations/20260807203000_lingocafe_conversation_progress.js"),
+    readSource("knex/migrations/20260806223000_lingocafe_conversations.js"),
   ]);
   assert.doesNotMatch(detailPage, /readAttemptedRef/);
   assert.doesNotMatch(detailPage, /method: "PUT"[^]*\/read/);
@@ -190,7 +190,7 @@ test("reader sessions resolve users inside the active app before email fallback"
 });
 
 test("conversation traversal stays English and only detail exposes translation controls", async () => {
-  const [dataSource, discoveryPage, sharedUi, categoryPage, detailPage, translationRoute, appLayout, appLayoutTypes, libraryShell, plainList] =
+  const [dataSource, discoveryPage, sharedUi, categoryPage, detailPage, translationRoute, appLayout, appLayoutTypes, libraryShell, plainList, bottomSheet] =
     await Promise.all([
       readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"),
       readSource("src/app/(app)/(lingocafe)/conversations/(library)/page.tsx"),
@@ -210,6 +210,7 @@ test("conversation traversal stays English and only detail exposes translation c
         "src/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell.tsx"
       ),
       readSource("src/42go/components/PlainList/PlainList.tsx"),
+      readSource("src/42go/components/SwipeableBottomSheet/SwipeableBottomSheet.tsx"),
     ]);
 
   assert.ok(
@@ -237,14 +238,14 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.match(categoryPage, /<ConversationChoiceGroupRow/);
   assert.doesNotMatch(sharedUi, /<ConversationBadge>\{choice\.language\}<\/ConversationBadge>/);
   assert.match(sharedUi, /Choose a level for \$\{firstChoice\.title\}/);
-  assert.match(sharedUi, /data-\[state=open\]:slide-in-from-bottom/);
-  assert.match(sharedUi, /data-\[state=closed\]:slide-out-to-bottom/);
-  assert.match(sharedUi, /inset-x-2\.5 bottom-0/);
-  assert.match(sharedUi, /rounded-t-3xl/);
-  assert.match(sharedUi, /window\.setTimeout\(\(\) => router\.push\(href\), 260\)/);
+  assert.match(sharedUi, /<SwipeableBottomSheet/);
+  assert.match(bottomSheet, /inset-x-2\.5 bottom-0/);
+  assert.match(bottomSheet, /rounded-t-3xl/);
+  assert.match(sharedUi, /onCloseComplete=\{\(\) => \{/);
+  assert.match(sharedUi, /if \(href\) router\.push\(href\)/);
   assert.match(sharedUi, /onClick=\{openLevelPicker\}[^]*className="relative flex min-w-0 w-full/);
   assert.match(sharedUi, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/);
-  assert.match(sharedUi, /<DialogTitle className="text-xl leading-tight">[^]*Choose reading level/);
+  assert.match(sharedUi, /title="Choose reading level"/);
   assert.ok(
     (sharedUi.match(/Choose reading level/g) || []).length >= 2,
     "desktop and mobile level pickers share the same visible title"
@@ -297,7 +298,7 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.doesNotMatch(detailPage, /data\.variant\.canonicalTitle/);
   assert.doesNotMatch(detailPage, /\{actor\?\.role \?/);
   assert.doesNotMatch(detailPage, />Turn \{round\.position\}<\/span>/);
-  assert.match(detailPage, /aria-label=\{`Turn \$\{round\.position\}, \$\{actor\?\.name \|\| round\.actorId\}`\}/);
+  assert.match(detailPage, /aria-label=\{`Turn \$\{round\.position\}, \$\{displayName\}`\}/);
   assert.match(detailPage, /data\.conversation\.cefrLevel\.toUpperCase\(\)\} · \{data\.state\.isRead \? "Read" : "Unread"\}/);
   assert.doesNotMatch(detailPage, /<ConversationBadge>/);
   assert.match(detailPage, /absolute inset-x-24 min-w-0 text-center/);
@@ -305,6 +306,33 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.match(translationRoute, /scenario\.canonical_language as scenario_canonical_language/);
   assert.match(translationRoute, /variant\.canonical_language as variant_canonical_language/);
   assert.match(translationRoute, /requestedSourceLanguage: payload\.from/);
+});
+
+test("conversation detail resolves persona presentation once per actor and renders run avatars", async () => {
+  const [dataSource, types, detailPage, avatar, assets] = await Promise.all([
+    readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"),
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/types.ts"),
+    readSource("src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"),
+    readSource("src/app/(app)/(lingocafe)/_components/PersonaAvatar.tsx"),
+    readSource("src/lib/lingocafe/assets.ts"),
+  ]);
+
+  assert.match(dataSource, /conversation_variant_cast as cast/);
+  assert.match(dataSource, /persona\.presentations as persona_presentations/);
+  assert.match(dataSource, /resolvePersonaPresentation/);
+  assert.match(dataSource, /profile\.ownLanguage/);
+  assert.match(dataSource, /\[normalizedContext, primaryContext, "default"\]/);
+  assert.match(dataSource, /castIsMalformed/);
+  assert.match(types, /source: "persona"/);
+  assert.match(types, /avatarContentHash: string/);
+  assert.match(detailPage, /<PersonaAvatar/);
+  assert.match(detailPage, /!startsActorRun && "invisible"/);
+  assert.match(detailPage, /actor\?\.identity\.displayName/);
+  assert.match(avatar, /unoptimized/);
+  assert.match(avatar, /setFailedSources/);
+  assert.match(assets, /LC_ASSETS_BASE_PATH/);
+  assert.match(assets, /normalized\.split\("\/"\)\.includes\("\.\."\)/);
+  assert.doesNotMatch(detailPage, /dangerouslySetInnerHTML/);
 });
 
 test("shared language preferences stage choices and save them explicitly", async () => {

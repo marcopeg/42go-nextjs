@@ -7,6 +7,7 @@ import {
   loadReaderProfile,
 } from "@/app/api/(lingocafe)/lingocafe/_lib/reader";
 import { isTranslationEnabled } from "@/app/api/(lingocafe)/lingocafe/_lib/translation";
+import { resolveLingoCafeAssetUrl } from "@/lib/lingocafe/assets";
 
 export type ConversationBand = "beginner" | "intermediate" | "advanced";
 export type ConversationCefrLevel = "a1" | "a2" | "b1" | "b2";
@@ -721,6 +722,93 @@ type ConversationDetailRow = ConversationSummaryRow & {
   variant_localized_description: string | null;
 };
 
+type PersonaPresentation = {
+  id: string;
+  languageContext: string;
+  displayName: string;
+  avatarAssetKey: string;
+  avatarContentHash: string;
+};
+
+type ConversationActorRow = {
+  id: string;
+  position: number | string;
+  name: string;
+  role: string;
+  description: string;
+  cast_actor_id: string | null;
+  persona_id: string | null;
+  persona_status: string | null;
+  persona_is_visible: boolean | null;
+  persona_one_line: string | null;
+  persona_presentations: unknown;
+};
+
+const parseRecord = (value: unknown): Record<string, unknown> => {
+  if (typeof value === "string") {
+    try {
+      return parseRecord(JSON.parse(value));
+    } catch {
+      return {};
+    }
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+};
+
+const parsePersonaPresentation = (
+  value: unknown
+): PersonaPresentation | null => {
+  const record = parseRecord(value);
+  const id = typeof record.id === "string" ? record.id.trim() : "";
+  const languageContext =
+    typeof record.language_context === "string"
+      ? record.language_context.trim().toLowerCase()
+      : "";
+  const displayName =
+    typeof record.display_name === "string" ? record.display_name.trim() : "";
+  const avatarAssetKey =
+    typeof record.avatar_asset_key === "string"
+      ? record.avatar_asset_key.trim()
+      : "";
+  const avatarContentHash =
+    typeof record.avatar_content_hash === "string"
+      ? record.avatar_content_hash.trim()
+      : "";
+  if (
+    !id ||
+    !languageContext ||
+    !displayName ||
+    !avatarAssetKey ||
+    !/^[a-f0-9]{64}$/.test(avatarContentHash)
+  ) {
+    return null;
+  }
+  return {
+    id,
+    languageContext,
+    displayName,
+    avatarAssetKey,
+    avatarContentHash,
+  };
+};
+
+const resolvePersonaPresentation = (
+  value: unknown,
+  requestedContext: string
+) => {
+  const presentations = parseRecord(value);
+  const normalizedContext = requestedContext.trim().toLowerCase().replaceAll("_", "-");
+  const primaryContext = normalizedContext.split("-")[0] || normalizedContext;
+  const keys = [...new Set([normalizedContext, primaryContext, "default"])];
+  const selectedKey = keys.find((key) => parsePersonaPresentation(presentations[key]));
+  const selected = selectedKey
+    ? parsePersonaPresentation(presentations[selectedKey])
+    : null;
+  const fallback = parsePersonaPresentation(presentations.default);
+  return { selected, fallback };
+};
+
 export const loadConversationDetail = async ({
   userId,
   conversationId,
@@ -771,15 +859,39 @@ export const loadConversationDetail = async ({
   }
 
   const [actors, rounds] = await Promise.all([
-    db("lingocafe.conversation_scenario_actors")
-      .select("id", "position", "name", "role", "description")
-      .where({ scenario_id: detail.scenario_id })
-      .orderBy("position", "asc"),
+    db("lingocafe.conversation_scenario_actors as actor")
+      .leftJoin("lingocafe.conversation_variant_cast as cast", function joinCast() {
+        this.on("cast.scenario_id", "=", "actor.scenario_id")
+          .andOnVal("cast.variant_id", "=", detail.variant_id)
+          .andOn("cast.actor_id", "=", "actor.id");
+      })
+      .leftJoin("lingocafe.personas as persona", "persona.id", "cast.persona_id")
+      .select(
+        "actor.id",
+        "actor.position",
+        "actor.name",
+        "actor.role",
+        "actor.description",
+        "cast.actor_id as cast_actor_id",
+        "cast.persona_id",
+        "persona.status as persona_status",
+        "persona.is_visible as persona_is_visible",
+        "persona.one_line as persona_one_line",
+        "persona.presentations as persona_presentations"
+      )
+      .where({ "actor.scenario_id": detail.scenario_id })
+      .orderBy("actor.position", "asc") as Promise<ConversationActorRow[]>,
     db("lingocafe.conversation_rounds")
       .select("position", "actor_id", "text")
       .where({ conversation_id: detail.id, scenario_id: detail.scenario_id })
       .orderBy("position", "asc"),
   ]);
+  const castIsMalformed = actors.some(
+    (actor) =>
+      actor.cast_actor_id === null ||
+      (actor.persona_id !== null &&
+        (actor.persona_status !== "accepted" || !actor.persona_is_visible))
+  );
   const actorIds = new Set(actors.map((actor) => String(actor.id)));
   const dialogueIsMalformed = rounds.some(
     (round, index) =>
@@ -787,9 +899,59 @@ export const loadConversationDetail = async ({
       !actorIds.has(String(round.actor_id)) ||
       !String(round.text).trim()
   );
-  if (rounds.length === 0 || dialogueIsMalformed) {
+  if (rounds.length === 0 || castIsMalformed || dialogueIsMalformed) {
     throw new ConversationApiError(404, "not_found", "Conversation not found.");
   }
+
+  const resolvedActors = actors.map((actor) => {
+    const sourceName = String(actor.name);
+    const base = {
+      id: String(actor.id),
+      position: Number(actor.position),
+      name: sourceName,
+      role: String(actor.role),
+      description: String(actor.description),
+    };
+    if (actor.persona_id === null) {
+      return {
+        ...base,
+        identity: {
+          source: "scenario" as const,
+          displayName: sourceName,
+          persona: null,
+        },
+      };
+    }
+
+    const { selected, fallback } = resolvePersonaPresentation(
+      actor.persona_presentations,
+      profile.ownLanguage
+    );
+    const avatarUrl = resolveLingoCafeAssetUrl(selected?.avatarAssetKey);
+    if (!selected || !avatarUrl) {
+      throw new ConversationApiError(404, "not_found", "Conversation not found.");
+    }
+    const fallbackUrl =
+      fallback && fallback.avatarAssetKey !== selected.avatarAssetKey
+        ? resolveLingoCafeAssetUrl(fallback.avatarAssetKey)
+        : null;
+    return {
+      ...base,
+      identity: {
+        source: "persona" as const,
+        displayName: selected.displayName,
+        persona: {
+          id: actor.persona_id,
+          presentationId: selected.id,
+          languageContext: selected.languageContext,
+          oneLine: String(actor.persona_one_line || ""),
+          avatarUrl,
+          avatarContentHash: selected.avatarContentHash,
+          avatarFallbackUrl: fallbackUrl,
+        },
+      },
+    };
+  });
 
   return {
     conversation: {
@@ -828,13 +990,7 @@ export const loadConversationDetail = async ({
         detail.cefr_level
       ),
     },
-    actors: actors.map((actor) => ({
-      id: String(actor.id),
-      position: Number(actor.position),
-      name: String(actor.name),
-      role: String(actor.role),
-      description: String(actor.description),
-    })),
+    actors: resolvedActors,
     rounds: rounds.map((round) => ({
       position: Number(round.position),
       actorId: String(round.actor_id),

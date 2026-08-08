@@ -9,6 +9,7 @@ import { Modal } from "@/42go/components/modal";
 import { useEventTracker } from "@/42go/events/use-events";
 import { AppLayout } from "@/42go/layouts/app";
 import { BookReaderFloatingActionBar } from "@/app/(app)/(lingocafe)/books/_components/BookReaderFloatingActionBar";
+import { PersonaAvatar } from "@/app/(app)/(lingocafe)/_components/PersonaAvatar";
 import { BookReaderPlaybackControls } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPlaybackControls";
 import {
   BookReaderPreferencesPanel,
@@ -457,6 +458,10 @@ const ConversationReaderPage = () => {
                       const placement = threadLayout[roundIndex];
                       const isRight = placement?.side === "right";
                       const startsActorRun = placement?.startsActorRun ?? true;
+                      const displayName = actor?.identity.displayName || actor?.name || round.actorId;
+                      const persona = actor?.identity.source === "persona"
+                        ? actor.identity.persona
+                        : null;
                       const active = playback.activeSentenceId?.startsWith(`conversation:${data.conversation.id}:round:${round.position}:`) ?? false;
                       return (
                         <li
@@ -466,49 +471,62 @@ const ConversationReaderPage = () => {
                             roundIndex > 0 && (startsActorRun ? "mt-5" : "mt-2"),
                             isRight && "justify-end"
                           )}
-                          aria-label={`Turn ${round.position}, ${actor?.name || round.actorId}`}
+                          aria-label={`Turn ${round.position}, ${displayName}`}
                         >
                           <div
                             className={cn(
-                              "flex w-full max-w-[92%] flex-col md:max-w-[85%]",
-                              isRight ? "items-end" : "items-start"
+                              "flex w-full max-w-[96%] items-end gap-2 md:max-w-[88%]",
+                              isRight && "flex-row-reverse"
                             )}
                           >
-                            {startsActorRun ? (
-                              <p
-                                className={cn("mb-1 px-2 text-xs font-medium", isRight && "text-right")}
-                                style={{ color: "var(--reader-fg-muted)" }}
-                              >
-                                {actor?.name || round.actorId}
-                              </p>
-                            ) : null}
-                            <article
+                            <PersonaAvatar
+                              displayName={displayName}
+                              avatarUrl={persona?.avatarUrl}
+                              avatarFallbackUrl={persona?.avatarFallbackUrl}
+                              className={cn(!startsActorRun && "invisible")}
+                            />
+                            <div
                               className={cn(
-                                "w-fit max-w-full rounded-2xl border px-4 py-3 shadow-sm",
-                                isRight && "text-right",
-                                active && "border-primary"
+                                "flex min-w-0 max-w-[calc(100%_-_2.75rem)] flex-col",
+                                isRight ? "items-end" : "items-start"
                               )}
-                              style={{
-                                borderColor: active ? "var(--primary)" : "var(--reader-border)",
-                                backgroundColor: active ? "var(--reader-hover-bg)" : "var(--reader-fg-soft)",
-                              }}
                             >
-                              <ConversationTranslatableText
-                                text={round.text}
-                                sourceLanguage={data.translation.from}
-                                targetLanguage={data.translation.to}
-                                context={{ kind: "conversation", conversationId: data.conversation.id }}
-                                scope={translationScope}
-                                idPrefix={`conversation:${data.conversation.id}:round:${round.position}`}
-                                activeSentenceId={playback.activeSentenceId}
-                                activeWordRange={playback.activeWordRange}
-                                className="leading-7"
-                                onStartFromHere={playback.canPlay
-                                  ? playback.startAudiobookFromTranslation
-                                  : undefined}
-                                {...translationPlaybackProps}
-                              />
-                            </article>
+                              {startsActorRun ? (
+                                <p
+                                  className={cn("mb-1 px-2 text-xs font-medium", isRight && "text-right")}
+                                  style={{ color: "var(--reader-fg-muted)" }}
+                                >
+                                  {displayName}
+                                </p>
+                              ) : null}
+                              <article
+                                className={cn(
+                                  "w-fit max-w-full rounded-2xl border px-4 py-3 shadow-sm",
+                                  isRight && "text-right",
+                                  active && "border-primary"
+                                )}
+                                style={{
+                                  borderColor: active ? "var(--primary)" : "var(--reader-border)",
+                                  backgroundColor: active ? "var(--reader-hover-bg)" : "var(--reader-fg-soft)",
+                                }}
+                              >
+                                <ConversationTranslatableText
+                                  text={round.text}
+                                  sourceLanguage={data.translation.from}
+                                  targetLanguage={data.translation.to}
+                                  context={{ kind: "conversation", conversationId: data.conversation.id }}
+                                  scope={translationScope}
+                                  idPrefix={`conversation:${data.conversation.id}:round:${round.position}`}
+                                  activeSentenceId={playback.activeSentenceId}
+                                  activeWordRange={playback.activeWordRange}
+                                  className="leading-7"
+                                  onStartFromHere={playback.canPlay
+                                    ? playback.startAudiobookFromTranslation
+                                    : undefined}
+                                  {...translationPlaybackProps}
+                                />
+                              </article>
+                            </div>
                           </div>
                         </li>
                       );

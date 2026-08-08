@@ -87,9 +87,29 @@ export type ConversationCategoryResponse = {
 
 export type ConversationActor = {
   id: string;
+  position: number;
   name: string;
   role?: string;
   description?: string;
+  identity:
+    | {
+        source: "scenario";
+        displayName: string;
+        persona: null;
+      }
+    | {
+        source: "persona";
+        displayName: string;
+        persona: {
+          id: string;
+          presentationId: string;
+          languageContext: string;
+          oneLine: string;
+          avatarUrl: string;
+          avatarContentHash: string;
+          avatarFallbackUrl: string | null;
+        };
+      };
 };
 
 export type ConversationRound = {

@@ -6,8 +6,6 @@ import test from "node:test";
 const require = createRequire(import.meta.url);
 const migrationPath =
   "knex/migrations/20260806223000_lingocafe_conversations.js";
-const availabilityMigrationPath =
-  "knex/migrations/20260807120000_lingocafe_conversation_category_availability.js";
 const seedPath = "knex/seeds/20260806224000.lingocafe.conversations.js";
 
 const readSource = (path: string) =>
@@ -22,21 +20,23 @@ const foundationContentTables = [
   "conversation_scenario_actors",
   "conversation_variants",
   "conversation_variant_localizations",
+  "conversation_variant_cast",
   "conversations",
   "conversation_rounds",
-];
-const contentTables = [
-  ...foundationContentTables,
   "conversation_category_availability",
 ];
+const contentTables = [...foundationContentTables];
 
-test("conversation migration creates the normalized model additively", async () => {
+test("conversation baseline creates the complete normalized model", async () => {
   const migration = await readSource(migrationPath);
 
   for (const table of [
     ...foundationContentTables,
     "conversation_reads",
+    "conversation_progress",
     "conversation_stars",
+    "conversation_publication_state",
+    "conversation_user_state_versions",
   ]) {
     assert.match(migration, new RegExp(`createTable\\("${table}"`));
   }
@@ -55,10 +55,12 @@ test("conversation migration creates the normalized model additively", async () 
   assert.match(migration, /conversations_cefr_check/);
   assert.match(migration, /conversation_rounds_position_check/);
   assert.match(migration, /conversation_rounds_text_check/);
+  assert.match(migration, /conversation_progress_bps_range/);
+  assert.match(migration, /conversation_publication_state_digest_check/);
 });
 
-test("additive migration stores exact-level and band category availability", async () => {
-  const migration = await readSource(availabilityMigrationPath);
+test("conversation baseline stores exact-level and band category availability", async () => {
+  const migration = await readSource(migrationPath);
 
   assert.match(migration, /createTable\("conversation_category_availability"/);
   assert.match(
@@ -85,6 +87,29 @@ test("additive migration stores exact-level and band category availability", asy
     migration.slice(migration.indexOf("exports.down")),
     /dropTable\("conversation_category_availability"\)/
   );
+});
+
+test("variant cast explicitly resolves every actor to a persona or scenario identity", async () => {
+  const migration = await readSource(migrationPath);
+
+  assert.match(migration, /createTable\("conversation_variant_cast"/);
+  assert.match(
+    migration,
+    /table\.primary\(\["scenario_id", "variant_id", "actor_id"\]\)/
+  );
+  assert.match(
+    migration,
+    /foreign\(\["scenario_id", "variant_id"\]\)[\s\S]*?inTable\("lingocafe\.conversation_variants"\)[\s\S]*?onDelete\("CASCADE"\)/
+  );
+  assert.match(
+    migration,
+    /foreign\(\["scenario_id", "actor_id"\]\)[\s\S]*?inTable\("lingocafe\.conversation_scenario_actors"\)[\s\S]*?onDelete\("RESTRICT"\)/
+  );
+  assert.match(
+    migration,
+    /foreign\("persona_id"\)[\s\S]*?inTable\("lingocafe\.personas"\)[\s\S]*?onDelete\("RESTRICT"\)/
+  );
+  assert.match(migration, /idx_lc_conversation_variant_cast_persona/);
 });
 
 test("migration enforces scenario-scoped variants, actors, and ordered rounds", async () => {
@@ -131,11 +156,11 @@ test("migration isolates user state with cascading composite keys and time index
   assert.equal(
     (userStateSection.match(/table\.primary\(\["user_id", "conversation_id"\]\)/g) || [])
       .length,
-    2
+    3
   );
   assert.equal(
     (userStateSection.match(/\.onDelete\("CASCADE"\)/g) || []).length,
-    4
+    7
   );
   assert.match(
     migration,
@@ -144,6 +169,10 @@ test("migration isolates user state with cascading composite keys and time index
   assert.match(
     migration,
     /idx_lc_conversation_stars_user_time[\s\S]*?\(user_id, starred_at DESC\)/
+  );
+  assert.match(
+    migration,
+    /idx_lc_conversation_progress_user_time[\s\S]*?\(user_id, updated_at DESC\)/
   );
 });
 
@@ -163,6 +192,8 @@ test("migration rollback drops only conversation tables in dependency-safe order
   assert.ok(positions.conversation_stars < positions.conversations);
   assert.ok(positions.conversation_reads < positions.conversations);
   assert.ok(positions.conversation_rounds < positions.conversations);
+  assert.ok(positions.conversation_variant_cast < positions.conversation_variants);
+  assert.ok(positions.conversation_variant_cast < positions.conversation_scenario_actors);
   assert.ok(positions.conversations < positions.conversation_variants);
   assert.ok(
     positions.conversation_variant_localizations <
@@ -297,6 +328,16 @@ test("development fixture is fixed, complete, and exercises plural category path
     ?.rows.map((row) => row.position);
   assert.deepEqual(actorPositions, [1, 2]);
   assert.deepEqual(roundPositions, [1, 2, 3, 4]);
+
+  const cast = byTable.get("lingocafe.conversation_variant_cast")?.rows;
+  assert.equal(cast?.length, 2);
+  assert.deepEqual(
+    cast?.map((row) => [row.actor_id, row.persona_id]),
+    [
+      ["customer", "fixture-learner"],
+      ["barista", null],
+    ]
+  );
 
   const availability = byTable.get(
     "lingocafe.conversation_category_availability"
