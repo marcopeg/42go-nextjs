@@ -1,6 +1,6 @@
 ---
 name: 42go-ui-modal
-description: Use when implementing modal, dialog, popup, sheet, side-panel, drawer, fullscreen overlay, or overlay migration UI in this repository. Prefer the shared 42Go Modal component over bespoke fixed overlays.
+description: Use when implementing modal, dialog, popup, lightweight mobile option sheet, bottom sheet, side-panel, drawer, fullscreen overlay, or overlay migration UI in this repository. Choose between the shared 42Go Modal and SwipeableBottomSheet components; never build bespoke fixed overlays.
 ---
 
 # 42go UI Modal
@@ -10,13 +10,25 @@ Use this skill before creating or changing overlay UI.
 The canonical component lives at:
 
 - `src/42go/components/modal`
+- `src/42go/components/SwipeableBottomSheet`
 - `src/components/ui/dialog.tsx`
 
-## Rule
+## Component selection
 
-Use `Modal` for dialogs, popups, sheets, drawers, side panels, and full-screen overlays. Do not build local `fixed inset-0` overlay shells unless `Modal` cannot support the requirement and the reason is documented in the task notes.
+Use `SwipeableBottomSheet` for a short, lightweight mobile choice or action surface, such as selecting one reading level from a small list. It is especially appropriate when desktop uses a contextual popover while mobile needs a native-style bottom sheet. The shared component owns:
+
+- finger-tracked downward dragging from the sheet or backdrop;
+- distance and velocity dismissal, short-drag snap-back, and backdrop-tap dismissal;
+- coordinated sheet translation and backdrop fading before unmount;
+- safe-area spacing, focus restoration, Escape handling, and reduced-motion adaptation.
+
+Use `Modal` for dialogs, forms, confirmations, editors, scroll-heavy content, drawers, side panels, multi-step workflows, and full-screen overlays.
+
+Do not build local `fixed inset-0` overlay shells or recreate swipe/backdrop gesture state at a call site. If neither shared component supports the requirement, document the gap before adding a new primitive.
 
 Keep app-specific content outside the shared modal component. The shared layer owns overlay lifecycle, focus, Escape handling, backdrop behavior, responsive presentation, stacking, and chrome.
+
+Keep app-specific content outside `SwipeableBottomSheet` too. Callers supply the controlled state, title, option content, focus-return callback, and optional post-close action. Use its imperative `close()` handle when an option must wait for the exit animation before navigating.
 
 `Modal` supports nested modal and panel stacks. There is no public stack prop. When a child surface belongs to a parent overlay, render the child `<Modal>` inside the parent `<Modal>` children. The core component assigns stack levels and z-index values automatically. Keep each level controlled with its own `open` state and clear child state when closing a parent.
 
@@ -34,7 +46,40 @@ Modal footer buttons must preserve the meaning of the action across normal, hove
 
 ```tsx
 import { Modal } from "@/42go/components/modal";
+import {
+  SwipeableBottomSheet,
+  type SwipeableBottomSheetHandle,
+} from "@/42go/components/SwipeableBottomSheet";
 ```
+
+## Lightweight mobile option sheet
+
+```tsx
+const sheetRef = useRef<SwipeableBottomSheetHandle | null>(null);
+
+<SwipeableBottomSheet
+  ref={sheetRef}
+  open={open}
+  onOpenChange={setOpen}
+  title="Choose an option"
+  onCloseComplete={runPendingAction}
+>
+  {options.map((option) => (
+    <button
+      key={option.id}
+      type="button"
+      onClick={() => {
+        pendingOptionRef.current = option;
+        sheetRef.current?.close();
+      }}
+    >
+      {option.label}
+    </button>
+  ))}
+</SwipeableBottomSheet>
+```
+
+Keep option rows at least 44 px high. Do not close and navigate in the same click; let `onCloseComplete` run the pending action after the shared exit animation.
 
 ## API
 

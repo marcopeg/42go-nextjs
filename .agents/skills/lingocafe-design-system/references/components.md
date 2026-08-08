@@ -207,6 +207,34 @@ In this repository, use `NavigationalTabs` from `@/components/ui/navigational-ta
 
 Use the shared `Modal` abstraction backed by Radix Dialog. Do not build bespoke fixed overlays.
 
+### Lightweight mobile option sheets
+
+Use `SwipeableBottomSheet` from `@/42go/components/SwipeableBottomSheet` for a
+short mobile-only list of choices or closely related actions. Prefer it when
+the same interaction is a contextual popover on desktop and a native-style
+bottom sheet below `md`.
+
+- Keep the visible content focused: one sentence-case title and a short option
+  list with minimum 44 px rows. Do not put multi-step forms or long editors in
+  this surface; use `Modal` for those.
+- Let the shared component own the rounded sheet, safe area, scrim, focus,
+  Escape, drag tracking, velocity/distance threshold, snap-back, and exit
+  timing. Never reproduce those mechanics in domain code.
+- Allow downward direct manipulation from both sheet and backdrop. Fade the
+  scrim proportionally while dragging.
+- Backdrop taps and committed drags must slide the sheet fully below the
+  viewport and fade the scrim to zero before unmount. A short drag returns to
+  rest.
+- Use the component's `close()` handle when choosing an option triggers
+  navigation or another visible state change. Defer that action until
+  `onCloseComplete` so the exit remains perceptible.
+- Adapt reduced motion with a shorter transition rather than an abrupt
+  disappearance; direct-manipulation feedback must remain understandable on
+  iOS Home Screen apps.
+
+Use `Modal` instead for forms, confirmations, scroll-heavy content, drawers,
+side panels, multi-step workflows, and full-screen overlays.
+
 ### Focused mobile editors
 
 Use the QuickList add/edit surface as the canonical mobile pattern when a modal

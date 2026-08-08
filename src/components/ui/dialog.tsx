@@ -29,36 +29,51 @@ const DialogClose = ({
   <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 );
 
+type DialogOverlayProps = React.ComponentProps<typeof DialogPrimitive.Overlay> & {
+  disableExitAnimation?: boolean;
+};
+
 const DialogOverlay = ({
   className,
+  disableExitAnimation = false,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) => (
+}: DialogOverlayProps) => (
   <DialogPrimitive.Overlay
     data-slot="dialog-overlay"
     className={cn(
-      "fixed inset-0 z-[700] bg-black/45 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+      "fixed inset-0 z-[700] bg-black/45 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+      !disableExitAnimation && "data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
       className
     )}
     {...props}
   />
 );
 
+type DialogContentProps = React.ComponentProps<typeof DialogPrimitive.Content> & {
+  overlayProps?: DialogOverlayProps;
+};
+
 const DialogContent = ({
   className,
+  overlayProps,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content>) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      data-slot="dialog-content"
-      className={cn(
-        "fixed z-[710] bg-background text-foreground shadow-xl outline-none",
-        className
-      )}
-      {...props}
-    />
-  </DialogPortal>
-);
+}: DialogContentProps) => {
+  const { className: overlayClassName, ...resolvedOverlayProps } = overlayProps ?? {};
+
+  return (
+    <DialogPortal>
+      <DialogOverlay className={overlayClassName} {...resolvedOverlayProps} />
+      <DialogPrimitive.Content
+        data-slot="dialog-content"
+        className={cn(
+          "fixed z-[710] bg-background text-foreground shadow-xl outline-none",
+          className
+        )}
+        {...props}
+      />
+    </DialogPortal>
+  );
+};
 
 const DialogTitle = ({
   className,

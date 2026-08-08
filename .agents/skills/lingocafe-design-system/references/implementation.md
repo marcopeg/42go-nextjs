@@ -97,7 +97,10 @@ Use the current compatible versions in the destination. Do not copy version pins
 - Keep hard-coded colors inside brand/editorial exceptions or reader palettes.
 - Use client-only authenticated pages with the shared `AppLayout` in this repository.
 - Fetch protected page data in the browser with same-origin credentials.
-- Reuse shared Modal for dialogs, sheets, panels, drawers, and fullscreen overlays.
+- Reuse shared Modal for dialogs, forms, confirmations, panels, drawers, and fullscreen overlays.
+- Reuse `SwipeableBottomSheet` for short mobile option/action lists, especially
+  when desktop uses a contextual popover. Keep swipe, snap-back, backdrop fade,
+  safe-area, and deferred-close behavior inside the shared component.
 - Keep complex components in container/presentation/logic modules.
 
 Avoid:
@@ -134,6 +137,7 @@ When working inside the original repository, treat these as code authority:
 - `src/42go/components/modal/`
 - `src/42go/components/panel/`
 - `src/42go/components/PlainList/`
+- `src/42go/components/SwipeableBottomSheet/`
 - `src/config/lingocafe/`
 - `src/app/(app)/(lingocafe)/books/`
 
