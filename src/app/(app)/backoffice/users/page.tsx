@@ -13,7 +13,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  getManagedUserFeatureFlags,
+  isManagedUserFeatureEnabled,
+  parseFeatureFlagsEditorValue,
+  updateManagedUserFeatureFlag,
+} from '@/app/(app)/backoffice/users/managed-user-feature-flags';
 import { useSession } from 'next-auth/react';
 import {
   Activity,
@@ -495,9 +502,31 @@ const UserEditPanel = ({
   onSave: (user: AppUser, fields: UserEditFields) => Promise<void>;
 }) => {
   const [error, setError] = useState<string | null>(null);
+  const managedFeatureFlags = getManagedUserFeatureFlags(user?.appId || '');
+  const featureFlagsAreValid = fields
+    ? parseFeatureFlagsEditorValue(fields.featureFlags) !== undefined
+    : true;
 
   const updateField = (key: keyof UserEditFields, value: string) => {
     onFieldsChange(fields ? { ...fields, [key]: value } : fields);
+  };
+
+  const updateManagedFeatureFlag = (key: string, enabled: boolean) => {
+    if (!fields) return;
+
+    try {
+      updateField(
+        'featureFlags',
+        updateManagedUserFeatureFlag({
+          value: fields.featureFlags,
+          key,
+          enabled,
+        })
+      );
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to update feature flag');
+    }
   };
 
   const handleSave = async () => {
@@ -607,7 +636,53 @@ const UserEditPanel = ({
             />
           </FieldGroup>
 
-          <FieldGroup label="Feature flags JSON">
+          {managedFeatureFlags.length > 0 ? (
+            <section className="grid gap-3">
+              <div className="grid gap-1">
+                <h3 className="text-sm font-medium">Features</h3>
+                <p className="text-xs text-muted-foreground">
+                  User-level rollout controls for this app.
+                </p>
+              </div>
+              <div className="divide-y rounded-md border bg-muted/20">
+                {managedFeatureFlags.map(feature => {
+                  const enabled = isManagedUserFeatureEnabled(
+                    fields.featureFlags,
+                    feature.key
+                  );
+
+                  return (
+                    <div
+                      key={feature.key}
+                      className="flex items-center justify-between gap-4 px-3 py-3"
+                    >
+                      <div className="grid min-w-0 gap-1">
+                        <span className="text-sm font-medium">{feature.title}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {feature.description}
+                        </span>
+                      </div>
+                      <Switch
+                        checked={enabled}
+                        onCheckedChange={checked =>
+                          updateManagedFeatureFlag(feature.key, checked)
+                        }
+                        disabled={!featureFlagsAreValid || saving}
+                        aria-label={`${feature.title} feature`}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              {!featureFlagsAreValid ? (
+                <p className="text-xs text-destructive">
+                  Fix the feature flags JSON before using these switches.
+                </p>
+              ) : null}
+            </section>
+          ) : null}
+
+          <FieldGroup label="Feature flags JSON (advanced)">
             <Textarea
               value={fields.featureFlags}
               onChange={event => updateField('featureFlags', event.target.value)}
@@ -752,6 +827,11 @@ const UserDetailPanel = ({
           </DetailSection>
 
           <DetailSection title="Feature flags">
+            {getManagedUserFeatureFlags(user.appId).map(feature => (
+              <DetailField key={feature.key} label={feature.title}>
+                {user.featureFlags?.[feature.key] === true ? 'Enabled' : 'Disabled'}
+              </DetailField>
+            ))}
             <JsonBlock value={user.featureFlags} />
           </DetailSection>
         </div>

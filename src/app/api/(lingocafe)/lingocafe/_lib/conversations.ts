@@ -7,7 +7,7 @@ import {
   loadReaderProfile,
 } from "@/app/api/(lingocafe)/lingocafe/_lib/reader";
 import { isTranslationEnabled } from "@/app/api/(lingocafe)/lingocafe/_lib/translation";
-import { resolveLingoCafeAssetUrl } from "@/lib/lingocafe/assets";
+import { resolveLingoCafePersonaAvatarUrl } from "@/lib/lingocafe/assets";
 
 export type ConversationBand = "beginner" | "intermediate" | "advanced";
 export type ConversationCefrLevel = "a1" | "a2" | "b1" | "b2";
@@ -927,13 +927,13 @@ export const loadConversationDetail = async ({
       actor.persona_presentations,
       profile.ownLanguage
     );
-    const avatarUrl = resolveLingoCafeAssetUrl(selected?.avatarAssetKey);
+    const avatarUrl = resolveLingoCafePersonaAvatarUrl(selected?.avatarAssetKey);
     if (!selected || !avatarUrl) {
       throw new ConversationApiError(404, "not_found", "Conversation not found.");
     }
     const fallbackUrl =
       fallback && fallback.avatarAssetKey !== selected.avatarAssetKey
-        ? resolveLingoCafeAssetUrl(fallback.avatarAssetKey)
+        ? resolveLingoCafePersonaAvatarUrl(fallback.avatarAssetKey)
         : null;
     return {
       ...base,

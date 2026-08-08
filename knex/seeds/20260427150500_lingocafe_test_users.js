@@ -22,6 +22,11 @@ const upsertUser = async (trx, user) => {
       name: user.name,
       password: user.password,
       image: user.image,
+      // Repair clean/legacy development users whose flags are still NULL, but
+      // preserve every explicit operator choice (including conversation:false).
+      feature_flags: trx.raw(
+        "COALESCE(auth.users.feature_flags, EXCLUDED.feature_flags)"
+      ),
       updated_at: user.updated_at,
     })
     .returning("id");
@@ -63,6 +68,7 @@ exports.seed = async function seedLingocafeTestUsers(knex) {
       email: "admin@lingocafe.app",
       password: await hashPassword("admin"),
       image: "https://ui-avatars.com/api/?name=LingoCafe+Admin",
+      feature_flags: { conversation: true },
       created_at: now,
       updated_at: now,
     });
@@ -76,6 +82,7 @@ exports.seed = async function seedLingocafeTestUsers(knex) {
       email: "john.doe@example.com",
       password: await hashPassword("john"),
       image: "https://api.dicebear.com/8.x/adventurer/svg?seed=john-doe",
+      feature_flags: { conversation: true },
       created_at: now,
       updated_at: now,
     });
@@ -89,6 +96,7 @@ exports.seed = async function seedLingocafeTestUsers(knex) {
       email: "jane.doe@example.com",
       password: await hashPassword("jane"),
       image: "https://api.dicebear.com/8.x/adventurer/svg?seed=jane-doe",
+      feature_flags: { conversation: true },
       created_at: now,
       updated_at: now,
     });
