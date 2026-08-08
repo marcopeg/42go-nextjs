@@ -124,6 +124,8 @@ declare module "next-auth" {
       email: string;
       grants: string[];
       roles: string[];
+      profile: Record<string, unknown> | null;
+      featureFlags: Record<string, unknown>;
       appId: string;
     };
   }
@@ -143,6 +145,8 @@ declare module "next-auth/jwt" {
     name: string;
     grants: string[];
     roles: string[];
+    profile: Record<string, unknown> | null;
+    featureFlags: Record<string, unknown>;
     appId: string;
   }
 }

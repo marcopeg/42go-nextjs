@@ -7,18 +7,26 @@ import { cn } from "@/42go/utils/utils";
 import { useAppConfig } from "@/42go/config/use-app-config";
 import { TAppLayoutNavItem } from "./types";
 import { ProtectComponent } from "@/42go/policy/client";
+import { filterUserFeatureFlaggedMenuItems } from "./menu-visibility";
 
 interface MobileBottomNavProps {
   onMoreClick: () => void;
+  userFeatureFlags?: Readonly<Record<string, unknown>> | null;
 }
 
-export const MobileBottomNav = ({ onMoreClick }: MobileBottomNavProps) => {
+export const MobileBottomNav = ({
+  onMoreClick,
+  userFeatureFlags = null,
+}: MobileBottomNavProps) => {
   const pathname = usePathname();
   const config = useAppConfig();
 
   // Get mobile bottom items from app config or fallback to empty array
   const mobileBottomItems: TAppLayoutNavItem[] =
-    config?.app?.menu?.mobile?.items || [];
+    filterUserFeatureFlaggedMenuItems(
+      config?.app?.menu?.mobile?.items || [],
+      userFeatureFlags
+    );
   const disableMore = config?.app?.menu?.mobile?.disableMore ?? false;
 
   // Calculate how many items to show in the bottom bar (max 4)

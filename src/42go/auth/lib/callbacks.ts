@@ -5,6 +5,7 @@ import { getAppID } from "@/42go/config/app-config";
 import { apps } from "@/AppConfig";
 import { recordEvent } from "@/42go/events/server";
 import { normalizeEmailIdentifier } from "@/42go/auth/lib/email/utils";
+import { getUserSessionProfile } from "@/42go/auth/lib/user-session-profile";
 
 const FALLBACK_APP_ID = "default";
 
@@ -52,6 +53,15 @@ const recordAuthEvent = async ({
 
 const looksLikeEmailIdentifier = (value: unknown) =>
   typeof value === "string" && value.includes("@");
+
+const refreshUserProfileSnapshot = async (
+  token: Record<string, unknown>,
+  userId: string
+) => {
+  const snapshot = await getUserSessionProfile(userId);
+  token.profile = snapshot.profile;
+  token.featureFlags = snapshot.featureFlags;
+};
 
 // EmailProvider can pass the email address as user.id in the signIn callback.
 // Resolve it when possible; otherwise keep an explicit pseudo identity for the event log.
@@ -253,6 +263,14 @@ export const jwt = async ({ token, user, trigger, session }: any) => {
       token.roles = [];
       token.appId = FALLBACK_APP_ID;
     }
+
+    try {
+      await refreshUserProfileSnapshot(token, user.id);
+    } catch (error) {
+      console.error("JWT callback: failed to load user profile", error);
+      token.profile = null;
+      token.featureFlags = {};
+    }
   }
 
   // Allow client to force a RBAC refresh via update({ rbacRefresh: true })
@@ -273,6 +291,15 @@ export const jwt = async ({ token, user, trigger, session }: any) => {
       console.error("JWT update: failed to refresh RBAC data", error);
     }
   }
+
+  // Refresh mutable user profile data without requiring a new login.
+  if (trigger === "update" && session?.profileRefresh && token?.id) {
+    try {
+      await refreshUserProfileSnapshot(token, token.id);
+    } catch (error) {
+      console.error("JWT update: failed to refresh user profile", error);
+    }
+  }
   return token;
 };
 
@@ -286,6 +313,8 @@ export const session = async ({ session, token }: any) => {
     // Expose RBAC data to client session
     session.user.grants = token.grants || [];
     session.user.roles = token.roles || [];
+    session.user.profile = token.profile || null;
+    session.user.featureFlags = token.featureFlags || {};
     session.user.appId = token.appId || FALLBACK_APP_ID;
   }
   return session;

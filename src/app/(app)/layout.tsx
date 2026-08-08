@@ -11,6 +11,9 @@ export default function AppRouteLayout({
   children: React.ReactNode;
 }) {
   const { status } = useSession();
+  const [hasAuthenticatedSession, setHasAuthenticatedSession] = useState(
+    status === "authenticated"
+  );
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
@@ -29,7 +32,22 @@ export default function AppRouteLayout({
     }
   }, [status]);
 
-  if (status === "loading") {
+  useEffect(() => {
+    if (status === "loading") return;
+
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setHasAuthenticatedSession(status === "authenticated");
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
+
+  if (status === "loading" && !hasAuthenticatedSession) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>

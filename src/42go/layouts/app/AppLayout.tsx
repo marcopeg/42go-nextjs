@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 import { AppLayoutProps } from "./types";
 import { ProtectComponent } from "@/42go/policy/client";
 import { SidebarMenu } from "./SidebarMenu";
@@ -48,11 +49,13 @@ const AppLayoutShell = ({
   containedMobileScroll = false,
 }: AppLayoutProps) => {
   const config = useAppConfig();
+  const { data: session } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     getSideMenuState()
   );
   const hasFooter = !!footer;
+  const userFeatureFlags = session?.user?.featureFlags || null;
 
   // Save sidebar state to localStorage when it changes
   useEffect(() => {
@@ -88,6 +91,7 @@ const AppLayoutShell = ({
         <SidebarMenu
           isCollapsed={isSidebarCollapsed}
           toggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          userFeatureFlags={userFeatureFlags}
           collapsePosition={
             config?.app?.menu?.collapsible?.position === "top"
               ? "top"
@@ -161,7 +165,10 @@ const AppLayoutShell = ({
 
       {/* Mobile Bottom Navigation */}
       {!hideMobileMenu && (
-        <MobileBottomNav onMoreClick={() => setIsMobileMenuOpen(true)} />
+        <MobileBottomNav
+          userFeatureFlags={userFeatureFlags}
+          onMoreClick={() => setIsMobileMenuOpen(true)}
+        />
       )}
 
       {/* Mobile Sidebar - Overlay */}
@@ -181,6 +188,7 @@ const AppLayoutShell = ({
             isCollapsed={false}
             toggleCollapse={() => {}}
             closeMobileMenu={() => setIsMobileMenuOpen(false)}
+            userFeatureFlags={userFeatureFlags}
             collapsePosition={
               config?.app?.menu?.collapsible?.position === "top"
                 ? "top"

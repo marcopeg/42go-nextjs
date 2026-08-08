@@ -13,6 +13,11 @@ export interface TAppLayoutNavItem {
   icon: LucideIcon;
   badge?: string;
   /**
+   * Optional user-level rollout flag. The item is shown only when the current
+   * user's `auth.users.feature_flags` contains this key as literal `true`.
+   */
+  userFeatureFlag?: string;
+  /**
    * Optional visibility policy. When provided, the menu item will be rendered
    * only if the policy passes. While the policy is loading or when it fails,
    * the item is silently omitted (no placeholder/error UI inside menus).
@@ -31,6 +36,7 @@ export interface SidebarMenuProps {
   isCollapsed: boolean;
   toggleCollapse: () => void;
   closeMobileMenu?: () => void;
+  userFeatureFlags?: Readonly<Record<string, unknown>> | null;
   /**
    * Where to place the desktop collapse button. Defaults to "top".
    */

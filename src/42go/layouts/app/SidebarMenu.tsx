@@ -11,11 +11,13 @@ import { useAppConfig } from "@/42go/config/use-app-config";
 import { SidebarMenuProps, TAppLayoutNavItem } from "./types";
 import { ProtectComponent } from "@/42go/policy/client";
 import { AppTitle } from "./AppTitle";
+import { filterUserFeatureFlaggedMenuItems } from "./menu-visibility";
 
 export const SidebarMenu = ({
   isCollapsed,
   toggleCollapse,
   closeMobileMenu,
+  userFeatureFlags = null,
   collapsePosition: collapsePositionProp,
 }: SidebarMenuProps) => {
   const { data: session } = useSession();
@@ -29,8 +31,14 @@ export const SidebarMenu = ({
   const COLLAPSE_BTN_SIZE = 24; // px
 
   // Get menu items from app config or fallback to empty arrays
-  const topMenuItems = config?.app?.menu?.top?.items || [];
-  const bottomMenuItems = config?.app?.menu?.bottom?.items || [];
+  const topMenuItems = filterUserFeatureFlaggedMenuItems(
+    config?.app?.menu?.top?.items || [],
+    userFeatureFlags
+  );
+  const bottomMenuItems = filterUserFeatureFlaggedMenuItems(
+    config?.app?.menu?.bottom?.items || [],
+    userFeatureFlags
+  );
 
   // Function to render a single menu link body
   const renderSingleItem = (item: TAppLayoutNavItem) => {

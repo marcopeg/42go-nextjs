@@ -209,6 +209,7 @@ export default {
             title: 'Conversations',
             href: '/conversations',
             icon: MessagesSquare,
+            userFeatureFlag: 'conversation',
             policy: {
               require: { feature: 'page:conversations', session: true },
             },
@@ -252,6 +253,7 @@ export default {
             title: 'Conversations',
             href: '/conversations',
             icon: MessagesSquare,
+            userFeatureFlag: 'conversation',
             policy: {
               require: { feature: 'page:conversations', session: true },
             },

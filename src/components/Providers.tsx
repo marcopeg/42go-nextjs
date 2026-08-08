@@ -7,7 +7,7 @@ import { AppQrOverlay } from "@/42go/components/AppQrOverlay";
 import type { TAppID, ThemeValue } from "@/AppConfig";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PWAInstallProvider } from "@/42go/pwa/PWAInstallProvider";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   hydrateLingoCafeProfileCompletion,
   setCurrentLingoCafeProfileUser,
@@ -34,8 +34,9 @@ const hydrateProviderState = ({
 };
 
 const SessionUserBridge = () => {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const userId = session?.user?.id;
+  const refreshedProfileUserRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (status === "authenticated" && userId) {
@@ -47,6 +48,16 @@ const SessionUserBridge = () => {
       setCurrentLingoCafeProfileUser(null);
     }
   }, [status, userId]);
+
+  useEffect(() => {
+    if (status !== "authenticated" || !userId) return;
+    if (refreshedProfileUserRef.current === userId) return;
+
+    refreshedProfileUserRef.current = userId;
+    void update({ profileRefresh: true }).catch(() => {
+      // Keep the current session snapshot. A later app load will retry.
+    });
+  }, [status, update, userId]);
 
   return null;
 };
