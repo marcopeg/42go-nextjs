@@ -2,11 +2,12 @@
 
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { getGenericInvalidEmailMessage, validateAuthEmail } from '@/42go/auth/lib/email/validation';
+import { shouldUsePasswordForIdentifier } from '@/42go/auth/components/login-strategies/identifier-login-flow';
 
 interface IdentifierLoginProps {
   providers: string[];
@@ -47,6 +48,27 @@ export const IdentifierLogin = ({
   const [message, setMessage] = useState<string | null>(queryErrorMessage);
   const [messageTone, setMessageTone] = useState<MessageTone>('error');
   const [isLoading, setIsLoading] = useState(false);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (step === 'password') {
+      passwordInputRef.current?.focus();
+    }
+  }, [step]);
+
+  const shouldUsePassword = () => {
+    // A non-email identifier signals an intentional credentials login.
+    return shouldUsePasswordForIdentifier({
+      emailIsValid: validateAuthEmail(identifier).ok,
+      hasCredentials,
+      identifier,
+    });
+  };
+
+  const showPasswordStep = () => {
+    setMessage(null);
+    setStep('password');
+  };
 
   const requestEmail = async (resend = false) => {
     const validation = validateAuthEmail(identifier);
@@ -101,12 +123,25 @@ export const IdentifierLogin = ({
     event.preventDefault();
     setMessage(null);
 
+    if (shouldUsePassword()) {
+      showPasswordStep();
+      return;
+    }
+
     if (hasEmail) {
       await requestEmail(false);
       return;
     }
 
-    setStep('password');
+    showPasswordStep();
+  };
+
+  const handleIdentifierKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const shouldAdvanceToPassword = event.key === 'Enter' || (event.key === 'Tab' && !event.shiftKey);
+    if (!shouldAdvanceToPassword || !shouldUsePassword()) return;
+
+    event.preventDefault();
+    showPasswordStep();
   };
 
   const submitPassword = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -147,6 +182,7 @@ export const IdentifierLogin = ({
       value={identifier}
       disabled={isLoading}
       onChange={event => setIdentifier(event.target.value)}
+      onKeyDown={handleIdentifierKeyDown}
       className="w-full px-4 py-3 border-0 focus:outline-none focus:ring-0 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50 bg-transparent"
       placeholder="username or name@example.com"
       autoComplete="username"
@@ -189,7 +225,7 @@ export const IdentifierLogin = ({
               disabled={isLoading}
               variant="link"
               className={secondaryLinkButtonClass}
-              onClick={() => setStep('password')}
+              onClick={showPasswordStep}
             >
               Continue with password
             </Button>
@@ -210,8 +246,10 @@ export const IdentifierLogin = ({
               className="w-full px-4 py-3 border-0 border-b border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-0 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50 bg-transparent"
               placeholder="username or name@example.com"
               autoComplete="username"
+              tabIndex={tabIndex > 0 ? tabIndex : undefined}
             />
             <input
+              ref={passwordInputRef}
               type="password"
               suppressHydrationWarning
               value={password}
@@ -221,12 +259,14 @@ export const IdentifierLogin = ({
               className="w-full px-4 py-3 border-0 focus:outline-none focus:ring-0 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50 bg-transparent"
               placeholder="password"
               autoComplete="current-password"
+              tabIndex={tabIndex > 0 ? tabIndex + 1 : undefined}
             />
           </div>
           <Button
             type="submit"
             disabled={isLoading}
             className="w-full h-12 rounded-lg text-lg font-medium"
+            tabIndex={tabIndex > 0 ? tabIndex + 2 : undefined}
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
