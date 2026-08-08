@@ -1,13 +1,17 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { getGenericInvalidEmailMessage, validateAuthEmail } from '@/42go/auth/lib/email/validation';
-import { shouldUsePasswordForIdentifier } from '@/42go/auth/components/login-strategies/identifier-login-flow';
+import {
+  getIdentifierCancelTabIndex,
+  getIndexedTabIndex,
+  shouldUsePasswordForIdentifier,
+} from '@/42go/auth/components/login-strategies/identifier-login-flow';
 
 interface IdentifierLoginProps {
   providers: string[];
@@ -37,6 +41,7 @@ export const IdentifierLogin = ({
 }: IdentifierLoginProps) => {
   const hasCredentials = providers.includes('credentials');
   const hasEmail = providers.includes('email');
+  const router = useRouter();
   const searchParams = useSearchParams();
   const queryError = searchParams?.get('error') || null;
   const queryEmail = searchParams?.get('email') || '';
@@ -45,10 +50,17 @@ export const IdentifierLogin = ({
   const [step, setStep] = useState<Step>(shouldStartOnCodeStep ? 'code' : 'identifier');
   const [identifier, setIdentifier] = useState(queryEmail);
   const [password, setPassword] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
   const [message, setMessage] = useState<string | null>(queryErrorMessage);
   const [messageTone, setMessageTone] = useState<MessageTone>('error');
   const [isLoading, setIsLoading] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
+  const getTabIndex = (offset: number) => getIndexedTabIndex(tabIndex, offset);
+  const cancelTabIndex = getIdentifierCancelTabIndex({
+    baseTabIndex: tabIndex,
+    hasCredentials,
+    step,
+  });
 
   useEffect(() => {
     if (step === 'password') {
@@ -68,6 +80,16 @@ export const IdentifierLogin = ({
   const showPasswordStep = () => {
     setMessage(null);
     setStep('password');
+  };
+
+  const cancelCodeStep = () => {
+    setVerificationCode('');
+    setMessage(null);
+    setStep('identifier');
+
+    if (queryError || queryEmail) {
+      router.replace('/login', { scroll: false });
+    }
   };
 
   const requestEmail = async (resend = false) => {
@@ -173,6 +195,76 @@ export const IdentifierLogin = ({
     }
   };
 
+  const verifyCode = async () => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+    setMessage(null);
+
+    try {
+      const verification = await fetch('/api/auth/email/verify-code', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          callbackUrl,
+          code: verificationCode,
+          email: identifier,
+        }),
+      });
+      const result = await verification.json();
+
+      if (!verification.ok || !result.ok || typeof result.callbackUrl !== 'string') {
+        setMessageTone('error');
+        setMessage(result.message || 'Invalid verification code.');
+        return;
+      }
+
+      const authResult = await fetch(result.callbackUrl, {
+        credentials: 'same-origin',
+        redirect: 'follow',
+      });
+      const authResultUrl = new URL(authResult.url);
+
+      if (
+        !authResult.ok ||
+        (authResultUrl.pathname === '/login' && authResultUrl.searchParams.has('error'))
+      ) {
+        setMessageTone('error');
+        setMessage('Invalid verification code.');
+        return;
+      }
+
+      router.replace(callbackUrl);
+      router.refresh();
+    } catch (error) {
+      console.error('Email code verification failed:', error);
+      setMessageTone('error');
+      setMessage('Verification could not be completed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const submitCode = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void verifyCode();
+  };
+
+  const handleVerificationCodeKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (
+      event.key !== 'Enter' ||
+      event.nativeEvent.isComposing ||
+      !verificationCode.trim() ||
+      isLoading
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    void verifyCode();
+  };
+
   const identifierField = (
     <input
       type="text"
@@ -187,7 +279,7 @@ export const IdentifierLogin = ({
       placeholder="username or name@example.com"
       autoComplete="username"
       autoFocus
-      tabIndex={tabIndex > 0 ? tabIndex : undefined}
+      tabIndex={getTabIndex(0)}
     />
   );
 
@@ -216,6 +308,7 @@ export const IdentifierLogin = ({
             type="submit"
             disabled={isLoading}
             className="w-full h-12 rounded-lg text-lg font-medium"
+            tabIndex={getTabIndex(1)}
           >
             {isLoading ? 'Sending...' : emailPrimaryActionLabel}
           </Button>
@@ -226,6 +319,7 @@ export const IdentifierLogin = ({
               variant="link"
               className={secondaryLinkButtonClass}
               onClick={showPasswordStep}
+              tabIndex={getTabIndex(2)}
             >
               Continue with password
             </Button>
@@ -235,7 +329,7 @@ export const IdentifierLogin = ({
 
       {step === 'password' ? (
         <form onSubmit={submitPassword} className="space-y-4" suppressHydrationWarning>
-          <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+          <div className="relative border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
             <input
               type="text"
               suppressHydrationWarning
@@ -243,10 +337,10 @@ export const IdentifierLogin = ({
               onChange={event => setIdentifier(event.target.value)}
               required
               disabled={isLoading}
-              className="w-full px-4 py-3 border-0 border-b border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-0 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50 bg-transparent"
+              className="w-full px-4 py-3 border-0 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50 bg-transparent"
               placeholder="username or name@example.com"
               autoComplete="username"
-              tabIndex={tabIndex > 0 ? tabIndex : undefined}
+              tabIndex={getTabIndex(0)}
             />
             <input
               ref={passwordInputRef}
@@ -256,17 +350,21 @@ export const IdentifierLogin = ({
               onChange={event => setPassword(event.target.value)}
               required
               disabled={isLoading}
-              className="w-full px-4 py-3 border-0 focus:outline-none focus:ring-0 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50 bg-transparent"
+              className="w-full px-4 py-3 border-0 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50 bg-transparent"
               placeholder="password"
               autoComplete="current-password"
-              tabIndex={tabIndex > 0 ? tabIndex + 1 : undefined}
+              tabIndex={getTabIndex(1)}
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-1/2 z-10 h-px bg-gray-300 dark:bg-gray-600"
             />
           </div>
           <Button
             type="submit"
             disabled={isLoading}
             className="w-full h-12 rounded-lg text-lg font-medium"
-            tabIndex={tabIndex > 0 ? tabIndex + 2 : undefined}
+            tabIndex={getTabIndex(2)}
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
@@ -274,14 +372,7 @@ export const IdentifierLogin = ({
       ) : null}
 
       {step === 'code' ? (
-        <form
-          action="/api/auth/email/verify-code"
-          method="post"
-          className="space-y-4"
-          suppressHydrationWarning
-        >
-          <input type="hidden" name="email" value={identifier} />
-          <input type="hidden" name="callbackUrl" value={callbackUrl} />
+        <form onSubmit={submitCode} className="space-y-4" suppressHydrationWarning>
           <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
             <input
               type="text"
@@ -289,14 +380,24 @@ export const IdentifierLogin = ({
               suppressHydrationWarning
               required
               inputMode="numeric"
+              value={verificationCode}
+              disabled={isLoading}
+              onChange={event => setVerificationCode(event.target.value)}
+              onKeyDown={handleVerificationCodeKeyDown}
               className="w-full px-4 py-3 border-0 focus:outline-none focus:ring-0 dark:bg-gray-800 dark:text-gray-100 bg-transparent"
               placeholder="Paste your verification code here"
               autoComplete="one-time-code"
               autoFocus
+              tabIndex={getTabIndex(0)}
             />
           </div>
-          <Button type="submit" className="w-full h-12 rounded-lg text-lg font-medium">
-            Verify and Sign In
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full h-12 rounded-lg text-lg font-medium"
+            tabIndex={getTabIndex(1)}
+          >
+            {isLoading ? 'Verifying...' : 'Verify and Sign In'}
           </Button>
           <Button
             type="button"
@@ -304,15 +405,34 @@ export const IdentifierLogin = ({
             disabled={isLoading}
             className={`${secondaryLinkButtonClass} text-primary`}
             onClick={() => requestEmail(true)}
+            tabIndex={getTabIndex(2)}
           >
             Send New Link
           </Button>
         </form>
       ) : null}
 
-      <Button asChild variant="neutralLink" className={secondaryLinkButtonClass}>
-        <Link href="/">Cancel</Link>
-      </Button>
+      {step === 'code' ? (
+        <Button
+          type="button"
+          variant="neutralLink"
+          disabled={isLoading}
+          className={secondaryLinkButtonClass}
+          onClick={cancelCodeStep}
+          tabIndex={cancelTabIndex}
+        >
+          Cancel
+        </Button>
+      ) : (
+        <Button
+          asChild
+          variant="neutralLink"
+          className={secondaryLinkButtonClass}
+          tabIndex={cancelTabIndex}
+        >
+          <Link href="/">Cancel</Link>
+        </Button>
+      )}
     </div>
   );
 };

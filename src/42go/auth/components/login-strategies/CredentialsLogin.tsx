@@ -1,6 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import { getIndexedTabIndex } from "@/42go/auth/components/login-strategies/identifier-login-flow";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -66,7 +67,7 @@ export function CredentialsLogin({
           placeholder="username or name@example.com"
           autoComplete="username"
           autoFocus
-          tabIndex={tabIndex > 0 ? tabIndex : undefined}
+          tabIndex={getIndexedTabIndex(tabIndex, 0)}
         />
         <input
           type="password"
@@ -78,7 +79,7 @@ export function CredentialsLogin({
           className="w-full px-4 py-3 border-0 focus:outline-none focus:ring-0 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50 bg-transparent"
           placeholder="password"
           autoComplete="current-password"
-          tabIndex={tabIndex > 0 ? tabIndex + 1 : undefined}
+          tabIndex={getIndexedTabIndex(tabIndex, 1)}
         />
       </div>
 
@@ -86,7 +87,7 @@ export function CredentialsLogin({
         type="submit"
         disabled={isLoading || isOtherLoading}
         className="w-full h-12 rounded-lg text-lg font-medium"
-        tabIndex={tabIndex > 0 ? tabIndex + 2 : undefined}
+        tabIndex={getIndexedTabIndex(tabIndex, 2)}
       >
         {isLoading ? (
           <>
@@ -101,6 +102,7 @@ export function CredentialsLogin({
         asChild
         variant="neutralLink"
         className="w-full h-12 rounded-lg text-lg font-medium"
+        tabIndex={getIndexedTabIndex(tabIndex, 3)}
       >
         <Link href="/">Cancel</Link>
       </Button>

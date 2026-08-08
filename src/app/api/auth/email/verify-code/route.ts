@@ -8,6 +8,8 @@ import { hashEmailToken } from "@/42go/auth/lib/email/token";
 import { normalizeEmailCode } from "@/42go/auth/lib/email/utils";
 import { validateAuthEmail } from "@/42go/auth/lib/email/validation";
 
+const INVALID_VERIFICATION_CODE_MESSAGE = "Invalid verification code.";
+
 const safeInternalPath = (input?: string | null): string => {
   if (!input || typeof input !== "string") return "/dashboard";
   const trimmed = input.trim();
@@ -29,6 +31,59 @@ const getPublicOrigin = (req: Request) => {
   return new URL(req.url).origin;
 };
 
+const expectsJson = (req: Request) =>
+  req.headers.get("content-type")?.includes("application/json") ?? false;
+
+const readVerificationInput = async (req: Request) => {
+  if (expectsJson(req)) {
+    const body = await req.json();
+    return {
+      callbackUrl: String(body?.callbackUrl || ""),
+      code: String(body?.code || ""),
+      email: String(body?.email || ""),
+    };
+  }
+
+  const form = await req.formData();
+  return {
+    callbackUrl: String(form.get("callbackUrl") || ""),
+    code: String(form.get("code") || ""),
+    email: String(form.get("email") || ""),
+  };
+};
+
+const verificationError = (
+  req: Request,
+  options: {
+    email?: string;
+    error?: "EmailSignin" | "Verification";
+    status?: number;
+  } = {}
+) => {
+  const error = options.error || "Verification";
+
+  if (expectsJson(req)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message:
+          error === "Verification"
+            ? INVALID_VERIFICATION_CODE_MESSAGE
+            : "Email sign-in is unavailable.",
+      },
+      { status: options.status || 400 }
+    );
+  }
+
+  const search = new URLSearchParams({ error });
+  if (options.email) search.set("email", options.email);
+
+  return NextResponse.redirect(
+    new URL(`/login?${search.toString()}`, getPublicOrigin(req)),
+    303
+  );
+};
+
 export const POST = async (req: Request) => {
   const { id: appId, config } = await getAppInfo();
   const emailProvider = config?.auth?.providers.find(
@@ -36,28 +91,22 @@ export const POST = async (req: Request) => {
   );
 
   if (!appId || !emailProvider || emailProvider.type !== "email") {
-    return NextResponse.redirect(
-      new URL("/login?error=EmailSignin", getPublicOrigin(req)),
-      303
-    );
+    return verificationError(req, { error: "EmailSignin", status: 404 });
   }
 
   const emailConfig = getEmailProviderConfig(emailProvider.config);
 
   try {
-    const form = await req.formData();
-    const validation = validateAuthEmail(String(form.get("email") || ""));
+    const input = await readVerificationInput(req);
+    const validation = validateAuthEmail(input.email);
 
     if (!validation.ok) {
-      return NextResponse.redirect(
-        new URL("/login?error=Verification", getPublicOrigin(req)),
-        303
-      );
+      return verificationError(req);
     }
 
     const identifier = validation.email;
-    const code = normalizeEmailCode(String(form.get("code") || ""), emailConfig.code);
-    const callbackUrl = safeInternalPath(String(form.get("callbackUrl") || ""));
+    const code = normalizeEmailCode(input.code, emailConfig.code);
+    const callbackUrl = safeInternalPath(input.callbackUrl);
     const tokenHash = hashEmailToken(code);
     const token = await getDB()("auth.verification_tokens")
       .where({
@@ -76,13 +125,7 @@ export const POST = async (req: Request) => {
         data: { reason: token ? "expired_code" : "invalid_code" },
       });
 
-      return NextResponse.redirect(
-        new URL(
-          `/login?error=Verification&email=${encodeURIComponent(identifier)}`,
-          getPublicOrigin(req)
-        ),
-        303
-      );
+      return verificationError(req, { email: identifier, status: 401 });
     }
 
     await recordEmailAuthEvent({
@@ -97,12 +140,16 @@ export const POST = async (req: Request) => {
     callback.searchParams.set("token", code);
     callback.searchParams.set("email", identifier);
 
+    if (expectsJson(req)) {
+      return NextResponse.json({
+        ok: true,
+        callbackUrl: `${callback.pathname}${callback.search}`,
+      });
+    }
+
     return NextResponse.redirect(callback, 303);
   } catch (error) {
     console.error("Email code verification failed:", error);
-    return NextResponse.redirect(
-      new URL("/login?error=Verification", getPublicOrigin(req)),
-      303
-    );
+    return verificationError(req, { status: 500 });
   }
 };
