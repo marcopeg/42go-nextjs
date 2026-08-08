@@ -26,20 +26,3 @@ export const resolveLingoCafeAssetUrl = (assetKey: string | null | undefined) =>
   if (!normalized) return null;
   return `${getLingoCafeAssetsBasePath()}/${normalized}`;
 };
-
-/**
- * Temporary same-origin persona mirror. Set LC_PERSONA_ASSETS_BASE_PATH to
- * switch these URLs to the immutable assets distribution without changing
- * database keys or the conversation payload.
- */
-export const resolveLingoCafePersonaAvatarUrl = (
-  assetKey: string | null | undefined
-) => {
-  const normalized = normalizeAssetKey(assetKey);
-  if (!normalized) return null;
-  const configuredBasePath =
-    process.env.LC_PERSONA_ASSETS_BASE_PATH?.trim().replace(/\/+$/, "");
-  return configuredBasePath
-    ? `${configuredBasePath}/${normalized}`
-    : `/${normalized}`;
-};

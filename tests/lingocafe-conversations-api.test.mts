@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
@@ -324,7 +323,7 @@ test("conversation detail resolves persona presentation once per actor and rende
   assert.match(dataSource, /profile\.ownLanguage/);
   assert.match(dataSource, /\[normalizedContext, primaryContext, "default"\]/);
   assert.match(dataSource, /castIsMalformed/);
-  assert.match(dataSource, /resolveLingoCafePersonaAvatarUrl/);
+  assert.match(dataSource, /resolveLingoCafeAssetUrl/);
   assert.match(types, /source: "persona"/);
   assert.match(types, /avatarContentHash: string/);
   assert.match(detailPage, /<PersonaAvatar/);
@@ -333,33 +332,9 @@ test("conversation detail resolves persona presentation once per actor and rende
   assert.match(avatar, /unoptimized/);
   assert.match(avatar, /setFailedSources/);
   assert.match(assets, /LC_ASSETS_BASE_PATH/);
-  assert.match(assets, /LC_PERSONA_ASSETS_BASE_PATH/);
-  assert.match(assets, /: `\/\$\{normalized\}`/);
+  assert.doesNotMatch(assets, /LC_PERSONA_ASSETS_BASE_PATH/);
   assert.match(assets, /normalized\.split\("\/"\)\.includes\("\.\."\)/);
   assert.doesNotMatch(detailPage, /dangerouslySetInnerHTML/);
-
-  const publicAvatars = new Map([
-    [
-      "public/personas/mark-carter/marco-conti/avatar-25e296537f4c2e9a8d58d68557481614607a2c66fd05ce4a7c49109fa00af697.svg",
-      "25e296537f4c2e9a8d58d68557481614607a2c66fd05ce4a7c49109fa00af697",
-    ],
-    [
-      "public/personas/mark-carter/mark-carter/avatar-3e58deedc8bf9998baaf3ee8a87f8ba34de45f7eb20182ef01b04d0e544ba48a.svg",
-      "3e58deedc8bf9998baaf3ee8a87f8ba34de45f7eb20182ef01b04d0e544ba48a",
-    ],
-    [
-      "public/personas/sophie-clarke/sofia-rinaldi/avatar-a98a9d839f0b118ce04ce36bea74ad4c6c694ee0d251711d2aa6f1e65e550aec.svg",
-      "a98a9d839f0b118ce04ce36bea74ad4c6c694ee0d251711d2aa6f1e65e550aec",
-    ],
-    [
-      "public/personas/sophie-clarke/sophie-clarke/avatar-bfaec2baedb0f65515dc28fa6eb55e096216943a9889fe0b0bd74b8397971958.svg",
-      "bfaec2baedb0f65515dc28fa6eb55e096216943a9889fe0b0bd74b8397971958",
-    ],
-  ]);
-  for (const [path, expectedHash] of publicAvatars) {
-    const bytes = await readFile(new URL(`../${path}`, import.meta.url));
-    assert.equal(createHash("sha256").update(bytes).digest("hex"), expectedHash);
-  }
 });
 
 test("shared language preferences stage choices and save them explicitly", async () => {
