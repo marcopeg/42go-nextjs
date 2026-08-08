@@ -2,13 +2,25 @@
 
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Check, ChevronRight, MessageCircle, Star } from "lucide-react";
-import type { CSSProperties } from "react";
+import {
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+  type MouseEvent,
+} from "react";
 
 import {
   PlainList,
   PlainListItem,
 } from "@/42go/components/PlainList";
+import {
+  SwipeableBottomSheet,
+  type SwipeableBottomSheetHandle,
+} from "@/42go/components/SwipeableBottomSheet";
 import type {
   ConversationCategory,
   ConversationChoice,
@@ -211,68 +223,173 @@ export const ConversationChoiceGroupRow = ({
   getHref: (choice: ConversationChoice) => string;
 }) => {
   const firstChoice = choices[0];
+  const router = useRouter();
+  const levelPickerId = useId();
+  const rowButtonRef = useRef<HTMLButtonElement | null>(null);
+  const mobileSheetRef = useRef<SwipeableBottomSheetHandle | null>(null);
+  const mobileNavigationHrefRef = useRef<string | null>(null);
+  const [levelPickerOpen, setLevelPickerOpen] = useState(false);
+  const [anchorPoint, setAnchorPoint] = useState({ x: 0, y: 0 });
+  const isDesktop = useSyncExternalStore(
+    (onChange) => {
+      const query = window.matchMedia("(min-width: 768px)");
+      query.addEventListener("change", onChange);
+      return () => query.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia("(min-width: 768px)").matches,
+    () => false
+  );
   if (!firstChoice) return null;
 
   if (choices.length === 1) {
     return <ConversationChoiceRow choice={firstChoice} href={getHref(firstChoice)} />;
   }
 
+  const openLevelPicker = (event: MouseEvent<HTMLElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    mobileNavigationHrefRef.current = null;
+    setAnchorPoint({
+      x: event.clientX || bounds.left + bounds.width / 2,
+      y: event.clientY || bounds.top + bounds.height / 2,
+    });
+    setLevelPickerOpen(true);
+  };
+
+  const renderLevelOption = (choice: ConversationChoice) => (
+    <Link
+      href={getHref(choice)}
+      aria-label={`Read ${firstChoice.title} at level ${choice.cefrLevel.toUpperCase()}`}
+      className="flex min-h-14 items-center justify-between gap-4 rounded-xl px-4 py-3 outline-none transition-colors hover:bg-muted active:bg-muted/80 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+    >
+      <span className="text-base font-semibold uppercase">{choice.cefrLevel}</span>
+      <span className="flex items-center gap-2">
+        <ConversationState isRead={choice.isRead} />
+        <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
+      </span>
+    </Link>
+  );
+
   return (
-    <PopoverPrimitive.Root>
-      <PopoverPrimitive.Trigger asChild>
+    <>
+      <div
+        onClick={openLevelPicker}
+        className="relative flex min-w-0 w-full items-center text-left transition-colors duration-75 hover:bg-muted/50 active:bg-muted"
+      >
         <button
+          ref={rowButtonRef}
           type="button"
           aria-label={`Choose a level for ${firstChoice.title}`}
-          className="flex min-w-0 w-full touch-manipulation items-center text-left outline-none transition-colors duration-75 hover:bg-muted/50 active:bg-muted focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50"
-        >
-          <span className="min-w-0 flex-1 space-y-1 px-5 py-4">
-            <span className="block font-medium text-foreground">{firstChoice.title}</span>
-            {firstChoice.description ? (
-              <span className="line-clamp-2 block text-sm text-muted-foreground">
-                {firstChoice.description}
-              </span>
-            ) : null}
-            <span className="mt-2 flex flex-wrap items-center gap-2">
-              {choices.map((choice) => (
-                <ConversationBadge key={choice.id}>{choice.cefrLevel}</ConversationBadge>
-              ))}
-              <ConversationGroupState choices={choices} />
+          aria-haspopup="dialog"
+          aria-expanded={levelPickerOpen}
+          aria-controls={levelPickerOpen ? levelPickerId : undefined}
+          className="absolute inset-0 z-0 touch-manipulation outline-none focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-ring/50"
+        />
+        <span className="pointer-events-none relative z-[1] min-w-0 flex-1 space-y-1 px-5 py-4">
+          <span className="block font-medium text-foreground">{firstChoice.title}</span>
+          {firstChoice.description ? (
+            <span className="line-clamp-2 block text-sm text-muted-foreground">
+              {firstChoice.description}
             </span>
-          </span>
-          <span className="my-2 flex size-11 shrink-0 items-center justify-center text-muted-foreground">
-            <ChevronRight aria-hidden="true" className="size-4" />
-          </span>
-        </button>
-      </PopoverPrimitive.Trigger>
-      <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Content
-          align="end"
-          side="bottom"
-          sideOffset={8}
-          collisionPadding={12}
-          className="z-[80] w-[min(20rem,calc(100vw-2rem))] rounded-xl border bg-popover p-2 text-popover-foreground shadow-lg outline-none"
-        >
-          <div className="px-3 pb-2 pt-1">
-            <p className="text-sm font-semibold">Choose a level</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Which version would you like to read?
-            </p>
-          </div>
-          <div className="space-y-1">
+          ) : null}
+          <span className="pointer-events-auto relative z-20 mt-2 flex flex-wrap items-center gap-2">
             {choices.map((choice) => (
-              <PopoverPrimitive.Close asChild key={choice.id}>
-                <Link
-                  href={getHref(choice)}
-                  className="flex min-h-12 items-center justify-between gap-4 rounded-lg px-3 py-2 outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                >
-                  <span className="font-semibold uppercase">{choice.cefrLevel}</span>
-                  <ConversationState isRead={choice.isRead} />
-                </Link>
-              </PopoverPrimitive.Close>
+              <Link
+                key={choice.id}
+                href={getHref(choice)}
+                aria-label={`Read ${firstChoice.title} at level ${choice.cefrLevel.toUpperCase()}`}
+                onClick={(event) => event.stopPropagation()}
+                className="-my-2 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                <ConversationBadge>{choice.cefrLevel}</ConversationBadge>
+              </Link>
             ))}
-          </div>
-        </PopoverPrimitive.Content>
-      </PopoverPrimitive.Portal>
-    </PopoverPrimitive.Root>
+            <ConversationGroupState choices={choices} />
+          </span>
+        </span>
+        <span className="pointer-events-none relative z-[1] my-2 flex size-11 shrink-0 items-center justify-center text-muted-foreground">
+          <ChevronRight aria-hidden="true" className="size-4" />
+        </span>
+      </div>
+
+      <PopoverPrimitive.Root
+        open={isDesktop && levelPickerOpen}
+        onOpenChange={setLevelPickerOpen}
+      >
+        <PopoverPrimitive.Anchor asChild>
+          <span
+            aria-hidden="true"
+            className="pointer-events-none fixed z-[-1] size-px"
+            style={{ left: anchorPoint.x, top: anchorPoint.y }}
+          />
+        </PopoverPrimitive.Anchor>
+        <PopoverPrimitive.Portal>
+          <PopoverPrimitive.Content
+            id={levelPickerId}
+            role="dialog"
+            aria-label={`Choose a level for ${firstChoice.title}`}
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            collisionPadding={12}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              rowButtonRef.current?.focus();
+            }}
+            className="z-[80] w-80 rounded-xl border bg-popover p-2 text-popover-foreground shadow-lg outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+          >
+            <div className="px-3 pb-2 pt-1">
+              <p className="text-sm font-semibold">Choose reading level</p>
+            </div>
+            <div className="space-y-1">
+              {choices.map((choice) => (
+                <PopoverPrimitive.Close asChild key={choice.id}>
+                  {renderLevelOption(choice)}
+                </PopoverPrimitive.Close>
+              ))}
+            </div>
+          </PopoverPrimitive.Content>
+        </PopoverPrimitive.Portal>
+      </PopoverPrimitive.Root>
+
+      <SwipeableBottomSheet
+        ref={mobileSheetRef}
+        id={levelPickerId}
+        open={!isDesktop && levelPickerOpen}
+        onOpenChange={setLevelPickerOpen}
+        title="Choose reading level"
+        onCloseComplete={() => {
+          const href = mobileNavigationHrefRef.current;
+          mobileNavigationHrefRef.current = null;
+          if (href) router.push(href);
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          rowButtonRef.current?.focus();
+        }}
+      >
+        <div className="space-y-1">
+          {choices.map((choice) => (
+            <button
+              key={choice.id}
+              type="button"
+              aria-label={`Read ${firstChoice.title} at level ${choice.cefrLevel.toUpperCase()}`}
+              onClick={() => {
+                mobileNavigationHrefRef.current = getHref(choice);
+                mobileSheetRef.current?.close();
+              }}
+              className="flex min-h-14 w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left outline-none transition-colors hover:bg-muted active:bg-muted/80 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <span className="text-base font-semibold uppercase">
+                {choice.cefrLevel}
+              </span>
+              <span className="flex items-center gap-2">
+                <ConversationState isRead={choice.isRead} />
+                <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
+              </span>
+            </button>
+          ))}
+        </div>
+      </SwipeableBottomSheet>
+    </>
   );
 };
