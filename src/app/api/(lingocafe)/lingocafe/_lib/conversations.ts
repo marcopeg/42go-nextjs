@@ -24,6 +24,10 @@ const profileBand: Record<string, ConversationBand> = {
 };
 
 const idPattern = /^[a-z0-9][a-z0-9._-]{0,255}$/;
+export const CONVERSATION_READ_PROGRESS_THRESHOLD_BPS = 9500;
+
+const clampProgressBps = (value: number) =>
+  Math.min(10000, Math.max(0, Math.round(value)));
 
 export class ConversationApiError extends Error {
   readonly status: number;
@@ -144,6 +148,56 @@ const loadConversationProfile = async (
     targetLanguage,
     targetLevel,
     defaultBand: resolveConversationBand(null, targetLevel),
+  };
+};
+
+export const loadConversationBrowseValidator = async ({
+  userId,
+  requestedBand,
+  categoryPath = [],
+}: {
+  userId: string;
+  requestedBand?: string | null;
+  categoryPath?: string[];
+}) => {
+  const normalizedPath = categoryPath.length > 0
+    ? validateConversationCategoryPath(categoryPath)
+    : [];
+  const explicitBand = requestedBand === null || requestedBand === undefined
+    ? null
+    : resolveConversationBand(requestedBand, null);
+  const profile = await loadConversationProfile(userId);
+  const band = explicitBand ?? resolveConversationBand(null, profile.targetLevel);
+  const db = getDB();
+  const [publication, learnerState] = await Promise.all([
+    db("lingocafe.conversation_publication_state")
+      .select("source_digest")
+      .where({ id: "current" })
+      .first() as Promise<{ source_digest: string } | undefined>,
+    db("lingocafe.conversation_user_state_versions")
+      .select("version")
+      .where({ user_id: userId })
+      .first() as Promise<{ version: number | string } | undefined>,
+  ]);
+
+  if (!publication) {
+    throw new ConversationApiError(
+      503,
+      "publication_state",
+      "Conversation publication state is unavailable."
+    );
+  }
+
+  return {
+    schema: "conversation-browse-v2",
+    sourceDigest: publication.source_digest,
+    learnerStateVersion: String(learnerState?.version ?? 0),
+    userId,
+    targetLanguage: profile.targetLanguage,
+    ownLanguage: profile.ownLanguage,
+    targetLevel: profile.targetLevel,
+    band,
+    categoryPath: normalizedPath,
   };
 };
 
@@ -651,6 +705,7 @@ export const loadConversationCategory = async ({
 };
 
 type ConversationDetailRow = ConversationSummaryRow & {
+  progress_bps: number | string | null;
   scenario_id: string;
   scenario_title: string;
   scenario_description: string;
@@ -694,9 +749,12 @@ export const loadConversationDetail = async ({
     .leftJoin("lingocafe.conversation_stars as star", function joinStar() {
       this.on("star.conversation_id", "=", "c.id").andOnVal("star.user_id", "=", userId);
     })
+    .leftJoin("lingocafe.conversation_progress as progress_state", function joinProgress() {
+      this.on("progress_state.conversation_id", "=", "c.id").andOnVal("progress_state.user_id", "=", userId);
+    })
     .select(
       "c.id", "c.title", "c.description", "c.language", "c.cefr_level",
-      "reader_state.read_at", "star.starred_at",
+      "reader_state.read_at", "star.starred_at", "progress_state.progress_bps",
       "s.id as scenario_id", "s.title as scenario_title", "s.description as scenario_description",
       "s.learner_promise", "s.canonical_language as scenario_canonical_language",
       "sl.title as scenario_localized_title", "sl.description as scenario_localized_description",
@@ -785,6 +843,7 @@ export const loadConversationDetail = async ({
     state: {
       isRead: !!detail.read_at,
       isStarred: !!detail.starred_at,
+      progressBps: clampProgressBps(Number(detail.progress_bps ?? 0)),
     },
     translation: {
       enabled: isTranslationEnabled(),
@@ -793,6 +852,96 @@ export const loadConversationDetail = async ({
     },
     speech: { language: detail.language },
   };
+};
+
+export const saveConversationProgress = async ({
+  userId,
+  conversationId,
+  progressBps,
+}: {
+  userId: string;
+  conversationId: string;
+  progressBps: number;
+}) => {
+  validateConversationId(conversationId, "conversation ID");
+  const normalizedProgressBps = clampProgressBps(progressBps);
+  const profile = await loadConversationProfile(userId);
+  const db = getDB();
+
+  return db.transaction(async (trx) => {
+    const eligibleQuery = conversationChain(trx)
+      .select("c.id")
+      .where("c.id", conversationId)
+      .first();
+    applyEligibleConversation(eligibleQuery, profile.targetLanguage);
+    if (!(await eligibleQuery)) {
+      throw new ConversationApiError(404, "not_found", "Conversation not found.");
+    }
+
+    await trx("lingocafe.conversation_progress")
+      .insert({
+        user_id: userId,
+        conversation_id: conversationId,
+        progress_bps: normalizedProgressBps,
+        updated_at: trx.fn.now(),
+      })
+      .onConflict(["user_id", "conversation_id"])
+      .merge({
+        progress_bps: normalizedProgressBps,
+        updated_at: trx.fn.now(),
+      });
+
+    let readChanged = false;
+    let readAt: string | null = null;
+    if (normalizedProgressBps >= CONVERSATION_READ_PROGRESS_THRESHOLD_BPS) {
+      const inserted = (await trx("lingocafe.conversation_reads")
+        .insert({
+          user_id: userId,
+          conversation_id: conversationId,
+          read_at: trx.fn.now(),
+        })
+        .onConflict(["user_id", "conversation_id"])
+        .ignore()
+        .returning("read_at")) as Array<{ read_at: Date | string }>;
+      readChanged = inserted.length > 0;
+      const value = readChanged
+        ? inserted[0].read_at
+        : (
+            await trx("lingocafe.conversation_reads")
+              .select("read_at")
+              .where({ user_id: userId, conversation_id: conversationId })
+              .first()
+          )?.read_at;
+      readAt = toISO(value);
+    } else {
+      const existing = await trx("lingocafe.conversation_reads")
+        .select("read_at")
+        .where({ user_id: userId, conversation_id: conversationId })
+        .first();
+      readAt = toISO(existing?.read_at);
+    }
+
+    if (readChanged) {
+      await trx.raw(
+        `
+          INSERT INTO lingocafe.conversation_user_state_versions
+            (user_id, version, updated_at)
+          VALUES (?, 1, NOW())
+          ON CONFLICT (user_id) DO UPDATE
+          SET version = lingocafe.conversation_user_state_versions.version + 1,
+              updated_at = NOW()
+        `,
+        [userId]
+      );
+    }
+
+    return {
+      progressBps: normalizedProgressBps,
+      isRead: readAt !== null,
+      readAt,
+      readChanged,
+    };
+  });
 };
 
 type StateKind = "read" | "star";
@@ -867,6 +1016,20 @@ export const mutateConversationState = async ({
         (await trx(config.table)
           .where({ user_id: userId, conversation_id: conversationId })
           .del()) > 0;
+    }
+
+    if (changed) {
+      await trx.raw(
+        `
+          INSERT INTO lingocafe.conversation_user_state_versions
+            (user_id, version, updated_at)
+          VALUES (?, 1, NOW())
+          ON CONFLICT (user_id) DO UPDATE
+          SET version = lingocafe.conversation_user_state_versions.version + 1,
+              updated_at = NOW()
+        `,
+        [userId]
+      );
     }
 
     return {

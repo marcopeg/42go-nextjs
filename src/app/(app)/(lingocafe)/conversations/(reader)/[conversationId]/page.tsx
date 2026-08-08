@@ -39,6 +39,30 @@ import { Button } from "@/components/ui/button";
 import { splitLingoCafeSentences } from "@/lib/lingocafe/sentence-segmentation";
 import { cn } from "@/lib/utils";
 
+const READER_SCROLL_PROGRESS_IDLE_SAVE_MS = 4000;
+
+const clampProgressBps = (value: number) =>
+  Math.min(10000, Math.max(0, Math.round(value)));
+
+const getScrollProgressBps = (element: HTMLElement) => {
+  const scrollable = element.scrollHeight - element.clientHeight;
+  if (scrollable <= 0) return 0;
+  return clampProgressBps((element.scrollTop / scrollable) * 10000);
+};
+
+const scrollToProgressBps = (element: HTMLElement, progressBps: number) => {
+  const scrollable = element.scrollHeight - element.clientHeight;
+  if (scrollable <= 0) {
+    if (progressBps === 0) {
+      element.scrollTop = 0;
+      return true;
+    }
+    return false;
+  }
+  element.scrollTop = (scrollable * progressBps) / 10000;
+  return true;
+};
+
 const parseParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] || "" : value || "";
 
@@ -71,13 +95,16 @@ const ConversationReaderPage = () => {
   const conversationId = parseParam(params.conversationId);
   const returnHref = safeReturnHref(searchParams.get("returnTo"), searchParams.get("band"));
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const readAttemptedRef = useRef("");
+  const restoredConversationRef = useRef("");
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestProgressRef = useRef<number | null>(null);
   const { trackEvent } = useEventTracker();
   const [data, setData] = useState<ConversationDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mutationMessage, setMutationMessage] = useState<string | null>(null);
   const [starPending, setStarPending] = useState(false);
+  const [readingProgressBps, setReadingProgressBps] = useState(0);
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -92,6 +119,7 @@ const ConversationReaderPage = () => {
       if (!isValidDetail(payload)) throw new Error("This conversation contains malformed or incomplete dialogue data.");
       payload.rounds.sort((a, b) => a.position - b.position);
       setData(payload);
+      setReadingProgressBps(payload.state.progressBps);
     } catch (caught) {
       if (caught instanceof DOMException && caught.name === "AbortError") return;
       setError(caught instanceof Error ? caught.message : "Could not load conversation.");
@@ -109,18 +137,109 @@ const ConversationReaderPage = () => {
   }, [load]);
 
   useEffect(() => {
-    if (!data || readAttemptedRef.current === data.conversation.id) return;
-    readAttemptedRef.current = data.conversation.id;
-    setData((current) => current ? { ...current, state: { ...current.state, isRead: true }, conversation: { ...current.conversation, isRead: true } } : current);
-    void fetch(`/api/lingocafe/conversations/${encodeURIComponent(data.conversation.id)}/read`, {
-      method: "PUT",
-      credentials: "same-origin",
-    }).then(async (response) => {
-      if (!response.ok) {
-        setMutationMessage(await getResponseMessage(response, "Conversation loaded, but read status could not be saved."));
+    if (!data) return;
+    const restoreKey = data.conversation.id;
+    if (restoredConversationRef.current === restoreKey) return;
+    let frame = 0;
+    let attempts = 0;
+
+    const restore = () => {
+      const element = scrollRef.current;
+      if (!element) return;
+      const restored = scrollToProgressBps(element, data.state.progressBps);
+      if (restored || attempts >= 8) {
+        restoredConversationRef.current = restoreKey;
+        return;
       }
-    }).catch(() => setMutationMessage("Conversation loaded, but read status could not be saved."));
+      attempts += 1;
+      frame = requestAnimationFrame(restore);
+    };
+
+    frame = requestAnimationFrame(restore);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, [data]);
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    const activeConversationId = data?.conversation.id;
+    if (!element || !activeConversationId) return;
+    const controller = new AbortController();
+    const progressApiHref = `/api/lingocafe/conversations/${encodeURIComponent(activeConversationId)}`;
+
+    const sendProgress = async (progress: number) => {
+      try {
+        const response = await fetch(progressApiHref, {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ progress_bps: progress }),
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Could not save conversation progress.");
+        const saved = (await response.json()) as {
+          progressBps: number;
+          isRead: boolean;
+        };
+        setData((current) => current
+          ? {
+              ...current,
+              state: {
+                ...current.state,
+                progressBps: saved.progressBps,
+                isRead: saved.isRead,
+              },
+              conversation: {
+                ...current.conversation,
+                isRead: saved.isRead,
+              },
+            }
+          : current);
+      } catch (caught) {
+        if (caught instanceof DOMException && caught.name === "AbortError") return;
+        console.warn("Could not save conversation progress", caught);
+      }
+    };
+
+    const scheduleProgress = () => {
+      const progress = getScrollProgressBps(element);
+      latestProgressRef.current = progress;
+      setReadingProgressBps(progress);
+
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = setTimeout(() => {
+        if (latestProgressRef.current === null) return;
+        void sendProgress(latestProgressRef.current);
+        latestProgressRef.current = null;
+        scrollTimerRef.current = null;
+      }, READER_SCROLL_PROGRESS_IDLE_SAVE_MS);
+    };
+
+    element.addEventListener("scroll", scheduleProgress, { passive: true });
+    return () => {
+      element.removeEventListener("scroll", scheduleProgress);
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+        scrollTimerRef.current = null;
+      }
+      if (latestProgressRef.current !== null) {
+        void fetch(progressApiHref, {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          keepalive: true,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ progress_bps: latestProgressRef.current }),
+        }).catch((caught) => {
+          console.warn("Could not save final conversation progress", caught);
+        });
+        latestProgressRef.current = null;
+      }
+      controller.abort();
+    };
+  }, [data?.conversation.id]);
 
   const playbackCatalog = useMemo(() => {
     if (!data) return [];
@@ -247,6 +366,11 @@ const ConversationReaderPage = () => {
             className="relative flex h-16 shrink-0 items-center justify-between gap-3 border-b px-3 md:h-[68px] md:px-8"
             style={{ borderColor: "var(--reader-border)" }}
           >
+            <span
+              aria-hidden="true"
+              className="absolute bottom-[-1px] left-0 h-[2px] bg-blue-500"
+              style={{ width: `${(readingProgressBps / 10000) * 100}%` }}
+            />
             <Button variant="neutralGhost" size="icon" asChild>
               <Link href={returnHref} aria-label="Back to conversations"><ChevronLeft className="size-5" /></Link>
             </Button>

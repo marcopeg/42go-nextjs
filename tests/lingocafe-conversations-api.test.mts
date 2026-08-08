@@ -98,11 +98,85 @@ test("category rows render precomputed availability without shrinking their tap 
   assert.match(sharedUi, /className="flex min-h-16 w-full/);
 });
 
-test("conversation JSON responses are explicitly non-cacheable", async () => {
-  const source = await readSource(
-    "src/app/api/(lingocafe)/lingocafe/_lib/reader.ts"
+test("conversation browse responses support private conditional revalidation", async () => {
+  const [readerSource, browseSource, rootRoute, categoryRoute] = await Promise.all([
+    readSource("src/app/api/(lingocafe)/lingocafe/_lib/reader.ts"),
+    readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversation-browse-response.ts"),
+    readSource("src/app/api/(lingocafe)/lingocafe/conversations/route.ts"),
+    readSource("src/app/api/(lingocafe)/lingocafe/conversations/categories/[...categoryPath]/route.ts"),
+  ]);
+  assert.match(readerSource, /"Cache-Control": "no-store"/);
+  assert.match(browseSource, /"Cache-Control": "private, no-cache"/);
+  assert.match(browseSource, /matchesConversationBrowseETag/);
+  assert.match(browseSource, /status: 304/);
+  assert.match(browseSource, /Vary: "Cookie"/);
+  assert.match(rootRoute, /conversationBrowseResponse/);
+  assert.match(categoryRoute, /conversationBrowseResponse/);
+  assert.ok(
+    rootRoute.indexOf("if (matchesConversationBrowseETag") <
+      rootRoute.lastIndexOf("await loadConversationDiscovery({"),
+    "root checks the validator before loading the browse payload"
   );
-  assert.match(source, /"Cache-Control": "no-store"/);
+  assert.ok(
+    categoryRoute.indexOf("if (matchesConversationBrowseETag") <
+      categoryRoute.lastIndexOf("await loadConversationCategory({"),
+    "category checks the validator before loading the browse payload"
+  );
+});
+
+test("conversation library caches route data and starts category transitions immediately", async () => {
+  const [cacheSource, hookSource, shellSource, sharedUi] = await Promise.all([
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/conversation-browse-cache.ts"),
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/useConversationBrowseData.ts"),
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell.tsx"),
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI.tsx"),
+  ]);
+  assert.match(cacheSource, /lingocafe\.conversations\.browse-cache\.v1/);
+  assert.match(cacheSource, /cacheKey = \(userId: string, href: string\)/);
+  assert.match(hookSource, /If-None-Match/);
+  assert.match(hookSource, /response\.status === 304/);
+  assert.match(shellSource, /navigateToCategory/);
+  assert.match(shellSource, /setPendingHref\(href\)/);
+  assert.match(shellSource, /<ConversationListSkeleton/);
+  assert.match(sharedUi, /onNavigate\(category, href\)/);
+});
+
+test("starred conversations are a root navigation entry with a dedicated list", async () => {
+  const [rootPage, starredPage, sharedUi] = await Promise.all([
+    readSource("src/app/(app)/(lingocafe)/conversations/(library)/page.tsx"),
+    readSource("src/app/(app)/(lingocafe)/conversations/(library)/starred/page.tsx"),
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI.tsx"),
+  ]);
+  assert.match(rootPage, /<StarredConversationCategoryRow/);
+  assert.match(rootPage, /\/conversations\/starred/);
+  assert.doesNotMatch(rootPage, /data\.starred\.map/);
+  assert.match(starredPage, /data\.starred\.map/);
+  assert.match(starredPage, /title: "Starred"/);
+  assert.match(starredPage, /<ConversationChoiceRow/);
+  assert.match(sharedUi, /Your saved conversations across every level\./);
+});
+
+test("conversation reader persists scroll progress and marks read near the end", async () => {
+  const [detailPage, detailRoute, dataSource, migration] = await Promise.all([
+    readSource("src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"),
+    readSource("src/app/api/(lingocafe)/lingocafe/conversations/[conversationId]/route.ts"),
+    readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"),
+    readSource("knex/migrations/20260807203000_lingocafe_conversation_progress.js"),
+  ]);
+  assert.doesNotMatch(detailPage, /readAttemptedRef/);
+  assert.doesNotMatch(detailPage, /method: "PUT"[^]*\/read/);
+  assert.match(detailPage, /getScrollProgressBps/);
+  assert.match(detailPage, /READER_SCROLL_PROGRESS_IDLE_SAVE_MS = 4000/);
+  assert.match(detailPage, /keepalive: true/);
+  assert.match(detailPage, /h-\[2px\] bg-blue-500/);
+  assert.match(detailPage, /data\.state\.progressBps/);
+  assert.match(detailRoute, /progressPayloadSchema/);
+  assert.match(detailRoute, /export const POST = protectRoute/);
+  assert.match(dataSource, /CONVERSATION_READ_PROGRESS_THRESHOLD_BPS = 9500/);
+  assert.match(dataSource, /conversation_progress/);
+  assert.match(dataSource, /readChanged/);
+  assert.match(migration, /createTable\("conversation_progress"/);
+  assert.match(migration, /progress_bps >= 0 AND progress_bps <= 10000/);
 });
 
 test("reader sessions resolve users inside the active app before email fallback", async () => {
@@ -116,7 +190,7 @@ test("reader sessions resolve users inside the active app before email fallback"
 });
 
 test("conversation traversal stays English and only detail exposes translation controls", async () => {
-  const [dataSource, discoveryPage, sharedUi, categoryPage, detailPage, translationRoute, appLayout, libraryShell] =
+  const [dataSource, discoveryPage, sharedUi, categoryPage, detailPage, translationRoute, appLayout, appLayoutTypes, libraryShell, plainList] =
     await Promise.all([
       readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"),
       readSource("src/app/(app)/(lingocafe)/conversations/(library)/page.tsx"),
@@ -131,9 +205,11 @@ test("conversation traversal stays English and only detail exposes translation c
       ),
       readSource("src/app/api/(lingocafe)/lingocafe/translate/route.ts"),
       readSource("src/42go/layouts/app/AppLayout.tsx"),
+      readSource("src/42go/layouts/app/types.ts"),
       readSource(
         "src/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell.tsx"
       ),
+      readSource("src/42go/components/PlainList/PlainList.tsx"),
     ]);
 
   assert.ok(
@@ -148,9 +224,11 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.match(dataSource, /variantTitle: row\.variant_title/);
   assert.match(dataSource, /starred: starred\.map\(mapConversationChoice\)/);
   assert.match(sharedUi, /<p className="font-medium text-foreground">\{choice\.title\}<\/p>/);
-  assert.match(sharedUi, /bottomMargin = "30vw"/);
-  assert.match(sharedUi, /style=\{\{ height: bottomMargin \}\}/);
-  assert.match(sharedUi, /flushMobileTop=\{flushMobileTop\}/);
+  assert.match(sharedUi, /hideMobileTopBorder/);
+  assert.match(sharedUi, /hideMobileBottomBorder/);
+  assert.match(sharedUi, /desktopVariant="contained"/);
+  assert.match(plainList, /desktopVariant\?: "default" \| "contained" \| "flush"/);
+  assert.match(plainList, /md:my-6 md:overflow-hidden md:rounded-xl md:border md:shadow-sm/);
   assert.doesNotMatch(sharedUi, /ConversationTranslatableText/);
   assert.match(categoryPage, /data\?\.scenarios\.flatMap\(\(scenario\)/);
   assert.match(categoryPage, /scenario\.variants[^]*\.map\(\(variant\)/);
@@ -159,6 +237,22 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.match(categoryPage, /<ConversationChoiceGroupRow/);
   assert.doesNotMatch(sharedUi, /<ConversationBadge>\{choice\.language\}<\/ConversationBadge>/);
   assert.match(sharedUi, /Choose a level for \$\{firstChoice\.title\}/);
+  assert.match(sharedUi, /data-\[state=open\]:slide-in-from-bottom/);
+  assert.match(sharedUi, /data-\[state=closed\]:slide-out-to-bottom/);
+  assert.match(sharedUi, /inset-x-2\.5 bottom-0/);
+  assert.match(sharedUi, /rounded-t-3xl/);
+  assert.match(sharedUi, /window\.setTimeout\(\(\) => router\.push\(href\), 260\)/);
+  assert.match(sharedUi, /onClick=\{openLevelPicker\}[^]*className="relative flex min-w-0 w-full/);
+  assert.match(sharedUi, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/);
+  assert.match(sharedUi, /<DialogTitle className="text-xl leading-tight">[^]*Choose reading level/);
+  assert.ok(
+    (sharedUi.match(/Choose reading level/g) || []).length >= 2,
+    "desktop and mobile level pickers share the same visible title"
+  );
+  assert.doesNotMatch(sharedUi, /Choose (?:a|the) level (?:to|you want to) read/);
+  assert.match(sharedUi, /style=\{\{ left: anchorPoint\.x, top: anchorPoint\.y \}\}/);
+  assert.match(sharedUi, /Read \$\{firstChoice\.title\} at level \$\{choice\.cefrLevel\.toUpperCase\(\)\}/);
+  assert.match(sharedUi, /inline-flex min-h-11 min-w-11/);
   assert.ok(
     (sharedUi.match(/touch-manipulation/g) || []).length >= 3,
     "category and conversation rows expose immediate touch feedback"
@@ -167,12 +261,14 @@ test("conversation traversal stays English and only detail exposes translation c
     (sharedUi.match(/active:bg-muted/g) || []).length >= 3,
     "category and conversation rows expose a pressed state"
   );
-  assert.match(categoryPage, /<PlainList bleedMobile=\{false\}/);
+  assert.match(categoryPage, /trailingItems=/);
   assert.doesNotMatch(categoryPage, /Choose a conversation|practice-heading/);
   assert.doesNotMatch(categoryPage, /Explore further|subcategories-heading/);
   assert.doesNotMatch(categoryPage, /scenario\.canonicalTitle|variant\.canonicalTitle/);
   assert.doesNotMatch(categoryPage, /data\.category\.(goal|description)/);
-  assert.match(categoryPage, /<CategoryList[^]*flush/);
+  assert.match(categoryPage, /<CategoryList/);
+  assert.match(categoryPage, /title: data\.category\.title/);
+  assert.doesNotMatch(categoryPage, /<h2[^]*data\.category\.title/);
   assert.match(sharedUi, /className="flex min-w-0 flex-1 items-center/);
   assert.doesNotMatch(discoveryPage, /ConversationActionFab|ConversationTranslatableText/);
   assert.doesNotMatch(categoryPage, /ConversationActionFab|ConversationTranslatableText/);
@@ -180,9 +276,17 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.doesNotMatch(categoryPage, /<AppLayout/);
   assert.match(libraryShell, /<AppLayout/);
   assert.match(libraryShell, /containedMobileScroll/);
+  assert.match(libraryShell, /pageWidth="content"/);
+  assert.match(appLayoutTypes, /pageWidth\?: "full" \| "content"/);
+  assert.match(appLayout, /pageWidth === "content" \? "mx-auto w-full max-w-4xl" : "w-full"/);
+  assert.match(appLayout, /<div className=\{pageWidthClass\}>[^]*<Toolbar/);
+  assert.match(appLayout, /className=\{`\$\{pageWidthClass\} px-6`\}/);
   assert.match(libraryShell, /component: LanguagePreferencesMenu/);
+  assert.match(libraryShell, /title=\{navigation\.title\}/);
+  assert.match(libraryShell, /backBtn=\{navigation\.backTo/);
   assert.match(libraryShell, /slide-in-from-right-4/);
   assert.match(libraryShell, /motion-reduce:animate-none/);
+  assert.match(libraryShell, /h-\[max\(30vw,calc\(4rem\+env\(safe-area-inset-bottom\)\)\)\]/);
   assert.match(appLayout, /h-\[100dvh\].*overflow-hidden/);
   assert.match(appLayout, /overflow-y-auto overscroll-contain/);
   assert.match(detailPage, /text=\{data\.conversation\.title\}/);

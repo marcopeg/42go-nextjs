@@ -13,7 +13,9 @@ accumulated model and the safe publication protocol. The additive foundation
 described here is migration
 `20260806223000_lingocafe_conversations.js`, with export-time category
 availability added by
-`20260807120000_lingocafe_conversation_category_availability.js`.
+`20260807120000_lingocafe_conversation_category_availability.js`, and browse
+cache versioning added by
+`20260807170000_lingocafe_conversation_cache_versions.js`.
 
 All conversation tables are in the PostgreSQL `lingocafe` schema. PostgreSQL is
 the only supported target.
@@ -33,14 +35,18 @@ Content publication owns these tables:
 - `conversation_variant_localizations`
 - `conversations`
 - `conversation_rounds`
+- `conversation_publication_state`
 
 The application and its learners own these tables:
 
 - `conversation_reads`
 - `conversation_stars`
+- `conversation_user_state_versions`
 
 An importer must never insert, update, delete, truncate, replace, or derive rows
-in the learner-owned tables. Normal publication must not touch books, book
+in the learner-owned tables. The publisher updates only the singleton
+`conversation_publication_state` row after all content writes succeed. Normal
+publication must not touch books, book
 pages, progress, completion, profiles, consent, events, or translation data.
 
 ## Common conventions
@@ -291,6 +297,43 @@ cascades to rounds; actor deletion is restricted.
 `(user_id, conversation_id)` is the primary key. Both foreign keys cascade on
 deletion. The `idx_lc_conversation_reads_user_time` index on
 `(user_id, read_at DESC)` supports recent-read queries.
+
+Opening a conversation does not create this row. The reader first persists
+scroll progress and creates the read row only after progress reaches 9500 basis
+points (95%). Existing read rows are backfilled to 10000 basis points when the
+progress table is introduced.
+
+### `lingocafe.conversation_progress`
+
+| Column | Meaning |
+| --- | --- |
+| `user_id` | Authenticated `auth.users.id`. |
+| `conversation_id` | Exact conversation ID. |
+| `progress_bps` | Scroll progress from 0 through 10000 basis points. |
+| `updated_at` | Last persisted scroll update. |
+
+`(user_id, conversation_id)` is the primary key. Both foreign keys cascade on
+deletion, and a check constraint enforces the basis-point range. Progress is
+independent of read state so opening or partially reading a conversation does
+not make it read. The reader restores this value on reopen, updates it after a
+four-second scroll idle period, and sends any pending final value with a
+keepalive request when leaving.
+
+### `lingocafe.conversation_publication_state`
+
+Singleton publication metadata used to validate cached browse responses before
+the application queries the content graph. The `current` row stores the exact
+full-corpus digest produced by `conv-push` and the successful publication time.
+The publisher changes this row in the same transaction and only after all
+content writes and checks have succeeded.
+
+### `lingocafe.conversation_user_state_versions`
+
+One monotonically increasing version per learner. The application increments
+it in the same transaction whenever a read or star mutation changes state.
+Browse ETags combine this version with the publication digest and resolved
+profile selection, so a conditional `304` never preserves stale read/star
+status. This table is application-owned and the publisher must not change it.
 
 ### `lingocafe.conversation_stars`
 

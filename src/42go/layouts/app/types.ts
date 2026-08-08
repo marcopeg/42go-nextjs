@@ -54,6 +54,12 @@ export interface AppLayoutProps {
   children: React.ReactNode;
   title: React.ReactNode;
   subtitle?: string;
+  /**
+   * Controls the shared horizontal boundary for the toolbar, page body, and
+   * sticky footer. `full` fills the post-sidebar canvas; `content` keeps all
+   * three surfaces aligned to the same reading-width column on large screens.
+   */
+  pageWidth?: "full" | "content";
   icon?: React.ComponentType<{ className?: string }> | string;
   actions?: TActionItem[];
   stickyHeader?: boolean;

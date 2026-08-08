@@ -121,7 +121,7 @@ export type ConversationDetailResponse = {
   };
   actors: ConversationActor[];
   rounds: ConversationRound[];
-  state: { isRead: boolean; isStarred: boolean };
+  state: { isRead: boolean; isStarred: boolean; progressBps: number };
   translation: { enabled: boolean; from: string; to: string | null };
   speech?: { language?: string };
 };

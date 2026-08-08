@@ -1,39 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-import {
-  PlainList,
-  PlainListItem,
-} from "@/42go/components/PlainList";
 import { useConversationLibraryShell } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell";
+import { useConversationBrowseData } from "@/app/(app)/(lingocafe)/conversations/_components/useConversationBrowseData";
 import {
-  ConversationChoiceRow,
   CategoryList,
   ConversationEmpty,
   ConversationError,
   ConversationLoading,
+  StarredConversationCategoryRow,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
 import {
   buildBandHref,
-  buildConversationHref,
-  getResponseMessage,
   isConversationBand,
   type ConversationBand,
-  type ConversationChoice,
   type ConversationDiscoveryResponse,
 } from "@/app/(app)/(lingocafe)/conversations/_components/types";
 
 const ConversationsPage = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { preferenceRevision, reportProfile } = useConversationLibraryShell();
+  const {
+    cacheScope,
+    navigateToCategory,
+    preferenceRevision,
+    reportNavigation,
+    reportProfile,
+  } = useConversationLibraryShell();
   const requestedBand = searchParams.get("band");
-  const [data, setData] = useState<ConversationDiscoveryResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [starPendingId, setStarPendingId] = useState<string | null>(null);
 
   const apiHref = useMemo(() => {
     const query = new URLSearchParams();
@@ -42,88 +38,36 @@ const ConversationsPage = () => {
     return `/api/lingocafe/conversations${encoded ? `?${encoded}` : ""}`;
   }, [requestedBand]);
 
-  const load = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(apiHref, {
-        credentials: "same-origin",
-        cache: "no-store",
-        signal,
-      });
-      if (!response.ok) {
-        throw new Error(await getResponseMessage(response, "Could not load conversations."));
-      }
-      const payload = (await response.json()) as ConversationDiscoveryResponse;
-      setData(payload);
-      reportProfile(payload.profile);
-    } catch (caught) {
-      if (caught instanceof DOMException && caught.name === "AbortError") return;
-      setError(caught instanceof Error ? caught.message : "Could not load conversations.");
-    } finally {
-      if (!signal?.aborted) setLoading(false);
-    }
-  }, [apiHref, reportProfile]);
+  const receiveData = useCallback(
+    (payload: ConversationDiscoveryResponse) => reportProfile(payload.profile),
+    [reportProfile]
+  );
+  const { data, error, loading, reload } =
+    useConversationBrowseData<ConversationDiscoveryResponse>({
+      apiHref,
+      cacheScope,
+      revision: preferenceRevision,
+      fallbackError: "Could not load conversations.",
+      onData: receiveData,
+    });
 
   useEffect(() => {
-    const controller = new AbortController();
-    queueMicrotask(() => {
-      if (!controller.signal.aborted) void load(controller.signal);
+    reportNavigation({
+      title: "Conversations",
+      subtitle: "Pick an everyday situation to practice.",
     });
-    return () => controller.abort();
-  }, [load, preferenceRevision]);
+  }, [reportNavigation]);
 
   const band: ConversationBand = isConversationBand(requestedBand)
     ? requestedBand
     : data?.selection.band ?? "intermediate";
   const currentHref = buildBandHref(pathname, band);
 
-  const toggleStar = async (choice: ConversationChoice) => {
-    if (starPendingId) return;
-    const nextStarred = !choice.isStarred;
-    setStarPendingId(choice.id);
-    setData((current) =>
-      current
-        ? {
-            ...current,
-            starred: nextStarred
-              ? current.starred.map((item) =>
-                  item.id === choice.id ? { ...item, isStarred: true } : item
-                )
-              : current.starred.filter((item) => item.id !== choice.id),
-          }
-        : current
-    );
-
-    try {
-      const response = await fetch(
-        `/api/lingocafe/conversations/${encodeURIComponent(choice.id)}/star`,
-        { method: nextStarred ? "PUT" : "DELETE", credentials: "same-origin" }
-      );
-      if (!response.ok) throw new Error(await getResponseMessage(response, "Could not update star."));
-    } catch (caught) {
-      setData((current) =>
-        current
-          ? {
-              ...current,
-              starred: current.starred.map((item) =>
-                item.id === choice.id ? { ...item, isStarred: choice.isStarred } : item
-              ),
-            }
-          : current
-      );
-      setError(caught instanceof Error ? caught.message : "Could not update star.");
-      void load();
-    } finally {
-      setStarPendingId(null);
-    }
-  };
-
   return (
-      <div className="mx-auto w-full max-w-4xl space-y-8 pb-[30vw] md:px-6 md:pb-6">
+      <div className="mx-auto w-full max-w-4xl md:px-6">
         {error ? (
           <div className="px-6 pt-6 md:px-0">
-            <ConversationError message={error} onRetry={() => void load()} />
+            <ConversationError message={error} onRetry={() => void reload()} />
           </div>
         ) : null}
         {loading && !data ? (
@@ -133,51 +77,43 @@ const ConversationsPage = () => {
         ) : null}
 
         {data ? (
-          <>
-            {data.starred.length > 0 ? (
-              <section aria-labelledby="starred-conversations-heading" className="space-y-3 pt-6">
-                <div className="px-6 md:px-0">
-                  <h2 id="starred-conversations-heading" className="text-lg font-semibold">
-                    Starred
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Saved conversations in {data.profile.targetLanguage.toUpperCase()}, across every level.
-                  </p>
-                </div>
-                <PlainList>
-                  {data.starred.map((choice) => (
-                    <PlainListItem key={choice.id}>
-                      <ConversationChoiceRow
-                        choice={choice}
-                        href={buildConversationHref({ id: choice.id, band, returnTo: currentHref })}
-                        showContext
-                        onStarChange={toggleStar}
-                        starPending={starPendingId === choice.id}
-                      />
-                    </PlainListItem>
-                  ))}
-                </PlainList>
-              </section>
-            ) : null}
-
-            <section aria-label="Conversation categories">
-              {data.roots.length > 0 ? (
-                <CategoryList
-                  categories={data.roots}
-                  flush
-                  bottomMargin={0}
-                  getHref={(category) =>
-                    `/conversations/categories/${encodeURIComponent(category.id)}?${new URLSearchParams({ band }).toString()}`
-                  }
-                />
-              ) : (
-                <ConversationEmpty
-                  title={`No ${data.profile.targetLanguage.toUpperCase()} conversations yet`}
-                  description="Conversation practice is not available for this language. Nothing has been substituted from another language."
-                />
-              )}
-            </section>
-          </>
+          <section aria-label="Conversation categories">
+            {data.roots.length > 0 || data.starred.length > 0 ? (
+              <CategoryList
+                categories={data.roots}
+                leadingItems={
+                  data.starred.length > 0 ? (
+                    <StarredConversationCategoryRow
+                      count={data.starred.length}
+                      href={buildBandHref("/conversations/starred", band)}
+                      onNavigate={(href) =>
+                        navigateToCategory({
+                          href,
+                          title: "Starred",
+                          backTo: currentHref,
+                        })
+                      }
+                    />
+                  ) : null
+                }
+                getHref={(category) =>
+                  `/conversations/categories/${encodeURIComponent(category.id)}?${new URLSearchParams({ band }).toString()}`
+                }
+                onNavigate={(category, href) =>
+                  navigateToCategory({
+                    href,
+                    title: category.title,
+                    backTo: currentHref,
+                  })
+                }
+              />
+            ) : (
+              <ConversationEmpty
+                title={`No ${data.profile.targetLanguage.toUpperCase()} conversations yet`}
+                description="Conversation practice is not available for this language. Nothing has been substituted from another language."
+              />
+            )}
+          </section>
         ) : null}
       </div>
   );

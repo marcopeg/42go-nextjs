@@ -35,6 +35,7 @@ const AppLayoutShell = ({
   children,
   title,
   subtitle,
+  pageWidth = "full",
   icon,
   actions,
   stickyHeader = true,
@@ -55,6 +56,8 @@ const AppLayoutShell = ({
     getSideMenuState()
   );
   const hasFooter = !!footer;
+  const pageWidthClass =
+    pageWidth === "content" ? "mx-auto w-full max-w-4xl" : "w-full";
   const userFeatureFlags = session?.user?.featureFlags || null;
 
   // Save sidebar state to localStorage when it changes
@@ -106,13 +109,15 @@ const AppLayoutShell = ({
           isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
         } ${stickyHeader ? "sticky top-0 z-30" : ""}`}
       >
-        <Toolbar
-          title={title}
-          subtitle={subtitle}
-          icon={icon}
-          actions={actions}
-          backBtn={backBtn}
-        />
+        <div className={pageWidthClass}>
+          <Toolbar
+            title={title}
+            subtitle={subtitle}
+            icon={icon}
+            actions={actions}
+            backBtn={backBtn}
+          />
+        </div>
       </header>
 
       {/* Main Content */}
@@ -127,7 +132,7 @@ const AppLayoutShell = ({
       >
         {/* Page Content */}
         <div
-          className={`h-full flex flex-col ${(() => {
+          className={`${pageWidthClass} h-full flex flex-col ${(() => {
             // Base paddings for left/right and top
             const base = disablePadding
               ? []
@@ -207,7 +212,7 @@ const AppLayoutShell = ({
             isSidebarCollapsed ? "left-0 md:left-20" : "left-0 md:left-64"
           }`}
         >
-          <div className="w-full px-6">{footer}</div>
+          <div className={`${pageWidthClass} px-6`}>{footer}</div>
         </footer>
       )}
 

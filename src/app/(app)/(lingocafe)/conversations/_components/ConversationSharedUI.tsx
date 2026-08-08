@@ -9,8 +9,8 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-  type CSSProperties,
   type MouseEvent,
+  type ReactNode,
 } from "react";
 
 import {
@@ -71,6 +71,33 @@ export const ConversationLoading = ({ label = "Loading conversations…" }) => (
   </div>
 );
 
+export const ConversationListSkeleton = ({ rows = 5 }: { rows?: number }) => (
+  <PlainList
+    role="status"
+    aria-label="Loading category"
+    bleedMobile={false}
+    hideMobileTopBorder
+    hideMobileBottomBorder
+    desktopVariant="contained"
+    className="bg-background"
+  >
+    {Array.from({ length: rows }, (_, index) => (
+      <div className="flex min-h-28 items-start gap-3 px-6 py-4" key={index}>
+        <div className="mt-0.5 size-5 shrink-0 animate-pulse rounded-full bg-muted motion-reduce:animate-none" />
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="h-5 w-3/5 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+          <div className="space-y-2">
+            <div className="h-4 w-full animate-pulse rounded bg-muted/80 motion-reduce:animate-none" />
+            <div className="h-4 w-4/5 animate-pulse rounded bg-muted/80 motion-reduce:animate-none" />
+          </div>
+        </div>
+        <div className="mt-1 h-5 w-8 shrink-0 animate-pulse rounded-full bg-muted motion-reduce:animate-none" />
+      </div>
+    ))}
+    <span className="sr-only">Loading…</span>
+  </PlainList>
+);
+
 export const ConversationEmpty = ({
   title,
   description,
@@ -87,54 +114,111 @@ export const ConversationEmpty = ({
 export const CategoryList = ({
   categories,
   getHref,
-  flush = false,
-  flushMobileTop = false,
-  bottomMargin = "30vw",
+  onNavigate,
+  leadingItems,
+  trailingItems,
 }: {
   categories: ConversationCategory[];
   getHref: (category: ConversationCategory) => string;
-  flush?: boolean;
-  flushMobileTop?: boolean;
-  bottomMargin?: CSSProperties["marginBottom"];
+  onNavigate?: (category: ConversationCategory, href: string) => void;
+  leadingItems?: ReactNode;
+  trailingItems?: ReactNode;
 }) => (
-  <>
     <PlainList
-      bleedMobile={!flush}
-      flushMobileTop={flushMobileTop}
-      className={cn(flush && "border-t-0 md:rounded-none md:border-x-0")}
+      bleedMobile={false}
+      hideMobileTopBorder
+      hideMobileBottomBorder
+      desktopVariant="contained"
     >
-      {categories.map((category) => (
-        <PlainListItem key={category.id}>
-          <Link
-            href={getHref(category)}
-            className="flex min-h-16 w-full touch-manipulation items-start gap-3 px-6 py-3 text-left outline-none transition-[background-color,filter,box-shadow] duration-75 hover:brightness-[0.98] active:bg-muted active:brightness-95 focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:brightness-110 dark:active:brightness-110 md:py-4"
-          >
-            <MessageCircle aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
-            <span className="min-w-0 flex-1">
-              <span className="block font-medium text-foreground">{category.title}</span>
-              {category.goal || category.description ? (
-                <span className="mt-0.5 line-clamp-2 block text-sm text-muted-foreground">
-                  {category.goal || category.description}
-                </span>
-              ) : null}
-            </span>
-            <span
-              aria-label={`${category.availableCount} ${category.availableCount === 1 ? "conversation" : "conversations"} available`}
-              className="mt-0.5 inline-flex min-w-6 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground"
+      {leadingItems}
+      {categories.map((category) => {
+        const href = getHref(category);
+        return (
+          <PlainListItem key={category.id}>
+            <Link
+              href={href}
+              onClick={(event) => {
+                if (
+                  !onNavigate ||
+                  event.defaultPrevented ||
+                  event.button !== 0 ||
+                  event.metaKey ||
+                  event.ctrlKey ||
+                  event.shiftKey ||
+                  event.altKey
+                ) return;
+                event.preventDefault();
+                onNavigate(category, href);
+              }}
+              className="flex min-h-16 w-full touch-manipulation items-start gap-3 px-6 py-3 text-left outline-none transition-[background-color,filter,box-shadow] duration-75 hover:brightness-[0.98] active:bg-muted active:brightness-95 focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:brightness-110 dark:active:brightness-110 md:py-4"
             >
-              {category.availableCount}
-            </span>
-            <ChevronRight aria-hidden="true" className="mt-1 size-4 shrink-0 text-muted-foreground" />
-          </Link>
-        </PlainListItem>
-      ))}
+              <MessageCircle aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium text-foreground">{category.title}</span>
+                {category.goal || category.description ? (
+                  <span className="mt-0.5 line-clamp-2 block text-sm text-muted-foreground">
+                    {category.goal || category.description}
+                  </span>
+                ) : null}
+              </span>
+              <span
+                aria-label={`${category.availableCount} ${category.availableCount === 1 ? "conversation" : "conversations"} available`}
+                className="mt-0.5 inline-flex min-w-6 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground"
+              >
+                {category.availableCount}
+              </span>
+              <ChevronRight aria-hidden="true" className="mt-1 size-4 shrink-0 text-muted-foreground" />
+            </Link>
+          </PlainListItem>
+        );
+      })}
+      {trailingItems}
     </PlainList>
-    <div
-      aria-hidden="true"
-      className="shrink-0 md:hidden"
-      style={{ height: bottomMargin }}
-    />
-  </>
+);
+
+export const StarredConversationCategoryRow = ({
+  count,
+  href,
+  onNavigate,
+}: {
+  count: number;
+  href: string;
+  onNavigate?: (href: string) => void;
+}) => (
+    <PlainListItem>
+      <Link
+        href={href}
+        onClick={(event) => {
+          if (
+            !onNavigate ||
+            event.defaultPrevented ||
+            event.button !== 0 ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey
+          ) return;
+          event.preventDefault();
+          onNavigate(href);
+        }}
+        className="flex min-h-16 w-full touch-manipulation items-start gap-3 px-6 py-3 text-left outline-none transition-[background-color,filter,box-shadow] duration-75 hover:brightness-[0.98] active:bg-muted active:brightness-95 focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:hover:brightness-110 dark:active:brightness-110 md:py-4"
+      >
+        <Star aria-hidden="true" className="mt-0.5 size-5 shrink-0 fill-primary text-primary" />
+        <span className="min-w-0 flex-1">
+          <span className="block font-medium text-foreground">Starred</span>
+          <span className="mt-0.5 line-clamp-2 block text-sm text-muted-foreground">
+            Your saved conversations across every level.
+          </span>
+        </span>
+        <span
+          aria-label={`${count} starred ${count === 1 ? "conversation" : "conversations"}`}
+          className="mt-0.5 inline-flex min-w-6 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground"
+        >
+          {count}
+        </span>
+        <ChevronRight aria-hidden="true" className="mt-1 size-4 shrink-0 text-muted-foreground" />
+      </Link>
+    </PlainListItem>
 );
 
 export const ConversationChoiceRow = ({
