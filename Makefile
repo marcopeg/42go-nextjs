@@ -19,13 +19,33 @@ BACKLOG_DOCTOR_HOME := $(HOME)/.agents/skills/backlog-doctor/scripts/doctor_back
 BACKLOG_ROOT := $(CURDIR)/docs/backlog
 SECURITY_CHECK := .agents/skills/42go-security-check/scripts/run_security_check.py
 SECURITY_IMAGE ?= 42go-next:latest
+DEV_LAUNCH_LABEL ?= 42go-nextjs.dev
+DEV_NODE_BIN := $(dir $(shell command -v node))
 
 export CAPROVER_URL
 export CAPROVER_APP_TOKEN
 
-boot: start app.install migrate seed app.start
+boot:
+	$(MAKE) start
+	$(MAKE) app.install
+	$(MAKE) migrate
+	$(MAKE) seed
+	$(MAKE) app.start
 
-reboot: clear boot
+boot.detached:
+	$(MAKE) start
+	$(MAKE) app.install
+	$(MAKE) migrate
+	$(MAKE) seed
+	$(MAKE) app.start.detached
+
+reboot:
+	$(MAKE) clear
+	$(MAKE) boot
+
+reboot.detached:
+	$(MAKE) clear
+	$(MAKE) boot.detached
 
 start:
 	docker-compose up -d
@@ -47,11 +67,31 @@ down:
 	docker-compose down -v 
 
 # New commands
-clear: down app.clear
-	docker-compose down -v
-	rm -rf node_modules
-	rm -rf .next
-	rm -rf .cache
+app.stop:
+	@launchctl remove "$(DEV_LAUNCH_LABEL)" 2>/dev/null || true
+	@pids="$$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null || true)"; \
+	if [ -z "$$pids" ]; then \
+		echo "No process is listening on port 3000."; \
+	else \
+		echo "Stopping port 3000 listener(s): $$pids"; \
+		kill $$pids; \
+		for attempt in 1 2 3 4 5; do \
+			remaining="$$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null || true)"; \
+			[ -z "$$remaining" ] && break; \
+			sleep 1; \
+		done; \
+		remaining="$$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null || true)"; \
+		if [ -n "$$remaining" ]; then \
+			echo "Force-stopping port 3000 listener(s): $$remaining"; \
+			kill -9 $$remaining; \
+		fi; \
+	fi
+	@rm -f .cache/42go-dev.pid
+
+clear:
+	$(MAKE) app.stop
+	$(MAKE) down
+	$(MAKE) app.clear
 
 app.clear:
 	rm -rf node_modules
@@ -63,6 +103,28 @@ app.install:
 
 app.start:
 	npm run dev
+
+app.start.detached:
+	@if lsof -tiTCP:3000 -sTCP:LISTEN >/dev/null 2>&1; then \
+		echo "Development server is already listening on port 3000."; \
+	else \
+		mkdir -p .cache; \
+		launchctl remove "$(DEV_LAUNCH_LABEL)" 2>/dev/null || true; \
+		launchctl submit -l "$(DEV_LAUNCH_LABEL)" \
+			-o "$(CURDIR)/.cache/42go-dev.log" \
+			-e "$(CURDIR)/.cache/42go-dev.log" \
+			-- /bin/zsh -lc 'export PATH="$(DEV_NODE_BIN):$$PATH"; cd "$(CURDIR)" && exec npm run dev'; \
+		echo "Starting development server through launchd (log: .cache/42go-dev.log)..."; \
+		for attempt in 1 2 3 4 5 6 7 8 9 10; do \
+			if lsof -tiTCP:3000 -sTCP:LISTEN >/dev/null 2>&1; then \
+				echo "Development server is listening on port 3000."; \
+				exit 0; \
+			fi; \
+			sleep 1; \
+		done; \
+		echo "Development server did not listen on port 3000 within 10 seconds. Log: .cache/42go-dev.log"; \
+		exit 1; \
+	fi
 
 app: app.install app.start
 qa: npm run qa

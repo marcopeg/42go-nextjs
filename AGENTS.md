@@ -44,6 +44,9 @@ make seed              # Re-apply seed data
 # Development
 make app               # Install dependencies and start dev server
 make app.start         # Start Next.js dev server only (assumes deps installed)
+make app.start.detached # Start dev server as a background macOS job (agent use)
+make reboot            # Stop port 3000, reset local Docker data, reinstall, migrate, seed, and start
+make reboot.detached   # Same reset, but leaves dev server running after an agent command ends
 npm run qa             # Lint and build (run before committing)
 
 # Production
@@ -64,6 +67,12 @@ npx shadcn@latest add <component>   # Add shadcn/ui component
 
 - Run `npm run qa` after modifying code to catch linting and build errors.
 - Never run `npm dev` — it's already running in the background (managed by `Makefile` target `app.start`).
+- `make app.start` and `make reboot` keep the dev server attached for a human
+  terminal. When an agent must leave the server running after its own command
+  session ends, use `make app.start.detached` or `make reboot.detached`.
+- Both reboot targets first terminate only the listener on port 3000, then
+  remove local Docker volumes, dependencies, caches, and build output before
+  rebuilding the local stack.
 
 ---
 
@@ -586,3 +595,13 @@ See `.env.example` for full reference.
 ---
 
 **Philosophy**: Configuration over convention, server-side validation over client trust, type safety over runtime flexibility.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
