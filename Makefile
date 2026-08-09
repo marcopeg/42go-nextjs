@@ -6,7 +6,6 @@
 VERSION := $(shell node -p "require('./package.json').version")
 -include .env
 IMAGE ?= marcopeg/42go-next
-PUBLISH_PLATFORM ?= linux/amd64
 UNIVERSAL_PLATFORMS ?= linux/amd64,linux/arm64
 CAPROVER ?= npx --yes caprover
 CAPROVER_URL := $(subst ",,$(CAPROVER_URL))
@@ -14,6 +13,12 @@ CAPROVER_APP ?= a42go-multi
 CAPROVER_APP := $(subst ",,$(CAPROVER_APP))
 CAPROVER_APP_TOKEN := $(subst ",,$(CAPROVER_APP_TOKEN))
 CAPROVER_IMAGE ?= $(IMAGE):$(VERSION)
+CAPROVER_IMAGE := $(subst ",,$(CAPROVER_IMAGE))
+DEPLOYMENT_URL ?= https://read.lingocafe.app/api/version
+DEPLOYMENT_VERIFY_INITIAL_WAIT ?= 30
+DEPLOYMENT_VERIFY_INTERVAL ?= 10
+DEPLOYMENT_VERIFY_ATTEMPTS ?= 30
+SKIP_DEPLOYMENT_VERIFY ?= 0
 BACKLOG_DOCTOR_LOCAL := .agents/skills/backlog-doctor/scripts/doctor_backlog.py
 BACKLOG_DOCTOR_HOME := $(HOME)/.agents/skills/backlog-doctor/scripts/doctor_backlog.py
 BACKLOG_ROOT := $(CURDIR)/docs/backlog
@@ -178,12 +183,12 @@ prod.js.ngrok:
 
 prod.build:
 	@echo "🏗️  Building production Docker image..."
-	docker build --progress=plain --load --no-cache -f Dockerfile -t 42go-next:latest .
+	docker build --progress=plain --load --no-cache --build-arg APP_VERSION=$(VERSION) -f Dockerfile -t 42go-next:latest .
 	@echo "✅ Production build complete"
 
 prod.build.light:
 	@echo "🏗️  Building production Docker image..."
-	docker build --progress=plain --load -f Dockerfile -t 42go-next:latest .
+	docker build --progress=plain --load --build-arg APP_VERSION=$(VERSION) -f Dockerfile -t 42go-next:latest .
 	@echo "✅ Production build complete"
 
 prod.start:
@@ -254,19 +259,21 @@ prod.app.restart: prod.app.stop prod.start prod.logs
 ### Publish to DockerHUB
 ###
 publish:
-	@echo "Building $(IMAGE):$(VERSION) for $(PUBLISH_PLATFORM)"
-	@docker buildx build --platform $(PUBLISH_PLATFORM) \
+	@echo "Building $(IMAGE):$(VERSION) for $(UNIVERSAL_PLATFORMS)"
+	@docker buildx build --platform $(UNIVERSAL_PLATFORMS) \
 		--build-arg NODE_ENV=production \
+		--build-arg APP_VERSION=$(VERSION) \
 		-t $(IMAGE):latest \
 		-t $(IMAGE):$(VERSION) \
 		--push \
 		.
 
 publish.nocache:
-	@echo "Building $(IMAGE):$(VERSION) for $(PUBLISH_PLATFORM) without cache"
-	@docker buildx build --platform $(PUBLISH_PLATFORM) \
+	@echo "Building $(IMAGE):$(VERSION) for $(UNIVERSAL_PLATFORMS) without cache"
+	@docker buildx build --platform $(UNIVERSAL_PLATFORMS) \
 		--no-cache \
 		--build-arg NODE_ENV=production \
+		--build-arg APP_VERSION=$(VERSION) \
 		-t $(IMAGE):latest \
 		-t $(IMAGE):$(VERSION) \
 		--push \
@@ -277,6 +284,7 @@ publish.universal:
 	@docker buildx build --platform $(UNIVERSAL_PLATFORMS) \
 		--no-cache \
 		--build-arg NODE_ENV=production \
+		--build-arg APP_VERSION=$(VERSION) \
 		-t $(IMAGE):latest \
 		-t $(IMAGE):$(VERSION) \
 		--push \
@@ -298,8 +306,56 @@ deploy.caprover:
 		--imageName "$(CAPROVER_IMAGE)" \
 		--appToken "$$CAPROVER_APP_TOKEN"
 
-deploy.nocache: publish.nocache deploy.caprover
-deploy: publish deploy.caprover
+deploy.mac: publish
+	@$(MAKE) deploy.caprover VERSION="$(VERSION)"
+	@$(MAKE) verify.deployment.maybe VERSION="$(VERSION)"
+
+deploy.nocache: publish.nocache
+	@$(MAKE) deploy.caprover VERSION="$(VERSION)"
+	@$(MAKE) verify.deployment.maybe VERSION="$(VERSION)"
+
+deploy: deploy.mac
+
+###
+### Release through GitHub Actions
+###
+.PHONY: deploy.mac deploy.github verify.deployment verify.deployment.maybe
+deploy.github:
+	@python3 .agents/skills/42go-deploy/scripts/bump_patch_version.py
+
+verify.deployment.maybe:
+	@if [ "$(SKIP_DEPLOYMENT_VERIFY)" = "1" ]; then \
+		echo "Skipping local deployment verification; the caller must verify the rollout"; \
+	else \
+		$(MAKE) verify.deployment VERSION="$(VERSION)"; \
+	fi
+
+verify.deployment:
+	@expected="$(VERSION)"; \
+		url="$(DEPLOYMENT_URL)"; \
+		response_file="$$(mktemp)"; \
+		trap 'rm -f "$$response_file"' EXIT; \
+		echo "Waiting $(DEPLOYMENT_VERIFY_INITIAL_WAIT)s before verifying $$url"; \
+		sleep $(DEPLOYMENT_VERIFY_INITIAL_WAIT); \
+		attempt=1; \
+		while [ $$attempt -le $(DEPLOYMENT_VERIFY_ATTEMPTS) ]; do \
+			: > "$$response_file"; \
+			http_code="$$(curl --silent --show-error --location \
+				--max-time $(DEPLOYMENT_VERIFY_INTERVAL) \
+				--output "$$response_file" \
+				--write-out '%{http_code}' \
+				"$$url?verify=$$expected-$$attempt" || true)"; \
+			body="$$(tr -d '\r\n' < "$$response_file")"; \
+			if [ "$$http_code" = "200" ] && [ "$$body" = "$$expected" ]; then \
+				echo "Verified deployment $$expected: $$url"; \
+				exit 0; \
+			fi; \
+			echo "Attempt $$attempt/$(DEPLOYMENT_VERIFY_ATTEMPTS): version not ready (HTTP $${http_code:-000}, body: $$body)"; \
+			attempt=$$((attempt + 1)); \
+			sleep $(DEPLOYMENT_VERIFY_INTERVAL); \
+		done; \
+		echo "Deployment verification failed after $(DEPLOYMENT_VERIFY_ATTEMPTS) attempts: $$url"; \
+		exit 1
 
 
 

@@ -1,12 +1,11 @@
 import assert from "node:assert/strict";
-import { createRequire } from "node:module";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const require = createRequire(import.meta.url);
 const migrationPath =
   "knex/migrations/20260806223000_lingocafe_conversations.js";
 const seedPath = "knex/seeds/20260806224000.lingocafe.conversations.js";
+const seedDataPath = "knex/seeds/data/lingocafe.conversations.json";
 
 const readSource = (path: string) =>
   readFile(new URL(`../${path}`, import.meta.url), "utf8");
@@ -25,7 +24,6 @@ const foundationContentTables = [
   "conversation_rounds",
   "conversation_category_availability",
 ];
-const contentTables = [...foundationContentTables];
 
 test("conversation baseline creates the complete normalized model", async () => {
   const migration = await readSource(migrationPath);
@@ -212,164 +210,41 @@ test("migration rollback drops only conversation tables in dependency-safe order
   );
 });
 
-type SeedOperation = {
-  table: string;
-  rows: Array<Record<string, unknown>>;
-  conflictTarget: string | string[] | null;
-  merged: boolean;
-  ignored: boolean;
-  mergeColumns: string[] | null;
-};
+test("development seed uses scoped Knex replacement without live-publisher machinery", async () => {
+  const seedSource = await readSource(seedPath);
 
-const captureSeedOperations = async () => {
-  const operations: SeedOperation[] = [];
-  const trx = (table: string) => ({
-    insert: (rows: Array<Record<string, unknown>>) => {
-      const operation: SeedOperation = {
-        table,
-        rows,
-        conflictTarget: null,
-        merged: false,
-        ignored: false,
-        mergeColumns: null,
-      };
-      operations.push(operation);
-
-      return {
-        onConflict: (conflictTarget: string | string[]) => {
-          operation.conflictTarget = conflictTarget;
-          return {
-            merge: async (columns: string[]) => {
-              operation.merged = true;
-              operation.mergeColumns = columns;
-            },
-            ignore: async () => {
-              operation.ignored = true;
-            },
-          };
-        },
-      };
-    },
-  });
-  const knex = {
-    transaction: async (callback: (transaction: typeof trx) => Promise<void>) =>
-      callback(trx),
-  };
-  const { seed } = require(`../${seedPath}`) as {
-    seed: (database: typeof knex) => Promise<void>;
-  };
-
-  await seed(knex);
-  return operations;
-};
-
-test("development fixture performs only scoped content upserts", async () => {
-  const [seedSource, operations] = await Promise.all([
-    readSource(seedPath),
-    captureSeedOperations(),
-  ]);
-
-  assert.deepEqual(
-    operations.map(({ table }) => table),
-    contentTables.map((table) => `lingocafe.${table}`)
-  );
-  assert.ok(operations.every(({ merged, ignored }) => merged || ignored));
-  assert.ok(operations.every(({ conflictTarget }) => conflictTarget !== null));
-  assert.ok(
-    operations.every(
-      ({ mergeColumns, ignored }) =>
-        ignored ||
-        (Array.isArray(mergeColumns) && !mergeColumns.includes("created_at"))
-    )
-  );
-  assert.doesNotMatch(seedSource, /\.del\s*\(|\.delete\s*\(|\.truncate\s*\(|\bDELETE\s+FROM\b/i);
+  assert.match(seedSource, /lingocafe\.conversations\.json/);
+  assert.match(seedSource, /\.onConflict\(conflict\)[\s\S]*?\.merge/);
+  assert.match(seedSource, /replaceSingleScope/);
+  assert.match(seedSource, /replaceVariantScope/);
+  assert.match(seedSource, /increment\("position", 1000000\)/);
+  assert.doesNotMatch(seedSource, /pg_advisory|CREATE TEMP|knex_migrations/);
+  assert.doesNotMatch(seedSource, /\.truncate\s*\(|\bTRUNCATE\b/i);
   assert.doesNotMatch(
     seedSource,
-    /conversation_reads|conversation_stars|books_progress|books_completed|translation_cache|auth\.users/
+    /conversation_reads|conversation_stars|conversation_progress|books_progress|books_completed|translation_cache|auth\.users/
   );
 });
 
-test("development fixture is fixed, complete, and exercises plural category paths", async () => {
-  const operations = await captureSeedOperations();
-  const byTable = new Map(operations.map((operation) => [operation.table, operation]));
-  const rows = operations.flatMap((operation) => operation.rows);
-  const serialized = JSON.stringify(rows);
+test("development seed payload is the complete deterministic corpus", async () => {
+  const payload = JSON.parse(await readSource(seedDataPath));
 
-  assert.match(serialized, /fixture-ordering-coffee/);
-  assert.match(serialized, /fixture-ordering-filter-coffee/);
-  assert.match(serialized, /sv-a1/);
-  for (const table of [
-    "conversation_categories",
-    "conversation_scenarios",
-    "conversation_variants",
-    "conversations",
-  ]) {
-    assert.ok(
-      byTable
-        .get(`lingocafe.${table}`)
-        ?.rows.every((row) => String(row.id).startsWith("fixture-"))
-    );
-  }
-
-  const parentEdges = byTable.get(
-    "lingocafe.conversation_category_parents"
-  )?.rows;
-  assert.equal(parentEdges?.length, 2);
-  assert.deepEqual(
-    new Set(parentEdges?.map((row) => row.category_id)),
-    new Set(["fixture-cafe-visits"])
-  );
-
-  const actorPositions = byTable
-    .get("lingocafe.conversation_scenario_actors")
-    ?.rows.map((row) => row.position);
-  const roundPositions = byTable
-    .get("lingocafe.conversation_rounds")
-    ?.rows.map((row) => row.position);
-  assert.deepEqual(actorPositions, [1, 2]);
-  assert.deepEqual(roundPositions, [1, 2, 3, 4]);
-
-  const cast = byTable.get("lingocafe.conversation_variant_cast")?.rows;
-  assert.equal(cast?.length, 2);
-  assert.deepEqual(
-    cast?.map((row) => [row.actor_id, row.persona_id]),
-    [
-      ["customer", "fixture-learner"],
-      ["barista", null],
-    ]
-  );
-
-  const availability = byTable.get(
-    "lingocafe.conversation_category_availability"
-  )?.rows;
-  assert.equal(availability?.length, 105);
-  assert.deepEqual(
-    new Set(availability?.map((row) => row.language)),
-    new Set(["en", "es", "it", "de", "sv"])
-  );
-  assert.ok(
-    availability?.every(
-      (row) =>
-        row.conversation_count ===
-        (row.language === "sv" &&
-        (row.level_key === "a1" || row.level_key === "beginner")
-          ? 1
-          : 0)
-    )
-  );
-
-  for (const table of [
-    "conversation_categories",
-    "conversation_scenarios",
-    "conversation_variants",
-    "conversations",
-  ]) {
-    for (const row of byTable.get(`lingocafe.${table}`)?.rows || []) {
-      assert.equal(row.source_schema_version, "poc-v0");
-      assert.match(String(row.source_path), /^fixture:\/\//);
-      assert.match(String(row.source_hash), /^[a-f0-9]{64}$/);
-      assert.equal(row.created_at, "2026-08-06T20:30:00.000Z");
-      assert.equal(row.updated_at, "2026-08-06T20:30:00.000Z");
-    }
-  }
+  assert.equal(payload.seed_format, "lingocafe-conversations-seed-v1");
+  assert.match(payload.source_digest, /^[a-f0-9]{64}$/);
+  assert.equal(payload.visibility_policy, "all-active");
+  assert.equal(payload.categories.length, 79);
+  assert.equal(payload.parents.length, 71);
+  assert.equal(payload.scenarios.length, 61);
+  assert.equal(payload.scenario_localizations.length, 708);
+  assert.equal(payload.memberships.length, 66);
+  assert.equal(payload.actors.length, 122);
+  assert.equal(payload.variants.length, 67);
+  assert.equal(payload.variant_cast.length, 134);
+  assert.equal(payload.variant_localizations.length, 708);
+  assert.equal(payload.conversations.length, 724);
+  assert.equal(payload.rounds.length, 7317);
+  assert.equal(payload.availability.length, 1659);
+  assert.ok(payload.variant_cast.some((row: { persona_id: string | null }) => row.persona_id));
+  assert.ok(payload.variant_cast.some((row: { persona_id: string | null }) => row.persona_id === null));
+  assert.ok(payload.categories.every((row: { source_path: string }) => !row.source_path.startsWith("fixture://")));
 });

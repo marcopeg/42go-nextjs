@@ -109,6 +109,47 @@ make deploy.nocache VERSION=0.0.21
 
 The deploy target uses CapRover's image deployment flow (`caprover deploy --imageName`). The image must be public or otherwise accessible to CapRover. If the Docker Hub repository is private, configure registry pull access in CapRover before running the deploy command.
 
+### GitHub Actions releases
+
+Production releases are triggered only by a semantic-version tag that exactly
+matches the version committed in `package.json`. GitHub Actions builds the
+multi-architecture (`linux/amd64,linux/arm64`) Docker image, pushes
+`marcopeg/42go-next:<version>` and `latest`,
+then instructs CapRover to deploy the immutable version tag.
+
+From a clean checkout on `main`, create a patch release with:
+
+```bash
+make deploy.github
+```
+
+The target bumps `package.json` and `package-lock.json`, commits
+`chore(release): <version>`, creates the matching `<version>` tag (no `v`
+prefix), pushes the commit to `main`, and pushes the tag. Do not manually bump
+the version inside the workflow: the tag must already identify the exact source
+and version that will be deployed.
+
+`make deploy.github` waits for the GitHub-triggered rollout and confirms that
+`https://read.lingocafe.app/api/version` returns HTTP 200 and exactly the
+release version. The `APP_VERSION` value is baked into the image at build time;
+the public route therefore proves the externally reachable container is the
+release image CapRover was asked to run.
+
+For the equivalent direct path from a Mac, run:
+
+```bash
+make deploy.mac
+```
+
+It builds and pushes the same multi-architecture image, deploys its immutable
+package version through the local CapRover CLI, and performs the same public
+verification. `make deploy` aliases `make deploy.mac`.
+
+Configure `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `CAPROVER_URL`,
+`CAPROVER_APP`, and `CAPROVER_APP_TOKEN` as repository Actions secrets. The
+reader's `CAPROVER_APP_TOKEN` is app-specific and must not reuse the assets
+token. See `GITHUB_SECRETS.md` for the secret contract.
+
 ### Monitoring & Debugging
 
 ```bash

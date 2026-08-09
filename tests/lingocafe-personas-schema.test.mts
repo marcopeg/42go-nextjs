@@ -5,6 +5,7 @@ import test from "node:test";
 const migrationPath =
   "knex/migrations/20260806220000_lingocafe_personas.js";
 const seedPath = "knex/seeds/20260806221000.lingocafe.personas.js";
+const seedDataPath = "knex/seeds/data/lingocafe.personas.json";
 
 const readSource = (path: string) =>
   readFile(new URL(`../${path}`, import.meta.url), "utf8");
@@ -52,18 +53,22 @@ test("persona publication state is a digest-versioned singleton", async () => {
   assert.match(migration, /0{64}/);
 });
 
-test("persona fixture is scoped, idempotent, and carries a runtime asset manifest", async () => {
-  const seed = await readSource(seedPath);
+test("persona seed is generated, idempotent, and carries runtime asset manifests", async () => {
+  const [seed, payloadSource] = await Promise.all([
+    readSource(seedPath),
+    readSource(seedDataPath),
+  ]);
+  const payload = JSON.parse(payloadSource);
 
-  assert.match(seed, /id: "fixture-learner"/);
-  assert.match(seed, /persona_type: "archetype"/);
+  assert.match(seed, /lingocafe\.personas\.json/);
   assert.match(seed, /\.onConflict\("id"\)/);
-  assert.match(seed, /\.merge\(\[/);
+  assert.match(seed, /\.merge\(columns\.filter/);
   assert.doesNotMatch(seed, /\.del\s*\(|\.delete\s*\(|\.truncate\s*\(|\bDELETE\s+FROM\b/i);
-  assert.match(seed, /presentations: \{/);
-  assert.match(seed, /default: \{/);
-  assert.match(seed, /avatar_asset_key:/);
-  assert.match(seed, /avatar_content_hash:/);
-  assert.match(seed, /avatar_media_type: "image\/svg\+xml"/);
-  assert.doesNotMatch(seed, /https?:\/\//);
+  assert.equal(payload.seed_format, "lingocafe-personas-seed-v1");
+  assert.match(payload.source_digest, /^[a-f0-9]{64}$/);
+  assert.equal(payload.personas.length, 21);
+  assert.ok(payload.personas.some((persona: { persona_type: string }) => persona.persona_type === "archetype"));
+  assert.ok(payload.personas.some((persona: { persona_type: string }) => persona.persona_type === "role"));
+  assert.ok(payload.personas.every((persona: { presentations: { default?: { avatar_asset_key?: string } } }) => persona.presentations.default?.avatar_asset_key));
+  assert.doesNotMatch(payloadSource, /https?:\/\//);
 });

@@ -122,3 +122,9 @@ rollback and cached clients.
 The publisher may generate reviewable SQL or connect directly to PostgreSQL,
 but both modes implement the same contract. It never writes conversation or
 learner-owned tables.
+
+For local development, `persona-push seed` exports the complete normalized
+persona corpus to `knex/seeds/data/lingocafe.personas.json`. The repository seed
+loads this prerequisite before the generated conversation seed. It uses
+stable-ID Knex upserts inside one transaction and does not require the sibling
+books checkout at seed runtime.

@@ -501,16 +501,23 @@ permission to truncate tables or delete omitted top-level IDs. A partial import
 names every authoritative parent whose child relationships may be replaced.
 Records outside those scopes remain unchanged.
 
-Generated SQL seed files and direct database mode implement the same protocol.
-Generated SQL must be reviewable, parameter-safe for all source values, wrapped
-in one transaction, advisory-locked, and free of learner-state statements.
+Direct publication SQL implements this protocol with a catalog preflight,
+transaction-scoped advisory lock, and temporary authoritative-scope tables so
+concurrent external publishers cannot interleave replacement operations.
 
-## Development fixture
+The repository development seed is a separate projection of the same normalized
+payload. Knex runs it serially against an already migrated local schema and owns
+its transaction, so the seed uses stable-ID Knex upserts and parent-scoped child
+replacement without a second advisory lock, catalog preflight, or temporary SQL
+tables. Both paths remain free of learner-state statements.
 
-The repository-owned development fixture uses reserved fixed IDs and upserts
-only those content rows and their explicitly scoped relationships/rounds. It
-must not depend on a sibling `books` checkout. Reapplying it must not clear
-full-corpus content or mutate learner state.
+## Development seed
+
+The repository-owned development seed consumes the checked-in deterministic
+payload at `knex/seeds/data/lingocafe.conversations.json`. `conv-push seed`
+regenerates that payload from the complete canonical books corpus. The seed does
+not depend on a sibling `books` checkout at runtime, does not delete omitted
+top-level IDs, and never mutates learner reads, progress, or stars.
 
 ## Consumer rules
 

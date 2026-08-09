@@ -4,6 +4,7 @@
 # shown intermittent Next.js build-worker SIGSEGVs under linux/amd64 buildx
 # emulation.
 ARG NODE_IMAGE=node:22-alpine
+ARG APP_VERSION
 
 # ==========================================
 # STAGE 1: Build Dependencies
@@ -33,6 +34,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
 ENV NEXT_BUILD_CPUS=1
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION}
 
 # Build the application with standalone output. Source maps are useful when
 # uploaded to a private error tracker, but they expose readable production
@@ -56,6 +59,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 ENV NODE_OPTIONS="--max-old-space-size=512"
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION}
 
 WORKDIR /app
 
