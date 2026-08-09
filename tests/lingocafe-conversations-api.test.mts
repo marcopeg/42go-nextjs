@@ -99,13 +99,15 @@ test("category rows render precomputed availability without shrinking their tap 
 });
 
 test("conversation browse responses support private conditional revalidation", async () => {
-  const [readerSource, browseSource, rootRoute, categoryRoute] = await Promise.all([
+  const [readerSource, conversationSource, browseSource, rootRoute, categoryRoute] = await Promise.all([
     readSource("src/app/api/(lingocafe)/lingocafe/_lib/reader.ts"),
+    readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"),
     readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversation-browse-response.ts"),
     readSource("src/app/api/(lingocafe)/lingocafe/conversations/route.ts"),
     readSource("src/app/api/(lingocafe)/lingocafe/conversations/categories/[...categoryPath]/route.ts"),
   ]);
   assert.match(readerSource, /"Cache-Control": "no-store"/);
+  assert.match(conversationSource, /schema: "conversation-browse-v3"/);
   assert.match(browseSource, /"Cache-Control": "private, no-cache"/);
   assert.match(browseSource, /matchesConversationBrowseETag/);
   assert.match(browseSource, /status: 304/);
@@ -131,7 +133,7 @@ test("conversation library caches route data and starts category transitions imm
     readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell.tsx"),
     readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI.tsx"),
   ]);
-  assert.match(cacheSource, /lingocafe\.conversations\.browse-cache\.v1/);
+  assert.match(cacheSource, /lingocafe\.conversations\.browse-cache\.v2/);
   assert.match(cacheSource, /cacheKey = \(userId: string, href: string\)/);
   assert.match(hookSource, /If-None-Match/);
   assert.match(hookSource, /response\.status === 304/);
@@ -223,7 +225,9 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.match(dataSource, /description: row\.list_description/);
   assert.match(dataSource, /scenarioTitle: row\.scenario_title/);
   assert.match(dataSource, /variantTitle: row\.variant_title/);
-  assert.match(dataSource, /starred: starred\.map\(mapConversationChoice\)/);
+  assert.match(dataSource, /starred: starred\.map\(\(row\) =>/);
+  assert.match(dataSource, /loadConversationParticipantPreviews/);
+  assert.match(dataSource, /participantPreviews\.get\(getConversationVariantKey\(row\)\)/);
   assert.match(sharedUi, /<p className="font-medium text-foreground">\{choice\.title\}<\/p>/);
   assert.match(sharedUi, /hideMobileTopBorder/);
   assert.match(sharedUi, /hideMobileBottomBorder/);
@@ -270,7 +274,7 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.match(categoryPage, /<CategoryList/);
   assert.match(categoryPage, /title: data\.category\.title/);
   assert.doesNotMatch(categoryPage, /<h2[^]*data\.category\.title/);
-  assert.match(sharedUi, /className="flex min-w-0 flex-1 items-center/);
+  assert.match(sharedUi, /flex min-w-0 flex-1 items-center/);
   assert.doesNotMatch(discoveryPage, /ConversationActionFab|ConversationTranslatableText/);
   assert.doesNotMatch(categoryPage, /ConversationActionFab|ConversationTranslatableText/);
   assert.doesNotMatch(discoveryPage, /<AppLayout/);
@@ -309,10 +313,11 @@ test("conversation traversal stays English and only detail exposes translation c
 });
 
 test("conversation detail resolves persona presentation once per actor and renders run avatars", async () => {
-  const [dataSource, types, detailPage, avatar, assets] = await Promise.all([
+  const [dataSource, types, detailPage, sharedUi, avatar, assets] = await Promise.all([
     readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"),
     readSource("src/app/(app)/(lingocafe)/conversations/_components/types.ts"),
     readSource("src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"),
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI.tsx"),
     readSource("src/app/(app)/(lingocafe)/_components/PersonaAvatar.tsx"),
     readSource("src/lib/lingocafe/assets.ts"),
   ]);
@@ -325,16 +330,39 @@ test("conversation detail resolves persona presentation once per actor and rende
   assert.match(dataSource, /castIsMalformed/);
   assert.match(dataSource, /resolveLingoCafeAssetUrl/);
   assert.match(types, /source: "persona"/);
+  assert.match(types, /participants: ConversationParticipant\[\]/);
   assert.match(types, /avatarContentHash: string/);
   assert.match(detailPage, /<PersonaAvatar/);
   assert.match(detailPage, /!startsActorRun && "invisible"/);
   assert.match(detailPage, /actor\?\.identity\.displayName/);
+  assert.match(sharedUi, /ConversationParticipantAvatars/);
+  assert.match(sharedUi, /participants\.slice\(0, 2\)/);
+  assert.match(sharedUi, /size="sm"/);
   assert.match(avatar, /unoptimized/);
   assert.match(avatar, /setFailedSources/);
   assert.match(assets, /LC_ASSETS_BASE_PATH/);
   assert.doesNotMatch(assets, /LC_PERSONA_ASSETS_BASE_PATH/);
   assert.match(assets, /normalized\.split\("\/"\)\.includes\("\.\."\)/);
   assert.doesNotMatch(detailPage, /dangerouslySetInnerHTML/);
+});
+
+test("conversation translation recovers when fluent and reading languages match", async () => {
+  const [translation, detailPage] = await Promise.all([
+    readSource(
+      "src/app/(app)/(lingocafe)/conversations/_components/ConversationTranslation.tsx"
+    ),
+    readSource(
+      "src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"
+    ),
+  ]);
+
+  assert.match(translation, /isSameLingoCafeTranslationLanguage/);
+  assert.match(translation, /setStatus\("choose-language"\)/);
+  assert.match(translation, /languageOptions=\{availableTranslationLanguages\}/);
+  assert.match(translation, /fetch\("\/api\/profile"/);
+  assert.match(translation, /values: \{ ownLang: language \}/);
+  assert.match(translation, /await loadTranslation\(selected, language\)/);
+  assert.match(detailPage, /onTargetLanguageChange=\{updateTranslationTargetLanguage\}/);
 });
 
 test("shared language preferences stage choices and save them explicitly", async () => {

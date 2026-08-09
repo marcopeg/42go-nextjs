@@ -23,7 +23,12 @@ import {
   writeStoredReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import { ExpandableFab } from "@/components/ui/expandable-fab";
+import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
 import { splitLingoCafeSentenceDisplaySegments } from "@/lib/lingocafe/sentence-segmentation";
+import {
+  filterLingoCafeTranslationTargets,
+  isSameLingoCafeTranslationLanguage,
+} from "@/lib/lingocafe/translation-language";
 import { cn } from "@/lib/utils";
 
 type TranslationContext =
@@ -38,6 +43,11 @@ type Selection = {
 };
 
 const conversationTranslationOpenEvent = "lingocafe:conversation-translation-open";
+const fluentLanguageOptions = getLingoCafeReaderLanguages().own;
+
+type ProfileApiResponse = {
+  message?: unknown;
+};
 
 export const useConversationTranslationScope = () => {
   const [scope, setScope] = useState<ReaderTranslationScope>(
@@ -156,6 +166,7 @@ export const ConversationTranslatableText = ({
   onPlaySelection,
   onStartFromHere,
   onTranslationOpenChange,
+  onTargetLanguageChange,
   headingLevel,
   className,
   style,
@@ -173,6 +184,7 @@ export const ConversationTranslatableText = ({
   onPlaySelection?: (text: string, scope: ReaderTranslationScope) => void;
   onStartFromHere?: (sentenceId: string) => void;
   onTranslationOpenChange?: (isOpen: boolean) => void;
+  onTargetLanguageChange?: (language: string) => void;
   headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
   className?: string;
   style?: CSSProperties;
@@ -180,12 +192,18 @@ export const ConversationTranslatableText = ({
   const sentences = splitLingoCafeSentenceDisplaySegments(text);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [translation, setTranslation] = useState<string | null>(null);
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "choose-language" | "saving-language" | "loading" | "error"
+  >("idle");
   const [translationSource, setTranslationSource] =
     useState<ReaderTranslationCacheEntry["source"] | null>(null);
   const selectionTriggerRef = useRef<HTMLElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const reportedOpenRef = useRef(false);
+  const availableTranslationLanguages = filterLingoCafeTranslationTargets(
+    fluentLanguageOptions,
+    sourceLanguage
+  );
 
   const closeTranslation = useCallback((restoreFocus = true) => {
     const trigger = selectionTriggerRef.current;
@@ -275,28 +293,14 @@ export const ConversationTranslatableText = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idPrefix, text]);
 
-  const translate = async (
+  const loadTranslation = async (
     next: Omit<Selection, "anchor">,
-    trigger: HTMLElement
+    language: string
   ) => {
-    if (!targetLanguage || sourceLanguage === targetLanguage) return;
-    if (selection?.id === next.id) {
-      closeTranslation(false);
-      return;
-    }
-    if (!containerRef.current) return;
-    selectionTriggerRef.current = trigger;
-    setSelection({
-      ...next,
-      anchor: getReaderTranslationAnchor(trigger, containerRef.current),
-    });
-    window.dispatchEvent(new CustomEvent(conversationTranslationOpenEvent, {
-      detail: idPrefix,
-    }));
     setTranslation(null);
     setTranslationSource(null);
     setStatus("loading");
-    const input = { text: next.text, from: sourceLanguage, to: targetLanguage };
+    const input = { text: next.text, from: sourceLanguage, to: language };
     try {
       const cached = await readCachedReaderTranslation(input);
       if (cached) {
@@ -339,6 +343,37 @@ export const ConversationTranslatableText = ({
     } catch {
       setStatus("error");
     }
+  };
+
+  const translate = async (
+    next: Omit<Selection, "anchor">,
+    trigger: HTMLElement
+  ) => {
+    if (selection?.id === next.id) {
+      closeTranslation(false);
+      return;
+    }
+    if (!containerRef.current) return;
+    selectionTriggerRef.current = trigger;
+    setSelection({
+      ...next,
+      anchor: getReaderTranslationAnchor(trigger, containerRef.current),
+    });
+    window.dispatchEvent(new CustomEvent(conversationTranslationOpenEvent, {
+      detail: idPrefix,
+    }));
+    setTranslation(null);
+    setTranslationSource(null);
+
+    if (
+      !targetLanguage ||
+      isSameLingoCafeTranslationLanguage(sourceLanguage, targetLanguage)
+    ) {
+      setStatus("choose-language");
+      return;
+    }
+
+    await loadTranslation(next, targetLanguage);
   };
 
   const renderSentence = (sentence: string, sentenceIndex: number) => {
@@ -436,8 +471,9 @@ export const ConversationTranslatableText = ({
               : null,
           }}
           scope={scope}
-          canListen={Boolean(onPlaySelection)}
+          canListen={Boolean(onPlaySelection) && status === "idle"}
           pronunciationPlaying={pronunciationPlaying}
+          languageOptions={availableTranslationLanguages}
           onDismiss={() => closeTranslation()}
           onPlaySelection={onPlaySelection
             ? () => onPlaySelection(selection.text, scope)
@@ -448,6 +484,45 @@ export const ConversationTranslatableText = ({
                 closeTranslation(false);
               }
             : undefined}
+          onLanguageSelect={(language) => {
+            if (isSameLingoCafeTranslationLanguage(sourceLanguage, language)) {
+              return;
+            }
+
+            const selected = selection;
+            setStatus("saving-language");
+            void (async () => {
+              try {
+                const response = await fetch("/api/profile", {
+                  method: "PATCH",
+                  credentials: "same-origin",
+                  cache: "no-store",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    values: { ownLang: language },
+                    source: "reader-translation",
+                    method: "language-select",
+                  }),
+                });
+                const payload = (await response.json().catch(() => null)) as
+                  | ProfileApiResponse
+                  | null;
+
+                if (!response.ok) {
+                  throw new Error(
+                    typeof payload?.message === "string"
+                      ? payload.message
+                      : "Could not save language."
+                  );
+                }
+
+                onTargetLanguageChange?.(language);
+                await loadTranslation(selected, language);
+              } catch {
+                setStatus("choose-language");
+              }
+            })();
+          }}
         />
       ) : null}
     </div>

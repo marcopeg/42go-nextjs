@@ -315,6 +315,14 @@ const ConversationReaderPage = () => {
     () => buildConversationThreadLayout(data?.rounds ?? []),
     [data?.rounds]
   );
+  const updateTranslationTargetLanguage = useCallback((language: string) => {
+    setData((current) => current
+      ? {
+          ...current,
+          translation: { ...current.translation, to: language },
+        }
+      : current);
+  }, []);
 
   const toggleStar = async () => {
     if (!data || starPending) return;
@@ -417,6 +425,7 @@ const ConversationReaderPage = () => {
                       text={data.conversation.title}
                       sourceLanguage={data.conversation.language}
                       targetLanguage={data.translation.to}
+                      onTargetLanguageChange={updateTranslationTargetLanguage}
                       context={{ kind: "conversation", conversationId: data.conversation.id }}
                       scope={translationScope}
                       idPrefix={`conversation:${data.conversation.id}:title`}
@@ -438,6 +447,7 @@ const ConversationReaderPage = () => {
                         text={data.conversation.description}
                         sourceLanguage={data.translation.from}
                         targetLanguage={data.translation.to}
+                        onTargetLanguageChange={updateTranslationTargetLanguage}
                         context={{ kind: "conversation", conversationId: data.conversation.id }}
                         scope={translationScope}
                         idPrefix={`conversation:${data.conversation.id}:description`}
@@ -483,6 +493,7 @@ const ConversationReaderPage = () => {
                               displayName={displayName}
                               avatarUrl={persona?.avatarUrl}
                               avatarFallbackUrl={persona?.avatarFallbackUrl}
+                              nameAlign={isRight ? "right" : "left"}
                               className={cn(!startsActorRun && "invisible")}
                             />
                             <div
@@ -491,14 +502,6 @@ const ConversationReaderPage = () => {
                                 isRight ? "items-end" : "items-start"
                               )}
                             >
-                              {startsActorRun ? (
-                                <p
-                                  className={cn("mb-1 px-2 text-xs font-medium", isRight && "text-right")}
-                                  style={{ color: "var(--reader-fg-muted)" }}
-                                >
-                                  {displayName}
-                                </p>
-                              ) : null}
                               <article
                                 className={cn(
                                   "w-fit max-w-full rounded-2xl border px-4 py-3 shadow-sm",
@@ -514,6 +517,7 @@ const ConversationReaderPage = () => {
                                   text={round.text}
                                   sourceLanguage={data.translation.from}
                                   targetLanguage={data.translation.to}
+                                  onTargetLanguageChange={updateTranslationTargetLanguage}
                                   context={{ kind: "conversation", conversationId: data.conversation.id }}
                                   scope={translationScope}
                                   idPrefix={`conversation:${data.conversation.id}:round:${round.position}`}

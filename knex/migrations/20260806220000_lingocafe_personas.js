@@ -11,6 +11,7 @@
 exports.up = async function up(knex) {
   await knex.schema.withSchema("lingocafe").createTable("personas", (table) => {
     table.text("id").primary().notNullable();
+    table.text("persona_type").notNullable();
     table.text("status").notNullable();
     table.text("canonical_language").notNullable();
     table.text("working_label").notNullable();
@@ -34,6 +35,8 @@ exports.up = async function up(knex) {
       CHECK (id ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
     ADD CONSTRAINT personas_status_check
       CHECK (status IN ('development', 'accepted', 'retired')),
+    ADD CONSTRAINT personas_type_check
+      CHECK (persona_type IN ('archetype', 'role')),
     ADD CONSTRAINT personas_canonical_language_check
       CHECK (canonical_language ~ '^[a-z]{2,3}(-[a-z0-9]+)*$'),
     ADD CONSTRAINT personas_visibility_status_check

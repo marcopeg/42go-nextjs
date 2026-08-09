@@ -21,9 +21,11 @@ import {
   SwipeableBottomSheet,
   type SwipeableBottomSheetHandle,
 } from "@/42go/components/SwipeableBottomSheet";
+import { PersonaAvatar } from "@/app/(app)/(lingocafe)/_components/PersonaAvatar";
 import type {
   ConversationCategory,
   ConversationChoice,
+  ConversationParticipant,
 } from "@/app/(app)/(lingocafe)/conversations/_components/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,6 +42,35 @@ export const ConversationState = ({ isRead }: { isRead: boolean }) => (
     {isRead ? "Read" : "Unread"}
   </span>
 );
+
+const ConversationParticipantAvatars = ({
+  participants = [],
+}: {
+  participants?: ConversationParticipant[];
+}) => {
+  if (participants.length === 0) return null;
+
+  return (
+    <span
+      role="group"
+      aria-label="Conversation participants"
+      className="pointer-events-auto relative z-20 ml-auto flex shrink-0 -space-x-2 pl-2"
+      onClick={(event) => event.stopPropagation()}
+    >
+      {participants.slice(0, 2).map((participant) => (
+        <PersonaAvatar
+          key={participant.id}
+          displayName={participant.displayName}
+          avatarUrl={participant.avatarUrl}
+          avatarFallbackUrl={participant.avatarFallbackUrl}
+          nameAlign="right"
+          size="sm"
+          className="rounded-full ring-2 ring-background"
+        />
+      ))}
+    </span>
+  );
+};
 
 export const ConversationError = ({
   message,
@@ -234,12 +265,16 @@ export const ConversationChoiceRow = ({
   onStarChange?: (choice: ConversationChoice) => void;
   starPending?: boolean;
 }) => (
-  <div className="flex min-w-0 items-stretch">
+  <div className="relative flex min-w-0 items-stretch">
     <Link
       href={href}
       aria-label={`Open ${choice.title}`}
-      className="flex min-w-0 flex-1 items-center touch-manipulation outline-none transition-colors duration-75 hover:bg-muted/50 active:bg-muted focus-visible:relative focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50"
-    >
+      className={cn(
+        "absolute inset-y-0 left-0 z-0 touch-manipulation outline-none transition-colors duration-75 hover:bg-muted/50 active:bg-muted focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        onStarChange ? "right-[3.75rem]" : "right-0"
+      )}
+    />
+    <div className="pointer-events-none relative z-[1] flex min-w-0 flex-1 items-center">
       <div className="min-w-0 flex-1 space-y-1 px-5 py-4">
         <p className="font-medium text-foreground">{choice.title}</p>
         {choice.description ? (
@@ -258,15 +293,18 @@ export const ConversationChoiceRow = ({
             ) : null}
           </div>
         ) : null}
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <ConversationBadge>{choice.cefrLevel}</ConversationBadge>
-          <ConversationState isRead={choice.isRead} />
+        <div className="mt-2 flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <ConversationBadge>{choice.cefrLevel}</ConversationBadge>
+            <ConversationState isRead={choice.isRead} />
+          </div>
+          <ConversationParticipantAvatars participants={choice.participants} />
         </div>
       </div>
       <span className="my-2 flex size-11 shrink-0 items-center justify-center text-muted-foreground">
         <ChevronRight aria-hidden="true" className="size-4" />
       </span>
-    </Link>
+    </div>
     {onStarChange ? (
       <button
         type="button"
@@ -274,7 +312,7 @@ export const ConversationChoiceRow = ({
         aria-pressed={choice.isStarred}
         disabled={starPending}
         onClick={() => onStarChange(choice)}
-        className="m-2 flex size-11 touch-manipulation shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-75 hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50"
+        className="relative z-20 m-2 flex size-11 touch-manipulation shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-75 hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50"
       >
         <Star
           aria-hidden="true"
@@ -375,19 +413,22 @@ export const ConversationChoiceGroupRow = ({
               {firstChoice.description}
             </span>
           ) : null}
-          <span className="pointer-events-auto relative z-20 mt-2 flex flex-wrap items-center gap-2">
-            {choices.map((choice) => (
-              <Link
-                key={choice.id}
-                href={getHref(choice)}
-                aria-label={`Read ${firstChoice.title} at level ${choice.cefrLevel.toUpperCase()}`}
-                onClick={(event) => event.stopPropagation()}
-                className="-my-2 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              >
-                <ConversationBadge>{choice.cefrLevel}</ConversationBadge>
-              </Link>
-            ))}
-            <ConversationGroupState choices={choices} />
+          <span className="relative z-20 mt-2 flex min-w-0 items-center gap-2">
+            <span className="pointer-events-auto flex min-w-0 flex-wrap items-center gap-2">
+              {choices.map((choice) => (
+                <Link
+                  key={choice.id}
+                  href={getHref(choice)}
+                  aria-label={`Read ${firstChoice.title} at level ${choice.cefrLevel.toUpperCase()}`}
+                  onClick={(event) => event.stopPropagation()}
+                  className="-my-2 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                >
+                  <ConversationBadge>{choice.cefrLevel}</ConversationBadge>
+                </Link>
+              ))}
+              <ConversationGroupState choices={choices} />
+            </span>
+            <ConversationParticipantAvatars participants={firstChoice.participants} />
           </span>
         </span>
         <span className="pointer-events-none relative z-[1] my-2 flex size-11 shrink-0 items-center justify-center text-muted-foreground">

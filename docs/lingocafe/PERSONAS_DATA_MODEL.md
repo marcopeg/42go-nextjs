@@ -6,6 +6,13 @@ Personas are reusable LingoCafe content identities. They are prerequisites for
 conversations but are not owned by conversations: later books, lessons, or
 other content types may reference the same stable persona.
 
+Two persona types are supported. An `archetype` is a durable person whose
+resolved presentation supplies both name and avatar. A `role` is a lightweight
+reusable visual identity whose avatar characterizes a functional role while
+the consuming scenario remains authoritative for the actor name, role,
+description, authority, and dialogue. Reusing a role persona does not imply
+that actors in different scenarios are the same person.
+
 The `books` repository owns canonical persona YAML and editable avatar SVGs.
 The external assets distribution owns published, content-addressed avatar
 files. `42go-nextjs` owns the PostgreSQL runtime projection defined by
@@ -20,6 +27,7 @@ One row is the complete runtime aggregate for one stable identity.
 | Column | Meaning |
 | --- | --- |
 | `id` | Stable lowercase kebab-case persona ID. Content always references this value. |
+| `persona_type` | `archetype` or `role`; controls whether the presentation or scenario supplies the displayed actor name. |
 | `status` | `development`, `accepted`, or `retired`. |
 | `canonical_language` | Normalized canonical source language. |
 | `working_label` | Short editorial/runtime label. |
@@ -59,6 +67,11 @@ Every presentation contains at least:
   "avatar_media_type": "image/svg+xml"
 }
 ```
+
+Archetype presentations require the durable birthplace and current-context
+fields shown above. Role presentations require only the ID, language context,
+editorial role label, and content-addressed avatar fields. The role label is
+not substituted for an authored scenario actor name in the reader.
 
 Optional presentation-specific context may be retained in the same object.
 The publisher validates that:

@@ -7,6 +7,13 @@ export type ConversationProfile = {
   defaultBand: ConversationBand;
 };
 
+export type ConversationParticipant = {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  avatarFallbackUrl: string | null;
+};
+
 export type ConversationChoice = {
   id: string;
   title: string;
@@ -27,6 +34,7 @@ export type ConversationChoice = {
   isStarred: boolean;
   readAt?: string | null;
   starredAt?: string | null;
+  participants: ConversationParticipant[];
 };
 
 export type ConversationLocalization = {
@@ -102,6 +110,7 @@ export type ConversationActor = {
         displayName: string;
         persona: {
           id: string;
+          type: "archetype" | "role";
           presentationId: string;
           languageContext: string;
           oneLine: string;

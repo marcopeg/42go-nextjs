@@ -13,6 +13,7 @@ test("persona prerequisite stores one aggregate row per stable identity", async 
   const migration = await readSource(migrationPath);
 
   assert.match(migration, /createTable\("personas"/);
+  assert.match(migration, /table\.text\("persona_type"\)\.notNullable\(\)/);
   for (const column of [
     "id",
     "status",
@@ -33,6 +34,8 @@ test("persona prerequisite stores one aggregate row per stable identity", async 
   }
   assert.doesNotMatch(migration, /persona_presentations/);
   assert.match(migration, /personas_status_check/);
+  assert.match(migration, /personas_type_check/);
+  assert.match(migration, /persona_type IN \('archetype', 'role'\)/);
   assert.match(migration, /personas_presentations_object_check/);
   assert.match(migration, /jsonb_typeof\(presentations -> 'default'\) = 'object'/);
   assert.match(migration, /personas_source_hash_check/);
@@ -53,6 +56,7 @@ test("persona fixture is scoped, idempotent, and carries a runtime asset manifes
   const seed = await readSource(seedPath);
 
   assert.match(seed, /id: "fixture-learner"/);
+  assert.match(seed, /persona_type: "archetype"/);
   assert.match(seed, /\.onConflict\("id"\)/);
   assert.match(seed, /\.merge\(\[/);
   assert.doesNotMatch(seed, /\.del\s*\(|\.delete\s*\(|\.truncate\s*\(|\bDELETE\s+FROM\b/i);

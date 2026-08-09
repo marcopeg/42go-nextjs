@@ -190,7 +190,7 @@ export const loadConversationBrowseValidator = async ({
   }
 
   return {
-    schema: "conversation-browse-v2",
+    schema: "conversation-browse-v3",
     sourceDigest: publication.source_digest,
     learnerStateVersion: String(learnerState?.version ?? 0),
     userId,
@@ -407,6 +407,10 @@ export const loadConversationDiscovery = async ({
     rootsQuery as Promise<CategoryRow[]>,
     starsQuery as Promise<CategoryConversationRow[]>,
   ]);
+  const participantPreviews = await loadConversationParticipantPreviews(
+    starred,
+    profile.ownLanguage
+  );
 
   return {
     profile: {
@@ -416,7 +420,12 @@ export const loadConversationDiscovery = async ({
       defaultBand: profile.defaultBand,
     },
     selection: { band, levels },
-    starred: starred.map(mapConversationChoice),
+    starred: starred.map((row) =>
+      mapConversationChoice(
+        row,
+        participantPreviews.get(getConversationVariantKey(row))
+      )
+    ),
     roots: roots.map(mapCategory),
   };
 };
@@ -449,7 +458,16 @@ const mapLocalization = (
     ? { title, description, language, cefrLevel }
     : null;
 
-const mapConversationChoice = (row: CategoryConversationRow) => ({
+const getConversationVariantKey = ({
+  scenario_id,
+  variant_id,
+}: Pick<CategoryConversationRow, "scenario_id" | "variant_id">) =>
+  `${scenario_id}\u0000${variant_id}`;
+
+const mapConversationChoice = (
+  row: CategoryConversationRow,
+  participants: ConversationParticipantPreview[] = []
+) => ({
   ...mapConversationSummary(row),
   title: row.list_title,
   description: row.list_description,
@@ -473,9 +491,13 @@ const mapConversationChoice = (row: CategoryConversationRow) => ({
     row.language,
     row.cefr_level
   ),
+  participants,
 });
 
-const groupCategoryScenarios = (rows: CategoryConversationRow[]) => {
+const groupCategoryScenarios = (
+  rows: CategoryConversationRow[],
+  participantPreviews: Map<string, ConversationParticipantPreview[]>
+) => {
   const scenarios = new Map<
     string,
     {
@@ -493,18 +515,7 @@ const groupCategoryScenarios = (rows: CategoryConversationRow[]) => {
         canonicalDescription: string;
         title: string;
         description: string;
-        choices: Array<ReturnType<typeof mapConversationSummary> & {
-          scenarioId: string;
-          scenarioTitle: string;
-          scenarioDescription: string;
-          scenarioCanonicalLanguage: string;
-          variantId: string;
-          variantTitle: string;
-          variantDescription: string;
-          variantCanonicalLanguage: string;
-          scenarioLocalization: ReturnType<typeof mapLocalization>;
-          variantLocalization: ReturnType<typeof mapLocalization>;
-        }>;
+        choices: Array<ReturnType<typeof mapConversationChoice>>;
       }>;
     }
   >();
@@ -539,7 +550,12 @@ const groupCategoryScenarios = (rows: CategoryConversationRow[]) => {
       scenario.variants.push(variant);
     }
 
-    variant.choices.push(mapConversationChoice(row));
+    variant.choices.push(
+      mapConversationChoice(
+        row,
+        participantPreviews.get(getConversationVariantKey(row))
+      )
+    );
   }
 
   return [...scenarios.values()];
@@ -689,6 +705,10 @@ export const loadConversationCategory = async ({
     childrenQuery as Promise<CategoryRow[]>,
     choicesQuery as Promise<CategoryConversationRow[]>,
   ]);
+  const participantPreviews = await loadConversationParticipantPreviews(
+    choices,
+    profile.ownLanguage
+  );
 
   return {
     profile: {
@@ -701,7 +721,7 @@ export const loadConversationCategory = async ({
     path: pathIds.map((id) => mapCategory(byId.get(id)!)),
     category: mapCategory(byId.get(categoryId)!),
     children: children.map(mapCategory),
-    scenarios: groupCategoryScenarios(choices),
+    scenarios: groupCategoryScenarios(choices, participantPreviews),
   };
 };
 
@@ -738,10 +758,23 @@ type ConversationActorRow = {
   description: string;
   cast_actor_id: string | null;
   persona_id: string | null;
+  persona_type: string | null;
   persona_status: string | null;
   persona_is_visible: boolean | null;
   persona_one_line: string | null;
   persona_presentations: unknown;
+};
+
+type ConversationParticipantPreview = {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  avatarFallbackUrl: string | null;
+};
+
+type ConversationParticipantRow = ConversationActorRow & {
+  scenario_id: string;
+  variant_id: string;
 };
 
 const parseRecord = (value: unknown): Record<string, unknown> => {
@@ -809,6 +842,86 @@ const resolvePersonaPresentation = (
   return { selected, fallback };
 };
 
+const loadConversationParticipantPreviews = async (
+  conversations: CategoryConversationRow[],
+  requestedContext: string
+) => {
+  const pairs = [
+    ...new Map<string, [string, string]>(
+      conversations.map((conversation) => [
+        getConversationVariantKey(conversation),
+        [conversation.scenario_id, conversation.variant_id],
+      ])
+    ).values(),
+  ];
+  const previews = new Map<string, ConversationParticipantPreview[]>();
+  if (pairs.length === 0) return previews;
+
+  const db = getDB();
+  const rows = (await db("lingocafe.conversation_scenario_actors as actor")
+    .join("lingocafe.conversation_variant_cast as cast", function joinCast() {
+      this.on("cast.scenario_id", "=", "actor.scenario_id").andOn(
+        "cast.actor_id",
+        "=",
+        "actor.id"
+      );
+    })
+    .leftJoin("lingocafe.personas as persona", "persona.id", "cast.persona_id")
+    .select(
+      "actor.scenario_id",
+      "cast.variant_id",
+      "actor.id",
+      "actor.position",
+      "actor.name",
+      "actor.role",
+      "actor.description",
+      "cast.actor_id as cast_actor_id",
+      "cast.persona_id",
+      "persona.persona_type",
+      "persona.status as persona_status",
+      "persona.is_visible as persona_is_visible",
+      "persona.one_line as persona_one_line",
+      "persona.presentations as persona_presentations"
+    )
+    .whereIn(["actor.scenario_id", "cast.variant_id"], pairs)
+    .orderBy("actor.scenario_id", "asc")
+    .orderBy("cast.variant_id", "asc")
+    .orderBy("actor.position", "asc")) as ConversationParticipantRow[];
+
+  for (const row of rows) {
+    const key = getConversationVariantKey(row);
+    const current = previews.get(key) ?? [];
+    if (current.length >= 2) continue;
+
+    const sourceName = String(row.name);
+    const personaIsUsable =
+      row.persona_id !== null &&
+      row.persona_status === "accepted" &&
+      row.persona_is_visible &&
+      ["archetype", "role"].includes(String(row.persona_type));
+    const { selected, fallback } = personaIsUsable
+      ? resolvePersonaPresentation(row.persona_presentations, requestedContext)
+      : { selected: null, fallback: null };
+    const avatarUrl = resolveLingoCafeAssetUrl(selected?.avatarAssetKey) || null;
+    const fallbackUrl =
+      fallback && fallback.avatarAssetKey !== selected?.avatarAssetKey
+        ? resolveLingoCafeAssetUrl(fallback.avatarAssetKey)
+        : null;
+    current.push({
+      id: String(row.id),
+      displayName:
+        row.persona_type === "archetype" && selected
+          ? selected.displayName
+          : sourceName,
+      avatarUrl,
+      avatarFallbackUrl: fallbackUrl,
+    });
+    previews.set(key, current);
+  }
+
+  return previews;
+};
+
 export const loadConversationDetail = async ({
   userId,
   conversationId,
@@ -874,6 +987,7 @@ export const loadConversationDetail = async ({
         "actor.description",
         "cast.actor_id as cast_actor_id",
         "cast.persona_id",
+        "persona.persona_type",
         "persona.status as persona_status",
         "persona.is_visible as persona_is_visible",
         "persona.one_line as persona_one_line",
@@ -890,7 +1004,9 @@ export const loadConversationDetail = async ({
     (actor) =>
       actor.cast_actor_id === null ||
       (actor.persona_id !== null &&
-        (actor.persona_status !== "accepted" || !actor.persona_is_visible))
+        (actor.persona_status !== "accepted" ||
+          !actor.persona_is_visible ||
+          !["archetype", "role"].includes(String(actor.persona_type))))
   );
   const actorIds = new Set(actors.map((actor) => String(actor.id)));
   const dialogueIsMalformed = rounds.some(
@@ -939,9 +1055,11 @@ export const loadConversationDetail = async ({
       ...base,
       identity: {
         source: "persona" as const,
-        displayName: selected.displayName,
+        displayName:
+          actor.persona_type === "role" ? sourceName : selected.displayName,
         persona: {
           id: actor.persona_id,
+          type: actor.persona_type as "archetype" | "role",
           presentationId: selected.id,
           languageContext: selected.languageContext,
           oneLine: String(actor.persona_one_line || ""),
@@ -958,6 +1076,13 @@ export const loadConversationDetail = async ({
       ...mapConversationSummary(detail),
       scenarioId: detail.scenario_id,
       variantId: detail.variant_id,
+      participants: resolvedActors.slice(0, 2).map((actor) => ({
+        id: actor.id,
+        displayName: actor.identity.displayName,
+        avatarUrl: actor.identity.persona?.avatarUrl ?? null,
+        avatarFallbackUrl:
+          actor.identity.persona?.avatarFallbackUrl ?? null,
+      })),
     },
     scenario: {
       id: detail.scenario_id,

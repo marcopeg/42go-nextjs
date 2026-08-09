@@ -1,6 +1,6 @@
 "use client";
 
-const storageKey = "lingocafe.conversations.browse-cache.v1";
+const storageKey = "lingocafe.conversations.browse-cache.v2";
 const maxEntries = 32;
 const maxCacheBytes = 512 * 1024;
 

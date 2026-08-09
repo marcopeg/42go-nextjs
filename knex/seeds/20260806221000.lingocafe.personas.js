@@ -13,6 +13,7 @@ exports.seed = async function seed(knex) {
   await knex("lingocafe.personas")
     .insert({
       id: "fixture-learner",
+      persona_type: "archetype",
       status: "accepted",
       canonical_language: "en",
       working_label: "Fixture learner",

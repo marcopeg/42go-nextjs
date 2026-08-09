@@ -30,8 +30,10 @@ export type ReaderTranslationPopoverState = {
   error: string | null;
 };
 
-const popoverMaxWidth = 360;
+const popoverDesktopMinWidth = 480;
+const popoverMaxWidth = 560;
 const mobilePopoverBreakpointPx = 768;
+const desktopPopoverViewportGutter = 16;
 const audiobookStartFeedbackMs = 600;
 
 export const getReaderTranslationAnchor = (
@@ -70,11 +72,21 @@ const getPopoverStyle = (anchor: ReaderTranslationAnchor): CSSProperties => {
     };
   }
 
-  const width = Math.min(popoverMaxWidth, Math.max(240, anchor.containerWidth - 32));
-  const left = Math.min(
-    anchor.containerWidth - 16 - width / 2,
-    Math.max(16 + width / 2, anchor.left + anchor.width / 2)
+  const width = Math.min(
+    popoverMaxWidth,
+    anchor.viewportWidth - desktopPopoverViewportGutter * 2,
+    Math.max(popoverDesktopMinWidth, anchor.containerWidth - 32)
   );
+  const triggerViewportCenter =
+    anchor.containerViewportLeft + anchor.left + anchor.width / 2;
+  const popoverViewportCenter = Math.min(
+    anchor.viewportWidth - desktopPopoverViewportGutter - width / 2,
+    Math.max(
+      desktopPopoverViewportGutter + width / 2,
+      triggerViewportCenter
+    )
+  );
+  const left = popoverViewportCenter - anchor.containerViewportLeft;
 
   return {
     position: "absolute",

@@ -23,6 +23,15 @@ exports.seed = async function seed(knex) {
         .del();
     }
 
+    const admin = await trx("auth.users")
+      .select("id")
+      .where({ app_id: "lingocafe", email: "admin@lingocafe.app" })
+      .first();
+
+    if (!admin) {
+      throw new Error('Missing LingoCafe app user "admin@lingocafe.app"');
+    }
+
     const jane = await trx("auth.users")
       .select("id")
       .where({ app_id: "lingocafe", email: "jane.doe@example.com" })
@@ -33,6 +42,38 @@ exports.seed = async function seed(knex) {
     }
 
     const now = new Date();
+    const acceptedRequiredConsent = {
+      terms: [
+        {
+          value: true,
+          changedAt: now.toISOString(),
+          version: "terms-2026-05-04",
+          statement: "I accept the Terms and Conditions",
+          source: "seed",
+          method: "seed",
+        },
+      ],
+      privacy: [
+        {
+          value: true,
+          changedAt: now.toISOString(),
+          version: "privacy-2026-05-04",
+          statement: "I acknowledge the Privacy Policy",
+          source: "seed",
+          method: "seed",
+        },
+      ],
+    };
+
+    await trx("auth.users").where({ id: admin.id }).update({
+      profile: {
+        ownLang: "en",
+        targetLang: "sv",
+        targetLevel: "a2",
+      },
+      consent: acceptedRequiredConsent,
+      updated_at: now,
+    });
 
     await trx("auth.users").where({ id: jane.id }).update({
       profile: {
@@ -40,28 +81,7 @@ exports.seed = async function seed(knex) {
         targetLang: "sv",
         targetLevel: "a2",
       },
-      consent: {
-        terms: [
-          {
-            value: true,
-            changedAt: now.toISOString(),
-            version: "terms-2026-05-04",
-            statement: "I accept the Terms and Conditions",
-            source: "seed",
-            method: "seed",
-          },
-        ],
-        privacy: [
-          {
-            value: true,
-            changedAt: now.toISOString(),
-            version: "privacy-2026-05-04",
-            statement: "I acknowledge the Privacy Policy",
-            source: "seed",
-            method: "seed",
-          },
-        ],
-      },
+      consent: acceptedRequiredConsent,
       updated_at: now,
     });
   });
