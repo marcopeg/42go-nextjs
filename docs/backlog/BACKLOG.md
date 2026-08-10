@@ -213,6 +213,7 @@
 
 ## Completed
 
+- [LW16: Show the Standard Mobile More Item to LingoCafe Backoffice Users](./tasks/LW16-show-backoffice-admin-menu-on-the-mobile-profile-page/LW16.task.md)
 - [RX01: Investigate and restore user editing in backoffice details](./tasks/RX01-investigate-and-restore-user-editing-in-backoffice-details/RX01.task.md)
 - [QT31: Build the complete LingoCafe conversation experience](./tasks/QT31-build-the-complete-lingocafe-conversation-experience/QT31.task.md)
 - [AS82: Add the LingoCafe conversation database foundation](./tasks/AS82-add-the-lingocafe-conversation-library-user-state-and-reader-experience/AS82.task.md)

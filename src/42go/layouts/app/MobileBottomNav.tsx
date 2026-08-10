@@ -26,13 +26,22 @@ export const MobileBottomNav = ({
     filterUserFeatureFlaggedMenuItems(
       config?.app?.menu?.mobile?.items || [],
       userFeatureFlags
-    );
+  );
   const disableMore = config?.app?.menu?.mobile?.disableMore ?? false;
+  const morePolicy = config?.app?.menu?.mobile?.more?.policy;
 
   // Calculate how many items to show in the bottom bar (max 4)
   const visibleItemsCount = Math.min(mobileBottomItems.length, 4);
-  // Calculate the width for each item (including the hamburger menu if enabled)
-  const itemWidth = `${100 / (visibleItemsCount + (disableMore ? 0 : 1))}%`;
+  const moreButton = (
+    <button
+      type="button"
+      onClick={onMoreClick}
+      className="flex min-w-0 flex-1 flex-col items-center justify-center h-full text-muted-foreground hover:text-foreground transition-colors duration-200"
+    >
+      <Menu className="h-5 w-5" />
+      <span className="text-xs mt-1 font-medium">More</span>
+    </button>
+  );
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border h-16 flex items-center z-40 md:hidden">
@@ -47,12 +56,11 @@ export const MobileBottomNav = ({
             href={item.href}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex flex-col items-center justify-center h-full transition-colors duration-200",
+              "flex min-w-0 flex-1 flex-col items-center justify-center h-full transition-colors duration-200",
               isActive
                 ? "text-accent-foreground"
                 : "text-muted-foreground hover:text-foreground"
             )}
-            style={{ width: itemWidth }}
           >
             <item.icon className="h-5 w-5" />
             <span className="text-xs mt-1 font-medium">{item.title}</span>
@@ -72,16 +80,18 @@ export const MobileBottomNav = ({
         );
       })}
 
-      {!disableMore && (
-        <button
-          onClick={onMoreClick}
-          className="flex flex-col items-center justify-center h-full text-muted-foreground hover:text-foreground transition-colors duration-200"
-          style={{ width: itemWidth }}
-        >
-          <Menu className="h-5 w-5" />
-          <span className="text-xs mt-1 font-medium">More</span>
-        </button>
-      )}
+      {!disableMore &&
+        (morePolicy ? (
+          <ProtectComponent
+            policy={morePolicy}
+            renderOnLoading={() => null}
+            renderOnError={() => null}
+          >
+            {moreButton}
+          </ProtectComponent>
+        ) : (
+          moreButton
+        ))}
     </div>
   );
 };

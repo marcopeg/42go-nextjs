@@ -242,7 +242,11 @@ export default {
         ],
       },
       mobile: {
-        disableMore: true,
+        more: {
+          policy: {
+            require: { role: 'backoffice' },
+          },
+        },
         items: [
           {
             title: 'Books',

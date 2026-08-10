@@ -135,6 +135,10 @@ export interface TAppConfigItem {
       };
       mobile?: {
         items?: TAppLayoutNavItem[];
+        /** Optional policy controlling visibility of the standard More item. */
+        more?: {
+          policy?: TAppLayoutNavItem["policy"];
+        };
         /**
          * If true, disables the "more" hamburger menu in mobile nav.
          * Defaults to false.

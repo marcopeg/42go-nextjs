@@ -21,6 +21,7 @@
     "test:lingocafe-personas-schema": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-personas-schema.test.mts",
     "test:lingocafe-conversations-api": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-conversations-api.test.mts",
     "test:lingocafe-conversation-feature-flag": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-conversation-feature-flag.test.mts",
+    "test:lingocafe-mobile-full-menu": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-mobile-full-menu.test.mts",
     "test:pwa-install-targets": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/pwa-install-targets.test.mts",
     "test:communications": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/communications.test.mts",
     "test:backoffice-users-routes": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/backoffice-users-routes.test.mts",
