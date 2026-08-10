@@ -213,6 +213,7 @@
 
 ## Completed
 
+- [RX01: Investigate and restore user editing in backoffice details](./tasks/RX01-investigate-and-restore-user-editing-in-backoffice-details/RX01.task.md)
 - [QT31: Build the complete LingoCafe conversation experience](./tasks/QT31-build-the-complete-lingocafe-conversation-experience/QT31.task.md)
 - [AS82: Add the LingoCafe conversation database foundation](./tasks/AS82-add-the-lingocafe-conversation-library-user-state-and-reader-experience/AS82.task.md)
 - [LI48: Add a Floating Reader Action Bar with Translation Mode Switch](./tasks/LI48-add-a-floating-reader-action-bar-with-translation-mode-switch/LI48.task.md)

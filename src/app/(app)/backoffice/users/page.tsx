@@ -1211,6 +1211,10 @@ const UsersList = ({
               )}
             </tbody>
           </table>
+          <div
+            aria-hidden="true"
+            className="h-[max(30vw,calc(4rem+env(safe-area-inset-bottom)))] shrink-0 md:hidden"
+          />
         </div>
       )}
     </div>
@@ -1385,6 +1389,7 @@ export default function UsersPage() {
       subtitle="Sorted by join date"
       actions={actions}
       disablePadding
+      containedMobileScroll
       policy={usersPolicy}
     >
       <UsersList
