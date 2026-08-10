@@ -222,7 +222,7 @@ export const SidebarMenu = ({
           <div className="flex items-center justify-between h-16 px-4">
             <h2 className="font-semibold text-lg">Menu</h2>
             <Button
-              variant="ghost"
+              variant="neutralGhost"
               size="icon"
               onClick={closeMobileMenu}
               className="flex items-center justify-center"
@@ -251,9 +251,9 @@ export const SidebarMenu = ({
 
       {/* Bottom Navigation Items & User Section - Only show divider if there's content */}
       {(bottomMenuItems.length > 0 || session?.user) && (
-        <div className="border-t border-border">
+        <div>
           {bottomMenuItems.length > 0 && (
-            <nav className="space-y-1 p-3">
+            <nav className="space-y-1 border-t border-border p-3 [&:not(:has(a))]:hidden">
               {renderMenuItems(bottomMenuItems)}
             </nav>
           )}
@@ -263,8 +263,7 @@ export const SidebarMenu = ({
               className={cn(
                 // Lock bottom area total height to match footer (h-16)
                 // When collapsed, inner content still centers within this area
-                "p-3 h-16 flex items-center",
-                bottomMenuItems.length > 0 && "border-t border-border"
+                "h-16 flex items-center border-t border-border p-3"
               )}
             >
               <Link

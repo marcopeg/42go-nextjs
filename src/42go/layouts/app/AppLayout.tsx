@@ -9,6 +9,7 @@ import { MobileBottomNav } from "./MobileBottomNav";
 import { Toolbar } from "./Toolbar";
 import { useAppConfig } from "@/42go/config/use-app-config";
 import { ProfileLayoutGuard } from "./ProfileLayoutGuard";
+import { Modal } from "@/42go/components/modal";
 import type {
   TProfileBeforeGuardReleaseOptions,
   TProfileLayoutGuardConfig,
@@ -81,7 +82,7 @@ const AppLayoutShell = ({
     <div
       className={
         containedMobileScroll
-          ? "flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background md:block md:h-auto md:min-h-screen md:overflow-visible"
+          ? "fixed inset-0 flex min-h-0 flex-col overflow-hidden overscroll-none bg-background md:static md:block md:min-h-screen md:overflow-visible"
           : "min-h-screen bg-background"
       }
     >
@@ -176,18 +177,18 @@ const AppLayoutShell = ({
         />
       )}
 
-      {/* Mobile Sidebar - Overlay */}
-      {!hideMobileMenu && isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-50 md:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Mobile Sidebar - Content */}
-      {!hideMobileMenu && isMobileMenuOpen && (
-        <aside
-          className="fixed top-0 right-0 z-[60] h-full w-4/5 transition-transform duration-300 ease-in-out md:hidden"
+      {!hideMobileMenu && (
+        <Modal
+          open={isMobileMenuOpen}
+          onOpenChange={setIsMobileMenuOpen}
+          presentation="panel"
+          anchor="right"
+          ariaLabel="Application menu"
+          showClose={false}
+          swipeToClose
+          className="ml-auto min-h-[100dvh] !w-4/5 border-l md:hidden"
+          overlayClassName="!bg-black/60 md:hidden"
+          bodyClassName="overflow-hidden p-0"
         >
           <SidebarMenu
             isCollapsed={false}
@@ -200,7 +201,7 @@ const AppLayoutShell = ({
                 : "bottom"
             }
           />
-        </aside>
+        </Modal>
       )}
 
       {/* Sticky Footer (matches top bar style) */}

@@ -54,6 +54,8 @@ make prod              # Full production pipeline (build + start + init)
 make prod.build        # Build Docker image
 make prod.start        # Start production environment
 make prod.logs         # Follow application logs
+make deploy.github     # Default deployment path: GitHub builds and deploys the tagged release
+make deploy.mac        # Local Mac build/deploy; use only when explicitly requested
 
 # UI Components
 npx shadcn@latest add <component>   # Add shadcn/ui component
@@ -66,6 +68,8 @@ npx shadcn@latest add <component>   # Add shadcn/ui component
 ## CLI Usage
 
 - Run `npm run qa` after modifying code to catch linting and build errors.
+- When the operator says "deploy", use `make deploy.github` by default. Use
+  `make deploy.mac` only when the operator explicitly requests a local build.
 - Never run `npm dev` — it's already running in the background (managed by `Makefile` target `app.start`).
 - `make app.start` and `make reboot` keep the dev server attached for a human
   terminal. When an agent must leave the server running after its own command

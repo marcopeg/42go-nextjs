@@ -94,9 +94,9 @@ export interface AppLayoutProps {
    */
   flushMobileTop?: boolean;
   /**
-   * When true, mobile scrolling is contained inside the page content viewport
-   * so the toolbar and bottom navigation never join document-level scrolling.
-   * Desktop keeps the standard document scroll model.
+   * When true, mobile uses a fixed viewport shell and contains scrolling inside
+   * the page content so gestures starting on fixed chrome cannot strand the
+   * document above the toolbar. Desktop keeps the standard document scroll.
    */
   containedMobileScroll?: boolean;
 }

@@ -1,6 +1,6 @@
 import { TAppConfigItem } from '../../AppConfig';
 import { HomePage } from './home-page';
-import { Bell, User, Users, BookOpen, MessagesSquare } from 'lucide-react';
+import { Bell, Users, BookOpen, MessagesSquare } from 'lucide-react';
 import { LingocafePreferences } from '@/app/(app)/(lingocafe)/_components/LingocafePreferences';
 import { hasCachedLingoCafeProfileCompletion } from '@/config/lingocafe/profile-completion-cache';
 import { lingoCafeProfileSchema } from '@/config/lingocafe/profile-options';
@@ -242,11 +242,6 @@ export default {
         ],
       },
       mobile: {
-        more: {
-          policy: {
-            require: { role: 'backoffice' },
-          },
-        },
         items: [
           {
             title: 'Books',
@@ -262,11 +257,11 @@ export default {
               require: { feature: 'page:conversations', session: true },
             },
           },
-          {
-            title: 'Account',
-            href: '/profile',
-            icon: User,
-          },
+          // {
+          //   title: 'Account',
+          //   href: '/profile',
+          //   icon: User,
+          // },
         ],
       },
       collapsible: {

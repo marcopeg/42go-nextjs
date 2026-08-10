@@ -50,6 +50,7 @@
 - [YQ19: optimization epic](./tasks/YQ19-optimization-epic/YQ19.task.md)
 - [ZD75: QuickShare: Add a rich web-page editing experience](./tasks/ZD75-quickshare-add-a-rich-web-page-editing-experience/ZD75.task.md)
 - [YB50: QuickShare: Add CSS and JavaScript transpilation to web-page publishing](./tasks/YB50-quickshare-add-css-and-javascript-transpilation-to-web-page-publishing/YB50.task.md)
+- [SE90: Restore Native Safari Browser-Chrome Collapse Across LingoCafe Mobile Reading Surfaces](./tasks/SE90-restore-native-safari-browser-chrome-collapse-across-lingocafe-mobile-reading-surfaces/SE90.task.md)
 
 ## Todo
 

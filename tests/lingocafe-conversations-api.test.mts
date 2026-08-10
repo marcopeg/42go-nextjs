@@ -292,7 +292,8 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.match(libraryShell, /slide-in-from-right-4/);
   assert.match(libraryShell, /motion-reduce:animate-none/);
   assert.match(libraryShell, /h-\[max\(30vw,calc\(4rem\+env\(safe-area-inset-bottom\)\)\)\]/);
-  assert.match(appLayout, /h-\[100dvh\].*overflow-hidden/);
+  assert.match(appLayout, /fixed inset-0.*overflow-hidden overscroll-none/);
+  assert.match(appLayout, /md:static md:block md:min-h-screen/);
   assert.match(appLayout, /overflow-y-auto overscroll-contain/);
   assert.match(detailPage, /text=\{data\.conversation\.title\}/);
   assert.match(detailPage, /<BookReaderFloatingActionBar/);

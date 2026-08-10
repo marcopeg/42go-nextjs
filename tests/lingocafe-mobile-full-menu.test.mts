@@ -7,14 +7,40 @@ const readSource = (path: string) =>
 
 test("AppLayout keeps the standard mobile More item wired to its existing drawer", async () => {
   const layout = await readSource("src/42go/layouts/app/AppLayout.tsx");
+  const modal = await readSource("src/42go/components/modal/Modal.tsx");
+  const swipe = await readSource("src/42go/components/useSwipeableDismiss.ts");
+  const bottomSheet = await readSource(
+    "src/42go/components/SwipeableBottomSheet/SwipeableBottomSheet.tsx"
+  );
 
   assert.match(layout, /onMoreClick=\{\(\) => setIsMobileMenuOpen\(true\)\}/);
-  assert.match(layout, /!hideMobileMenu && isMobileMenuOpen/);
+  assert.match(layout, /presentation="panel"/);
+  assert.match(layout, /anchor="right"/);
+  assert.match(layout, /swipeToClose/);
+  assert.match(layout, /!w-4\/5/);
   assert.match(layout, /<SidebarMenu/);
+  const sidebar = await readSource("src/42go/layouts/app/SidebarMenu.tsx");
+  assert.match(
+    sidebar,
+    /border-t border-border p-3 \[&:not\(:has\(a\)\)\]:hidden/
+  );
+  assert.doesNotMatch(sidebar, /closeMobileMenu && "\[&:not\(:has/);
+  assert.match(sidebar, /href="\/profile"/);
+  assert.match(sidebar, /h-16 flex items-center border-t border-border p-3/);
+  assert.doesNotMatch(layout, /Mobile Sidebar - Overlay/);
+  assert.match(modal, /useSwipeableDismiss/);
+  assert.match(modal, /data-\[state=open\]:slide-in-from-right/);
+  assert.match(modal, /data-\[state=closed\]:slide-out-to-right/);
+  assert.match(swipe, /passedDistance/);
+  assert.match(swipe, /passedVelocity/);
+  assert.match(swipe, /drag\.source === "backdrop"/);
+  assert.match(swipe, /prefers-reduced-motion: reduce/);
+  assert.match(swipe, /touchAction: horizontal \? "pan-y" : "none"/);
+  assert.match(bottomSheet, /useSwipeableDismiss/);
   assert.doesNotMatch(layout, /AppLayoutMobileMenuProvider/);
 });
 
-test("LingoCafe declaratively restricts the standard mobile More item to backoffice users", async () => {
+test("LingoCafe shows More to everyone and disables its mobile Account entry", async () => {
   const [
     mobileBottomNav,
     appConfig,
@@ -41,15 +67,18 @@ test("LingoCafe declaratively restricts the standard mobile More item to backoff
   assert.match(mobileBottomNav, /min-w-0 flex-1/);
 
   const mobileIndex = config.indexOf("mobile:");
-  const moreIndex = config.indexOf("more:", mobileIndex);
-  const policyIndex = config.indexOf("require: { role: 'backoffice' }", moreIndex);
-  const mobileItemsIndex = config.indexOf("items:", moreIndex);
+  const mobileItemsIndex = config.indexOf("items:", mobileIndex);
+  const mobileMenuEndIndex = config.indexOf("collapsible:", mobileItemsIndex);
 
   assert.ok(mobileIndex >= 0);
-  assert.ok(moreIndex > mobileIndex);
-  assert.ok(policyIndex > moreIndex);
-  assert.ok(mobileItemsIndex > policyIndex);
+  assert.ok(mobileItemsIndex > mobileIndex);
+  assert.ok(mobileMenuEndIndex > mobileItemsIndex);
   assert.doesNotMatch(config.slice(mobileIndex, mobileItemsIndex), /disableMore: true/);
+  assert.doesNotMatch(config.slice(mobileIndex, mobileItemsIndex), /more:/);
+  assert.match(
+    config.slice(mobileItemsIndex, mobileMenuEndIndex),
+    /\/\/\s+title: 'Account',[\s\S]*\/\/\s+href: '\/profile'/
+  );
   assert.doesNotMatch(config, /toolbarActions|AppLayoutMobileMenuTrigger/);
   assert.doesNotMatch(profilePage, /profile\?\.toolbarActions/);
   assert.doesNotMatch(defaultConfig, /mobile:\s*\{\s*more:/);

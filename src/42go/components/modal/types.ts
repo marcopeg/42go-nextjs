@@ -22,6 +22,8 @@ export interface ModalProps {
   showClose?: boolean;
   closeLabel?: string;
   closeOnOverlayClick?: boolean;
+  /** Enables direct swipe dismissal in the panel anchor direction. */
+  swipeToClose?: boolean;
   skipOpenAnimation?: boolean;
   skipCloseAnimation?: boolean;
   onOpenAutoFocus?: (event: Event) => void;

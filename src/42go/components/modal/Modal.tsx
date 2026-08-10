@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useCallback, useContext, useRef } from "react";
 import { X } from "lucide-react";
 
 import {
@@ -14,6 +14,7 @@ import {
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/42go/utils/utils";
+import { useSwipeableDismiss } from "@/42go/components/useSwipeableDismiss";
 import type { ModalAnchor, ModalProps, ModalSize } from "./types";
 
 const ModalStackContext = createContext(0);
@@ -67,6 +68,20 @@ const panelAnchorCloseAnimationClasses: Record<ModalAnchor, string> = {
   bottom: "md:data-[state=closed]:slide-out-to-bottom",
 };
 
+const swipePanelAnchorOpenAnimationClasses: Record<ModalAnchor, string> = {
+  right: "data-[state=open]:slide-in-from-right",
+  left: "data-[state=open]:slide-in-from-left",
+  top: "data-[state=open]:slide-in-from-top",
+  bottom: "data-[state=open]:slide-in-from-bottom",
+};
+
+const swipePanelAnchorCloseAnimationClasses: Record<ModalAnchor, string> = {
+  right: "data-[state=closed]:slide-out-to-right",
+  left: "data-[state=closed]:slide-out-to-left",
+  top: "data-[state=closed]:slide-out-to-top",
+  bottom: "data-[state=closed]:slide-out-to-bottom",
+};
+
 const hasVisibleTitle = (title: ModalProps["title"]) =>
   typeof title === "string" ? title.trim().length > 0 : Boolean(title);
 
@@ -86,6 +101,7 @@ export const Modal = ({
   showClose = true,
   closeLabel = "Close modal",
   closeOnOverlayClick = true,
+  swipeToClose = false,
   skipOpenAnimation = false,
   skipCloseAnimation = false,
   onOpenAutoFocus,
@@ -106,23 +122,70 @@ export const Modal = ({
   const titleIsVisible = hasVisibleTitle(title);
   const inferredLabel =
     ariaLabel || (typeof title === "string" ? title : "Modal");
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const dismiss = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const swipe = useSwipeableDismiss({
+    enabled: isPanel && swipeToClose,
+    open,
+    direction: anchor,
+    surfaceRef: contentRef,
+    onDismiss: dismiss,
+  });
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      onOpenChange(true);
+      return;
+    }
+    if (isPanel && swipeToClose) {
+      swipe.close();
+      return;
+    }
+    onOpenChange(false);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogPortal>
         <DialogOverlay
           data-modal-stack-level={stackLevel}
-          style={{ zIndex: overlayZIndex }}
+          onPointerDown={(event) => {
+            if (
+              isPanel &&
+              swipeToClose &&
+              closeOnOverlayClick &&
+              event.target === event.currentTarget
+            ) {
+              swipe.beginDrag(event, "backdrop");
+            }
+          }}
+          style={{
+            zIndex: overlayZIndex,
+            ...(isPanel && swipeToClose ? swipe.overlayStyle : {}),
+          }}
           className={cn("flex items-stretch justify-stretch", overlayClassName)}
         >
           <DialogPrimitive.Content
+            ref={contentRef}
             data-modal-stack-level={stackLevel}
             aria-label={!titleIsVisible ? inferredLabel : undefined}
             onPointerDownOutside={(event) => {
-              if (!closeOnOverlayClick) event.preventDefault();
+              if (!closeOnOverlayClick || (isPanel && swipeToClose)) {
+                event.preventDefault();
+              }
             }}
+            onPointerDownCapture={(event) => {
+              if (isPanel && swipeToClose) {
+                swipe.beginDrag(event, "surface");
+              }
+            }}
+            onClickCapture={
+              isPanel && swipeToClose ? swipe.onClickCapture : undefined
+            }
             onOpenAutoFocus={onOpenAutoFocus}
-            style={{ zIndex: contentZIndex }}
+            style={{
+              zIndex: contentZIndex,
+              ...(isPanel && swipeToClose ? swipe.surfaceStyle : {}),
+            }}
             className={cn(
               "relative z-[710] flex min-h-full w-full flex-col bg-background text-foreground shadow-2xl outline-none",
               !skipCloseAnimation &&
@@ -140,12 +203,20 @@ export const Modal = ({
                     !skipCloseAnimation &&
                       cn(
                         "md:data-[state=closed]:fade-out-0",
-                        panelAnchorCloseAnimationClasses[anchor]
+                        swipeToClose &&
+                          "data-[state=closed]:duration-300 data-[state=closed]:ease-in",
+                        swipeToClose
+                          ? swipePanelAnchorCloseAnimationClasses[anchor]
+                          : panelAnchorCloseAnimationClasses[anchor]
                       ),
                     !skipOpenAnimation &&
                       cn(
                         "md:data-[state=open]:fade-in-0",
-                        panelAnchorOpenAnimationClasses[anchor]
+                        swipeToClose &&
+                          "data-[state=open]:duration-300 data-[state=open]:ease-out",
+                        swipeToClose
+                          ? swipePanelAnchorOpenAnimationClasses[anchor]
+                          : panelAnchorOpenAnimationClasses[anchor]
                       )
                 )
               : cn(
