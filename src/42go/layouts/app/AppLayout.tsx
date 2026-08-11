@@ -40,6 +40,7 @@ const AppLayoutShell = ({
   icon,
   actions,
   stickyHeader = true,
+  hideHeader = false,
   backBtn,
   policy,
   renderOnLoading,
@@ -105,28 +106,32 @@ const AppLayoutShell = ({
       </aside>
 
       {/* Header - Full Width */}
-      <header
-        className={`w-full shrink-0 bg-background border-b transition-all duration-300 ease-in-out ${
-          isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
-        } ${stickyHeader ? "sticky top-0 z-30" : ""}`}
-      >
-        <div className={pageWidthClass}>
-          <Toolbar
-            title={title}
-            subtitle={subtitle}
-            icon={icon}
-            actions={actions}
-            backBtn={backBtn}
-          />
-        </div>
-      </header>
+      {!hideHeader && (
+        <header
+          className={`w-full shrink-0 bg-background border-b transition-all duration-300 ease-in-out ${
+            isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
+          } ${stickyHeader ? "sticky top-0 z-30" : ""}`}
+        >
+          <div className={pageWidthClass}>
+            <Toolbar
+              title={title}
+              subtitle={subtitle}
+              icon={icon}
+              actions={actions}
+              backBtn={backBtn}
+            />
+          </div>
+        </header>
+      )}
 
       {/* Main Content */}
       <main
         className={`${
           containedMobileScroll
             ? "min-h-0 flex-1 overflow-y-auto overscroll-contain md:min-h-[calc(100vh-4rem)] md:overflow-visible"
-            : "min-h-[calc(100vh-4rem)]"
+            : hideHeader
+              ? "min-h-screen"
+              : "min-h-[calc(100vh-4rem)]"
         } transition-all duration-300 ease-in-out ${
           isSidebarCollapsed ? "md:ml-20" : "md:ml-64"
         }`}

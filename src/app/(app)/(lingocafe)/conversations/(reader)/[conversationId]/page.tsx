@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { ChevronLeft, Star } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { Modal } from "@/42go/components/modal";
 import { useEventTracker } from "@/42go/events/use-events";
@@ -21,6 +29,12 @@ import {
   type ReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import { useReaderPlayback } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/useReaderPlayback";
+import {
+  createDocumentReaderScrollTarget,
+  createElementReaderScrollTarget,
+  getReaderScrollProgressBps,
+  scrollReaderToProgressBps,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-scroll-target";
 import { useReaderPreferences } from "@/app/(app)/(lingocafe)/books/_components/useReaderPreferences";
 import {
   ConversationTranslatableText,
@@ -41,28 +55,20 @@ import { splitLingoCafeSentences } from "@/lib/lingocafe/sentence-segmentation";
 import { cn } from "@/lib/utils";
 
 const READER_SCROLL_PROGRESS_IDLE_SAVE_MS = 4000;
+const MOBILE_READER_HEADER_HEIGHT_PX = 64;
+const READER_OVERLAY_SCROLL_RESTORE_INTERVAL_MS = 50;
+const READER_OVERLAY_SCROLL_RESTORE_MAX_ATTEMPTS = 40;
 
-const clampProgressBps = (value: number) =>
-  Math.min(10000, Math.max(0, Math.round(value)));
-
-const getScrollProgressBps = (element: HTMLElement) => {
-  const scrollable = element.scrollHeight - element.clientHeight;
-  if (scrollable <= 0) return 0;
-  return clampProgressBps((element.scrollTop / scrollable) * 10000);
+const subscribeToDesktopReader = (onStoreChange: () => void) => {
+  const query = window.matchMedia("(min-width: 768px)");
+  query.addEventListener("change", onStoreChange);
+  return () => query.removeEventListener("change", onStoreChange);
 };
 
-const scrollToProgressBps = (element: HTMLElement, progressBps: number) => {
-  const scrollable = element.scrollHeight - element.clientHeight;
-  if (scrollable <= 0) {
-    if (progressBps === 0) {
-      element.scrollTop = 0;
-      return true;
-    }
-    return false;
-  }
-  element.scrollTop = (scrollable * progressBps) / 10000;
-  return true;
-};
+const getDesktopReaderSnapshot = () =>
+  window.matchMedia("(min-width: 768px)").matches;
+
+const getDesktopReaderServerSnapshot = () => false;
 
 const parseParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] || "" : value || "";
@@ -90,14 +96,78 @@ const isValidDetail = (value: ConversationDetailResponse) =>
       )
   );
 
+const ConversationReaderShell = ({
+  children,
+  isDesktopReader,
+}: {
+  children: ReactNode;
+  isDesktopReader: boolean;
+}) => {
+  if (!isDesktopReader) return <>{children}</>;
+
+  return (
+    <Modal
+      open
+      onOpenChange={() => undefined}
+      ariaLabel="Conversation reader"
+      presentation="panel"
+      anchor="right"
+      size="full"
+      showClose={false}
+      closeOnOverlayClick={false}
+      onOpenAutoFocus={(event) => event.preventDefault()}
+      skipOpenAnimation
+      skipCloseAnimation
+      overlayClassName="pointer-events-none !bg-transparent"
+      className="!transform-none md:!w-screen md:!max-w-none md:!border-l-0"
+      bodyClassName="flex min-h-0 !overflow-hidden p-0"
+    >
+      {children}
+    </Modal>
+  );
+};
+
 const ConversationReaderPage = () => {
   const params = useParams<{ conversationId: string | string[] }>();
   const searchParams = useSearchParams();
   const conversationId = parseParam(params.conversationId);
   const returnHref = safeReturnHref(searchParams.get("returnTo"), searchParams.get("band"));
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const isDesktopReader = useSyncExternalStore(
+    subscribeToDesktopReader,
+    getDesktopReaderSnapshot,
+    getDesktopReaderServerSnapshot
+  );
+  const desktopScrollRef = useRef<HTMLDivElement | null>(null);
+  const mobileSurfaceRef = useRef<HTMLDivElement | null>(null);
+  const getMobileReaderScrollTarget = useCallback(() => {
+    if (typeof window === "undefined" || !mobileSurfaceRef.current) return null;
+    return createDocumentReaderScrollTarget({
+      contentRoot: mobileSurfaceRef.current,
+      document,
+      window,
+      topInsetPx: MOBILE_READER_HEADER_HEIGHT_PX,
+    });
+  }, []);
+  const getDesktopReaderScrollTarget = useCallback(
+    () =>
+      desktopScrollRef.current
+        ? createElementReaderScrollTarget(desktopScrollRef.current)
+        : null,
+    []
+  );
+  const getActiveReaderScrollTarget = useCallback(
+    () =>
+      window.matchMedia("(min-width: 768px)").matches
+        ? getDesktopReaderScrollTarget()
+        : getMobileReaderScrollTarget(),
+    [getDesktopReaderScrollTarget, getMobileReaderScrollTarget]
+  );
   const restoredConversationRef = useRef("");
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const overlayRestoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const overlayScrollTopRef = useRef<number | null>(null);
   const latestProgressRef = useRef<number | null>(null);
   const { trackEvent } = useEventTracker();
   const [data, setData] = useState<ConversationDetailResponse | null>(null);
@@ -139,15 +209,24 @@ const ConversationReaderPage = () => {
 
   useEffect(() => {
     if (!data) return;
-    const restoreKey = data.conversation.id;
+    const surfaceKey = isDesktopReader ? "desktop" : "mobile";
+    const restoreKey = `${surfaceKey}:${data.conversation.id}`;
     if (restoredConversationRef.current === restoreKey) return;
     let frame = 0;
     let attempts = 0;
 
     const restore = () => {
-      const element = scrollRef.current;
-      if (!element) return;
-      const restored = scrollToProgressBps(element, data.state.progressBps);
+      const target = getActiveReaderScrollTarget();
+      if (!target) {
+        if (attempts >= 8) return;
+        attempts += 1;
+        frame = requestAnimationFrame(restore);
+        return;
+      }
+      const restored = scrollReaderToProgressBps(
+        target,
+        data.state.progressBps
+      );
       if (restored || attempts >= 8) {
         restoredConversationRef.current = restoreKey;
         return;
@@ -160,12 +239,14 @@ const ConversationReaderPage = () => {
     return () => {
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [data]);
+  }, [data, getActiveReaderScrollTarget, isDesktopReader]);
 
   useEffect(() => {
-    const element = scrollRef.current;
+    const target = isDesktopReader
+      ? getDesktopReaderScrollTarget()
+      : getMobileReaderScrollTarget();
     const activeConversationId = data?.conversation.id;
-    if (!element || !activeConversationId) return;
+    if (!target || !activeConversationId) return;
     const controller = new AbortController();
     const progressApiHref = `/api/lingocafe/conversations/${encodeURIComponent(activeConversationId)}`;
 
@@ -205,7 +286,7 @@ const ConversationReaderPage = () => {
     };
 
     const scheduleProgress = () => {
-      const progress = getScrollProgressBps(element);
+      const progress = getReaderScrollProgressBps(target);
       latestProgressRef.current = progress;
       setReadingProgressBps(progress);
 
@@ -218,9 +299,9 @@ const ConversationReaderPage = () => {
       }, READER_SCROLL_PROGRESS_IDLE_SAVE_MS);
     };
 
-    element.addEventListener("scroll", scheduleProgress, { passive: true });
+    const removeScrollListener = target.addScrollListener(scheduleProgress);
     return () => {
-      element.removeEventListener("scroll", scheduleProgress);
+      removeScrollListener();
       if (scrollTimerRef.current) {
         clearTimeout(scrollTimerRef.current);
         scrollTimerRef.current = null;
@@ -240,7 +321,12 @@ const ConversationReaderPage = () => {
       }
       controller.abort();
     };
-  }, [data?.conversation.id]);
+  }, [
+    data?.conversation.id,
+    getDesktopReaderScrollTarget,
+    getMobileReaderScrollTarget,
+    isDesktopReader,
+  ]);
 
   const playbackCatalog = useMemo(() => {
     if (!data) return [];
@@ -261,7 +347,7 @@ const ConversationReaderPage = () => {
     contentType: "conversation",
     contentId: data?.conversation.id ?? conversationId,
     language: data?.speech?.language || data?.conversation.language || "",
-    getScrollContainer: () => scrollRef.current,
+    getScrollTarget: getActiveReaderScrollTarget,
     trackEvent,
     restoreLastPlayedSentence: false,
   });
@@ -271,7 +357,6 @@ const ConversationReaderPage = () => {
     readerThemeStyle,
     canResetPreferences,
     isOpen: isPreferencesOpen,
-    open: openPreferences,
     onOpenChange: handlePreferencesOpenChange,
     updatePreferences,
     updateTranslationScope,
@@ -324,6 +409,60 @@ const ConversationReaderPage = () => {
       : current);
   }, []);
 
+  const handlePreferencesPanelOpenChange = useCallback(
+    (next: boolean) => {
+      if (!isDesktopReader) {
+        if (overlayRestoreTimerRef.current) {
+          clearTimeout(overlayRestoreTimerRef.current);
+          overlayRestoreTimerRef.current = null;
+        }
+
+        if (next && overlayScrollTopRef.current === null) {
+          overlayScrollTopRef.current =
+            document.scrollingElement?.scrollTop ?? window.scrollY;
+        } else if (overlayScrollTopRef.current !== null) {
+          const scrollTop = overlayScrollTopRef.current;
+          overlayScrollTopRef.current = null;
+          let attempts = 0;
+          const restoreAfterUnlock = () => {
+            if (
+              getComputedStyle(document.body).overflow === "hidden" &&
+              attempts < READER_OVERLAY_SCROLL_RESTORE_MAX_ATTEMPTS
+            ) {
+              attempts += 1;
+              overlayRestoreTimerRef.current = setTimeout(
+                restoreAfterUnlock,
+                READER_OVERLAY_SCROLL_RESTORE_INTERVAL_MS
+              );
+              return;
+            }
+            window.scrollTo({ top: scrollTop, behavior: "auto" });
+            overlayRestoreTimerRef.current = null;
+          };
+          overlayRestoreTimerRef.current = setTimeout(
+            restoreAfterUnlock,
+            READER_OVERLAY_SCROLL_RESTORE_INTERVAL_MS
+          );
+        }
+      }
+
+      handlePreferencesOpenChange(next);
+    },
+    [handlePreferencesOpenChange, isDesktopReader]
+  );
+  const openPreferencesPanel = useCallback(() => {
+    handlePreferencesPanelOpenChange(true);
+  }, [handlePreferencesPanelOpenChange]);
+
+  useEffect(
+    () => () => {
+      if (overlayRestoreTimerRef.current) {
+        clearTimeout(overlayRestoreTimerRef.current);
+      }
+    },
+    []
+  );
+
   const toggleStar = async () => {
     if (!data || starPending) return;
     const previous = data.state.isStarred;
@@ -346,25 +485,18 @@ const ConversationReaderPage = () => {
   };
 
   return (
-    <AppLayout title={data?.conversation.title || "Conversation"} hideMobileMenu disablePadding stickyHeader={false} policy={CONVERSATIONS_POLICY}>
-      <Modal
-        open
-        onOpenChange={() => undefined}
-        ariaLabel="Conversation reader"
-        presentation="panel"
-        anchor="right"
-        size="full"
-        showClose={false}
-        closeOnOverlayClick={false}
-        onOpenAutoFocus={(event) => event.preventDefault()}
-        skipOpenAnimation
-        skipCloseAnimation
-        overlayClassName="pointer-events-none !bg-transparent"
-        className="!transform-none md:!w-screen md:!max-w-none md:!border-l-0"
-        bodyClassName="flex min-h-0 !overflow-hidden p-0"
-      >
+    <AppLayout
+      title={data?.conversation.title || "Conversation"}
+      hideHeader
+      hideMobileMenu
+      disablePadding
+      stickyHeader={false}
+      policy={CONVERSATIONS_POLICY}
+    >
+      <ConversationReaderShell isDesktopReader={isDesktopReader}>
         <div
-          className="flex h-[100dvh] min-h-0 w-full flex-col"
+          ref={mobileSurfaceRef}
+          className="flex min-h-screen w-full flex-col overflow-x-clip md:h-[100dvh] md:min-h-0"
           style={{
             ...readerThemeStyle,
             backgroundColor: "var(--reader-bg)",
@@ -372,8 +504,11 @@ const ConversationReaderPage = () => {
           }}
         >
           <header
-            className="relative flex h-16 shrink-0 items-center justify-between gap-3 border-b px-3 md:h-[68px] md:px-8"
-            style={{ borderColor: "var(--reader-border)" }}
+            className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b px-3 md:relative md:h-[68px] md:px-8"
+            style={{
+              borderColor: "var(--reader-border)",
+              backgroundColor: "var(--reader-bg)",
+            }}
           >
             <span
               aria-hidden="true"
@@ -392,7 +527,7 @@ const ConversationReaderPage = () => {
               ) : null}
             </div>
             <div className="relative z-10 flex items-center gap-1">
-              <BookReaderPreferencesTrigger onClick={openPreferences} />
+              <BookReaderPreferencesTrigger onClick={openPreferencesPanel} />
               {data ? (
                 <button
                   type="button"
@@ -409,7 +544,10 @@ const ConversationReaderPage = () => {
             </div>
           </header>
 
-          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 md:px-8">
+          <div
+            ref={desktopScrollRef}
+            className="px-5 md:min-h-0 md:flex-1 md:overflow-y-auto md:px-8"
+          >
             <main
               className="mx-auto w-full max-w-[680px] pb-28 pt-10 md:pb-32 md:pt-24"
               style={{ fontFamily: readerFont.family, fontSize: `${readerFontSize}px` }}
@@ -556,7 +694,7 @@ const ConversationReaderPage = () => {
           <BookReaderPlaybackControls playback={playback} />
           <BookReaderPreferencesPanel
             open={isPreferencesOpen}
-            onOpenChange={handlePreferencesOpenChange}
+            onOpenChange={handlePreferencesPanelOpenChange}
             preferences={readerPreferences}
             onPreferencesChange={updatePreferences}
             translationScope={translationScope}
@@ -564,9 +702,10 @@ const ConversationReaderPage = () => {
             canResetPreferences={canResetPreferences}
             onResetPreferences={resetPreferences}
             playback={playback}
+            preserveDocumentScroll={!isDesktopReader}
           />
         </div>
-      </Modal>
+      </ConversationReaderShell>
     </AppLayout>
   );
 };

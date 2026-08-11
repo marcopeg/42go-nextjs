@@ -63,6 +63,11 @@ export interface AppLayoutProps {
   icon?: React.ComponentType<{ className?: string }> | string;
   actions?: TActionItem[];
   stickyHeader?: boolean;
+  /**
+   * Hides the shared page toolbar for immersive routes that provide their own
+   * accessible navigation chrome. The desktop sidebar remains available.
+   */
+  hideHeader?: boolean;
   // Rich back button configuration for the top toolbar
   backBtn?: BackBtnConfig;
   // Optional client-side policy to guard the page content visually

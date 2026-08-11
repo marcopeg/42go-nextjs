@@ -167,7 +167,9 @@ test("conversation reader persists scroll progress and marks read near the end",
   ]);
   assert.doesNotMatch(detailPage, /readAttemptedRef/);
   assert.doesNotMatch(detailPage, /method: "PUT"[^]*\/read/);
-  assert.match(detailPage, /getScrollProgressBps/);
+  assert.match(detailPage, /getReaderScrollProgressBps/);
+  assert.match(detailPage, /createDocumentReaderScrollTarget/);
+  assert.match(detailPage, /createElementReaderScrollTarget/);
   assert.match(detailPage, /READER_SCROLL_PROGRESS_IDLE_SAVE_MS = 4000/);
   assert.match(detailPage, /keepalive: true/);
   assert.match(detailPage, /h-\[2px\] bg-blue-500/);
@@ -280,7 +282,11 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.doesNotMatch(discoveryPage, /<AppLayout/);
   assert.doesNotMatch(categoryPage, /<AppLayout/);
   assert.match(libraryShell, /<AppLayout/);
-  assert.match(libraryShell, /containedMobileScroll/);
+  assert.doesNotMatch(libraryShell, /containedMobileScroll/);
+  assert.match(
+    libraryShell,
+    /min-h-\[calc\(100dvh\+6rem\)\] min-w-0 overflow-x-clip md:min-h-full/
+  );
   assert.match(libraryShell, /pageWidth="content"/);
   assert.match(appLayoutTypes, /pageWidth\?: "full" \| "content"/);
   assert.match(appLayout, /pageWidth === "content" \? "mx-auto w-full max-w-4xl" : "w-full"/);

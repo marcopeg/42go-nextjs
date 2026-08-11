@@ -48,6 +48,7 @@ type BookReaderPreferencesPanelProps = {
   canResetPreferences: boolean;
   onResetPreferences: () => void;
   playback: ReaderPlaybackController;
+  preserveDocumentScroll?: boolean;
 };
 
 type ReaderPreferencesTab = "reading" | "listening";
@@ -216,6 +217,7 @@ export const BookReaderPreferencesPanel = ({
   canResetPreferences,
   onResetPreferences,
   playback,
+  preserveDocumentScroll = false,
 }: BookReaderPreferencesPanelProps) => {
   const [activeTab, setActiveTab] =
     useState<ReaderPreferencesTab>("reading");
@@ -304,6 +306,7 @@ export const BookReaderPreferencesPanel = ({
       size="md"
       title="Reader Preferences"
       ariaLabel="Reader preferences"
+      preserveDocumentScroll={preserveDocumentScroll}
       headerClassName="md:h-[68px] md:px-8"
       bodyClassName="px-0 py-0 md:pb-6"
     >

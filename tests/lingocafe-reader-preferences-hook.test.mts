@@ -27,7 +27,11 @@ test("book reader consumes the shared preference controller", async () => {
 
   assert.match(source, /useReaderPreferences\(\{/);
   assert.match(source, /setSettingsSurfaceOpen: playback\.setSettingsSurfaceOpen/);
-  assert.match(source, /onOpenChange=\{handlePreferencesOpenChange\}/);
+  assert.match(source, /onOpenChange=\{handlePreferencesPanelOpenChange\}/);
+  assert.match(
+    source,
+    /preserveMobileReaderScroll\(next, handlePreferencesOpenChange\)/
+  );
   assert.match(source, /onPreferencesChange=\{updateReaderPreferences\}/);
   assert.match(source, /onTranslationScopeChange=\{updateReaderTranslationScope\}/);
   assert.doesNotMatch(source, /localStorage\.setItem\(/);

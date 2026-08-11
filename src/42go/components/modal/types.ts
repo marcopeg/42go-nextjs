@@ -26,6 +26,11 @@ export interface ModalProps {
   swipeToClose?: boolean;
   skipOpenAnimation?: boolean;
   skipCloseAnimation?: boolean;
+  /**
+   * Keeps focus movement from scrolling the underlying document when a
+   * temporary overlay opens above a document-scrolling surface.
+   */
+  preserveDocumentScroll?: boolean;
   onOpenAutoFocus?: (event: Event) => void;
   className?: string;
   overlayClassName?: string;

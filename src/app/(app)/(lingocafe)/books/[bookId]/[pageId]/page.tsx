@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
@@ -16,6 +23,13 @@ import {
 import { BookReaderPreferencesPanel } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
 import { BookReaderTableOfContents } from "@/app/(app)/(lingocafe)/books/_components/BookReaderTableOfContents";
 import { useReaderPlayback } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/useReaderPlayback";
+import {
+  createDocumentReaderScrollTarget,
+  createElementReaderScrollTarget,
+  getReaderScrollProgressBps,
+  scrollReaderToProgressBps,
+  type ReaderScrollTarget,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-scroll-target";
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
 import { useBookCompletionMutation } from "@/app/(app)/(lingocafe)/books/_components/useBookCompletionMutation";
 import { useReaderPreferences } from "@/app/(app)/(lingocafe)/books/_components/useReaderPreferences";
@@ -39,6 +53,9 @@ const READER_SCROLL_PROGRESS_IDLE_SAVE_MS = 4000;
 const READER_PLAYBACK_PROGRESS_SAVE_MS = 30000;
 const READER_HEADER_TITLE_TOP_THRESHOLD_PX = 12;
 const READER_HEADER_TITLE_DIRECTION_THRESHOLD_PX = 6;
+const MOBILE_READER_HEADER_HEIGHT_PX = 64;
+const READER_OVERLAY_SCROLL_RESTORE_INTERVAL_MS = 50;
+const READER_OVERLAY_SCROLL_RESTORE_MAX_ATTEMPTS = 40;
 const BOOK_READER_PAGE_POLICY: Policy = {
   require: { feature: "page:books", session: true },
 };
@@ -248,24 +265,16 @@ const normalizeBookPage = (
   };
 };
 
-const getScrollProgressBps = (element: HTMLElement) => {
-  const scrollable = element.scrollHeight - element.clientHeight;
-  if (scrollable <= 0) return 0;
-  return clampProgressBps((element.scrollTop / scrollable) * 10000);
+const subscribeToDesktopReader = (onStoreChange: () => void) => {
+  const query = window.matchMedia("(min-width: 768px)");
+  query.addEventListener("change", onStoreChange);
+  return () => query.removeEventListener("change", onStoreChange);
 };
 
-const scrollToProgressBps = (element: HTMLElement, progressBps: number) => {
-  const scrollable = element.scrollHeight - element.clientHeight;
-  if (scrollable <= 0) {
-    if (progressBps === 0) {
-      element.scrollTop = 0;
-      return true;
-    }
-    return false;
-  }
-  element.scrollTop = (scrollable * progressBps) / 10000;
-  return true;
-};
+const getDesktopReaderSnapshot = () =>
+  window.matchMedia("(min-width: 768px)").matches;
+
+const getDesktopReaderServerSnapshot = () => false;
 
 const getHeaderTitleModeForScroll = (
   scrollTop: number,
@@ -306,18 +315,42 @@ const BookReadPage = () => {
     () => buildReaderRouteState(bookId, pageId, urlProgressBps),
     [bookId, pageId, urlProgressBps]
   );
+  const isDesktopReader = useSyncExternalStore(
+    subscribeToDesktopReader,
+    getDesktopReaderSnapshot,
+    getDesktopReaderServerSnapshot
+  );
   const desktopScrollRef = useRef<HTMLDivElement | null>(null);
-  const mobileScrollRef = useRef<HTMLDivElement | null>(null);
-  const getActiveReaderScrollContainer = useCallback(
+  const mobileSurfaceRef = useRef<HTMLDivElement | null>(null);
+  const getMobileReaderScrollTarget = useCallback(() => {
+    if (typeof window === "undefined" || !mobileSurfaceRef.current) return null;
+    return createDocumentReaderScrollTarget({
+      contentRoot: mobileSurfaceRef.current,
+      document,
+      window,
+      topInsetPx: MOBILE_READER_HEADER_HEIGHT_PX,
+    });
+  }, []);
+  const getDesktopReaderScrollTarget = useCallback(
     () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(min-width: 768px)").matches
-        ? desktopScrollRef.current
-        : mobileScrollRef.current,
+      desktopScrollRef.current
+        ? createElementReaderScrollTarget(desktopScrollRef.current)
+        : null,
     []
+  );
+  const getActiveReaderScrollTarget = useCallback(
+    () =>
+      window.matchMedia("(min-width: 768px)").matches
+        ? getDesktopReaderScrollTarget()
+        : getMobileReaderScrollTarget(),
+    [getDesktopReaderScrollTarget, getMobileReaderScrollTarget]
   );
   const restoredKeyRef = useRef("");
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const overlayRestoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const overlayScrollTopRef = useRef<number | null>(null);
   const latestProgressRef = useRef<number | null>(null);
   const persistCurrentProgressRef = useRef<(() => void) | null>(null);
   const playbackProgressActiveRef = useRef(false);
@@ -396,7 +429,7 @@ const BookReadPage = () => {
     bookId: bookPage?.book.id || "",
     pageId: bookPage?.page.pageId || "",
     language: bookPage?.book.lang || "",
-    getScrollContainer: getActiveReaderScrollContainer,
+    getScrollTarget: getActiveReaderScrollTarget,
     trackEvent,
     onPageEnd: () => {
       const nextHref = bookPage?.next?.href;
@@ -419,7 +452,6 @@ const BookReadPage = () => {
     translationScope: readerTranslationScope,
     canResetPreferences: canResetReaderPreferences,
     isOpen: isPreferencesOpen,
-    open: openPreferences,
     onOpenChange: handlePreferencesOpenChange,
     updatePreferences: updateReaderPreferences,
     updateTranslationScope: updateReaderTranslationScope,
@@ -442,6 +474,59 @@ const BookReadPage = () => {
       setSettingsSurfaceOpen("contents", next);
     },
     [setSettingsSurfaceOpen]
+  );
+  const preserveMobileReaderScroll = useCallback(
+    (next: boolean, onOpenChange: (open: boolean) => void) => {
+      if (!isDesktopReader) {
+        if (overlayRestoreTimerRef.current) {
+          clearTimeout(overlayRestoreTimerRef.current);
+          overlayRestoreTimerRef.current = null;
+        }
+
+        if (next && overlayScrollTopRef.current === null) {
+          overlayScrollTopRef.current =
+            document.scrollingElement?.scrollTop ?? window.scrollY;
+        } else if (overlayScrollTopRef.current !== null) {
+          const scrollTop = overlayScrollTopRef.current;
+          overlayScrollTopRef.current = null;
+          let attempts = 0;
+          const restoreAfterUnlock = () => {
+            if (
+              getComputedStyle(document.body).overflow === "hidden" &&
+              attempts < READER_OVERLAY_SCROLL_RESTORE_MAX_ATTEMPTS
+            ) {
+              attempts += 1;
+              overlayRestoreTimerRef.current = setTimeout(
+                restoreAfterUnlock,
+                READER_OVERLAY_SCROLL_RESTORE_INTERVAL_MS
+              );
+              return;
+            }
+            window.scrollTo({ top: scrollTop, behavior: "auto" });
+            overlayRestoreTimerRef.current = null;
+          };
+          overlayRestoreTimerRef.current = setTimeout(
+            restoreAfterUnlock,
+            READER_OVERLAY_SCROLL_RESTORE_INTERVAL_MS
+          );
+        }
+      }
+
+      onOpenChange(next);
+    },
+    [isDesktopReader]
+  );
+  const handlePreferencesPanelOpenChange = useCallback(
+    (next: boolean) => {
+      preserveMobileReaderScroll(next, handlePreferencesOpenChange);
+    },
+    [handlePreferencesOpenChange, preserveMobileReaderScroll]
+  );
+  const handleContentsPanelOpenChange = useCallback(
+    (next: boolean) => {
+      preserveMobileReaderScroll(next, handleTableOfContentsOpenChange);
+    },
+    [handleTableOfContentsOpenChange, preserveMobileReaderScroll]
   );
   const handleReaderOpenChange = (next: boolean) => {
     if (!next) {
@@ -481,8 +566,20 @@ const BookReadPage = () => {
     navigateToReaderPageRef.current = navigateToReaderPage;
   }, [navigateToReaderPage]);
 
+  useEffect(
+    () => () => {
+      if (overlayRestoreTimerRef.current) {
+        clearTimeout(overlayRestoreTimerRef.current);
+      }
+    },
+    []
+  );
+
   const openTableOfContents = () => {
-    handleTableOfContentsOpenChange(true);
+    handleContentsPanelOpenChange(true);
+  };
+  const openPreferencesPanel = () => {
+    handlePreferencesPanelOpenChange(true);
   };
 
   useEffect(() => {
@@ -600,7 +697,10 @@ const BookReadPage = () => {
         (bookPage.progress?.pageId === bookPage.page.pageId
           ? bookPage.progress.progressBps
           : 0);
-    const restoreKey = `${bookPage.page.bookId}:${bookPage.page.pageId}:${restoreProgressBps}`;
+    const surfaceKey: ReaderSurfaceKey = isDesktopReader
+      ? "desktop"
+      : "mobile";
+    const restoreKey = `${surfaceKey}:${bookPage.page.bookId}:${bookPage.page.pageId}:${restoreProgressBps}`;
     if (!shouldForcePlaybackTop && restoredKeyRef.current === restoreKey) {
       return;
     }
@@ -610,15 +710,12 @@ const BookReadPage = () => {
 
     const restore = () => {
       if (shouldForcePlaybackTop) {
-        if (desktopScrollRef.current) desktopScrollRef.current.scrollTop = 0;
-        if (mobileScrollRef.current) mobileScrollRef.current.scrollTop = 0;
+        getDesktopReaderScrollTarget()?.setScrollTop(0);
+        getMobileReaderScrollTarget()?.setScrollTop(0);
         lastScrollTopRef.current.desktop = 0;
         lastScrollTopRef.current.mobile = 0;
       }
-      const target =
-        window.matchMedia("(min-width: 768px)").matches
-          ? desktopScrollRef.current
-          : mobileScrollRef.current;
+      const target = getActiveReaderScrollTarget();
 
       if (!target) {
         if (attempts >= 8) return;
@@ -626,17 +723,12 @@ const BookReadPage = () => {
         frame = requestAnimationFrame(restore);
         return;
       }
-      const restored = scrollToProgressBps(target, restoreProgressBps);
-      const surfaceKey: ReaderSurfaceKey = window.matchMedia(
-        "(min-width: 768px)"
-      ).matches
-        ? "desktop"
-        : "mobile";
-
-      lastScrollTopRef.current[surfaceKey] = target.scrollTop;
+      const restored = scrollReaderToProgressBps(target, restoreProgressBps);
+      const scrollTop = target.getScrollTop();
+      lastScrollTopRef.current[surfaceKey] = scrollTop;
       setReadingProgressBps(restoreProgressBps);
       setHeaderTitleMode(
-        target.scrollTop <= READER_HEADER_TITLE_TOP_THRESHOLD_PX
+        scrollTop <= READER_HEADER_TITLE_TOP_THRESHOLD_PX
           ? "book"
           : "page"
       );
@@ -660,6 +752,10 @@ const BookReadPage = () => {
     };
   }, [
     bookPage,
+    getActiveReaderScrollTarget,
+    getDesktopReaderScrollTarget,
+    getMobileReaderScrollTarget,
+    isDesktopReader,
     shouldForcePlaybackTop,
     readerRoute?.bookId,
     readerRoute?.pageId,
@@ -668,8 +764,12 @@ const BookReadPage = () => {
 
   useEffect(() => {
     if (!bookPage || !loadedBookPageApiHref) return;
-    const desktopElement = desktopScrollRef.current;
-    const mobileElement = mobileScrollRef.current;
+    const surfaceKey: ReaderSurfaceKey = isDesktopReader
+      ? "desktop"
+      : "mobile";
+    const activeTarget = isDesktopReader
+      ? getDesktopReaderScrollTarget()
+      : getMobileReaderScrollTarget();
     const controller = new AbortController();
     const progressApiHref = loadedBookPageApiHref;
 
@@ -690,9 +790,9 @@ const BookReadPage = () => {
     };
 
     persistCurrentProgressRef.current = () => {
-      const element = getActiveReaderScrollContainer();
-      if (!element) return;
-      const progress = getScrollProgressBps(element);
+      const target = getActiveReaderScrollTarget();
+      if (!target) return;
+      const progress = getReaderScrollProgressBps(target);
 
       if (scrollTimerRef.current) {
         clearTimeout(scrollTimerRef.current);
@@ -716,12 +816,9 @@ const BookReadPage = () => {
       });
     };
 
-    const scheduleProgress = (
-      surfaceKey: ReaderSurfaceKey,
-      element: HTMLElement
-    ) => {
+    const scheduleProgress = (target: ReaderScrollTarget) => {
       const previousScrollTop = lastScrollTopRef.current[surfaceKey];
-      const currentScrollTop = element.scrollTop;
+      const currentScrollTop = target.getScrollTop();
       const delta = currentScrollTop - previousScrollTop;
 
       lastScrollTopRef.current[surfaceKey] = currentScrollTop;
@@ -729,7 +826,7 @@ const BookReadPage = () => {
         getHeaderTitleModeForScroll(currentScrollTop, delta, currentMode)
       );
 
-      const currentProgressBps = getScrollProgressBps(element);
+      const currentProgressBps = getReaderScrollProgressBps(target);
       latestProgressRef.current = currentProgressBps;
       setReadingProgressBps(currentProgressBps);
 
@@ -745,19 +842,14 @@ const BookReadPage = () => {
       }, READER_SCROLL_PROGRESS_IDLE_SAVE_MS);
     };
 
-    const onDesktopScroll = () => {
-      if (desktopElement) scheduleProgress("desktop", desktopElement);
-    };
-    const onMobileScroll = () => {
-      if (mobileElement) scheduleProgress("mobile", mobileElement);
+    const onScroll = () => {
+      if (activeTarget) scheduleProgress(activeTarget);
     };
 
-    desktopElement?.addEventListener("scroll", onDesktopScroll, { passive: true });
-    mobileElement?.addEventListener("scroll", onMobileScroll, { passive: true });
+    const removeScrollListener = activeTarget?.addScrollListener(onScroll);
 
     return () => {
-      desktopElement?.removeEventListener("scroll", onDesktopScroll);
-      mobileElement?.removeEventListener("scroll", onMobileScroll);
+      removeScrollListener?.();
 
       if (scrollTimerRef.current) {
         clearTimeout(scrollTimerRef.current);
@@ -773,7 +865,14 @@ const BookReadPage = () => {
 
       controller.abort();
     };
-  }, [bookPage, getActiveReaderScrollContainer, loadedBookPageApiHref]);
+  }, [
+    bookPage,
+    getActiveReaderScrollTarget,
+    getDesktopReaderScrollTarget,
+    getMobileReaderScrollTarget,
+    isDesktopReader,
+    loadedBookPageApiHref,
+  ]);
 
   useEffect(() => {
     playbackProgressActiveRef.current =
@@ -791,97 +890,110 @@ const BookReadPage = () => {
     return () => window.clearInterval(timer);
   }, [currentBookPageKey, playback.isOpen]);
 
+  const readerOverlays = (
+    <>
+      <BookReaderPreferencesPanel
+        open={isPreferencesOpen}
+        onOpenChange={handlePreferencesPanelOpenChange}
+        preferences={readerPreferences}
+        onPreferencesChange={updateReaderPreferences}
+        translationScope={readerTranslationScope}
+        onTranslationScopeChange={updateReaderTranslationScope}
+        canResetPreferences={canResetReaderPreferences}
+        onResetPreferences={resetReaderPreferences}
+        playback={playback}
+        preserveDocumentScroll={!isDesktopReader}
+      />
+
+      <BookReaderTableOfContents
+        open={isTableOfContentsOpen}
+        onOpenChange={handleContentsPanelOpenChange}
+        bookPage={bookPage}
+        bookInfoHref={bookInfoHref}
+        onNavigatePage={navigateToReaderPage}
+        preserveDocumentScroll={!isDesktopReader}
+      />
+    </>
+  );
+
   return (
     <AppLayout
       title={bookPage?.book.title || "Reading"}
       stickyHeader={false}
+      hideHeader
       hideMobileMenu
       backBtn={{ to: bookshelfHref }}
       disablePadding
       policy={BOOK_READER_PAGE_POLICY}
     >
-      <Modal
-        open
-        onOpenChange={handleReaderOpenChange}
-        ariaLabel="Reading"
-        presentation="panel"
-        anchor="right"
-        size="full"
-        showClose={false}
-        closeOnOverlayClick={false}
-        onOpenAutoFocus={(event) => event.preventDefault()}
-        skipOpenAnimation
-        skipCloseAnimation
-        overlayClassName="pointer-events-none !bg-transparent"
-        className="!transform-none md:!w-screen md:!max-w-none md:!border-l-0"
-        bodyClassName="flex min-h-0 !overflow-hidden p-0"
-      >
-        <BookReaderMobileSurface
-          bookPage={bookPage}
-          loading={readerSurfaceLoading}
-          error={readerSurfaceError}
-          scrollRef={mobileScrollRef}
-          backHref={bookshelfHref}
-          readingProgressBps={readingProgressBps}
-          headerTitleMode={headerTitleMode}
-          preferences={readerPreferences}
-          translationScope={readerTranslationScope}
-          onTranslationScopeChange={updateReaderTranslationScope}
-          playback={playback}
-          forceScrollTop={shouldForcePlaybackTop}
-          pageTurnPending={pageTurnPending}
-          onOpenTableOfContents={openTableOfContents}
-          onOpenPreferences={openPreferences}
-          onNavigatePage={navigateToReaderPage}
-          completionPending={completionPending}
-          onMarkRead={() => {
-            void setCompleted(true);
-          }}
-        />
+      <BookReaderMobileSurface
+        bookPage={bookPage}
+        loading={readerSurfaceLoading}
+        error={readerSurfaceError}
+        scrollRef={mobileSurfaceRef}
+        backHref={bookshelfHref}
+        readingProgressBps={readingProgressBps}
+        headerTitleMode={headerTitleMode}
+        preferences={readerPreferences}
+        translationScope={readerTranslationScope}
+        onTranslationScopeChange={updateReaderTranslationScope}
+        playback={playback}
+        forceScrollTop={shouldForcePlaybackTop}
+        pageTurnPending={pageTurnPending}
+        onOpenTableOfContents={openTableOfContents}
+        onOpenPreferences={openPreferencesPanel}
+        onNavigatePage={navigateToReaderPage}
+        completionPending={completionPending}
+        onMarkRead={() => {
+          void setCompleted(true);
+        }}
+      />
 
-        <BookReaderDesktopSurface
-          bookPage={bookPage}
-          loading={readerSurfaceLoading}
-          error={readerSurfaceError}
-          scrollRef={desktopScrollRef}
-          backHref={bookshelfHref}
-          readingProgressBps={readingProgressBps}
-          headerTitleMode={headerTitleMode}
-          preferences={readerPreferences}
-          translationScope={readerTranslationScope}
-          onTranslationScopeChange={updateReaderTranslationScope}
-          playback={playback}
-          forceScrollTop={shouldForcePlaybackTop}
-          pageTurnPending={pageTurnPending}
-          onOpenTableOfContents={openTableOfContents}
-          onOpenPreferences={openPreferences}
-          onNavigatePage={navigateToReaderPage}
-          completionPending={completionPending}
-          onMarkRead={() => {
-            void setCompleted(true);
-          }}
-        />
+      {!isDesktopReader && readerOverlays}
 
-        <BookReaderPreferencesPanel
-          open={isPreferencesOpen}
-          onOpenChange={handlePreferencesOpenChange}
-          preferences={readerPreferences}
-          onPreferencesChange={updateReaderPreferences}
-          translationScope={readerTranslationScope}
-          onTranslationScopeChange={updateReaderTranslationScope}
-          canResetPreferences={canResetReaderPreferences}
-          onResetPreferences={resetReaderPreferences}
-          playback={playback}
-        />
+      {isDesktopReader && (
+        <Modal
+          open
+          onOpenChange={handleReaderOpenChange}
+          ariaLabel="Reading"
+          presentation="panel"
+          anchor="right"
+          size="full"
+          showClose={false}
+          closeOnOverlayClick={false}
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          skipOpenAnimation
+          skipCloseAnimation
+          overlayClassName="pointer-events-none !bg-transparent"
+          className="!transform-none md:!w-screen md:!max-w-none md:!border-l-0"
+          bodyClassName="flex min-h-0 !overflow-hidden p-0"
+        >
+          <BookReaderDesktopSurface
+            bookPage={bookPage}
+            loading={readerSurfaceLoading}
+            error={readerSurfaceError}
+            scrollRef={desktopScrollRef}
+            backHref={bookshelfHref}
+            readingProgressBps={readingProgressBps}
+            headerTitleMode={headerTitleMode}
+            preferences={readerPreferences}
+            translationScope={readerTranslationScope}
+            onTranslationScopeChange={updateReaderTranslationScope}
+            playback={playback}
+            forceScrollTop={shouldForcePlaybackTop}
+            pageTurnPending={pageTurnPending}
+            onOpenTableOfContents={openTableOfContents}
+            onOpenPreferences={openPreferencesPanel}
+            onNavigatePage={navigateToReaderPage}
+            completionPending={completionPending}
+            onMarkRead={() => {
+              void setCompleted(true);
+            }}
+          />
 
-        <BookReaderTableOfContents
-          open={isTableOfContentsOpen}
-          onOpenChange={handleTableOfContentsOpenChange}
-          bookPage={bookPage}
-          bookInfoHref={bookInfoHref}
-          onNavigatePage={navigateToReaderPage}
-        />
-      </Modal>
+          {readerOverlays}
+        </Modal>
+      )}
     </AppLayout>
   );
 };

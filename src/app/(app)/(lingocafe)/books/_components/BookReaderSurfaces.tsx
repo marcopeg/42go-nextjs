@@ -619,7 +619,6 @@ export const BookReaderMobileSurface = ({
   translationScope,
   onTranslationScopeChange,
   playback,
-  forceScrollTop,
   pageTurnPending,
   onOpenTableOfContents,
   onOpenPreferences,
@@ -635,16 +634,6 @@ export const BookReaderMobileSurface = ({
   );
   const bookTitle = bookPage?.book.title || "Reading";
   const pageTitle = getReaderPageTitle(bookPage);
-  useLayoutEffect(() => {
-    if (!forceScrollTop || !bookPage) return;
-    const container = scrollRef.current;
-    if (!container) return;
-    container.scrollTop = 0;
-    const frame = requestAnimationFrame(() => {
-      container.scrollTop = 0;
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [bookPage, forceScrollTop, scrollRef]);
   const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
     if (pageTurnPending) return;
     if (hasActiveTextSelection()) return;
@@ -687,10 +676,14 @@ export const BookReaderMobileSurface = ({
 
   return (
     <div
-      className="flex min-h-0 flex-1 bg-background md:hidden"
+      ref={scrollRef}
+      className="min-h-screen min-w-0 bg-background md:hidden"
       style={readerThemeStyle}
     >
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+      <div
+        className="sticky top-0 z-30"
+        style={{ backgroundColor: "var(--reader-bg)" }}
+      >
         <ReaderHeader
           backHref={backHref}
           readingProgressBps={readingProgressBps}
@@ -713,15 +706,15 @@ export const BookReaderMobileSurface = ({
           horizontalPaddingPx={12}
           titleTextClassName="text-sm font-semibold"
         />
+      </div>
 
-        <div
-          key={bookPage?.page.pageId || "reader-mobile"}
-          ref={scrollRef}
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto px-5 py-6"
-          style={{ overflowAnchor: "none" }}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
+      <div
+        key={bookPage?.page.pageId || "reader-mobile"}
+        className="min-w-0 px-5 py-6"
+        style={{ overflowAnchor: "none" }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
           {(!bookPage || loading || error) && (
             <ReaderState loading={loading} error={error} />
           )}
@@ -789,19 +782,18 @@ export const BookReaderMobileSurface = ({
               )}
             </>
           )}
-        </div>
-        <BookReaderFloatingActionBar
-          key={`reader-actions-mobile:${bookPage?.page.pageId || "loading"}`}
-          playback={playback}
-          translationAvailable={Boolean(
-            bookPage?.translation.enabled && bookPage.translation.to
-          )}
-          translationScope={translationScope}
-          onTranslationScopeChange={onTranslationScopeChange}
-          readerThemeStyle={readerThemeStyle}
-        />
-        <BookReaderPlaybackControls playback={playback} />
       </div>
+      <BookReaderFloatingActionBar
+        key={`reader-actions-mobile:${bookPage?.page.pageId || "loading"}`}
+        playback={playback}
+        translationAvailable={Boolean(
+          bookPage?.translation.enabled && bookPage.translation.to
+        )}
+        translationScope={translationScope}
+        onTranslationScopeChange={onTranslationScopeChange}
+        readerThemeStyle={readerThemeStyle}
+      />
+      <BookReaderPlaybackControls playback={playback} />
     </div>
   );
 };

@@ -26,6 +26,11 @@ import {
   type ReaderPlaybackPreferences,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/playback-preferences";
 import { getTranslationPronunciationIntent } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/translation-pronunciation";
+import {
+  centerReaderElement,
+  isReaderElementVisible,
+  type ReaderScrollTarget,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-scroll-target";
 import type {
   ReaderPlaybackController,
   ReaderPlaybackSettingsSurface,
@@ -38,7 +43,7 @@ import type {
 
 type UseReaderPlaybackCommonInput = {
   language: string;
-  getScrollContainer: () => HTMLElement | null;
+  getScrollTarget: () => ReaderScrollTarget | null;
   trackEvent: (name: string, data?: TEventJson) => void;
   onPageEnd?: () => void;
   autoStartPageKey?: string | null;
@@ -63,43 +68,33 @@ export type UseReaderPlaybackInput = UseReaderPlaybackCommonInput &
       }
   );
 
-const getSentenceElement = (container: HTMLElement, sentenceId: string) =>
-  container.querySelector<HTMLElement>(getReaderSentenceSelector(sentenceId));
-
-const isElementInContainerViewport = (
-  element: HTMLElement,
-  container: HTMLElement
-) => {
-  const elementRect = element.getBoundingClientRect();
-  const containerRect = container.getBoundingClientRect();
-  return (
-    elementRect.bottom > containerRect.top &&
-    elementRect.top < containerRect.bottom
+const getSentenceElement = (target: ReaderScrollTarget, sentenceId: string) =>
+  target.contentRoot.querySelector<HTMLElement>(
+    getReaderSentenceSelector(sentenceId)
   );
-};
 
 const getFirstViewportSentenceIndex = (
   sentences: ReaderPlaybackSentence[],
-  container: HTMLElement | null
+  target: ReaderScrollTarget | null
 ) => {
-  if (!container || sentences.length === 0) return 0;
-  const containerRect = container.getBoundingClientRect();
+  if (!target || sentences.length === 0) return 0;
+  const viewport = target.getViewportRect();
 
   for (const sentence of sentences) {
-    const element = getSentenceElement(container, sentence.id);
-    if (element && isElementInContainerViewport(element, container)) {
+    const element = getSentenceElement(target, sentence.id);
+    if (element && isReaderElementVisible(target, element)) {
       return sentence.index;
     }
   }
 
   // Layout gaps can leave no sentence intersecting the viewport. In that case,
   // use the nearest sentence instead of jumping back to the page title.
-  const viewportCenter = containerRect.top + containerRect.height / 2;
+  const viewportCenter = viewport.top + viewport.height / 2;
   let closestIndex = 0;
   let closestDistance = Number.POSITIVE_INFINITY;
 
   for (const sentence of sentences) {
-    const element = getSentenceElement(container, sentence.id);
+    const element = getSentenceElement(target, sentence.id);
     if (!element) continue;
     const rect = element.getBoundingClientRect();
     const distance = Math.abs(rect.top + rect.height / 2 - viewportCenter);
@@ -140,7 +135,7 @@ export const useReaderPlayback = (
 ): ReaderPlaybackController => {
   const {
     language,
-    getScrollContainer,
+    getScrollTarget,
     trackEvent,
     onPageEnd,
     autoStartPageKey = null,
@@ -367,30 +362,21 @@ export const useReaderPlayback = (
 
   const centerSentence = useCallback(
     (sentenceId: string, behavior: ScrollBehavior = "smooth") => {
-      const container = getScrollContainer();
-      if (!container) return;
-      const element = getSentenceElement(container, sentenceId);
+      const target = getScrollTarget();
+      if (!target) return;
+      const element = getSentenceElement(target, sentenceId);
       if (!element) return;
-      const containerRect = container.getBoundingClientRect();
-      const elementRect = element.getBoundingClientRect();
-      const targetTop =
-        container.scrollTop +
-        (elementRect.top - containerRect.top) -
-        (container.clientHeight - elementRect.height) / 2;
 
       clearGuidedScrollTimer();
       programmaticScrollRef.current = true;
       guidedScrollRef.current = true;
-      container.scrollTo({
-        top: Math.max(0, targetTop),
-        behavior,
-      });
+      centerReaderElement(target, element, behavior);
       guidedScrollTimerRef.current = setTimeout(() => {
         guidedScrollTimerRef.current = null;
         programmaticScrollRef.current = false;
       }, 700);
     },
-    [clearGuidedScrollTimer, getScrollContainer]
+    [clearGuidedScrollTimer, getScrollTarget]
   );
 
   const speakIndex = useCallback(
@@ -515,14 +501,14 @@ export const useReaderPlayback = (
         return;
       }
 
-      const container = getScrollContainer();
-      const currentElement = container
-        ? getSentenceElement(container, current.id)
+      const target = getScrollTarget();
+      const currentElement = target
+        ? getSentenceElement(target, current.id)
         : null;
       guidedScrollRef.current = Boolean(
-        container &&
+        target &&
         currentElement &&
-        isElementInContainerViewport(currentElement, container)
+        isReaderElementVisible(target, currentElement)
       );
 
       const pauseMs =
@@ -543,7 +529,7 @@ export const useReaderPlayback = (
         speakIndexRef.current(next.index, true);
       }, pauseMs);
     },
-    [getScrollContainer, onPageEnd, setStatus]
+    [getScrollTarget, onPageEnd, setStatus]
   );
 
   useEffect(() => {
@@ -576,24 +562,24 @@ export const useReaderPlayback = (
               (sentence) => sentence.id === selectedSentenceIdRef.current
             )
           : -1;
-        const container = getScrollContainer();
-        const atTop = !container || container.scrollTop <= 8;
+        const target = getScrollTarget();
+        const atTop = !target || target.getScrollTop() <= 8;
         const lastPlayedIndex = lastPlayedSentenceIdRef.current
           ? sentencesRef.current.findIndex(
               (sentence) => sentence.id === lastPlayedSentenceIdRef.current
             )
           : -1;
         const lastPlayedElement =
-          container && lastPlayedIndex >= 0
+          target && lastPlayedIndex >= 0
             ? getSentenceElement(
-                container,
+                target,
                 sentencesRef.current[lastPlayedIndex].id
               )
             : null;
         const lastPlayedIsVisible = Boolean(
-          container &&
+          target &&
           lastPlayedElement &&
-          isElementInContainerViewport(lastPlayedElement, container)
+          isReaderElementVisible(target, lastPlayedElement)
         );
         const index =
           selectedIndex >= 0
@@ -606,9 +592,9 @@ export const useReaderPlayback = (
                   ? 0
                   : getFirstViewportSentenceIndex(
                       sentencesRef.current,
-                      container
+                      target
                     );
-        if (fromBeginning && container) container.scrollTop = 0;
+        if (fromBeginning && target) target.setScrollTop(0);
         speakIndexRef.current(index);
       } catch (error) {
         reportPlaybackError("start", error);
@@ -617,7 +603,7 @@ export const useReaderPlayback = (
     [
       canPlay,
       cancelCurrentSpeech,
-      getScrollContainer,
+      getScrollTarget,
       reportPlaybackError,
       unavailableReason,
     ]
@@ -1078,24 +1064,17 @@ export const useReaderPlayback = (
     const sentenceExists = sentencesRef.current.some(
       (sentence) => sentence.id === sentenceId
     );
-    const container = getScrollContainer();
-    const element = container
-      ? getSentenceElement(container, sentenceId)
+    const target = getScrollTarget();
+    const element = target
+      ? getSentenceElement(target, sentenceId)
       : null;
-    if (!sentenceExists || !container || !element) return;
+    if (!sentenceExists || !target || !element) return;
 
-    const containerRect = container.getBoundingClientRect();
-    const elementRect = element.getBoundingClientRect();
-    container.scrollTop = Math.max(
-      0,
-      container.scrollTop +
-        (elementRect.top - containerRect.top) -
-        (container.clientHeight - elementRect.height) / 2
-    );
+    centerReaderElement(target, element);
   }, [
     autoStartPageKey,
     catalogPageKey,
-    getScrollContainer,
+    getScrollTarget,
     memoryItemId,
     memoryNamespace,
     playbackContentKey,
@@ -1112,8 +1091,8 @@ export const useReaderPlayback = (
       return;
 
     autoStartedPageKeyRef.current = pageKey;
-    const container = getScrollContainer();
-    if (container) container.scrollTop = 0;
+    const target = getScrollTarget();
+    target?.setScrollTop(0);
     pendingIndexRef.current = 0;
     pendingPauseMsRef.current = READER_PAGE_TRANSITION_PAUSE_MS;
     setActiveIndex(-1);
@@ -1130,7 +1109,7 @@ export const useReaderPlayback = (
     autoStartPageKey,
     canPlay,
     catalogPageKey,
-    getScrollContainer,
+    getScrollTarget,
     playbackContentKey,
     setActiveIndex,
     setStatus,
@@ -1140,15 +1119,15 @@ export const useReaderPlayback = (
 
   useEffect(() => {
     if (!isOpen || !activeSentenceId) return;
-    const container = getScrollContainer();
-    if (!container) return;
+    const target = getScrollTarget();
+    if (!target) return;
     let frame = 0;
     const syncGuidedState = () => {
       frame = 0;
       if (programmaticScrollRef.current) return;
-      const element = getSentenceElement(container, activeSentenceId);
+      const element = getSentenceElement(target, activeSentenceId);
       guidedScrollRef.current = Boolean(
-        element && isElementInContainerViewport(element, container)
+        element && isReaderElementVisible(target, element)
       );
     };
     const schedule = () => {
@@ -1160,24 +1139,26 @@ export const useReaderPlayback = (
       programmaticScrollRef.current = false;
     };
     syncGuidedState();
-    container.addEventListener("scroll", schedule, { passive: true });
-    container.addEventListener("pointerdown", markManualScroll, {
+    const removeScrollListener = target.addScrollListener(schedule);
+    target.contentRoot.addEventListener("pointerdown", markManualScroll, {
       passive: true,
     });
-    container.addEventListener("touchstart", markManualScroll, {
+    target.contentRoot.addEventListener("touchstart", markManualScroll, {
       passive: true,
     });
-    container.addEventListener("wheel", markManualScroll, { passive: true });
+    target.contentRoot.addEventListener("wheel", markManualScroll, {
+      passive: true,
+    });
     window.addEventListener("resize", schedule);
     return () => {
       if (frame) cancelAnimationFrame(frame);
-      container.removeEventListener("scroll", schedule);
-      container.removeEventListener("pointerdown", markManualScroll);
-      container.removeEventListener("touchstart", markManualScroll);
-      container.removeEventListener("wheel", markManualScroll);
+      removeScrollListener();
+      target.contentRoot.removeEventListener("pointerdown", markManualScroll);
+      target.contentRoot.removeEventListener("touchstart", markManualScroll);
+      target.contentRoot.removeEventListener("wheel", markManualScroll);
       window.removeEventListener("resize", schedule);
     };
-  }, [activeSentenceId, clearGuidedScrollTimer, getScrollContainer, isOpen]);
+  }, [activeSentenceId, clearGuidedScrollTimer, getScrollTarget, isOpen]);
 
   return {
     isOpen,

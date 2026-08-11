@@ -6,7 +6,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useRef,
   useState,
 } from "react";
 
@@ -66,14 +65,13 @@ export const ConversationLibraryShell = ({ children }: { children: React.ReactNo
     subtitle: "Pick an everyday situation to practice.",
   });
   const [pendingHref, setPendingHref] = useState<string | null>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
   const band: ConversationBand = isConversationBand(requestedBand)
     ? requestedBand
     : profile?.defaultBand ?? "intermediate";
   const transitionKey = pendingHref?.split("?")[0] ?? pathname;
 
   useEffect(() => {
-    contentRef.current?.closest("main")?.scrollTo({ top: 0, behavior: "auto" });
+    window.scrollTo({ top: 0, behavior: "auto" });
   }, [pathname]);
 
   useEffect(() => {
@@ -128,7 +126,6 @@ export const ConversationLibraryShell = ({ children }: { children: React.ReactNo
       }] : []}
       stickyHeader
       disablePadding
-      containedMobileScroll
       policy={CONVERSATIONS_POLICY}
     >
       <ConversationLibraryContext.Provider
@@ -140,13 +137,10 @@ export const ConversationLibraryShell = ({ children }: { children: React.ReactNo
           navigateToCategory,
         }}
       >
-        <div
-          className="min-h-full overflow-x-clip"
-          ref={contentRef}
-        >
+        <div className="min-h-[calc(100dvh+6rem)] min-w-0 overflow-x-clip md:min-h-full">
           <div
             key={transitionKey}
-            className="animate-in fade-in-0 slide-in-from-right-4 duration-200 ease-out motion-reduce:animate-none"
+            className="min-w-0 animate-in fade-in-0 slide-in-from-right-4 duration-200 ease-out motion-reduce:animate-none"
           >
             {pendingHref ? <ConversationListSkeleton /> : children}
           </div>

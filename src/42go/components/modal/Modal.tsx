@@ -104,6 +104,7 @@ export const Modal = ({
   swipeToClose = false,
   skipOpenAnimation = false,
   skipCloseAnimation = false,
+  preserveDocumentScroll = false,
   onOpenAutoFocus,
   className,
   overlayClassName,
@@ -123,6 +124,7 @@ export const Modal = ({
   const inferredLabel =
     ariaLabel || (typeof title === "string" ? title : "Modal");
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const focusReturnRef = useRef<HTMLElement | null>(null);
   const dismiss = useCallback(() => onOpenChange(false), [onOpenChange]);
   const swipe = useSwipeableDismiss({
     enabled: isPanel && swipeToClose,
@@ -181,7 +183,23 @@ export const Modal = ({
             onClickCapture={
               isPanel && swipeToClose ? swipe.onClickCapture : undefined
             }
-            onOpenAutoFocus={onOpenAutoFocus}
+            onOpenAutoFocus={(event) => {
+              onOpenAutoFocus?.(event);
+              if (!preserveDocumentScroll || event.defaultPrevented) return;
+
+              const activeElement = document.activeElement;
+              focusReturnRef.current =
+                activeElement instanceof HTMLElement ? activeElement : null;
+              event.preventDefault();
+              contentRef.current?.focus({ preventScroll: true });
+            }}
+            onCloseAutoFocus={(event) => {
+              if (!preserveDocumentScroll) return;
+
+              event.preventDefault();
+              focusReturnRef.current?.focus({ preventScroll: true });
+              focusReturnRef.current = null;
+            }}
             style={{
               zIndex: contentZIndex,
               ...(isPanel && swipeToClose ? swipe.surfaceStyle : {}),

@@ -15,6 +15,7 @@ type BookReaderTableOfContentsProps = {
   bookPage: ReaderBookPage | null;
   bookInfoHref: string;
   onNavigatePage: (href: string) => void;
+  preserveDocumentScroll?: boolean;
 };
 
 const getCurrentPageIndex = (bookPage: ReaderBookPage) => {
@@ -89,6 +90,7 @@ export const BookReaderTableOfContents = ({
   bookPage,
   bookInfoHref,
   onNavigatePage,
+  preserveDocumentScroll = false,
 }: BookReaderTableOfContentsProps) => {
   const handleSelectPage = () => {
     onOpenChange(false);
@@ -101,6 +103,7 @@ export const BookReaderTableOfContents = ({
       title="Contents"
       subtitle={bookPage ? `${bookPage.pages.length} pages` : "Book structure"}
       ariaLabel="Table of contents"
+      preserveDocumentScroll={preserveDocumentScroll}
       presentation="panel"
       anchor="right"
       size="md"
