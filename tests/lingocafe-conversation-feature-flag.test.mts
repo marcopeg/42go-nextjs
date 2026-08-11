@@ -90,12 +90,13 @@ test("clean and null-flag LingoCafe users receive Conversations without overwrit
   );
 });
 
-test("desktop and mobile Conversations entries use the same literal user flag", async () => {
-  const [config, visibility] = await Promise.all([
-    readSource("src/config/lingocafe/config.ts"),
-    readSource("src/42go/layouts/app/menu-visibility.ts"),
-  ]);
+test("desktop and mobile Conversations entries do not use the user rollout flag", async () => {
+  const config = await readSource("src/config/lingocafe/config.ts");
 
-  assert.equal(config.match(/userFeatureFlag: 'conversation'/g)?.length, 2);
-  assert.match(visibility, /featureFlags\?\.\[item\.userFeatureFlag\] === true/);
+  assert.doesNotMatch(config, /userFeatureFlag: 'conversation'/);
+  assert.equal(
+    config.match(/require: \{ feature: 'page:conversations', session: true \}/g)
+      ?.length,
+    2
+  );
 });
