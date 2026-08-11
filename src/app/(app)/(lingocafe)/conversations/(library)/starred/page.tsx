@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { PlainList, PlainListItem } from "@/42go/components/PlainList";
@@ -14,10 +14,8 @@ import {
 import {
   buildBandHref,
   buildConversationHref,
-  getResponseMessage,
   isConversationBand,
   type ConversationBand,
-  type ConversationChoice,
   type ConversationDiscoveryResponse,
 } from "@/app/(app)/(lingocafe)/conversations/_components/types";
 import { useConversationBrowseData } from "@/app/(app)/(lingocafe)/conversations/_components/useConversationBrowseData";
@@ -32,7 +30,6 @@ const StarredConversationsPage = () => {
     reportProfile,
   } = useConversationLibraryShell();
   const requestedBand = searchParams.get("band");
-  const [starPendingId, setStarPendingId] = useState<string | null>(null);
 
   const apiHref = useMemo(() => {
     const query = new URLSearchParams();
@@ -50,8 +47,6 @@ const StarredConversationsPage = () => {
     error,
     loading,
     reload,
-    setData,
-    setError,
   } = useConversationBrowseData<ConversationDiscoveryResponse>({
     apiHref,
     cacheScope,
@@ -69,29 +64,6 @@ const StarredConversationsPage = () => {
   useEffect(() => {
     reportNavigation({ title: "Starred", backTo: rootHref });
   }, [reportNavigation, rootHref]);
-
-  const toggleStar = async (choice: ConversationChoice) => {
-    if (starPendingId) return;
-    setStarPendingId(choice.id);
-    setData((current) => current
-      ? { ...current, starred: current.starred.filter((item) => item.id !== choice.id) }
-      : current);
-
-    try {
-      const response = await fetch(
-        `/api/lingocafe/conversations/${encodeURIComponent(choice.id)}/star`,
-        { method: "DELETE", credentials: "same-origin" }
-      );
-      if (!response.ok) {
-        throw new Error(await getResponseMessage(response, "Could not remove star."));
-      }
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not remove star.");
-      void reload();
-    } finally {
-      setStarPendingId(null);
-    }
-  };
 
   return (
     <div className="mx-auto w-full max-w-4xl md:px-6">
@@ -116,8 +88,6 @@ const StarredConversationsPage = () => {
                     choice={choice}
                     href={buildConversationHref({ id: choice.id, band, returnTo: currentHref })}
                     showContext
-                    onStarChange={toggleStar}
-                    starPending={starPendingId === choice.id}
                   />
                 </PlainListItem>
               ))}

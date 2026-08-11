@@ -144,10 +144,11 @@ test("conversation library caches route data and starts category transitions imm
 });
 
 test("starred conversations are a root navigation entry with a dedicated list", async () => {
-  const [rootPage, starredPage, sharedUi] = await Promise.all([
+  const [rootPage, starredPage, sharedUi, readerPage] = await Promise.all([
     readSource("src/app/(app)/(lingocafe)/conversations/(library)/page.tsx"),
     readSource("src/app/(app)/(lingocafe)/conversations/(library)/starred/page.tsx"),
     readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI.tsx"),
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage.tsx"),
   ]);
   assert.match(rootPage, /<StarredConversationCategoryRow/);
   assert.match(rootPage, /\/conversations\/starred/);
@@ -155,6 +156,9 @@ test("starred conversations are a root navigation entry with a dedicated list", 
   assert.match(starredPage, /data\.starred\.map/);
   assert.match(starredPage, /title: "Starred"/);
   assert.match(starredPage, /<ConversationChoiceRow/);
+  assert.doesNotMatch(starredPage, /onStarChange/);
+  assert.doesNotMatch(starredPage, /method: "DELETE"/);
+  assert.match(readerPage, /Unstar conversation/);
   assert.match(sharedUi, /Your saved conversations across every level\./);
 });
 
