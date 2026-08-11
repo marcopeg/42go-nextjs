@@ -152,7 +152,9 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
       "src/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage.tsx"
     ),
     readSource("src/app/(app)/(lingocafe)/books/[bookId]/page.tsx"),
-    readSource("src/app/(app)/(lingocafe)/books/[bookId]/[pageId]/page.tsx"),
+    readSource(
+      "src/app/(app)/(lingocafe)/books/_components/BookReaderPage.tsx"
+    ),
     readSource(
       "src/app/(app)/(lingocafe)/books/_components/BookReaderSurfaces.tsx"
     ),
@@ -189,18 +191,51 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
   );
   assert.doesNotMatch(details, /fixed inset-0 z-\[500\]/);
   assert.doesNotMatch(details, /overflow-y-auto/);
-  assert.match(reader, /createDocumentReaderScrollTarget/);
-  assert.match(reader, /\{!isDesktopReader && readerOverlays\}/);
-  assert.match(reader, /\{isDesktopReader && \(\s*<Modal/);
+  assert.doesNotMatch(reader, /createDocumentReaderScrollTarget/);
+  assert.match(reader, /createElementReaderScrollTarget/);
+  assert.match(reader, /swipeToClose=\{!isDesktopReader\}/);
+  assert.match(reader, /swipeFromEdge=\{!isDesktopReader\}/);
+  assert.match(reader, /\{readerOverlays\}/);
   assert.match(reader, /preserveDocumentScroll=\{!isDesktopReader\}/);
-  assert.match(surfaces, /className="sticky top-0 z-30"/);
-  assert.doesNotMatch(
-    surfaces,
-    /reader-mobile"\}\s*ref=\{scrollRef\}[\s\S]*overflow-y-auto/
-  );
+  assert.match(surfaces, /MOBILE_READER_DISMISS_EDGE_PX = 32/);
+  assert.match(surfaces, /start\.x <= MOBILE_READER_DISMISS_EDGE_PX/);
+  assert.match(surfaces, /flex-1 overflow-y-auto overscroll-contain/);
+  assert.match(surfaces, /<DialogClose asChild>/);
   assert.match(modal, /focus\(\{ preventScroll: true \}\)/);
   assert.match(modal, /onCloseAutoFocus/);
   assert.match(users, /containedMobileScroll/);
+});
+
+test("book reader soft navigation keeps the originating books page beneath an animated panel", async () => {
+  const readSource = (path: string) =>
+    readFile(new URL(`../${path}`, import.meta.url), "utf8");
+  const [layout, interceptedPage, standalonePage, legacyPage, reader, readerApi] =
+    await Promise.all([
+      readSource("src/app/(app)/(lingocafe)/books/layout.tsx"),
+      readSource(
+        "src/app/(app)/(lingocafe)/books/@reader/(.)read/[bookId]/[pageId]/page.tsx"
+      ),
+      readSource(
+        "src/app/(app)/(lingocafe)/books/read/[bookId]/[pageId]/page.tsx"
+      ),
+      readSource(
+        "src/app/(app)/(lingocafe)/books/[bookId]/[pageId]/page.tsx"
+      ),
+      readSource(
+        "src/app/(app)/(lingocafe)/books/_components/BookReaderPage.tsx"
+      ),
+      readSource("src/app/api/(lingocafe)/lingocafe/_lib/reader.ts"),
+    ]);
+
+  assert.match(layout, /\{children\}[\s\S]*\{reader\}/);
+  assert.match(interceptedPage, /<BookReadPage intercepted \/>/);
+  assert.match(standalonePage, /<BookReadPage \/>/);
+  assert.match(legacyPage, /<BookReadPage \/>/);
+  assert.match(readerApi, /`\/books\/read\/\$\{encodeURIComponent\(bookId\)\}/);
+  assert.match(reader, /if \(intercepted\) \{[\s\S]*router\.back\(\)/);
+  assert.match(reader, /replaceReaderHistory\(href\)/);
+  assert.match(reader, /router\.replace\(bookshelfHref, \{ scroll: false \}\)/);
+  assert.match(reader, /overlayClassName="!bg-transparent"/);
 });
 
 test("conversation reader soft navigation keeps the library beneath an animated panel", async () => {

@@ -2,6 +2,6 @@
 
 import { BookReadPage } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPage";
 
-const LegacyBookReaderPage = () => <BookReadPage />;
+const StandaloneBookReaderPage = () => <BookReadPage />;
 
-export default LegacyBookReaderPage;
+export default StandaloneBookReaderPage;

@@ -177,7 +177,7 @@ const buildReadPageHref = (
   pageId: string,
   progressBps?: number | null
 ) => {
-  const href = `/books/${encodeURIComponent(bookId)}/${encodeURIComponent(
+  const href = `/books/read/${encodeURIComponent(bookId)}/${encodeURIComponent(
     pageId
   )}`;
 

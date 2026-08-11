@@ -1,0 +1,1054 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+
+import { Modal } from "@/42go/components/modal";
+import { useEventTracker } from "@/42go/events/use-events";
+import { AppLayout } from "@/42go/layouts/app";
+import type { Policy } from "@/42go/policy/types";
+import {
+  BookReaderDesktopSurface,
+  BookReaderMobileSurface,
+  type ReaderHeaderTitleMode,
+} from "@/app/(app)/(lingocafe)/books/_components/BookReaderSurfaces";
+import { BookReaderPreferencesPanel } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
+import { BookReaderTableOfContents } from "@/app/(app)/(lingocafe)/books/_components/BookReaderTableOfContents";
+import { useReaderPlayback } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/useReaderPlayback";
+import {
+  createElementReaderScrollTarget,
+  getReaderScrollProgressBps,
+  scrollReaderToProgressBps,
+  type ReaderScrollTarget,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-scroll-target";
+import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
+import { useBookCompletionMutation } from "@/app/(app)/(lingocafe)/books/_components/useBookCompletionMutation";
+import { useReaderPreferences } from "@/app/(app)/(lingocafe)/books/_components/useReaderPreferences";
+import type {
+  ReaderBookPage,
+  ReaderBookPageNeighbor,
+  ReaderBookPageSummary,
+} from "@/app/(app)/(lingocafe)/books/_components/book-types";
+
+type BookPageResponse = {
+  bookPage: ReaderBookPage;
+};
+type ReaderRouteState = {
+  href: string;
+  apiHref: string;
+  bookId: string;
+  pageId: string;
+  progressBps: number | null;
+};
+const READER_SCROLL_PROGRESS_IDLE_SAVE_MS = 4000;
+const READER_PLAYBACK_PROGRESS_SAVE_MS = 30000;
+const READER_HEADER_TITLE_TOP_THRESHOLD_PX = 12;
+const READER_HEADER_TITLE_DIRECTION_THRESHOLD_PX = 6;
+const READER_OVERLAY_SCROLL_RESTORE_INTERVAL_MS = 50;
+const READER_OVERLAY_SCROLL_RESTORE_MAX_ATTEMPTS = 40;
+const BOOK_READER_PAGE_POLICY: Policy = {
+  require: { feature: "page:books", session: true },
+};
+
+type ReaderSurfaceKey = "desktop" | "mobile";
+
+const clampProgressBps = (value: number) =>
+  Math.min(10000, Math.max(0, Math.round(value)));
+
+const parseParam = (value: string | string[] | undefined) =>
+  Array.isArray(value) ? value[0] || "" : value || "";
+
+const parseProgressParam = (value: string | null) => {
+  if (value === null) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? clampProgressBps(parsed) : null;
+};
+
+const parseReaderRouteHref = (href: string): ReaderRouteState | null => {
+  try {
+    const url = new URL(href, "http://localhost");
+    const segments = url.pathname.split("/").filter(Boolean);
+    const [root, second, third, fourth] = segments;
+    const isCurrentRoute =
+      root === "books" &&
+      second === "read" &&
+      !!third &&
+      !!fourth &&
+      segments.length === 4;
+    const isLegacyRoute =
+      root === "books" &&
+      second !== "read" &&
+      !!second &&
+      !!third &&
+      segments.length === 3;
+
+    if (!isCurrentRoute && !isLegacyRoute) {
+      return null;
+    }
+
+    const rawBookId = isCurrentRoute ? third : second;
+    const rawPageId = isCurrentRoute ? fourth : third;
+    if (!rawBookId || !rawPageId) return null;
+
+    const routeBookId = decodeURIComponent(rawBookId);
+    const routePageId = decodeURIComponent(rawPageId);
+    const pathname = `/books/read/${encodeURIComponent(
+      routeBookId
+    )}/${encodeURIComponent(routePageId)}`;
+
+    return {
+      href: `${pathname}${url.search}`,
+      apiHref: `/api/lingocafe/books/${encodeURIComponent(
+        routeBookId
+      )}/pages/${encodeURIComponent(routePageId)}`,
+      bookId: routeBookId,
+      pageId: routePageId,
+      progressBps: parseProgressParam(url.searchParams.get("progress_bps")),
+    };
+  } catch {
+    return null;
+  }
+};
+
+const buildBookPageApiHref = (bookId: string, pageId: string) =>
+  `/api/lingocafe/books/${encodeURIComponent(bookId)}/pages/${encodeURIComponent(
+    pageId
+  )}`;
+
+const buildReaderRouteState = (
+  bookId: string,
+  pageId: string,
+  progressBps: number | null
+): ReaderRouteState | null => {
+  if (!bookId || !pageId) return null;
+
+  const pathname = `/books/read/${encodeURIComponent(
+    bookId
+  )}/${encodeURIComponent(pageId)}`;
+  const search =
+    progressBps === null
+      ? ""
+      : `?${new URLSearchParams({
+          progress_bps: String(progressBps),
+        }).toString()}`;
+
+  return {
+    href: `${pathname}${search}`,
+    apiHref: buildBookPageApiHref(bookId, pageId),
+    bookId,
+    pageId,
+    progressBps,
+  };
+};
+
+const getBrowserReaderHref = () =>
+  typeof window === "undefined"
+    ? ""
+    : `${window.location.pathname}${window.location.search}`;
+
+const pushReaderHistory = (href: string) => {
+  if (typeof window === "undefined") return;
+  if (getBrowserReaderHref() === href) return;
+  window.history.pushState(null, "", href);
+};
+
+const replaceReaderHistory = (href: string) => {
+  if (typeof window === "undefined") return;
+  if (getBrowserReaderHref() === href) return;
+  window.history.replaceState(null, "", href);
+};
+
+const normalizeInfo = (info: unknown): Record<string, unknown> => {
+  if (!info || typeof info !== "object" || Array.isArray(info)) return {};
+  return info as Record<string, unknown>;
+};
+
+const isNeighbor = (value: unknown): value is ReaderBookPageNeighbor => {
+  if (!value || typeof value !== "object") return false;
+  const neighbor = value as Partial<ReaderBookPageNeighbor>;
+
+  return (
+    typeof neighbor.bookId === "string" &&
+    typeof neighbor.pageId === "string" &&
+    typeof neighbor.position === "number" &&
+    (typeof neighbor.prefix === "string" || neighbor.prefix === null) &&
+    typeof neighbor.title === "string" &&
+    typeof neighbor.href === "string"
+  );
+};
+
+const isPageSummary = (value: unknown): value is ReaderBookPageSummary => {
+  if (!value || typeof value !== "object") return false;
+  const page = value as Partial<ReaderBookPageSummary>;
+
+  return (
+    typeof page.bookId === "string" &&
+    typeof page.pageId === "string" &&
+    typeof page.position === "number" &&
+    typeof page.kind === "string" &&
+    (typeof page.prefix === "string" || page.prefix === null) &&
+    typeof page.title === "string" &&
+    typeof page.href === "string"
+  );
+};
+
+const normalizeProgress = (
+  value: unknown
+): ReaderBookPage["progress"] => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const progress = value as Partial<NonNullable<ReaderBookPage["progress"]>>;
+
+  if (
+    typeof progress.bookId !== "string" ||
+    typeof progress.pageId !== "string" ||
+    typeof progress.progressBps !== "number"
+  ) {
+    return null;
+  }
+
+  return {
+    bookId: progress.bookId,
+    pageId: progress.pageId,
+    progressBps: clampProgressBps(progress.progressBps),
+  };
+};
+
+const normalizeBookPage = (
+  payload: Partial<BookPageResponse>
+): ReaderBookPage | null => {
+  const bookPage = payload.bookPage;
+  if (!bookPage?.book || !bookPage.page) return null;
+
+  if (
+    typeof bookPage.book.id !== "string" ||
+    typeof bookPage.book.project !== "string" ||
+    typeof bookPage.book.lang !== "string" ||
+    typeof bookPage.book.level !== "string" ||
+    typeof bookPage.book.title !== "string" ||
+    typeof bookPage.book.author !== "string" ||
+    (typeof bookPage.book.cover !== "string" && bookPage.book.cover !== null) ||
+    typeof bookPage.book.coverFallback !== "string" ||
+    typeof bookPage.page.bookId !== "string" ||
+    typeof bookPage.page.pageId !== "string" ||
+    typeof bookPage.page.position !== "number" ||
+    typeof bookPage.page.title !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    book: {
+      id: bookPage.book.id,
+      project: bookPage.book.project,
+      lang: bookPage.book.lang,
+      level: bookPage.book.level,
+      title: bookPage.book.title,
+      author: bookPage.book.author,
+      info: normalizeInfo(bookPage.book.info),
+      cover: bookPage.book.cover,
+      coverFallback: bookPage.book.coverFallback,
+    },
+    page: {
+      bookId: bookPage.page.bookId,
+      pageId: bookPage.page.pageId,
+      position: bookPage.page.position,
+      kind: bookPage.page.kind || "chapter",
+      prefix: bookPage.page.prefix ?? null,
+      title: bookPage.page.title,
+      summary: bookPage.page.summary ?? null,
+      content: bookPage.page.content || "",
+    },
+    previous: isNeighbor(bookPage.previous) ? bookPage.previous : null,
+    next: isNeighbor(bookPage.next) ? bookPage.next : null,
+    pages: Array.isArray(bookPage.pages)
+      ? bookPage.pages.filter(isPageSummary)
+      : [],
+    translation: {
+      enabled: bookPage.translation?.enabled === true,
+      from:
+        typeof bookPage.translation?.from === "string"
+          ? bookPage.translation.from
+          : bookPage.book.lang,
+      to:
+        typeof bookPage.translation?.to === "string"
+          ? bookPage.translation.to
+          : null,
+    },
+    progress: normalizeProgress(bookPage.progress),
+    completedAt:
+      typeof bookPage.completedAt === "string" ? bookPage.completedAt : null,
+  };
+};
+
+const subscribeToDesktopReader = (onStoreChange: () => void) => {
+  const query = window.matchMedia("(min-width: 768px)");
+  query.addEventListener("change", onStoreChange);
+  return () => query.removeEventListener("change", onStoreChange);
+};
+
+const getDesktopReaderSnapshot = () =>
+  window.matchMedia("(min-width: 768px)").matches;
+
+const getDesktopReaderServerSnapshot = () => false;
+
+const getHeaderTitleModeForScroll = (
+  scrollTop: number,
+  delta: number,
+  currentMode: ReaderHeaderTitleMode
+): ReaderHeaderTitleMode => {
+  if (scrollTop <= READER_HEADER_TITLE_TOP_THRESHOLD_PX) {
+    return "book";
+  }
+
+  if (delta >= READER_HEADER_TITLE_DIRECTION_THRESHOLD_PX) {
+    return "page";
+  }
+
+  if (delta <= -READER_HEADER_TITLE_DIRECTION_THRESHOLD_PX) {
+    return "book";
+  }
+
+  return currentMode;
+};
+
+export const BookReadPage = ({
+  intercepted = false,
+}: {
+  intercepted?: boolean;
+}) => {
+  const params = useParams<{
+    bookId: string | string[];
+    pageId: string | string[];
+  }>();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { status } = useSession();
+  const { trackEvent } = useEventTracker();
+  const bookId = parseParam(params?.bookId);
+  const pageId = parseParam(params?.pageId);
+  const urlProgressBps = useMemo(
+    () => parseProgressParam(searchParams.get("progress_bps")),
+    [searchParams]
+  );
+  const routeFromUrl = useMemo(
+    () => buildReaderRouteState(bookId, pageId, urlProgressBps),
+    [bookId, pageId, urlProgressBps]
+  );
+  const isDesktopReader = useSyncExternalStore(
+    subscribeToDesktopReader,
+    getDesktopReaderSnapshot,
+    getDesktopReaderServerSnapshot
+  );
+  const desktopScrollRef = useRef<HTMLDivElement | null>(null);
+  const mobileSurfaceRef = useRef<HTMLDivElement | null>(null);
+  const getMobileReaderScrollTarget = useCallback(
+    () =>
+      mobileSurfaceRef.current
+        ? createElementReaderScrollTarget(mobileSurfaceRef.current)
+        : null,
+    []
+  );
+  const getDesktopReaderScrollTarget = useCallback(
+    () =>
+      desktopScrollRef.current
+        ? createElementReaderScrollTarget(desktopScrollRef.current)
+        : null,
+    []
+  );
+  const getActiveReaderScrollTarget = useCallback(
+    () =>
+      window.matchMedia("(min-width: 768px)").matches
+        ? getDesktopReaderScrollTarget()
+        : getMobileReaderScrollTarget(),
+    [getDesktopReaderScrollTarget, getMobileReaderScrollTarget]
+  );
+  const restoredKeyRef = useRef("");
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const overlayRestoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const overlayScrollTopRef = useRef<number | null>(null);
+  const latestProgressRef = useRef<number | null>(null);
+  const persistCurrentProgressRef = useRef<(() => void) | null>(null);
+  const playbackProgressActiveRef = useRef(false);
+  const latestRouteHrefRef = useRef(routeFromUrl?.href ?? "");
+  const pendingReaderHrefRef = useRef<string | null>(null);
+  const navigateToReaderPageRef = useRef<
+    (href: string, preservePlaybackTop?: boolean) => void
+  >(() => undefined);
+  const loadSequenceRef = useRef(0);
+  const lastScrollTopRef = useRef<Record<ReaderSurfaceKey, number>>({
+    desktop: 0,
+    mobile: 0,
+  });
+  const [readerRoute, setReaderRoute] = useState<ReaderRouteState | null>(
+    routeFromUrl
+  );
+  const [bookPage, setBookPage] = useState<ReaderBookPage | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pendingReaderHref, setPendingReaderHref] = useState<string | null>(
+    null
+  );
+  const [playbackContinuationHref, setPlaybackContinuationHref] = useState<
+    string | null
+  >(null);
+  const [playbackTopPageKey, setPlaybackTopPageKey] = useState("");
+  const [restoredPageKey, setRestoredPageKey] = useState("");
+  const [readingProgressBps, setReadingProgressBps] = useState(0);
+  const [headerTitleMode, setHeaderTitleMode] =
+    useState<ReaderHeaderTitleMode>("book");
+  const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
+  const showLoading = useLingocafeRouteLoading({
+    isLoading: loading,
+    canDelay: !!bookPage,
+  });
+  const visibleError = showLoading ? null : error;
+  const readerSurfaceLoading = !bookPage && showLoading;
+  const readerSurfaceError = bookPage ? null : visibleError;
+  const apiHref = readerRoute?.apiHref || "";
+  const loadedBookPageApiHref = bookPage
+    ? buildBookPageApiHref(bookPage.page.bookId, bookPage.page.pageId)
+    : "";
+  const pageTurnPending = pendingReaderHref !== null;
+  const bookshelfHref = "/books";
+  const activeBookId = bookPage?.book.id || readerRoute?.bookId || bookId;
+  const activePageId = bookPage?.page.pageId || readerRoute?.pageId || pageId;
+  const updateCompletedAt = useCallback((completedAt: string | null) => {
+    setBookPage((current) =>
+      current ? { ...current, completedAt } : current
+    );
+  }, []);
+  const { pending: completionPending, setCompleted } =
+    useBookCompletionMutation({
+      bookId: activeBookId,
+      onCompletedAtChange: updateCompletedAt,
+    });
+  const playbackContinuationRoute = playbackContinuationHref
+    ? parseReaderRouteHref(playbackContinuationHref)
+    : null;
+  const isPlaybackContinuationPage = Boolean(
+    bookPage &&
+      playbackContinuationRoute?.bookId === bookPage.page.bookId &&
+      playbackContinuationRoute.pageId === bookPage.page.pageId
+  );
+  const playbackContinuationPageKey = isPlaybackContinuationPage && bookPage
+    ? `${bookPage.page.bookId}:${bookPage.page.pageId}`
+    : null;
+  const currentBookPageKey = bookPage
+    ? `${bookPage.page.bookId}:${bookPage.page.pageId}`
+    : "";
+  const shouldForcePlaybackTop = Boolean(
+    isPlaybackContinuationPage ||
+      (currentBookPageKey && playbackTopPageKey === currentBookPageKey)
+  );
+  const playback = useReaderPlayback({
+    bookId: bookPage?.book.id || "",
+    pageId: bookPage?.page.pageId || "",
+    language: bookPage?.book.lang || "",
+    getScrollTarget: getActiveReaderScrollTarget,
+    trackEvent,
+    onPageEnd: () => {
+      const nextHref = bookPage?.next?.href;
+      if (!nextHref) return;
+      setPlaybackContinuationHref(nextHref);
+      navigateToReaderPageRef.current(nextHref, true);
+    },
+    autoStartPageKey: playbackContinuationPageKey,
+    restoredPageKey,
+    restoreLastPlayedSentence: !shouldForcePlaybackTop,
+    onAutoStart: () => {
+      if (playbackContinuationPageKey) {
+        setPlaybackTopPageKey(playbackContinuationPageKey);
+      }
+      setPlaybackContinuationHref(null);
+    },
+  });
+  const {
+    preferences: readerPreferences,
+    translationScope: readerTranslationScope,
+    canResetPreferences: canResetReaderPreferences,
+    isOpen: isPreferencesOpen,
+    onOpenChange: handlePreferencesOpenChange,
+    updatePreferences: updateReaderPreferences,
+    updateTranslationScope: updateReaderTranslationScope,
+    resetPreferences: resetReaderPreferences,
+  } = useReaderPreferences({
+    trackEvent,
+    eventContext: {
+      ...(activeBookId ? { book_id: activeBookId } : {}),
+      ...(activePageId ? { page_id: activePageId } : {}),
+    },
+    setSettingsSurfaceOpen: playback.setSettingsSurfaceOpen,
+  });
+  const bookInfoHref = activeBookId
+    ? `/books/${encodeURIComponent(activeBookId)}`
+    : bookshelfHref;
+  const { setSettingsSurfaceOpen } = playback;
+  const handleTableOfContentsOpenChange = useCallback(
+    (next: boolean) => {
+      setIsTableOfContentsOpen(next);
+      setSettingsSurfaceOpen("contents", next);
+    },
+    [setSettingsSurfaceOpen]
+  );
+  const preserveMobileReaderScroll = useCallback(
+    (next: boolean, onOpenChange: (open: boolean) => void) => {
+      if (!isDesktopReader) {
+        if (overlayRestoreTimerRef.current) {
+          clearTimeout(overlayRestoreTimerRef.current);
+          overlayRestoreTimerRef.current = null;
+        }
+
+        if (next && overlayScrollTopRef.current === null) {
+          overlayScrollTopRef.current =
+            document.scrollingElement?.scrollTop ?? window.scrollY;
+        } else if (overlayScrollTopRef.current !== null) {
+          const scrollTop = overlayScrollTopRef.current;
+          overlayScrollTopRef.current = null;
+          let attempts = 0;
+          const restoreAfterUnlock = () => {
+            if (
+              getComputedStyle(document.body).overflow === "hidden" &&
+              attempts < READER_OVERLAY_SCROLL_RESTORE_MAX_ATTEMPTS
+            ) {
+              attempts += 1;
+              overlayRestoreTimerRef.current = setTimeout(
+                restoreAfterUnlock,
+                READER_OVERLAY_SCROLL_RESTORE_INTERVAL_MS
+              );
+              return;
+            }
+            window.scrollTo({ top: scrollTop, behavior: "auto" });
+            overlayRestoreTimerRef.current = null;
+          };
+          overlayRestoreTimerRef.current = setTimeout(
+            restoreAfterUnlock,
+            READER_OVERLAY_SCROLL_RESTORE_INTERVAL_MS
+          );
+        }
+      }
+
+      onOpenChange(next);
+    },
+    [isDesktopReader]
+  );
+  const handlePreferencesPanelOpenChange = useCallback(
+    (next: boolean) => {
+      preserveMobileReaderScroll(next, handlePreferencesOpenChange);
+    },
+    [handlePreferencesOpenChange, preserveMobileReaderScroll]
+  );
+  const handleContentsPanelOpenChange = useCallback(
+    (next: boolean) => {
+      preserveMobileReaderScroll(next, handleTableOfContentsOpenChange);
+    },
+    [handleTableOfContentsOpenChange, preserveMobileReaderScroll]
+  );
+  const closeReader = useCallback(() => {
+    if (intercepted) {
+      router.back();
+      return;
+    }
+
+    router.replace(bookshelfHref, { scroll: false });
+  }, [intercepted, router]);
+  const handleReaderOpenChange = useCallback(
+    (next: boolean) => {
+      if (!next) closeReader();
+    },
+    [closeReader]
+  );
+  const syncReaderHistory = useCallback(
+    (href: string) => {
+      if (intercepted) {
+        replaceReaderHistory(href);
+        return;
+      }
+
+      pushReaderHistory(href);
+    },
+    [intercepted]
+  );
+
+  const updatePendingReaderHref = useCallback((href: string | null) => {
+    pendingReaderHrefRef.current = href;
+    setPendingReaderHref(href);
+  }, []);
+
+  const navigateToReaderPage = useCallback(
+    (href: string, preservePlaybackTop = false) => {
+      if (pendingReaderHrefRef.current) return;
+      if (!preservePlaybackTop) setPlaybackTopPageKey("");
+      const nextRoute = parseReaderRouteHref(href);
+
+      if (!nextRoute) {
+        router.push(href);
+        return;
+      }
+
+      if (readerRoute?.href === nextRoute.href) return;
+
+      latestRouteHrefRef.current = nextRoute.href;
+      updatePendingReaderHref(nextRoute.href);
+      syncReaderHistory(nextRoute.href);
+      setReaderRoute((current) =>
+        current?.href === nextRoute.href ? current : nextRoute
+      );
+    },
+    [readerRoute?.href, router, syncReaderHistory, updatePendingReaderHref]
+  );
+
+  useEffect(() => {
+    navigateToReaderPageRef.current = navigateToReaderPage;
+  }, [navigateToReaderPage]);
+
+  useEffect(
+    () => () => {
+      if (overlayRestoreTimerRef.current) {
+        clearTimeout(overlayRestoreTimerRef.current);
+      }
+    },
+    []
+  );
+
+  const openTableOfContents = () => {
+    handleContentsPanelOpenChange(true);
+  };
+  const openPreferencesPanel = () => {
+    handlePreferencesPanelOpenChange(true);
+  };
+
+  useEffect(() => {
+    if (!routeFromUrl) return;
+    let active = true;
+
+    queueMicrotask(() => {
+      if (!active) return;
+      if (getBrowserReaderHref() !== routeFromUrl.href) return;
+      const pendingHref = pendingReaderHrefRef.current;
+      if (pendingHref && pendingHref !== routeFromUrl.href) return;
+
+      latestRouteHrefRef.current = routeFromUrl.href;
+      setReaderRoute((current) =>
+        current?.href === routeFromUrl.href ? current : routeFromUrl
+      );
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [routeFromUrl]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const nextRoute = parseReaderRouteHref(
+        `${window.location.pathname}${window.location.search}`
+      );
+      if (!nextRoute) return;
+
+      latestRouteHrefRef.current = nextRoute.href;
+      updatePendingReaderHref(null);
+      setReaderRoute((current) =>
+        current?.href === nextRoute.href ? current : nextRoute
+      );
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [updatePendingReaderHref]);
+
+  useEffect(() => {
+    const routeHref = readerRoute?.href || "";
+    if (status !== "authenticated" || !apiHref || !routeHref) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const loadId = loadSequenceRef.current + 1;
+    loadSequenceRef.current = loadId;
+    latestRouteHrefRef.current = routeHref;
+    const isLatestLoad = () =>
+      loadSequenceRef.current === loadId &&
+      latestRouteHrefRef.current === routeHref;
+
+    const loadPage = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(apiHref, {
+          credentials: "same-origin",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        if (res.status === 404) {
+          throw new Error("Book page not found.");
+        }
+
+        if (!res.ok) {
+          throw new Error("Could not load page.");
+        }
+
+        const payload = normalizeBookPage(await res.json());
+        if (!payload) {
+          throw new Error("Could not load page.");
+        }
+
+        if (!isLatestLoad()) return;
+
+        setBookPage(payload);
+        syncReaderHistory(routeHref);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        if (!isLatestLoad()) return;
+        setError(err instanceof Error ? err.message : "Could not load page.");
+      } finally {
+        if (!isLatestLoad()) return;
+        setLoading(false);
+        if (pendingReaderHrefRef.current === routeHref) {
+          updatePendingReaderHref(null);
+        }
+      }
+    };
+
+    loadPage();
+
+    return () => controller.abort();
+  }, [
+    apiHref,
+    readerRoute?.href,
+    status,
+    syncReaderHistory,
+    updatePendingReaderHref,
+  ]);
+
+  useEffect(() => {
+    if (!bookPage) return;
+    const routeProgressBps =
+      readerRoute?.bookId === bookPage.page.bookId &&
+      readerRoute.pageId === bookPage.page.pageId
+        ? readerRoute.progressBps
+        : null;
+    const restoreProgressBps = shouldForcePlaybackTop
+      ? 0
+      : routeProgressBps ??
+        (bookPage.progress?.pageId === bookPage.page.pageId
+          ? bookPage.progress.progressBps
+          : 0);
+    const surfaceKey: ReaderSurfaceKey = isDesktopReader
+      ? "desktop"
+      : "mobile";
+    const restoreKey = `${surfaceKey}:${bookPage.page.bookId}:${bookPage.page.pageId}:${restoreProgressBps}`;
+    if (!shouldForcePlaybackTop && restoredKeyRef.current === restoreKey) {
+      return;
+    }
+
+    let frame = 0;
+    let attempts = 0;
+
+    const restore = () => {
+      if (shouldForcePlaybackTop) {
+        getDesktopReaderScrollTarget()?.setScrollTop(0);
+        getMobileReaderScrollTarget()?.setScrollTop(0);
+        lastScrollTopRef.current.desktop = 0;
+        lastScrollTopRef.current.mobile = 0;
+      }
+      const target = getActiveReaderScrollTarget();
+
+      if (!target) {
+        if (attempts >= 8) return;
+        attempts += 1;
+        frame = requestAnimationFrame(restore);
+        return;
+      }
+      const restored = scrollReaderToProgressBps(target, restoreProgressBps);
+      const scrollTop = target.getScrollTop();
+      lastScrollTopRef.current[surfaceKey] = scrollTop;
+      setReadingProgressBps(restoreProgressBps);
+      setHeaderTitleMode(
+        scrollTop <= READER_HEADER_TITLE_TOP_THRESHOLD_PX
+          ? "book"
+          : "page"
+      );
+
+      if (restored || attempts >= 8) {
+        restoredKeyRef.current = restoreKey;
+        setRestoredPageKey(
+          `${bookPage.page.bookId}:${bookPage.page.pageId}`
+        );
+        return;
+      }
+
+      attempts += 1;
+      frame = requestAnimationFrame(restore);
+    };
+
+    frame = requestAnimationFrame(restore);
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [
+    bookPage,
+    getActiveReaderScrollTarget,
+    getDesktopReaderScrollTarget,
+    getMobileReaderScrollTarget,
+    isDesktopReader,
+    shouldForcePlaybackTop,
+    readerRoute?.bookId,
+    readerRoute?.pageId,
+    readerRoute?.progressBps,
+  ]);
+
+  useEffect(() => {
+    if (!bookPage || !loadedBookPageApiHref) return;
+    const surfaceKey: ReaderSurfaceKey = isDesktopReader
+      ? "desktop"
+      : "mobile";
+    const activeTarget = isDesktopReader
+      ? getDesktopReaderScrollTarget()
+      : getMobileReaderScrollTarget();
+    const controller = new AbortController();
+    const progressApiHref = loadedBookPageApiHref;
+
+    const sendProgress = async (progress: number) => {
+      try {
+        await fetch(progressApiHref, {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ progress_bps: progress }),
+          signal: controller.signal,
+        });
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.warn("Could not save reading progress", err);
+      }
+    };
+
+    persistCurrentProgressRef.current = () => {
+      const target = getActiveReaderScrollTarget();
+      if (!target) return;
+      const progress = getReaderScrollProgressBps(target);
+
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+        scrollTimerRef.current = null;
+      }
+      latestProgressRef.current = null;
+      setReadingProgressBps(progress);
+      void sendProgress(progress);
+    };
+
+    const sendFinalProgress = (progress: number) => {
+      void fetch(progressApiHref, {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ progress_bps: progress }),
+      }).catch((err) => {
+        console.warn("Could not save final reading progress", err);
+      });
+    };
+
+    const scheduleProgress = (target: ReaderScrollTarget) => {
+      const previousScrollTop = lastScrollTopRef.current[surfaceKey];
+      const currentScrollTop = target.getScrollTop();
+      const delta = currentScrollTop - previousScrollTop;
+
+      lastScrollTopRef.current[surfaceKey] = currentScrollTop;
+      setHeaderTitleMode((currentMode) =>
+        getHeaderTitleModeForScroll(currentScrollTop, delta, currentMode)
+      );
+
+      const currentProgressBps = getReaderScrollProgressBps(target);
+      latestProgressRef.current = currentProgressBps;
+      setReadingProgressBps(currentProgressBps);
+
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+
+      scrollTimerRef.current = setTimeout(() => {
+        if (latestProgressRef.current === null) return;
+        void sendProgress(latestProgressRef.current);
+        latestProgressRef.current = null;
+        scrollTimerRef.current = null;
+      }, READER_SCROLL_PROGRESS_IDLE_SAVE_MS);
+    };
+
+    const onScroll = () => {
+      if (activeTarget) scheduleProgress(activeTarget);
+    };
+
+    const removeScrollListener = activeTarget?.addScrollListener(onScroll);
+
+    return () => {
+      removeScrollListener?.();
+
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+        scrollTimerRef.current = null;
+      }
+
+      if (latestProgressRef.current !== null) {
+        sendFinalProgress(latestProgressRef.current);
+        latestProgressRef.current = null;
+      }
+
+      persistCurrentProgressRef.current = null;
+
+      controller.abort();
+    };
+  }, [
+    bookPage,
+    getActiveReaderScrollTarget,
+    getDesktopReaderScrollTarget,
+    getMobileReaderScrollTarget,
+    isDesktopReader,
+    loadedBookPageApiHref,
+  ]);
+
+  useEffect(() => {
+    playbackProgressActiveRef.current =
+      playback.status === "playing" || playback.status === "delay";
+  }, [playback.status]);
+
+  useEffect(() => {
+    if (!playback.isOpen || !currentBookPageKey) return;
+
+    const timer = window.setInterval(() => {
+      if (!playbackProgressActiveRef.current) return;
+      persistCurrentProgressRef.current?.();
+    }, READER_PLAYBACK_PROGRESS_SAVE_MS);
+
+    return () => window.clearInterval(timer);
+  }, [currentBookPageKey, playback.isOpen]);
+
+  const readerOverlays = (
+    <>
+      <BookReaderPreferencesPanel
+        open={isPreferencesOpen}
+        onOpenChange={handlePreferencesPanelOpenChange}
+        preferences={readerPreferences}
+        onPreferencesChange={updateReaderPreferences}
+        translationScope={readerTranslationScope}
+        onTranslationScopeChange={updateReaderTranslationScope}
+        canResetPreferences={canResetReaderPreferences}
+        onResetPreferences={resetReaderPreferences}
+        playback={playback}
+        preserveDocumentScroll={!isDesktopReader}
+      />
+
+      <BookReaderTableOfContents
+        open={isTableOfContentsOpen}
+        onOpenChange={handleContentsPanelOpenChange}
+        bookPage={bookPage}
+        bookInfoHref={bookInfoHref}
+        onNavigatePage={navigateToReaderPage}
+        preserveDocumentScroll={!isDesktopReader}
+      />
+    </>
+  );
+
+  const reader = (
+    <Modal
+      open
+      onOpenChange={handleReaderOpenChange}
+      ariaLabel="Reading"
+      presentation="panel"
+      anchor="right"
+      size="full"
+      showClose={false}
+      closeOnOverlayClick={false}
+      swipeToClose={!isDesktopReader}
+      swipeFromEdge={!isDesktopReader}
+      onOpenAutoFocus={(event) => event.preventDefault()}
+      skipOpenAnimation={isDesktopReader}
+      skipCloseAnimation={isDesktopReader}
+      overlayClassName="!bg-transparent"
+      className="h-[100dvh] min-h-0 will-change-transform md:!transform-none md:!w-screen md:!max-w-none md:!border-l-0"
+      bodyClassName="flex min-h-0 !overflow-hidden p-0"
+    >
+      <BookReaderMobileSurface
+        bookPage={bookPage}
+        loading={readerSurfaceLoading}
+        error={readerSurfaceError}
+        scrollRef={mobileSurfaceRef}
+        readingProgressBps={readingProgressBps}
+        headerTitleMode={headerTitleMode}
+        preferences={readerPreferences}
+        translationScope={readerTranslationScope}
+        onTranslationScopeChange={updateReaderTranslationScope}
+        playback={playback}
+        forceScrollTop={shouldForcePlaybackTop}
+        pageTurnPending={pageTurnPending}
+        onOpenTableOfContents={openTableOfContents}
+        onOpenPreferences={openPreferencesPanel}
+        onNavigatePage={navigateToReaderPage}
+        completionPending={completionPending}
+        onMarkRead={() => {
+          void setCompleted(true);
+        }}
+      />
+
+      <BookReaderDesktopSurface
+        bookPage={bookPage}
+        loading={readerSurfaceLoading}
+        error={readerSurfaceError}
+        scrollRef={desktopScrollRef}
+        readingProgressBps={readingProgressBps}
+        headerTitleMode={headerTitleMode}
+        preferences={readerPreferences}
+        translationScope={readerTranslationScope}
+        onTranslationScopeChange={updateReaderTranslationScope}
+        playback={playback}
+        forceScrollTop={shouldForcePlaybackTop}
+        pageTurnPending={pageTurnPending}
+        onOpenTableOfContents={openTableOfContents}
+        onOpenPreferences={openPreferencesPanel}
+        onNavigatePage={navigateToReaderPage}
+        completionPending={completionPending}
+        onMarkRead={() => {
+          void setCompleted(true);
+        }}
+      />
+
+      {readerOverlays}
+    </Modal>
+  );
+
+  if (intercepted) return reader;
+
+  return (
+    <AppLayout
+      title={bookPage?.book.title || "Reading"}
+      stickyHeader={false}
+      hideHeader
+      hideMobileMenu
+      backBtn={{ to: bookshelfHref }}
+      disablePadding
+      policy={BOOK_READER_PAGE_POLICY}
+    >
+      {reader}
+    </AppLayout>
+  );
+};
+
+export default BookReadPage;

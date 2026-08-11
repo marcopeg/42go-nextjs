@@ -22,7 +22,7 @@ test("shared reader preferences own storage, theme profiles, and panel coordinat
 
 test("book reader consumes the shared preference controller", async () => {
   const source = await readSource(
-    "src/app/(app)/(lingocafe)/books/[bookId]/[pageId]/page.tsx"
+    "src/app/(app)/(lingocafe)/books/_components/BookReaderPage.tsx"
   );
 
   assert.match(source, /useReaderPreferences\(\{/);

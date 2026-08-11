@@ -30,13 +30,13 @@ import {
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import type { ReaderPlaybackController } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 import { Button } from "@/components/ui/button";
+import { DialogClose } from "@/components/ui/dialog";
 
 type ReaderSurfaceProps = {
   bookPage: ReaderBookPage | null;
   loading: boolean;
   error: string | null;
   scrollRef: RefObject<HTMLDivElement | null>;
-  backHref: string;
   readingProgressBps: number;
   headerTitleMode: ReaderHeaderTitleMode;
   preferences: ReaderPreferences;
@@ -74,7 +74,6 @@ type ReaderHeaderActionProps = {
 type ReaderHeaderTitleMode = "book" | "page";
 
 type ReaderHeaderProps = {
-  backHref: string;
   readingProgressBps: number;
   bookTitle: string;
   pageTitle: string;
@@ -89,6 +88,7 @@ type ReaderHeaderProps = {
 
 const MOBILE_SWIPE_THRESHOLD = 72;
 const MOBILE_SWIPE_MAX_VERTICAL_DRIFT = 80;
+const MOBILE_READER_DISMISS_EDGE_PX = 32;
 const MIN_HEADER_TITLE_MAX_WIDTH_PX = 96;
 
 const hasActiveTextSelection = () => {
@@ -309,7 +309,6 @@ const ReaderHeaderAction = ({
 );
 
 const ReaderHeader = ({
-  backHref,
   readingProgressBps,
   bookTitle,
   pageTitle,
@@ -381,11 +380,16 @@ const ReaderHeader = ({
 
       <div className="relative flex h-full items-center justify-between gap-3">
         <div ref={leadingRef} className="relative z-10 flex min-w-0 items-center gap-3">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={backHref} aria-label="Back to books">
+          <DialogClose asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Back to books"
+            >
               <ChevronLeft className="h-5 w-5" />
-            </Link>
-          </Button>
+            </Button>
+          </DialogClose>
           {leading}
         </div>
 
@@ -442,7 +446,6 @@ export const BookReaderDesktopSurface = ({
   loading,
   error,
   scrollRef,
-  backHref,
   readingProgressBps,
   headerTitleMode,
   preferences,
@@ -484,7 +487,6 @@ export const BookReaderDesktopSurface = ({
         style={readerThemeStyle}
       >
         <ReaderHeader
-          backHref={backHref}
           readingProgressBps={readingProgressBps}
           bookTitle={bookTitle}
           pageTitle={pageTitle}
@@ -612,7 +614,6 @@ export const BookReaderMobileSurface = ({
   loading,
   error,
   scrollRef,
-  backHref,
   readingProgressBps,
   headerTitleMode,
   preferences,
@@ -664,6 +665,10 @@ export const BookReaderMobileSurface = ({
     if (Math.abs(deltaY) > MOBILE_SWIPE_MAX_VERTICAL_DRIFT) return;
     if (Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
 
+    if (start.x <= MOBILE_READER_DISMISS_EDGE_PX && deltaX > 0) {
+      return;
+    }
+
     if (deltaX < 0 && bookPage.next?.href) {
       onNavigatePage(bookPage.next.href);
       return;
@@ -676,16 +681,14 @@ export const BookReaderMobileSurface = ({
 
   return (
     <div
-      ref={scrollRef}
-      className="min-h-screen min-w-0 bg-background md:hidden"
+      className="flex h-full min-h-0 min-w-0 flex-col bg-background md:hidden"
       style={readerThemeStyle}
     >
       <div
-        className="sticky top-0 z-30"
+        className="relative z-30 shrink-0"
         style={{ backgroundColor: "var(--reader-bg)" }}
       >
         <ReaderHeader
-          backHref={backHref}
           readingProgressBps={readingProgressBps}
           bookTitle={bookTitle}
           pageTitle={pageTitle}
@@ -710,7 +713,8 @@ export const BookReaderMobileSurface = ({
 
       <div
         key={bookPage?.page.pageId || "reader-mobile"}
-        className="min-w-0 px-5 py-6"
+        ref={scrollRef}
+        className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6"
         style={{ overflowAnchor: "none" }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
