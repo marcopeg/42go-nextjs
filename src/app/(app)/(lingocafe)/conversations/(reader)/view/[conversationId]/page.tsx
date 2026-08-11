@@ -2,6 +2,6 @@
 
 import { ConversationReaderPage } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage";
 
-const StandaloneConversationReaderPage = () => <ConversationReaderPage />;
+const StandaloneConversationViewPage = () => <ConversationReaderPage />;
 
-export default StandaloneConversationReaderPage;
+export default StandaloneConversationViewPage;

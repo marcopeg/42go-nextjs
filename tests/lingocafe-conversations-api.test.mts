@@ -160,7 +160,7 @@ test("starred conversations are a root navigation entry with a dedicated list", 
 
 test("conversation reader persists scroll progress and marks read near the end", async () => {
   const [detailPage, detailRoute, dataSource, migration] = await Promise.all([
-    readSource("src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"),
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage.tsx"),
     readSource("src/app/api/(lingocafe)/lingocafe/conversations/[conversationId]/route.ts"),
     readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"),
     readSource("knex/migrations/20260806223000_lingocafe_conversations.js"),
@@ -168,7 +168,7 @@ test("conversation reader persists scroll progress and marks read near the end",
   assert.doesNotMatch(detailPage, /readAttemptedRef/);
   assert.doesNotMatch(detailPage, /method: "PUT"[^]*\/read/);
   assert.match(detailPage, /getReaderScrollProgressBps/);
-  assert.match(detailPage, /createDocumentReaderScrollTarget/);
+  assert.doesNotMatch(detailPage, /createDocumentReaderScrollTarget/);
   assert.match(detailPage, /createElementReaderScrollTarget/);
   assert.match(detailPage, /READER_SCROLL_PROGRESS_IDLE_SAVE_MS = 4000/);
   assert.match(detailPage, /keepalive: true/);
@@ -205,7 +205,7 @@ test("conversation traversal stays English and only detail exposes translation c
         "src/app/(app)/(lingocafe)/conversations/(library)/categories/[...categoryPath]/page.tsx"
       ),
       readSource(
-        "src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"
+        "src/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage.tsx"
       ),
       readSource("src/app/api/(lingocafe)/lingocafe/translate/route.ts"),
       readSource("src/42go/layouts/app/AppLayout.tsx"),
@@ -323,7 +323,7 @@ test("conversation detail resolves persona presentation once per actor and rende
   const [dataSource, types, detailPage, sharedUi, avatar, assets] = await Promise.all([
     readSource("src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"),
     readSource("src/app/(app)/(lingocafe)/conversations/_components/types.ts"),
-    readSource("src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"),
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage.tsx"),
     readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI.tsx"),
     readSource("src/app/(app)/(lingocafe)/_components/PersonaAvatar.tsx"),
     readSource("src/lib/lingocafe/assets.ts"),
@@ -359,7 +359,7 @@ test("conversation translation recovers when fluent and reading languages match"
       "src/app/(app)/(lingocafe)/conversations/_components/ConversationTranslation.tsx"
     ),
     readSource(
-      "src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"
+      "src/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage.tsx"
     ),
   ]);
 

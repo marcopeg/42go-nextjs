@@ -78,7 +78,7 @@ test("books and conversations share the anchored reader translation popover", as
         "src/app/(app)/(lingocafe)/conversations/_components/ConversationTranslation.tsx"
       ),
       readSource(
-        "src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"
+        "src/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage.tsx"
       ),
     ]);
 

@@ -24,6 +24,8 @@ export interface ModalProps {
   closeOnOverlayClick?: boolean;
   /** Enables direct swipe dismissal in the panel anchor direction. */
   swipeToClose?: boolean;
+  /** Requires surface swipe dismissal to begin within 32px of the opposite edge. */
+  swipeFromEdge?: boolean;
   skipOpenAnimation?: boolean;
   skipCloseAnimation?: boolean;
   /**

@@ -181,6 +181,21 @@ export const bandFromProfileLevel = (
 export const buildBandHref = (pathname: string, band: ConversationBand) =>
   `${pathname}?${new URLSearchParams({ band }).toString()}`;
 
+export const getVisibleConversationLibraryPathname = (
+  pathname: string,
+  returnTo: string | null
+) => {
+  if (
+    !pathname.startsWith("/conversations/view/") ||
+    !returnTo?.startsWith("/conversations") ||
+    returnTo.startsWith("//")
+  ) {
+    return pathname;
+  }
+
+  return returnTo.split(/[?#]/)[0] || pathname;
+};
+
 export const buildConversationHref = ({
   id,
   band,
@@ -191,7 +206,7 @@ export const buildConversationHref = ({
   returnTo: string;
 }) => {
   const query = new URLSearchParams({ band, returnTo });
-  return `/conversations/${encodeURIComponent(id)}?${query.toString()}`;
+  return `/conversations/view/${encodeURIComponent(id)}?${query.toString()}`;
 };
 
 export const getResponseMessage = async (

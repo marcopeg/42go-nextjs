@@ -9,6 +9,7 @@ import {
   getReaderScrollProgressBps,
   scrollReaderToProgressBps,
 } from "../src/app/(app)/(lingocafe)/books/_components/reader-scroll-target.ts";
+import { getVisibleConversationLibraryPathname } from "../src/app/(app)/(lingocafe)/conversations/_components/types.ts";
 
 class FakeHTMLElement extends EventTarget {
   clientHeight = 0;
@@ -108,7 +109,31 @@ test("document reader targets use root metrics and exclude the sticky header", (
   assert.deepEqual(lastWindowScroll, { top: 588, behavior: "smooth" });
 });
 
-test("targeted mobile surfaces use document flow while desktop containment remains", async () => {
+test("reader overlay keeps the mounted library route identity stable", () => {
+  const libraryPath =
+    "/conversations/categories/food-restaurants-and-pubs/restaurants-and-takeaways";
+
+  assert.equal(
+    getVisibleConversationLibraryPathname(
+      "/conversations/view/checking-and-splitting-a-bill--en-a2",
+      `${libraryPath}?band=intermediate`
+    ),
+    libraryPath
+  );
+  assert.equal(
+    getVisibleConversationLibraryPathname(libraryPath, null),
+    libraryPath
+  );
+  assert.equal(
+    getVisibleConversationLibraryPathname(
+      "/conversations/view/checking-and-splitting-a-bill--en-a2",
+      "https://example.com/conversations"
+    ),
+    "/conversations/view/checking-and-splitting-a-bill--en-a2"
+  );
+});
+
+test("targeted mobile surfaces keep their intended scroll containment", async () => {
   const readSource = (path: string) =>
     readFile(new URL(`../${path}`, import.meta.url), "utf8");
   const [
@@ -124,7 +149,7 @@ test("targeted mobile surfaces use document flow while desktop containment remai
       "src/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell.tsx"
     ),
     readSource(
-      "src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"
+      "src/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage.tsx"
     ),
     readSource("src/app/(app)/(lingocafe)/books/[bookId]/page.tsx"),
     readSource("src/app/(app)/(lingocafe)/books/[bookId]/[pageId]/page.tsx"),
@@ -142,16 +167,22 @@ test("targeted mobile surfaces use document flow while desktop containment remai
   );
   assert.match(library, /window\.scrollTo\(\{ top: 0, behavior: "auto" \}\)/);
   assert.match(library, /fade-in-0 slide-in-from-right-4/);
+  assert.match(library, /const visiblePathname = getVisibleConversationLibraryPathname/);
+  assert.match(library, /const transitionKey = pendingHref\?\.split\("\?"\)\[0\] \?\? visiblePathname/);
+  assert.match(library, /\}, \[visiblePathname\]\);/);
+  assert.match(library, /pendingPath === visiblePathname/);
   assert.match(
     library,
     /h-\[max\(30vw,calc\(4rem\+env\(safe-area-inset-bottom\)\)\)\]/
   );
-  assert.match(conversationReader, /createDocumentReaderScrollTarget/);
+  assert.doesNotMatch(conversationReader, /createDocumentReaderScrollTarget/);
+  assert.match(conversationReader, /createElementReaderScrollTarget/);
   assert.match(
     conversationReader,
-    /if \(!isDesktopReader\) return <>{children}<\/>;/
+    /swipeToClose=\{!isDesktopReader\}/
   );
-  assert.match(conversationReader, /md:overflow-y-auto/);
+  assert.match(conversationReader, /swipeFromEdge=\{!isDesktopReader\}/);
+  assert.match(conversationReader, /overflow-y-auto overscroll-contain/);
   assert.match(
     conversationReader,
     /preserveDocumentScroll=\{!isDesktopReader\}/
@@ -170,4 +201,45 @@ test("targeted mobile surfaces use document flow while desktop containment remai
   assert.match(modal, /focus\(\{ preventScroll: true \}\)/);
   assert.match(modal, /onCloseAutoFocus/);
   assert.match(users, /containedMobileScroll/);
+});
+
+test("conversation reader soft navigation keeps the library beneath an animated panel", async () => {
+  const readSource = (path: string) =>
+    readFile(new URL(`../${path}`, import.meta.url), "utf8");
+  const [
+    layout,
+    interceptedPage,
+    standalonePage,
+    legacyStandalonePage,
+    conversationReader,
+    conversationTypes,
+  ] =
+    await Promise.all([
+      readSource("src/app/(app)/(lingocafe)/conversations/layout.tsx"),
+      readSource(
+        "src/app/(app)/(lingocafe)/conversations/@reader/(.)view/[conversationId]/page.tsx"
+      ),
+      readSource(
+        "src/app/(app)/(lingocafe)/conversations/(reader)/view/[conversationId]/page.tsx"
+      ),
+      readSource(
+        "src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"
+      ),
+      readSource(
+        "src/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage.tsx"
+      ),
+      readSource(
+        "src/app/(app)/(lingocafe)/conversations/_components/types.ts"
+      ),
+    ]);
+
+  assert.match(layout, /\{children\}[\s\S]*\{reader\}/);
+  assert.match(interceptedPage, /<ConversationReaderPage intercepted \/>/);
+  assert.match(standalonePage, /<ConversationReaderPage \/>/);
+  assert.match(legacyStandalonePage, /<ConversationReaderPage \/>/);
+  assert.match(conversationTypes, /return `\/conversations\/view\/\$\{encodeURIComponent\(id\)\}/);
+  assert.match(conversationReader, /<DialogClose asChild>/);
+  assert.match(conversationReader, /if \(intercepted\) \{[\s\S]*router\.back\(\)/);
+  assert.match(conversationReader, /router\.replace\(returnHref, \{ scroll: false \}\)/);
+  assert.match(conversationReader, /overlayClassName="!bg-transparent"/);
 });

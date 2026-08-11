@@ -17,6 +17,7 @@ import {
 import {
   CONVERSATIONS_POLICY,
   buildBandHref,
+  getVisibleConversationLibraryPathname,
   isConversationBand,
   type ConversationBand,
   type ConversationProfile,
@@ -68,19 +69,23 @@ export const ConversationLibraryShell = ({ children }: { children: React.ReactNo
   const band: ConversationBand = isConversationBand(requestedBand)
     ? requestedBand
     : profile?.defaultBand ?? "intermediate";
-  const transitionKey = pendingHref?.split("?")[0] ?? pathname;
+  const visiblePathname = getVisibleConversationLibraryPathname(
+    pathname,
+    searchParams.get("returnTo")
+  );
+  const transitionKey = pendingHref?.split("?")[0] ?? visiblePathname;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
-  }, [pathname]);
+  }, [visiblePathname]);
 
   useEffect(() => {
     if (!pendingHref) return;
     const pendingPath = new URL(pendingHref, window.location.origin).pathname;
-    if (pendingPath === pathname) queueMicrotask(() => setPendingHref(null));
+    if (pendingPath === visiblePathname) queueMicrotask(() => setPendingHref(null));
     const recovery = window.setTimeout(() => setPendingHref(null), 10_000);
     return () => window.clearTimeout(recovery);
-  }, [pathname, pendingHref]);
+  }, [pendingHref, visiblePathname]);
 
   const navigateToCategory = ({ href, title, backTo }: ConversationCategoryNavigation) => {
     setNavigation({ title, backTo });

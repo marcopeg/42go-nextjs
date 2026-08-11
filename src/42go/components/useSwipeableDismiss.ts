@@ -15,6 +15,7 @@ import { flushSync } from "react-dom";
 const DISMISS_DISTANCE = 300;
 const MOTION_DURATION = 240;
 const REDUCED_MOTION_DURATION = 180;
+const SWIPE_EDGE_SIZE = 32;
 
 export type SwipeDismissDirection = "top" | "right" | "bottom" | "left";
 export type SwipeDismissSource = "backdrop" | "surface";
@@ -23,6 +24,7 @@ type UseSwipeableDismissOptions = {
   enabled?: boolean;
   open: boolean;
   direction: SwipeDismissDirection;
+  startFromEdge?: boolean;
   surfaceRef: RefObject<HTMLElement | null>;
   onDismiss: () => void;
   onCloseComplete?: () => void;
@@ -38,6 +40,7 @@ export const useSwipeableDismiss = ({
   enabled = true,
   open,
   direction,
+  startFromEdge = false,
   surfaceRef,
   onDismiss,
   onCloseComplete,
@@ -217,6 +220,18 @@ export const useSwipeableDismiss = ({
   ) => {
     if (!enabled || !open || !event.isPrimary || closingRef.current) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (startFromEdge && source === "surface") {
+      const bounds = surfaceRef.current?.getBoundingClientRect();
+      if (!bounds) return;
+      const startsAtDismissEdge = direction === "right"
+        ? event.clientX <= bounds.left + SWIPE_EDGE_SIZE
+        : direction === "left"
+          ? event.clientX >= bounds.right - SWIPE_EDGE_SIZE
+          : direction === "bottom"
+            ? event.clientY <= bounds.top + SWIPE_EDGE_SIZE
+            : event.clientY >= bounds.bottom - SWIPE_EDGE_SIZE;
+      if (!startsAtDismissEdge) return;
+    }
     clearAnimationFrame();
     clearTimer(settleTimerRef);
     setSettling(false);

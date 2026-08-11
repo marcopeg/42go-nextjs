@@ -102,6 +102,7 @@ export const Modal = ({
   closeLabel = "Close modal",
   closeOnOverlayClick = true,
   swipeToClose = false,
+  swipeFromEdge = false,
   skipOpenAnimation = false,
   skipCloseAnimation = false,
   preserveDocumentScroll = false,
@@ -130,6 +131,7 @@ export const Modal = ({
     enabled: isPanel && swipeToClose,
     open,
     direction: anchor,
+    startFromEdge: swipeFromEdge,
     surfaceRef: contentRef,
     onDismiss: dismiss,
   });

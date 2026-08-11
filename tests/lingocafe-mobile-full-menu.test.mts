@@ -12,6 +12,9 @@ test("AppLayout keeps the standard mobile More item wired to its existing drawer
   const bottomSheet = await readSource(
     "src/42go/components/SwipeableBottomSheet/SwipeableBottomSheet.tsx"
   );
+  const conversationUi = await readSource(
+    "src/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI.tsx"
+  );
 
   assert.match(layout, /onMoreClick=\{\(\) => setIsMobileMenuOpen\(true\)\}/);
   assert.match(layout, /presentation="panel"/);
@@ -36,7 +39,13 @@ test("AppLayout keeps the standard mobile More item wired to its existing drawer
   assert.match(swipe, /drag\.source === "backdrop"/);
   assert.match(swipe, /prefers-reduced-motion: reduce/);
   assert.match(swipe, /touchAction: horizontal \? "pan-y" : "none"/);
+  assert.match(swipe, /startFromEdge && source === "surface"/);
+  assert.match(swipe, /SWIPE_EDGE_SIZE = 32/);
+  assert.match(swipe, /animateTo\([\s\S]*onDismiss\(\);[\s\S]*onCloseComplete\?\.\(\);/);
   assert.match(bottomSheet, /useSwipeableDismiss/);
+  assert.match(conversationUi, /mobileSheetRef\.current\?\.close\(\)/);
+  assert.match(conversationUi, /onCloseComplete=\{\(\) => \{/);
+  assert.match(conversationUi, /if \(href\) router\.push\(href\)/);
   assert.doesNotMatch(layout, /AppLayoutMobileMenuProvider/);
 });
 
