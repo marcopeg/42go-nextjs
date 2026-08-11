@@ -277,7 +277,6 @@ test("conversation reader soft navigation keeps the library beneath an animated 
     layout,
     interceptedPage,
     standalonePage,
-    legacyStandalonePage,
     conversationReader,
     conversationTypes,
   ] =
@@ -290,9 +289,6 @@ test("conversation reader soft navigation keeps the library beneath an animated 
         "src/app/(app)/(lingocafe)/conversations/(reader)/view/[conversationId]/page.tsx"
       ),
       readSource(
-        "src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"
-      ),
-      readSource(
         "src/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage.tsx"
       ),
       readSource(
@@ -303,7 +299,6 @@ test("conversation reader soft navigation keeps the library beneath an animated 
   assert.match(layout, /\{children\}[\s\S]*\{reader\}/);
   assert.match(interceptedPage, /<ConversationReaderPage intercepted \/>/);
   assert.match(standalonePage, /<ConversationReaderPage \/>/);
-  assert.match(legacyStandalonePage, /<ConversationReaderPage \/>/);
   assert.match(conversationTypes, /return `\/conversations\/view\/\$\{encodeURIComponent\(id\)\}/);
   assert.match(conversationReader, /<DialogClose asChild>/);
   assert.match(conversationReader, /if \(intercepted\) \{[\s\S]*router\.back\(\)/);

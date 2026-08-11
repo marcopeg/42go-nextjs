@@ -1,7 +1,0 @@
-"use client";
-
-import { ConversationReaderPage } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage";
-
-const StandaloneConversationReaderPage = () => <ConversationReaderPage />;
-
-export default StandaloneConversationReaderPage;

@@ -162,6 +162,21 @@ test("starred conversations are a root navigation entry with a dedicated list", 
   assert.match(sharedUi, /Your saved conversations across every level\./);
 });
 
+test("starred navigation does not conflict with a legacy reader route", async () => {
+  const [readerTypes, legacyReaderRoute] = await Promise.all([
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/types.ts"),
+    readSource(
+      "src/app/(app)/(lingocafe)/conversations/(reader)/[conversationId]/page.tsx"
+    ).catch(() => null),
+  ]);
+
+  assert.match(
+    readerTypes,
+    /return `\/conversations\/view\/\$\{encodeURIComponent\(id\)\}/
+  );
+  assert.equal(legacyReaderRoute, null);
+});
+
 test("conversation reader persists scroll progress and marks read near the end", async () => {
   const [detailPage, detailRoute, dataSource, migration] = await Promise.all([
     readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage.tsx"),
