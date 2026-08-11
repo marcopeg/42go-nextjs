@@ -142,6 +142,7 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
     details,
     reader,
     surfaces,
+    readerSkeleton,
     modal,
     users,
   ] = await Promise.all([
@@ -157,6 +158,9 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
     ),
     readSource(
       "src/app/(app)/(lingocafe)/books/_components/BookReaderSurfaces.tsx"
+    ),
+    readSource(
+      "src/app/(app)/(lingocafe)/books/_components/ReaderContentSkeleton.tsx"
     ),
     readSource("src/42go/components/modal/Modal.tsx"),
     readSource("src/app/(app)/backoffice/users/page.tsx"),
@@ -200,7 +204,35 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
   assert.match(surfaces, /MOBILE_READER_DISMISS_EDGE_PX = 32/);
   assert.match(surfaces, /start\.x <= MOBILE_READER_DISMISS_EDGE_PX/);
   assert.match(surfaces, /flex-1 overflow-y-auto overscroll-contain/);
+  assert.match(
+    surfaces,
+    /h-full min-h-0 min-w-0 w-full flex-1 flex-col bg-background md:hidden/
+  );
   assert.match(surfaces, /<DialogClose asChild>/);
+  assert.match(surfaces, /<ReaderContentSkeleton variant="book" \/>/);
+  assert.match(
+    conversationReader,
+    /<ReaderContentSkeleton variant="conversation" \/>/
+  );
+  assert.match(readerSkeleton, /role="status"/);
+  assert.match(readerSkeleton, /aria-live="polite"/);
+  assert.match(readerSkeleton, /var\(--reader-fg-soft\)/);
+  assert.match(readerSkeleton, /motion-reduce:animate-none/);
+  assert.match(readerSkeleton, /max-w-\[680px\]/);
+  assert.match(readerSkeleton, /READER_PANEL_OPEN_ANIMATION_MS = 300/);
+  assert.match(readerSkeleton, /useReaderEntrySkeleton/);
+  assert.match(reader, /useLayoutEffect\(\(\) => \{[\s\S]*restore\(\);/);
+  assert.match(
+    conversationReader,
+    /useLayoutEffect\(\(\) => \{[\s\S]*restore\(\);/
+  );
+  assert.match(surfaces, /const mobileLoading = entrySkeletonPending \|\| loading/);
+  assert.match(
+    conversationReader,
+    /const showEntrySkeleton = !isDesktopReader && entrySkeletonPending/
+  );
+  assert.doesNotMatch(conversationReader, /<ConversationLoading/);
+  assert.doesNotMatch(surfaces, /Loading page\.\.\./);
   assert.match(modal, /focus\(\{ preventScroll: true \}\)/);
   assert.match(modal, /onCloseAutoFocus/);
   assert.match(users, /containedMobileScroll/);

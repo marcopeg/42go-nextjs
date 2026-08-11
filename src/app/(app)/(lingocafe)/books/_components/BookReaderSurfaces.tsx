@@ -22,6 +22,10 @@ import { BookPageReader } from "@/app/(app)/(lingocafe)/books/_components/BookPa
 import { BookReaderFloatingActionBar } from "@/app/(app)/(lingocafe)/books/_components/BookReaderFloatingActionBar";
 import { BookReaderPlaybackControls } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPlaybackControls";
 import { BookReaderPreferencesTrigger } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
+import {
+  ReaderContentSkeleton,
+  useReaderEntrySkeleton,
+} from "@/app/(app)/(lingocafe)/books/_components/ReaderContentSkeleton";
 import type { ReaderBookPage } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 import {
   getReaderThemeStyle,
@@ -147,18 +151,16 @@ const ReaderState = ({
   loading: boolean;
   error: string | null;
 }) => (
-  <div className="mx-auto w-full max-w-xl px-6 py-12">
-    {loading && (
-      <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground shadow-sm">
-        Loading page...
-      </div>
-    )}
+  <>
+    {loading && <ReaderContentSkeleton variant="book" />}
     {error && (
-      <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-        {error}
+      <div className="mx-auto w-full max-w-xl px-6 py-12">
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
       </div>
     )}
-  </div>
+  </>
 );
 
 const shouldLetBrowserHandleClick = (
@@ -629,6 +631,9 @@ export const BookReaderMobileSurface = ({
 }: ReaderSurfaceProps) => {
   const { resolvedTheme } = useTheme();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const entrySkeletonPending = useReaderEntrySkeleton();
+  const mobileLoading = entrySkeletonPending || loading;
+  const mobileError = entrySkeletonPending ? null : error;
   const readerThemeStyle = getReaderThemeStyle(
     preferences,
     resolvedTheme === "dark" ? "dark" : "light"
@@ -681,7 +686,7 @@ export const BookReaderMobileSurface = ({
 
   return (
     <div
-      className="flex h-full min-h-0 min-w-0 flex-col bg-background md:hidden"
+      className="flex h-full min-h-0 min-w-0 w-full flex-1 flex-col bg-background md:hidden"
       style={readerThemeStyle}
     >
       <div
@@ -719,10 +724,10 @@ export const BookReaderMobileSurface = ({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-          {(!bookPage || loading || error) && (
-            <ReaderState loading={loading} error={error} />
+          {(!bookPage || mobileLoading || mobileError) && (
+            <ReaderState loading={mobileLoading} error={mobileError} />
           )}
-          {!loading && !error && bookPage && (
+          {!mobileLoading && !mobileError && bookPage && (
             <>
               <BookPageReader
                 bookPage={bookPage}

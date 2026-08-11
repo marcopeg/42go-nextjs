@@ -6,6 +6,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -23,6 +24,10 @@ import {
   BookReaderPreferencesTrigger,
 } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
 import {
+  ReaderContentSkeleton,
+  useReaderEntrySkeleton,
+} from "@/app/(app)/(lingocafe)/books/_components/ReaderContentSkeleton";
+import {
   getReaderFont,
   getReaderFontSize,
   type ReaderTranslationScope,
@@ -39,7 +44,6 @@ import {
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationTranslation";
 import {
   ConversationError,
-  ConversationLoading,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
 import {
   CONVERSATIONS_POLICY,
@@ -173,6 +177,10 @@ export const ConversationReaderPage = ({
   const [mutationMessage, setMutationMessage] = useState<string | null>(null);
   const [starPending, setStarPending] = useState(false);
   const [readingProgressBps, setReadingProgressBps] = useState(0);
+  const entrySkeletonPending = useReaderEntrySkeleton();
+  const showEntrySkeleton = !isDesktopReader && entrySkeletonPending;
+  const showContentSkeleton = showEntrySkeleton || (loading && !data);
+  const showReaderContent = Boolean(data) && !showEntrySkeleton;
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -204,7 +212,7 @@ export const ConversationReaderPage = ({
     return () => controller.abort();
   }, [load]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!data) return;
     const surfaceKey = isDesktopReader ? "desktop" : "mobile";
     const restoreKey = `${surfaceKey}:${data.conversation.id}`;
@@ -232,7 +240,7 @@ export const ConversationReaderPage = ({
       frame = requestAnimationFrame(restore);
     };
 
-    frame = requestAnimationFrame(restore);
+    restore();
     return () => {
       if (frame) cancelAnimationFrame(frame);
     };
@@ -546,11 +554,11 @@ export const ConversationReaderPage = ({
               className="mx-auto w-full max-w-[680px] pb-28 pt-10 md:pb-32 md:pt-24"
               style={{ fontFamily: readerFont.family, fontSize: `${readerFontSize}px` }}
             >
-              {loading && !data ? <ConversationLoading label="Loading conversation…" /> : null}
-              {error ? <ConversationError message={error} onRetry={() => void load()} /> : null}
+              {showContentSkeleton ? <ReaderContentSkeleton variant="conversation" /> : null}
+              {!showEntrySkeleton && error ? <ConversationError message={error} onRetry={() => void load()} /> : null}
               {mutationMessage ? <div role="status" aria-live="polite" className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">{mutationMessage}</div> : null}
 
-              {data ? (
+              {data && showReaderContent ? (
                 <>
                   <header className="mb-12 text-center">
                     <ConversationTranslatableText

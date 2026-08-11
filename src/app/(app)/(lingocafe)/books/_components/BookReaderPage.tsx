@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -735,7 +736,7 @@ export const BookReadPage = ({
     updatePendingReaderHref,
   ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!bookPage) return;
     const routeProgressBps =
       readerRoute?.bookId === bookPage.page.bookId &&
@@ -796,7 +797,7 @@ export const BookReadPage = ({
       frame = requestAnimationFrame(restore);
     };
 
-    frame = requestAnimationFrame(restore);
+    restore();
 
     return () => {
       if (frame) cancelAnimationFrame(frame);
