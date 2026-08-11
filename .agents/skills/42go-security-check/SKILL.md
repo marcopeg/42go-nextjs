@@ -1,11 +1,15 @@
 ---
 name: 42go-security-check
-description: Run 42Go Docker release security checks before publish/deploy work, including Trivy image/config/secret scans, runtime image inspection, Docker Compose exposure checks, and optional backlog draft creation for findings.
+description: Run 42Go Docker image security checks before local image publish/deploy work or when explicitly requested, including Trivy image/config/secret scans, runtime image inspection, Docker Compose exposure checks, and optional backlog draft creation. Do not use for the GitHub-only deployment flow, where GitHub Actions owns the image build.
 ---
 
 # 42Go Docker Security Check
 
-Use this skill whenever the user asks to audit Docker security, check publish readiness, run Trivy, prepare a production image, deploy/publish the app, or turn security findings into backlog work.
+Use this skill whenever the user asks to audit Docker security, check local image publish readiness, run Trivy, prepare a production image locally, deploy/publish a locally built image, or turn security findings into backlog work.
+
+Do not run this skill for `make deploy.github`. That workflow runs `npm run qa`
+locally, while GitHub Actions owns the Docker image build, publish, and
+deployment.
 
 ## Gate Command
 
@@ -62,7 +66,7 @@ Use `make security.check.draft` when the gate findings should become a draft bac
 
 ## Operator Rules
 
-- Prefer `--build` before publishing or deploying.
+- Prefer `--build` before publishing or deploying a locally built image.
 - Use `--draft` when there are actionable findings or the user explicitly asks for backlog work.
 - Use `--fail-on-findings` for release gating.
 - Do not paste raw Trivy secret payloads, environment values, tokens, or `.env` content into chat or backlog tasks.

@@ -11,11 +11,24 @@ Production deployment is tag-triggered. The release version must be committed
 before the tag is pushed, so the tag always identifies the exact
 `package.json` version that was built and deployed.
 
-From a clean checkout of `main`, run:
+## GitHub Deployment Workflow
+
+Run the host QA gate first:
+
+```bash
+npm run qa
+```
+
+Then, from a clean checkout of `main`, run:
 
 ```bash
 make deploy.github
 ```
+
+Do not build or scan a Docker image locally for this workflow. GitHub Actions
+owns the release image build, publish, and deployment. Use the Docker security
+check only when the operator explicitly requests it or when using a local
+image publish/deploy workflow.
 
 The target runs the release helper, which:
 
@@ -38,7 +51,8 @@ make deploy.mac
 
 It publishes the current `package.json` version as a multi-architecture image,
 uses the local CapRover CLI to deploy that immutable image, and performs the
-same public-version verification. `make deploy` remains an alias for this path.
+same public-version verification. Run the Docker security gate before this
+local image workflow. `make deploy` remains an alias for this path.
 
 ## Preconditions
 
