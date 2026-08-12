@@ -916,6 +916,7 @@ export const BookPageReader = ({
   return (
     <article
       ref={articleRef}
+      data-reader-scroll-ready="true"
       className="relative mx-auto flex w-full max-w-[680px] flex-col px-1 pb-16 pt-10 md:px-0 md:pb-24 md:pt-24"
       style={{ fontFamily: font.family, fontSize: `${fontSize}px` }}
     >

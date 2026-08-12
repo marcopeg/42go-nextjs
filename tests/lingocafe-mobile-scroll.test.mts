@@ -9,10 +9,19 @@ import {
   getReaderScrollProgressBps,
   scrollReaderToProgressBps,
 } from "../src/app/(app)/(lingocafe)/books/_components/reader-scroll-target.ts";
+import {
+  getBookPageScrollMemoryKey,
+  getConversationScrollMemoryKey,
+  readReaderScrollMemory,
+  READER_SCROLL_MEMORY_STORAGE_KEY,
+  restoreReaderScrollMemory,
+  writeReaderScrollMemory,
+} from "../src/app/(app)/(lingocafe)/books/_components/reader-scroll-memory.ts";
 import { getVisibleConversationLibraryPathname } from "../src/app/(app)/(lingocafe)/conversations/_components/types.ts";
 
 class FakeHTMLElement extends EventTarget {
   clientHeight = 0;
+  clientWidth = 0;
   scrollHeight = 0;
   scrollTop = 0;
   rect = { top: 0, bottom: 0, height: 0 };
@@ -25,6 +34,18 @@ class FakeHTMLElement extends EventTarget {
   scrollTo(options: ScrollToOptions) {
     this.lastScrollTo = options;
     if (typeof options.top === "number") this.scrollTop = options.top;
+  }
+}
+
+class FakeStorage {
+  readonly values = new Map<string, string>();
+
+  getItem(key: string) {
+    return this.values.get(key) ?? null;
+  }
+
+  setItem(key: string, value: string) {
+    this.values.set(key, value);
   }
 }
 
@@ -63,6 +84,84 @@ test("element reader targets preserve existing progress and restoration math", (
     bottom: 580,
     height: 500,
   });
+});
+
+test("reader scroll memory restores exact pixels only for the same layout width", () => {
+  const element = new FakeHTMLElement();
+  element.clientHeight = 500;
+  element.clientWidth = 390;
+  element.scrollHeight = 1500;
+  const target = createElementReaderScrollTarget(
+    element as unknown as HTMLElement
+  );
+  const memory = {
+    scrollTop: 437.25,
+    contentWidth: 390,
+    progressBps: 4373,
+  };
+
+  assert.equal(restoreReaderScrollMemory(target, memory), true);
+  assert.equal(element.scrollTop, 437.25);
+
+  element.scrollHeight = 700;
+  element.scrollTop = 0;
+  assert.equal(restoreReaderScrollMemory(target, memory), false);
+  assert.equal(element.scrollTop, 0);
+
+  element.scrollHeight = 1500;
+  element.clientWidth = 844;
+  element.scrollTop = 0;
+  assert.equal(restoreReaderScrollMemory(target, memory), false);
+  assert.equal(element.scrollTop, 0);
+});
+
+test("reader positions share one durable local-storage object", () => {
+  const storage = new FakeStorage();
+  const originalWindow = globalThis.window;
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: { localStorage: storage },
+  });
+
+  try {
+    const element = new FakeHTMLElement();
+    element.clientWidth = 390;
+    element.clientHeight = 500;
+    element.scrollHeight = 1500;
+    element.scrollTop = 437.25;
+    const target = createElementReaderScrollTarget(
+      element as unknown as HTMLElement
+    );
+    const bookKey = getBookPageScrollMemoryKey("book-a", "page-1");
+    const conversationKey = getConversationScrollMemoryKey("conversation-a");
+
+    writeReaderScrollMemory(bookKey, "mobile", target, 4373);
+    element.clientWidth = 844;
+    element.scrollTop = 612;
+    writeReaderScrollMemory(conversationKey, "desktop", target, 5200);
+
+    assert.deepEqual(readReaderScrollMemory(bookKey, "mobile"), {
+      scrollTop: 437.25,
+      contentWidth: 390,
+      progressBps: 4373,
+    });
+    assert.deepEqual(readReaderScrollMemory(conversationKey, "desktop"), {
+      scrollTop: 612,
+      contentWidth: 844,
+      progressBps: 5200,
+    });
+    assert.equal(storage.values.size, 1);
+    assert.ok(storage.getItem(READER_SCROLL_MEMORY_STORAGE_KEY));
+  } finally {
+    if (originalWindow === undefined) {
+      Reflect.deleteProperty(globalThis, "window");
+    } else {
+      Object.defineProperty(globalThis, "window", {
+        configurable: true,
+        value: originalWindow,
+      });
+    }
+  }
 });
 
 test("document reader targets use root metrics and exclude the sticky header", () => {
@@ -143,6 +242,7 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
     reader,
     surfaces,
     readerSkeleton,
+    scrollMemory,
     modal,
     users,
   ] = await Promise.all([
@@ -161,6 +261,9 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
     ),
     readSource(
       "src/app/(app)/(lingocafe)/books/_components/ReaderContentSkeleton.tsx"
+    ),
+    readSource(
+      "src/app/(app)/(lingocafe)/books/_components/reader-scroll-memory.ts"
     ),
     readSource("src/42go/components/modal/Modal.tsx"),
     readSource("src/app/(app)/backoffice/users/page.tsx"),
@@ -183,6 +286,8 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
   );
   assert.doesNotMatch(conversationReader, /createDocumentReaderScrollTarget/);
   assert.match(conversationReader, /createElementReaderScrollTarget/);
+  assert.match(conversationReader, /readReaderScrollMemory/);
+  assert.match(conversationReader, /writeReaderScrollMemory/);
   assert.match(
     conversationReader,
     /swipeToClose=\{!isDesktopReader\}/
@@ -197,6 +302,11 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
   assert.doesNotMatch(details, /overflow-y-auto/);
   assert.doesNotMatch(reader, /createDocumentReaderScrollTarget/);
   assert.match(reader, /createElementReaderScrollTarget/);
+  assert.match(reader, /restoredKeyRef\.current\[surfaceKey\]/);
+  assert.match(reader, /restoreReaderScrollMemory/);
+  assert.match(reader, /writeReaderScrollMemory/);
+  assert.match(reader, /setForceTopPageKey\(nextPageKey\)/);
+  assert.match(reader, /pendingServerTopPageKeyRef\.current/);
   assert.match(reader, /swipeToClose=\{!isDesktopReader\}/);
   assert.match(reader, /swipeFromEdge=\{!isDesktopReader\}/);
   assert.match(reader, /\{readerOverlays\}/);
@@ -221,6 +331,8 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
   assert.match(readerSkeleton, /max-w-\[680px\]/);
   assert.match(readerSkeleton, /READER_PANEL_OPEN_ANIMATION_MS = 300/);
   assert.match(readerSkeleton, /useReaderEntrySkeleton/);
+  assert.match(scrollMemory, /window\.localStorage/);
+  assert.doesNotMatch(scrollMemory, /sessionStorage/);
   assert.match(reader, /useLayoutEffect\(\(\) => \{[\s\S]*restore\(\);/);
   assert.match(
     conversationReader,

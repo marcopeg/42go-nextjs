@@ -38,6 +38,14 @@ import {
   getReaderScrollProgressBps,
   scrollReaderToProgressBps,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-scroll-target";
+import {
+  getConversationScrollMemoryKey,
+  readReaderScrollMemory,
+  READER_SCROLL_READY_SELECTOR,
+  restoreReaderScrollMemory,
+  writeReaderScrollMemory,
+  type ReaderScrollSurface,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-scroll-memory";
 import { useReaderPreferences } from "@/app/(app)/(lingocafe)/books/_components/useReaderPreferences";
 import {
   ConversationTranslatableText,
@@ -60,6 +68,8 @@ import { cn } from "@/lib/utils";
 const READER_SCROLL_PROGRESS_IDLE_SAVE_MS = 4000;
 const READER_OVERLAY_SCROLL_RESTORE_INTERVAL_MS = 50;
 const READER_OVERLAY_SCROLL_RESTORE_MAX_ATTEMPTS = 40;
+const READER_CONTENT_RESTORE_INTERVAL_MS = 25;
+const READER_CONTENT_RESTORE_MAX_ATTEMPTS = 200;
 
 const subscribeToDesktopReader = (onStoreChange: () => void) => {
   const query = window.matchMedia("(min-width: 768px)");
@@ -156,20 +166,18 @@ export const ConversationReaderPage = ({
         : null,
     []
   );
-  const closeReader = useCallback(() => {
-    if (intercepted) {
-      router.back();
-      return;
-    }
-    router.replace(returnHref, { scroll: false });
-  }, [intercepted, returnHref, router]);
-  const restoredConversationRef = useRef("");
+  const restoredConversationRef = useRef<Record<ReaderScrollSurface, string>>({
+    desktop: "",
+    mobile: "",
+  });
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const overlayRestoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
   const overlayScrollTopRef = useRef<number | null>(null);
   const latestProgressRef = useRef<number | null>(null);
+  const displayedProgressRef = useRef(0);
+  const scrollPersistenceSuspendedRef = useRef(false);
   const { trackEvent } = useEventTracker();
   const [data, setData] = useState<ConversationDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -177,6 +185,36 @@ export const ConversationReaderPage = ({
   const [mutationMessage, setMutationMessage] = useState<string | null>(null);
   const [starPending, setStarPending] = useState(false);
   const [readingProgressBps, setReadingProgressBps] = useState(0);
+  const updateDisplayedProgress = useCallback((progressBps: number) => {
+    if (displayedProgressRef.current === progressBps) return;
+    displayedProgressRef.current = progressBps;
+    setReadingProgressBps(progressBps);
+  }, []);
+  const persistLocalReaderPosition = useCallback(() => {
+    const target = getReaderScrollTarget();
+    const activeConversationId = data?.conversation.id;
+    if (!target || !activeConversationId) return;
+    const surfaceKey: ReaderScrollSurface = window.matchMedia(
+      "(min-width: 768px)"
+    ).matches
+      ? "desktop"
+      : "mobile";
+    writeReaderScrollMemory(
+      getConversationScrollMemoryKey(activeConversationId),
+      surfaceKey,
+      target,
+      getReaderScrollProgressBps(target)
+    );
+  }, [data?.conversation.id, getReaderScrollTarget]);
+  const closeReader = useCallback(() => {
+    persistLocalReaderPosition();
+    scrollPersistenceSuspendedRef.current = true;
+    if (intercepted) {
+      router.back();
+      return;
+    }
+    router.replace(returnHref, { scroll: false });
+  }, [intercepted, persistLocalReaderPosition, returnHref, router]);
   const entrySkeletonPending = useReaderEntrySkeleton();
   const showEntrySkeleton = !isDesktopReader && entrySkeletonPending;
   const showContentSkeleton = showEntrySkeleton || (loading && !data);
@@ -195,7 +233,6 @@ export const ConversationReaderPage = ({
       if (!isValidDetail(payload)) throw new Error("This conversation contains malformed or incomplete dialogue data.");
       payload.rounds.sort((a, b) => a.position - b.position);
       setData(payload);
-      setReadingProgressBps(payload.state.progressBps);
     } catch (caught) {
       if (caught instanceof DOMException && caught.name === "AbortError") return;
       setError(caught instanceof Error ? caught.message : "Could not load conversation.");
@@ -214,37 +251,67 @@ export const ConversationReaderPage = ({
 
   useLayoutEffect(() => {
     if (!data) return;
-    const surfaceKey = isDesktopReader ? "desktop" : "mobile";
+    const surfaceKey: ReaderScrollSurface = isDesktopReader
+      ? "desktop"
+      : "mobile";
     const restoreKey = `${surfaceKey}:${data.conversation.id}`;
-    if (restoredConversationRef.current === restoreKey) return;
-    let frame = 0;
+    if (restoredConversationRef.current[surfaceKey] === restoreKey) return;
+    scrollPersistenceSuspendedRef.current = true;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     let attempts = 0;
+
+    const retryRestore = () => {
+      if (attempts >= READER_CONTENT_RESTORE_MAX_ATTEMPTS) return;
+      attempts += 1;
+      timer = setTimeout(restore, READER_CONTENT_RESTORE_INTERVAL_MS);
+    };
 
     const restore = () => {
       const target = getReaderScrollTarget();
       if (!target) {
-        if (attempts >= 8) return;
-        attempts += 1;
-        frame = requestAnimationFrame(restore);
+        retryRestore();
         return;
       }
-      const restored = scrollReaderToProgressBps(
-        target,
-        data.state.progressBps
+      if (!target.contentRoot.querySelector(READER_SCROLL_READY_SELECTOR)) {
+        retryRestore();
+        return;
+      }
+      const scrollMemoryKey = getConversationScrollMemoryKey(
+        data.conversation.id
       );
-      if (restored || attempts >= 8) {
-        restoredConversationRef.current = restoreKey;
+      const scrollMemory = readReaderScrollMemory(
+        scrollMemoryKey,
+        surfaceKey
+      );
+      const restoredFromMemory = scrollMemory
+        ? restoreReaderScrollMemory(target, scrollMemory)
+        : false;
+      const restored =
+        restoredFromMemory ||
+        scrollReaderToProgressBps(target, data.state.progressBps);
+      const restoredProgressBps = restoredFromMemory && scrollMemory
+        ? scrollMemory.progressBps
+        : data.state.progressBps;
+      if (restored) {
+        updateDisplayedProgress(restoredProgressBps);
+        restoredConversationRef.current[surfaceKey] = restoreKey;
+        writeReaderScrollMemory(
+          scrollMemoryKey,
+          surfaceKey,
+          target,
+          restoredProgressBps
+        );
+        scrollPersistenceSuspendedRef.current = false;
         return;
       }
-      attempts += 1;
-      frame = requestAnimationFrame(restore);
+      retryRestore();
     };
 
     restore();
     return () => {
-      if (frame) cancelAnimationFrame(frame);
+      if (timer) clearTimeout(timer);
     };
-  }, [data, getReaderScrollTarget, isDesktopReader]);
+  }, [data, getReaderScrollTarget, isDesktopReader, updateDisplayedProgress]);
 
   useEffect(() => {
     const target = getReaderScrollTarget();
@@ -252,6 +319,12 @@ export const ConversationReaderPage = ({
     if (!target || !activeConversationId) return;
     const controller = new AbortController();
     const progressApiHref = `/api/lingocafe/conversations/${encodeURIComponent(activeConversationId)}`;
+    const surfaceKey: ReaderScrollSurface = isDesktopReader
+      ? "desktop"
+      : "mobile";
+    const scrollMemoryKey = getConversationScrollMemoryKey(
+      activeConversationId
+    );
 
     const sendProgress = async (progress: number) => {
       try {
@@ -289,9 +362,16 @@ export const ConversationReaderPage = ({
     };
 
     const scheduleProgress = () => {
+      if (scrollPersistenceSuspendedRef.current) return;
       const progress = getReaderScrollProgressBps(target);
+      writeReaderScrollMemory(
+        scrollMemoryKey,
+        surfaceKey,
+        target,
+        progress
+      );
       latestProgressRef.current = progress;
-      setReadingProgressBps(progress);
+      updateDisplayedProgress(progress);
 
       if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
       scrollTimerRef.current = setTimeout(() => {
@@ -327,6 +407,8 @@ export const ConversationReaderPage = ({
   }, [
     data?.conversation.id,
     getReaderScrollTarget,
+    isDesktopReader,
+    updateDisplayedProgress,
   ]);
 
   const playbackCatalog = useMemo(() => {
@@ -602,7 +684,10 @@ export const ConversationReaderPage = ({
                     ) : null}
                   </header>
 
-                  <ol aria-label="Conversation turns">
+                  <ol
+                    aria-label="Conversation turns"
+                    data-reader-scroll-ready="true"
+                  >
                     {data.rounds.map((round, roundIndex) => {
                       const actor = actorMap.get(round.actorId);
                       const placement = threadLayout[roundIndex];

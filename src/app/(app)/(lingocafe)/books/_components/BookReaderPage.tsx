@@ -30,6 +30,13 @@ import {
   scrollReaderToProgressBps,
   type ReaderScrollTarget,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-scroll-target";
+import {
+  getBookPageScrollMemoryKey,
+  readReaderScrollMemory,
+  READER_SCROLL_READY_SELECTOR,
+  restoreReaderScrollMemory,
+  writeReaderScrollMemory,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-scroll-memory";
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
 import { useBookCompletionMutation } from "@/app/(app)/(lingocafe)/books/_components/useBookCompletionMutation";
 import { useReaderPreferences } from "@/app/(app)/(lingocafe)/books/_components/useReaderPreferences";
@@ -55,6 +62,8 @@ const READER_HEADER_TITLE_TOP_THRESHOLD_PX = 12;
 const READER_HEADER_TITLE_DIRECTION_THRESHOLD_PX = 6;
 const READER_OVERLAY_SCROLL_RESTORE_INTERVAL_MS = 50;
 const READER_OVERLAY_SCROLL_RESTORE_MAX_ATTEMPTS = 40;
+const READER_CONTENT_RESTORE_INTERVAL_MS = 25;
+const READER_CONTENT_RESTORE_MAX_ATTEMPTS = 200;
 const BOOK_READER_PAGE_POLICY: Policy = {
   require: { feature: "page:books", session: true },
 };
@@ -371,7 +380,10 @@ export const BookReadPage = ({
         : getMobileReaderScrollTarget(),
     [getDesktopReaderScrollTarget, getMobileReaderScrollTarget]
   );
-  const restoredKeyRef = useRef("");
+  const restoredKeyRef = useRef<Record<ReaderSurfaceKey, string>>({
+    desktop: "",
+    mobile: "",
+  });
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const overlayRestoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
@@ -382,6 +394,8 @@ export const BookReadPage = ({
   const playbackProgressActiveRef = useRef(false);
   const latestRouteHrefRef = useRef(routeFromUrl?.href ?? "");
   const pendingReaderHrefRef = useRef<string | null>(null);
+  const pendingServerTopPageKeyRef = useRef("");
+  const scrollPersistenceSuspendedRef = useRef(false);
   const navigateToReaderPageRef = useRef<
     (href: string, preservePlaybackTop?: boolean) => void
   >(() => undefined);
@@ -390,6 +404,8 @@ export const BookReadPage = ({
     desktop: 0,
     mobile: 0,
   });
+  const displayedProgressRef = useRef(0);
+  const headerTitleModeRef = useRef<ReaderHeaderTitleMode>("book");
   const [readerRoute, setReaderRoute] = useState<ReaderRouteState | null>(
     routeFromUrl
   );
@@ -403,11 +419,25 @@ export const BookReadPage = ({
     string | null
   >(null);
   const [playbackTopPageKey, setPlaybackTopPageKey] = useState("");
+  const [forceTopPageKey, setForceTopPageKey] = useState("");
   const [restoredPageKey, setRestoredPageKey] = useState("");
   const [readingProgressBps, setReadingProgressBps] = useState(0);
   const [headerTitleMode, setHeaderTitleMode] =
     useState<ReaderHeaderTitleMode>("book");
   const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
+  const updateDisplayedProgress = useCallback((progressBps: number) => {
+    if (displayedProgressRef.current === progressBps) return;
+    displayedProgressRef.current = progressBps;
+    setReadingProgressBps(progressBps);
+  }, []);
+  const updateHeaderTitleMode = useCallback(
+    (nextMode: ReaderHeaderTitleMode) => {
+      if (headerTitleModeRef.current === nextMode) return;
+      headerTitleModeRef.current = nextMode;
+      setHeaderTitleMode(nextMode);
+    },
+    []
+  );
   const showLoading = useLingocafeRouteLoading({
     isLoading: loading,
     canDelay: !!bookPage,
@@ -451,6 +481,11 @@ export const BookReadPage = ({
     isPlaybackContinuationPage ||
       (currentBookPageKey && playbackTopPageKey === currentBookPageKey)
   );
+  const shouldForcePageTop = Boolean(
+    shouldForcePlaybackTop ||
+      (currentBookPageKey &&
+        forceTopPageKey === currentBookPageKey)
+  );
   const playback = useReaderPlayback({
     bookId: bookPage?.book.id || "",
     pageId: bookPage?.page.pageId || "",
@@ -493,6 +528,25 @@ export const BookReadPage = ({
   const bookInfoHref = activeBookId
     ? `/books/${encodeURIComponent(activeBookId)}`
     : bookshelfHref;
+  const persistLocalReaderPosition = useCallback(() => {
+    if (!bookPage) return;
+    const target = getActiveReaderScrollTarget();
+    if (!target) return;
+    const surfaceKey: ReaderSurfaceKey = window.matchMedia(
+      "(min-width: 768px)"
+    ).matches
+      ? "desktop"
+      : "mobile";
+    writeReaderScrollMemory(
+      getBookPageScrollMemoryKey(
+        bookPage.page.bookId,
+        bookPage.page.pageId
+      ),
+      surfaceKey,
+      target,
+      getReaderScrollProgressBps(target)
+    );
+  }, [bookPage, getActiveReaderScrollTarget]);
   const { setSettingsSurfaceOpen } = playback;
   const handleTableOfContentsOpenChange = useCallback(
     (next: boolean) => {
@@ -555,13 +609,15 @@ export const BookReadPage = ({
     [handleTableOfContentsOpenChange, preserveMobileReaderScroll]
   );
   const closeReader = useCallback(() => {
+    persistLocalReaderPosition();
+    scrollPersistenceSuspendedRef.current = true;
     if (intercepted) {
       router.back();
       return;
     }
 
     router.replace(bookshelfHref, { scroll: false });
-  }, [intercepted, router]);
+  }, [intercepted, persistLocalReaderPosition, router]);
   const handleReaderOpenChange = useCallback(
     (next: boolean) => {
       if (!next) closeReader();
@@ -592,11 +648,20 @@ export const BookReadPage = ({
       const nextRoute = parseReaderRouteHref(href);
 
       if (!nextRoute) {
+        persistLocalReaderPosition();
+        scrollPersistenceSuspendedRef.current = true;
         router.push(href);
         return;
       }
 
       if (readerRoute?.href === nextRoute.href) return;
+
+      persistLocalReaderPosition();
+      scrollPersistenceSuspendedRef.current = true;
+
+      const nextPageKey = `${nextRoute.bookId}:${nextRoute.pageId}`;
+      setForceTopPageKey(nextPageKey);
+      pendingServerTopPageKeyRef.current = nextPageKey;
 
       latestRouteHrefRef.current = nextRoute.href;
       updatePendingReaderHref(nextRoute.href);
@@ -605,7 +670,13 @@ export const BookReadPage = ({
         current?.href === nextRoute.href ? current : nextRoute
       );
     },
-    [readerRoute?.href, router, syncReaderHistory, updatePendingReaderHref]
+    [
+      persistLocalReaderPosition,
+      readerRoute?.href,
+      router,
+      syncReaderHistory,
+      updatePendingReaderHref,
+    ]
   );
 
   useEffect(() => {
@@ -743,7 +814,7 @@ export const BookReadPage = ({
       readerRoute.pageId === bookPage.page.pageId
         ? readerRoute.progressBps
         : null;
-    const restoreProgressBps = shouldForcePlaybackTop
+    const restoreProgressBps = shouldForcePageTop
       ? 0
       : routeProgressBps ??
         (bookPage.progress?.pageId === bookPage.page.pageId
@@ -753,15 +824,25 @@ export const BookReadPage = ({
       ? "desktop"
       : "mobile";
     const restoreKey = `${surfaceKey}:${bookPage.page.bookId}:${bookPage.page.pageId}:${restoreProgressBps}`;
-    if (!shouldForcePlaybackTop && restoredKeyRef.current === restoreKey) {
+    if (
+      !shouldForcePageTop &&
+      restoredKeyRef.current[surfaceKey] === restoreKey
+    ) {
       return;
     }
 
-    let frame = 0;
+    scrollPersistenceSuspendedRef.current = true;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     let attempts = 0;
 
+    const retryRestore = () => {
+      if (attempts >= READER_CONTENT_RESTORE_MAX_ATTEMPTS) return;
+      attempts += 1;
+      timer = setTimeout(restore, READER_CONTENT_RESTORE_INTERVAL_MS);
+    };
+
     const restore = () => {
-      if (shouldForcePlaybackTop) {
+      if (shouldForcePageTop) {
         getDesktopReaderScrollTarget()?.setScrollTop(0);
         getMobileReaderScrollTarget()?.setScrollTop(0);
         lastScrollTopRef.current.desktop = 0;
@@ -770,37 +851,63 @@ export const BookReadPage = ({
       const target = getActiveReaderScrollTarget();
 
       if (!target) {
-        if (attempts >= 8) return;
-        attempts += 1;
-        frame = requestAnimationFrame(restore);
+        retryRestore();
         return;
       }
-      const restored = scrollReaderToProgressBps(target, restoreProgressBps);
-      const scrollTop = target.getScrollTop();
-      lastScrollTopRef.current[surfaceKey] = scrollTop;
-      setReadingProgressBps(restoreProgressBps);
-      setHeaderTitleMode(
-        scrollTop <= READER_HEADER_TITLE_TOP_THRESHOLD_PX
-          ? "book"
-          : "page"
+      if (!target.contentRoot.querySelector(READER_SCROLL_READY_SELECTOR)) {
+        retryRestore();
+        return;
+      }
+      const scrollMemoryKey = getBookPageScrollMemoryKey(
+        bookPage.page.bookId,
+        bookPage.page.pageId
       );
+      const scrollMemory = shouldForcePageTop
+        ? null
+        : readReaderScrollMemory(scrollMemoryKey, surfaceKey);
+      const restoredFromMemory = scrollMemory
+        ? restoreReaderScrollMemory(target, scrollMemory)
+        : false;
+      const restored =
+        restoredFromMemory ||
+        scrollReaderToProgressBps(target, restoreProgressBps);
+      const scrollTop = target.getScrollTop();
+      const restoredProgressBps = restoredFromMemory && scrollMemory
+        ? scrollMemory.progressBps
+        : restoreProgressBps;
 
-      if (restored || attempts >= 8) {
-        restoredKeyRef.current = restoreKey;
+      if (restored) {
+        lastScrollTopRef.current[surfaceKey] = scrollTop;
+        updateDisplayedProgress(restoredProgressBps);
+        updateHeaderTitleMode(
+          scrollTop <= READER_HEADER_TITLE_TOP_THRESHOLD_PX
+            ? "book"
+            : "page"
+        );
+        restoredKeyRef.current[surfaceKey] = restoreKey;
+        writeReaderScrollMemory(
+          scrollMemoryKey,
+          surfaceKey,
+          target,
+          restoredProgressBps
+        );
+        if (forceTopPageKey === currentBookPageKey) {
+          setForceTopPageKey("");
+        }
+        scrollPersistenceSuspendedRef.current = false;
         setRestoredPageKey(
           `${bookPage.page.bookId}:${bookPage.page.pageId}`
         );
         return;
       }
 
-      attempts += 1;
-      frame = requestAnimationFrame(restore);
+      retryRestore();
     };
 
     restore();
 
     return () => {
-      if (frame) cancelAnimationFrame(frame);
+      if (timer) clearTimeout(timer);
     };
   }, [
     bookPage,
@@ -808,10 +915,14 @@ export const BookReadPage = ({
     getDesktopReaderScrollTarget,
     getMobileReaderScrollTarget,
     isDesktopReader,
-    shouldForcePlaybackTop,
+    currentBookPageKey,
+    forceTopPageKey,
+    shouldForcePageTop,
     readerRoute?.bookId,
     readerRoute?.pageId,
     readerRoute?.progressBps,
+    updateDisplayedProgress,
+    updateHeaderTitleMode,
   ]);
 
   useEffect(() => {
@@ -824,6 +935,10 @@ export const BookReadPage = ({
       : getMobileReaderScrollTarget();
     const controller = new AbortController();
     const progressApiHref = loadedBookPageApiHref;
+    const scrollMemoryKey = getBookPageScrollMemoryKey(
+      bookPage.page.bookId,
+      bookPage.page.pageId
+    );
 
     const sendProgress = async (progress: number) => {
       try {
@@ -846,12 +961,19 @@ export const BookReadPage = ({
       if (!target) return;
       const progress = getReaderScrollProgressBps(target);
 
+      writeReaderScrollMemory(
+        scrollMemoryKey,
+        surfaceKey,
+        target,
+        progress
+      );
+
       if (scrollTimerRef.current) {
         clearTimeout(scrollTimerRef.current);
         scrollTimerRef.current = null;
       }
       latestProgressRef.current = null;
-      setReadingProgressBps(progress);
+      updateDisplayedProgress(progress);
       void sendProgress(progress);
     };
 
@@ -869,18 +991,29 @@ export const BookReadPage = ({
     };
 
     const scheduleProgress = (target: ReaderScrollTarget) => {
+      if (scrollPersistenceSuspendedRef.current) return;
       const previousScrollTop = lastScrollTopRef.current[surfaceKey];
       const currentScrollTop = target.getScrollTop();
       const delta = currentScrollTop - previousScrollTop;
 
       lastScrollTopRef.current[surfaceKey] = currentScrollTop;
-      setHeaderTitleMode((currentMode) =>
-        getHeaderTitleModeForScroll(currentScrollTop, delta, currentMode)
+      updateHeaderTitleMode(
+        getHeaderTitleModeForScroll(
+          currentScrollTop,
+          delta,
+          headerTitleModeRef.current
+        )
       );
 
       const currentProgressBps = getReaderScrollProgressBps(target);
+      writeReaderScrollMemory(
+        scrollMemoryKey,
+        surfaceKey,
+        target,
+        currentProgressBps
+      );
       latestProgressRef.current = currentProgressBps;
-      setReadingProgressBps(currentProgressBps);
+      updateDisplayedProgress(currentProgressBps);
 
       if (scrollTimerRef.current) {
         clearTimeout(scrollTimerRef.current);
@@ -899,6 +1032,11 @@ export const BookReadPage = ({
     };
 
     const removeScrollListener = activeTarget?.addScrollListener(onScroll);
+
+    if (pendingServerTopPageKeyRef.current === currentBookPageKey) {
+      pendingServerTopPageKeyRef.current = "";
+      void sendProgress(0);
+    }
 
     return () => {
       removeScrollListener?.();
@@ -919,11 +1057,14 @@ export const BookReadPage = ({
     };
   }, [
     bookPage,
+    currentBookPageKey,
     getActiveReaderScrollTarget,
     getDesktopReaderScrollTarget,
     getMobileReaderScrollTarget,
     isDesktopReader,
     loadedBookPageApiHref,
+    updateDisplayedProgress,
+    updateHeaderTitleMode,
   ]);
 
   useEffect(() => {
@@ -998,7 +1139,7 @@ export const BookReadPage = ({
         translationScope={readerTranslationScope}
         onTranslationScopeChange={updateReaderTranslationScope}
         playback={playback}
-        forceScrollTop={shouldForcePlaybackTop}
+        forceScrollTop={shouldForcePageTop}
         pageTurnPending={pageTurnPending}
         onOpenTableOfContents={openTableOfContents}
         onOpenPreferences={openPreferencesPanel}
@@ -1020,7 +1161,7 @@ export const BookReadPage = ({
         translationScope={readerTranslationScope}
         onTranslationScopeChange={updateReaderTranslationScope}
         playback={playback}
-        forceScrollTop={shouldForcePlaybackTop}
+        forceScrollTop={shouldForcePageTop}
         pageTurnPending={pageTurnPending}
         onOpenTableOfContents={openTableOfContents}
         onOpenPreferences={openPreferencesPanel}
