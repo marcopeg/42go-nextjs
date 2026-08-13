@@ -1,6 +1,5 @@
 "use client";
 
-import { Languages } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Fragment, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
@@ -23,6 +22,7 @@ import {
   writeStoredReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import { ExpandableFab } from "@/components/ui/expandable-fab";
+import { TranslationScopeFab } from "@/components/ui/translation-scope-fab";
 import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
 import { splitLingoCafeSentenceDisplaySegments } from "@/lib/lingocafe/sentence-segmentation";
 import {
@@ -113,16 +113,7 @@ export const ConversationActionFab = ({
   >
     {translationAvailable ? (
       <div className="pointer-events-auto">
-        <ExpandableFab
-          label="Translation options"
-          icon={<Languages aria-hidden="true" className="size-6" />}
-          placement="top-start"
-          selectedActionId={scope}
-          actions={[
-            { id: "sentence", label: "Translate sentence", onSelect: () => onScopeChange("sentence") },
-            { id: "word", label: "Translate word", onSelect: () => onScopeChange("word") },
-          ]}
-        />
+        <TranslationScopeFab scope={scope} onScopeChange={onScopeChange} />
       </div>
     ) : <span />}
     {canPlay && onPlay ? (

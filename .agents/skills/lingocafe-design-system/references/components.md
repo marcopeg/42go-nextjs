@@ -94,6 +94,32 @@ perform a direct action or reveal a small set of closely related actions.
 
 The portable starter is `assets/starter/expandable-fab.tsx`.
 
+### Translation-scope FAB
+
+Use `TranslationScopeFab` for a one-tap reader setting that alternates between
+word and sentence translation without opening a menu.
+
+- Keep it a solid-primary, 56 px circular FAB. Do not widen it into a pill on
+  mobile reading surfaces where it can compete with page navigation.
+- Use the Lucide `Languages` icon as the persistent control symbol. Add a small
+  high-contrast circular badge at the bottom-right: `W` for word mode and `S`
+  for sentence mode. The badge makes the active state visible without consuming
+  reader width; it does not replace the accessible mode label.
+- One click, tap, Enter, or Space toggles the canonical setting immediately.
+  The accessible name must state both the current mode and the next mode.
+- Roll the badge upward into its replacement over about 180 ms. Keep the FAB's
+  outer geometry still, and disable the animation under reduced motion.
+- On desktop hover and keyboard focus, show a short non-interactive tooltip:
+  `Click here to switch translation mode to …`, naming the next mode. Do not
+  show the tooltip on touch viewports.
+- When the control is fixed over a reader, give the content below it sufficient
+  bottom padding so page navigation and terminal content can scroll completely
+  above the floating action area.
+
+The portable starter is `assets/starter/translation-scope-fab.tsx`; it needs
+the accompanying `translation-scope-badge-roll-up` keyframe from the starter
+Tailwind stylesheet.
+
 ## Inputs and selection
 
 Text input:

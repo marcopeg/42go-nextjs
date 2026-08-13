@@ -666,7 +666,7 @@ export const ConversationReaderPage = ({
                 "mx-auto w-full max-w-[680px] pt-10 md:pb-48 md:pt-24",
                 playback.isOpen
                   ? "pb-[calc(13rem+env(safe-area-inset-bottom))]"
-                  : "pb-[calc(1.75rem+env(safe-area-inset-bottom))]"
+                  : "pb-[calc(7.5rem+env(safe-area-inset-bottom))]"
               )}
               style={{ fontFamily: readerFont.family, fontSize: `${readerFontSize}px` }}
             >

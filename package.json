@@ -16,6 +16,7 @@
     "test:lingocafe-sentence-segmentation": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-sentence-segmentation.test.mts",
     "test:lingocafe-translation-language": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-translation-language.test.mts",
     "test:lingocafe-translation-context": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-translation-context.test.mts",
+    "test:lingocafe-translation-scope-fab": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-translation-scope-fab.test.mts",
     "test:lingocafe-book-completion": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-book-completion.test.mts",
     "test:lingocafe-conversations-schema": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-conversations-schema.test.mts",
     "test:lingocafe-personas-schema": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-personas-schema.test.mts",

@@ -53,6 +53,7 @@ Load the default tokens first, then an app-specific stylesheet. Keep app overrid
 - `tailwind.css`: Tailwind 4 mapping and focus baseline;
 - `button.tsx`: canonical action variants and sizes;
 - `expandable-fab.tsx`: accessible direct-action and multi-action floating speed dial;
+- `translation-scope-fab.tsx`: one-tap circular reader translation-mode control with a visible `W`/`S` badge;
 - `reader-theme.ts`: reader choices, contrast filtering, and derived styles;
 - `tokens-studio.json`: portable token values for Figma/Tokens Studio workflows.
 
@@ -69,7 +70,8 @@ Inter is available from Google Fonts and in the source project under `src/app/fo
 3. Copy `tokens.css` and `tailwind.css`; ensure tokens load before Tailwind utilities.
 4. Install shadcn with New York style, neutral base, CSS variables, and Lucide icons.
 5. Copy/adapt `button.tsx` before building higher-level actions; add
-   `expandable-fab.tsx` when the product needs floating speed-dial actions.
+   `expandable-fab.tsx` when the product needs floating speed-dial actions,
+   and `translation-scope-fab.tsx` for one-tap word/sentence reader switching.
 6. Implement `Panel`, input, segmented control, and shared Modal.
 7. Implement the public shell and authenticated shell.
 8. Add book/editorial and reader layers only when needed.

@@ -1,11 +1,12 @@
 "use client";
 
-import { Languages, Volume2 } from "lucide-react";
+import { Volume2 } from "lucide-react";
 import type { CSSProperties } from "react";
 
 import type { ReaderTranslationScope } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import type { ReaderPlaybackController } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
 import { ExpandableFab } from "@/components/ui/expandable-fab";
+import { TranslationScopeFab } from "@/components/ui/translation-scope-fab";
 
 type BookReaderFloatingActionBarProps = {
   playback: ReaderPlaybackController;
@@ -23,7 +24,7 @@ const floatingBarStyle: CSSProperties = {
   zIndex: 1000,
 };
 
-const translationActionClassName =
+const translationTooltipClassName =
   "border-[var(--reader-popover-border)] bg-[var(--reader-popover-bg)] text-[var(--reader-fg)] data-[highlighted]:bg-[var(--reader-hover-bg)] data-[highlighted]:text-[var(--reader-fg)]";
 
 const getReaderThemeVariables = (style: CSSProperties): CSSProperties =>
@@ -44,28 +45,13 @@ export const BookReaderFloatingActionBar = ({
     return null;
   }
 
-  const renderTranslationFab = (desktop: boolean) =>
+  const renderTranslationFab = () =>
     translationAvailable ? (
-      <ExpandableFab
-        label="Translation options"
-        icon={<Languages aria-hidden="true" className="size-6" />}
-        placement={desktop ? "top-end" : "top-start"}
-        openOnHover={desktop}
-        selectedActionId={translationScope}
-        contentStyle={getReaderThemeVariables(readerThemeStyle)}
-        actionClassName={translationActionClassName}
-        actions={[
-          {
-            id: "sentence",
-            label: "Translate sentence",
-            onSelect: () => onTranslationScopeChange("sentence"),
-          },
-          {
-            id: "word",
-            label: "Translate word",
-            onSelect: () => onTranslationScopeChange("word"),
-          },
-        ]}
+      <TranslationScopeFab
+        scope={translationScope}
+        onScopeChange={onTranslationScopeChange}
+        style={getReaderThemeVariables(readerThemeStyle)}
+        tooltipClassName={translationTooltipClassName}
       />
     ) : null;
 
@@ -77,13 +63,13 @@ export const BookReaderFloatingActionBar = ({
       style={floatingBarStyle}
     >
       <div className="pointer-events-auto justify-self-start md:hidden">
-        {renderTranslationFab(false)}
+        {renderTranslationFab()}
       </div>
 
       <div aria-hidden="true" />
 
       <div className="pointer-events-auto flex items-center gap-3 justify-self-end">
-        <div className="hidden md:block">{renderTranslationFab(true)}</div>
+        <div className="hidden md:block">{renderTranslationFab()}</div>
         {playback.canPlay ? (
           <ExpandableFab
             label="Play page aloud"
