@@ -78,7 +78,6 @@
 
 ## WIP
 
-- [FN40: Show all CEFR variants in the conversation library](./tasks/FN40-show-all-cefr-variants-in-the-conversation-library/FN40.task.md)
 - [SE90: Restore Native Safari Browser-Chrome Collapse Across LingoCafe Mobile Reading Surfaces](./tasks/SE90-restore-native-safari-browser-chrome-collapse-across-lingocafe-mobile-reading-surfaces/SE90.task.md)
 
 ## Blocked
@@ -215,6 +214,7 @@
 
 ## Completed
 
+- [FN40: Show all CEFR variants in the conversation library](./tasks/FN40-show-all-cefr-variants-in-the-conversation-library/FN40.task.md)
 - [LW16: Show the Standard Mobile More Item to LingoCafe Backoffice Users](./tasks/LW16-show-backoffice-admin-menu-on-the-mobile-profile-page/LW16.task.md)
 - [RX01: Investigate and restore user editing in backoffice details](./tasks/RX01-investigate-and-restore-user-editing-in-backoffice-details/RX01.task.md)
 - [QT31: Build the complete LingoCafe conversation experience](./tasks/QT31-build-the-complete-lingocafe-conversation-experience/QT31.task.md)
