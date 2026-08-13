@@ -1,10 +1,7 @@
-export type ConversationBand = "beginner" | "intermediate" | "advanced";
-
 export type ConversationProfile = {
   targetLanguage: string;
   ownLanguage: string;
   targetLevel: string | null;
-  defaultBand: ConversationBand;
 };
 
 export type ConversationParticipant = {
@@ -79,14 +76,12 @@ export type ConversationScenario = {
 
 export type ConversationDiscoveryResponse = {
   profile: ConversationProfile;
-  selection: { band: ConversationBand; levels: string[] };
   starred: ConversationChoice[];
   roots: ConversationCategory[];
 };
 
 export type ConversationCategoryResponse = {
   profile: ConversationProfile;
-  selection: { band: ConversationBand; levels: string[] };
   path: ConversationPathItem[];
   category: ConversationCategory;
   children: ConversationCategory[];
@@ -127,6 +122,11 @@ export type ConversationRound = {
   text: string;
 };
 
+export type ConversationLevelLink = {
+  id: string;
+  cefrLevel: string;
+};
+
 export type ConversationDetailResponse = {
   conversation: ConversationChoice;
   scenario: {
@@ -150,6 +150,7 @@ export type ConversationDetailResponse = {
   };
   actors: ConversationActor[];
   rounds: ConversationRound[];
+  availableLevels: ConversationLevelLink[];
   state: { isRead: boolean; isStarred: boolean; progressBps: number };
   translation: { enabled: boolean; from: string; to: string | null };
   speech?: { language?: string };
@@ -158,28 +159,6 @@ export type ConversationDetailResponse = {
 export const CONVERSATIONS_POLICY = {
   require: { feature: "page:conversations", session: true },
 } as const;
-
-export const BAND_LEVELS: Record<ConversationBand, string[]> = {
-  beginner: ["a1"],
-  intermediate: ["a2", "b1"],
-  advanced: ["b2"],
-};
-
-export const isConversationBand = (
-  value: string | null | undefined
-): value is ConversationBand =>
-  value === "beginner" || value === "intermediate" || value === "advanced";
-
-export const bandFromProfileLevel = (
-  value: string | null | undefined
-): ConversationBand => {
-  if (value === "a1") return "beginner";
-  if (value === "b2") return "advanced";
-  return "intermediate";
-};
-
-export const buildBandHref = (pathname: string, band: ConversationBand) =>
-  `${pathname}?${new URLSearchParams({ band }).toString()}`;
 
 export const getVisibleConversationLibraryPathname = (
   pathname: string,
@@ -198,14 +177,12 @@ export const getVisibleConversationLibraryPathname = (
 
 export const buildConversationHref = ({
   id,
-  band,
   returnTo,
 }: {
   id: string;
-  band: ConversationBand;
   returnTo: string;
 }) => {
-  const query = new URLSearchParams({ band, returnTo });
+  const query = new URLSearchParams({ returnTo });
   return `/conversations/view/${encodeURIComponent(id)}?${query.toString()}`;
 };
 

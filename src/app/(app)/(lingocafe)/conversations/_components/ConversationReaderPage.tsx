@@ -55,8 +55,8 @@ import {
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
 import {
   CONVERSATIONS_POLICY,
+  buildConversationHref,
   getResponseMessage,
-  isConversationBand,
   type ConversationDetailResponse,
 } from "@/app/(app)/(lingocafe)/conversations/_components/types";
 import { buildConversationThreadLayout } from "@/app/(app)/(lingocafe)/conversations/_components/thread-layout";
@@ -85,10 +85,16 @@ const getDesktopReaderServerSnapshot = () => false;
 const parseParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] || "" : value || "";
 
-const safeReturnHref = (value: string | null, band: string | null) => {
+const safeReturnHref = (value: string | null) => {
   if (value?.startsWith("/conversations") && !value.startsWith("//")) return value;
-  const safeBand = isConversationBand(band) ? band : "intermediate";
-  return `/conversations?${new URLSearchParams({ band: safeBand })}`;
+  return "/conversations";
+};
+
+const replaceConversationReaderHistory = (href: string) => {
+  if (typeof window === "undefined") return;
+  const currentHref = `${window.location.pathname}${window.location.search}`;
+  if (currentHref === href) return;
+  window.history.replaceState(null, "", href);
 };
 
 const isValidDetail = (value: ConversationDetailResponse) =>
@@ -152,7 +158,7 @@ export const ConversationReaderPage = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const conversationId = parseParam(params.conversationId);
-  const returnHref = safeReturnHref(searchParams.get("returnTo"), searchParams.get("band"));
+  const returnHref = safeReturnHref(searchParams.get("returnTo"));
   const isDesktopReader = useSyncExternalStore(
     subscribeToDesktopReader,
     getDesktopReaderSnapshot,
@@ -178,7 +184,9 @@ export const ConversationReaderPage = ({
   const latestProgressRef = useRef<number | null>(null);
   const displayedProgressRef = useRef(0);
   const scrollPersistenceSuspendedRef = useRef(false);
+  const forceTopConversationRef = useRef("");
   const { trackEvent } = useEventTracker();
+  const [activeConversationId, setActiveConversationId] = useState(conversationId);
   const [data, setData] = useState<ConversationDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -225,7 +233,7 @@ export const ConversationReaderPage = ({
     setError(null);
     try {
       const response = await fetch(
-        `/api/lingocafe/conversations/${encodeURIComponent(conversationId)}`,
+        `/api/lingocafe/conversations/${encodeURIComponent(activeConversationId)}`,
         { credentials: "same-origin", cache: "no-store", signal }
       );
       if (!response.ok) throw new Error(await getResponseMessage(response, response.status === 404 ? "Conversation not found." : "Could not load conversation."));
@@ -239,7 +247,7 @@ export const ConversationReaderPage = ({
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, [conversationId]);
+  }, [activeConversationId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -276,22 +284,23 @@ export const ConversationReaderPage = ({
         retryRestore();
         return;
       }
-      const scrollMemoryKey = getConversationScrollMemoryKey(
-        data.conversation.id
-      );
-      const scrollMemory = readReaderScrollMemory(
-        scrollMemoryKey,
-        surfaceKey
-      );
+      const shouldForceTop = forceTopConversationRef.current === data.conversation.id;
+      const scrollMemoryKey = getConversationScrollMemoryKey(data.conversation.id);
+      const scrollMemory = shouldForceTop
+        ? null
+        : readReaderScrollMemory(scrollMemoryKey, surfaceKey);
       const restoredFromMemory = scrollMemory
         ? restoreReaderScrollMemory(target, scrollMemory)
         : false;
-      const restored =
-        restoredFromMemory ||
-        scrollReaderToProgressBps(target, data.state.progressBps);
-      const restoredProgressBps = restoredFromMemory && scrollMemory
-        ? scrollMemory.progressBps
-        : data.state.progressBps;
+      const restored = shouldForceTop
+        ? (target.setScrollTop(0), true)
+        : restoredFromMemory ||
+          scrollReaderToProgressBps(target, data.state.progressBps);
+      const restoredProgressBps = shouldForceTop
+        ? 0
+        : restoredFromMemory && scrollMemory
+          ? scrollMemory.progressBps
+          : data.state.progressBps;
       if (restored) {
         updateDisplayedProgress(restoredProgressBps);
         restoredConversationRef.current[surfaceKey] = restoreKey;
@@ -301,6 +310,7 @@ export const ConversationReaderPage = ({
           target,
           restoredProgressBps
         );
+        if (shouldForceTop) forceTopConversationRef.current = "";
         scrollPersistenceSuspendedRef.current = false;
         return;
       }
@@ -567,6 +577,23 @@ export const ConversationReaderPage = ({
     }
   };
 
+  const switchConversationLevel = useCallback(
+    (nextConversationId: string) => {
+      if (!data || nextConversationId === data.conversation.id) return;
+      persistLocalReaderPosition();
+      scrollPersistenceSuspendedRef.current = true;
+      forceTopConversationRef.current = nextConversationId;
+      updateDisplayedProgress(0);
+      setData(null);
+      setLoading(true);
+      setActiveConversationId(nextConversationId);
+      replaceConversationReaderHistory(
+        buildConversationHref({ id: nextConversationId, returnTo: returnHref })
+      );
+    },
+    [data, persistLocalReaderPosition, returnHref, updateDisplayedProgress]
+  );
+
   const reader = (
     <ConversationReaderShell
       isDesktopReader={isDesktopReader}
@@ -633,7 +660,12 @@ export const ConversationReaderPage = ({
             className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 md:px-8"
           >
             <main
-              className="mx-auto w-full max-w-[680px] pb-28 pt-10 md:pb-32 md:pt-24"
+              className={cn(
+                "mx-auto w-full max-w-[680px] pt-10 md:pb-48 md:pt-24",
+                playback.isOpen
+                  ? "pb-[calc(13rem+env(safe-area-inset-bottom))]"
+                  : "pb-[calc(1.75rem+env(safe-area-inset-bottom))]"
+              )}
               style={{ fontFamily: readerFont.family, fontSize: `${readerFontSize}px` }}
             >
               {showContentSkeleton ? <ReaderContentSkeleton variant="conversation" /> : null}
@@ -761,6 +793,40 @@ export const ConversationReaderPage = ({
                       );
                     })}
                   </ol>
+                  {data.availableLevels.length > 1 ? (
+                    <nav
+                      aria-label="Available conversation levels"
+                      className="mt-16 text-center md:fixed md:top-1/2 md:right-[max(1rem,calc((100vw-680px)/2-5rem))] md:z-20 md:mt-0 md:flex md:w-12 md:-translate-y-1/2 md:flex-col md:items-center"
+                    >
+                      <div className="flex flex-wrap justify-center gap-2 md:w-12 md:flex-col">
+                        {data.availableLevels.map((level) => {
+                          const isCurrent = level.id === data.conversation.id;
+                          const levelLabel = level.cefrLevel.toUpperCase();
+                          return isCurrent ? (
+                            <span
+                              key={level.id}
+                              aria-current="page"
+                              aria-label={`Current conversation level ${levelLabel}`}
+                              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-primary bg-primary/10 px-3 text-sm font-semibold uppercase text-foreground md:w-12"
+                            >
+                              {levelLabel}
+                            </span>
+                          ) : (
+                            <button
+                              key={level.id}
+                              type="button"
+                              onClick={() => switchConversationLevel(level.id)}
+                              aria-label={`Switch to conversation level ${levelLabel}`}
+                              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border px-3 text-sm font-semibold uppercase outline-none transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-12"
+                              style={{ borderColor: "var(--reader-border)" }}
+                            >
+                              {levelLabel}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </nav>
+                  ) : null}
                   {!playback.capabilityPending && !playback.canPlay && playback.unavailableReason ? (
                     <p role="status" className="mt-8 text-center text-xs text-muted-foreground">Voiceover unavailable: {playback.unavailableReason}</p>
                   ) : null}

@@ -78,6 +78,7 @@
 
 ## WIP
 
+- [FN40: Show all CEFR variants in the conversation library](./tasks/FN40-show-all-cefr-variants-in-the-conversation-library/FN40.task.md)
 - [SE90: Restore Native Safari Browser-Chrome Collapse Across LingoCafe Mobile Reading Surfaces](./tasks/SE90-restore-native-safari-browser-chrome-collapse-across-lingocafe-mobile-reading-surfaces/SE90.task.md)
 
 ## Blocked

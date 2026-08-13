@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, usePathname, useSearchParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo } from "react";
 
 import { PlainListItem } from "@/42go/components/PlainList";
@@ -14,17 +14,13 @@ import {
   ConversationListSkeleton,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
 import {
-  buildBandHref,
   buildConversationHref,
-  isConversationBand,
-  type ConversationBand,
   type ConversationCategoryResponse,
 } from "@/app/(app)/(lingocafe)/conversations/_components/types";
 
 const CategoryPage = () => {
   const params = useParams<{ categoryPath: string[] }>();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const {
     cacheScope,
     navigateToCategory,
@@ -32,7 +28,6 @@ const CategoryPage = () => {
     reportNavigation,
     reportProfile,
   } = useConversationLibraryShell();
-  const requestedBand = searchParams.get("band");
   const categoryPath = useMemo(
     () => (Array.isArray(params.categoryPath) ? params.categoryPath : []),
     [params.categoryPath]
@@ -40,10 +35,8 @@ const CategoryPage = () => {
 
   const apiHref = useMemo(() => {
     const encodedPath = categoryPath.map(encodeURIComponent).join("/");
-    const query = new URLSearchParams();
-    if (isConversationBand(requestedBand)) query.set("band", requestedBand);
-    return `/api/lingocafe/conversations/categories/${encodedPath}${query.size ? `?${query}` : ""}`;
-  }, [categoryPath, requestedBand]);
+    return `/api/lingocafe/conversations/categories/${encodedPath}`;
+  }, [categoryPath]);
 
   const receiveData = useCallback(
     (payload: ConversationCategoryResponse) => reportProfile(payload.profile),
@@ -58,10 +51,7 @@ const CategoryPage = () => {
       onData: receiveData,
     });
 
-  const band: ConversationBand = isConversationBand(requestedBand)
-    ? requestedBand
-    : data?.selection.band ?? "intermediate";
-  const returnTo = buildBandHref(pathname, band);
+  const returnTo = pathname;
   const conversationGroups = useMemo(
     () =>
       data?.scenarios.flatMap((scenario) =>
@@ -80,8 +70,8 @@ const CategoryPage = () => {
   );
 
   const parentHref = categoryPath.length > 1
-    ? `/conversations/categories/${categoryPath.slice(0, -1).map(encodeURIComponent).join("/")}?${new URLSearchParams({ band })}`
-    : buildBandHref("/conversations", band);
+    ? `/conversations/categories/${categoryPath.slice(0, -1).map(encodeURIComponent).join("/")}`
+    : "/conversations";
 
   useEffect(() => {
     if (!data) return;
@@ -114,7 +104,7 @@ const CategoryPage = () => {
               >
                 <CategoryList
                   categories={data.children}
-                  getHref={(child) => `/conversations/categories/${[...categoryPath, child.id].map(encodeURIComponent).join("/")}?${new URLSearchParams({ band })}`}
+                  getHref={(child) => `/conversations/categories/${[...categoryPath, child.id].map(encodeURIComponent).join("/")}`}
                   onNavigate={(child, href) => navigateToCategory({
                     href,
                     title: child.title,
@@ -129,7 +119,6 @@ const CategoryPage = () => {
                             getHref={(choice) =>
                               buildConversationHref({
                                 id: choice.id,
-                                band,
                                 returnTo,
                               })
                             }
@@ -141,7 +130,7 @@ const CategoryPage = () => {
                 />
               </section>
             ) : data.children.length === 0 ? (
-              <ConversationEmpty title="No conversations at this level" description="Try another practice level. Conversations from another language or level are never substituted automatically." />
+              <ConversationEmpty title="No conversations yet" description="Conversation practice is not available for this language. Nothing has been substituted from another language." />
             ) : null}
           </>
         ) : null}

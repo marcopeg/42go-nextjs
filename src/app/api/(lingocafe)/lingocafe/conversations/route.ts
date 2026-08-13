@@ -22,14 +22,13 @@ const getConversations = async (req: Request) => {
         { status: 401 }
       );
     }
-    const requestedBand = new URL(req.url).searchParams.get("band");
-    const validator = await loadConversationBrowseValidator({ userId, requestedBand });
+    const validator = await loadConversationBrowseValidator({ userId });
     const etag = createConversationBrowseETag(validator);
     if (matchesConversationBrowseETag(req.headers.get("if-none-match"), etag)) {
       return conversationBrowseNotModified(etag);
     }
     return conversationBrowseResponse(
-      await loadConversationDiscovery({ userId, requestedBand }),
+      await loadConversationDiscovery({ userId }),
       etag
     );
   } catch (error) {

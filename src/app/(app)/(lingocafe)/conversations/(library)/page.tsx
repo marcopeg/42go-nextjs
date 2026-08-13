@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import { useConversationLibraryShell } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell";
 import { useConversationBrowseData } from "@/app/(app)/(lingocafe)/conversations/_components/useConversationBrowseData";
@@ -12,16 +12,10 @@ import {
   ConversationLoading,
   StarredConversationCategoryRow,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
-import {
-  buildBandHref,
-  isConversationBand,
-  type ConversationBand,
-  type ConversationDiscoveryResponse,
-} from "@/app/(app)/(lingocafe)/conversations/_components/types";
+import { type ConversationDiscoveryResponse } from "@/app/(app)/(lingocafe)/conversations/_components/types";
 
 const ConversationsPage = () => {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const {
     cacheScope,
     navigateToCategory,
@@ -29,14 +23,7 @@ const ConversationsPage = () => {
     reportNavigation,
     reportProfile,
   } = useConversationLibraryShell();
-  const requestedBand = searchParams.get("band");
-
-  const apiHref = useMemo(() => {
-    const query = new URLSearchParams();
-    if (isConversationBand(requestedBand)) query.set("band", requestedBand);
-    const encoded = query.toString();
-    return `/api/lingocafe/conversations${encoded ? `?${encoded}` : ""}`;
-  }, [requestedBand]);
+  const apiHref = useMemo(() => "/api/lingocafe/conversations", []);
 
   const receiveData = useCallback(
     (payload: ConversationDiscoveryResponse) => reportProfile(payload.profile),
@@ -58,10 +45,7 @@ const ConversationsPage = () => {
     });
   }, [reportNavigation]);
 
-  const band: ConversationBand = isConversationBand(requestedBand)
-    ? requestedBand
-    : data?.selection.band ?? "intermediate";
-  const currentHref = buildBandHref(pathname, band);
+  const currentHref = pathname;
 
   return (
       <div className="mx-auto w-full max-w-4xl md:px-6">
@@ -85,7 +69,7 @@ const ConversationsPage = () => {
                   data.starred.length > 0 ? (
                     <StarredConversationCategoryRow
                       count={data.starred.length}
-                      href={buildBandHref("/conversations/starred", band)}
+                      href="/conversations/starred"
                       onNavigate={(href) =>
                         navigateToCategory({
                           href,
@@ -97,7 +81,7 @@ const ConversationsPage = () => {
                   ) : null
                 }
                 getHref={(category) =>
-                  `/conversations/categories/${encodeURIComponent(category.id)}?${new URLSearchParams({ band }).toString()}`
+                  `/conversations/categories/${encodeURIComponent(category.id)}`
                 }
                 onNavigate={(category, href) =>
                   navigateToCategory({

@@ -5,30 +5,17 @@ import test from "node:test";
 const readSource = (path: string) =>
   readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("conversation bands and category paths implement the refined contract", async () => {
+test("conversation browse ignores profile level and preserves category-path validation", async () => {
   const source = await readSource(
     "src/app/api/(lingocafe)/lingocafe/_lib/conversations.ts"
   );
-  assert.match(source, /beginner: \["a1"\]/);
-  assert.match(source, /intermediate: \["a2", "b1"\]/);
-  assert.match(source, /advanced: \["b2"\]/);
-  assert.match(source, /requestedBand !== null && requestedBand !== undefined/);
-  assert.match(source, /"Invalid conversation band\."/);
-  assert.ok(
-    (
-      source.match(
-        /explicitBand[\s\S]*?resolveConversationBand\(requestedBand, null\)[\s\S]*?loadConversationProfile/g
-      ) || []
-    ).length >= 2,
-    "discovery and category validate an explicit band before loading the profile"
-  );
-  assert.match(source, /return profileBand\[targetLevel \|\| ""\] \|\| "intermediate"/);
+  assert.match(source, /conversationCefrLevels: ConversationCefrLevel\[\] = \["a1", "a2", "b1", "b2"\]/);
+  assert.match(source, /level_key IN \(\?, \?, \?, \?\)/);
+  assert.doesNotMatch(source, /requestedBand|resolveConversationBand|getConversationBandLevels|profileBand|defaultBand/);
+  assert.doesNotMatch(source, /whereIn\("c\.cefr_level"/);
+  assert.match(source, /schema: "conversation-browse-v4"/);
   assert.match(source, /path\.length === 0 \|\| path\.length > 32/);
   assert.match(source, /new Set\(normalized\)\.size !== normalized\.length/);
-  assert.ok(
-    (source.match(/defaultBand: profile\.defaultBand/g) || []).length >= 2,
-    "discovery and category DTOs both expose the profile-derived default band"
-  );
 });
 
 test("conversation routes are protected and state exposes both idempotent verbs", async () => {
@@ -60,9 +47,9 @@ test("data access enforces visibility, materialized membership, language scope, 
   assert.match(source, /v\.is_visible/);
   assert.match(source, /s\.is_visible/);
   assert.match(source, /eligible_round\.conversation_id = c\.id/);
-  assert.match(source, /conversation_category_availability as availability/);
-  assert.match(source, /availability\.language/);
-  assert.match(source, /availability\.level_key/);
+  assert.match(source, /conversation_category_availability/);
+  assert.match(source, /SUM\(conversation_count\)::integer AS conversation_count/);
+  assert.match(source, /level_key IN \(\?, \?, \?, \?\)/);
   assert.match(source, /availability\.conversation_count", ">", 0/);
   assert.match(source, /availableCount: Number\(row\.conversation_count\)/);
   assert.doesNotMatch(source, /withRecursive\(\s*"descendant_categories"/);
@@ -107,7 +94,7 @@ test("conversation browse responses support private conditional revalidation", a
     readSource("src/app/api/(lingocafe)/lingocafe/conversations/categories/[...categoryPath]/route.ts"),
   ]);
   assert.match(readerSource, /"Cache-Control": "no-store"/);
-  assert.match(conversationSource, /schema: "conversation-browse-v3"/);
+  assert.match(conversationSource, /schema: "conversation-browse-v4"/);
   assert.match(browseSource, /"Cache-Control": "private, no-cache"/);
   assert.match(browseSource, /matchesConversationBrowseETag/);
   assert.match(browseSource, /status: 304/);
@@ -193,9 +180,24 @@ test("conversation reader persists scroll progress and marks read near the end",
   assert.match(detailPage, /keepalive: true/);
   assert.match(detailPage, /h-\[2px\] bg-blue-500/);
   assert.match(detailPage, /data\.state\.progressBps/);
+  assert.match(detailPage, /Available conversation levels/);
+  assert.doesNotMatch(detailPage, /Choose another level/);
+  assert.match(detailPage, /pb-\[calc\(1\.75rem\+env\(safe-area-inset-bottom\)\)\]/);
+  assert.match(detailPage, /pb-\[calc\(13rem\+env\(safe-area-inset-bottom\)\)\]/);
+  assert.match(detailPage, /md:fixed md:top-1\/2/);
+  assert.match(detailPage, /md:flex-col/);
+  assert.doesNotMatch(detailPage, /border-t pt-8 text-center/);
+  assert.match(detailPage, /buildConversationHref\(\{/);
+  assert.match(detailPage, /replaceConversationReaderHistory/);
+  assert.match(detailPage, /setActiveConversationId\(nextConversationId\)/);
+  assert.match(detailPage, /forceTopConversationRef\.current = nextConversationId/);
+  assert.match(detailPage, /target\.setScrollTop\(0\)/);
   assert.match(detailRoute, /progressPayloadSchema/);
   assert.match(detailRoute, /export const POST = protectRoute/);
   assert.match(dataSource, /CONVERSATION_READ_PROGRESS_THRESHOLD_BPS = 9500/);
+  assert.match(dataSource, /availableLevels: availableLevels\.map/);
+  assert.match(dataSource, /"c\.scenario_id": detail\.scenario_id/);
+  assert.match(dataSource, /"c\.variant_id": detail\.variant_id/);
   assert.match(dataSource, /conversation_progress/);
   assert.match(dataSource, /readChanged/);
   assert.match(migration, /createTable\("conversation_progress"/);

@@ -13,13 +13,11 @@ import { AppLayout } from "@/42go/layouts/app";
 import {
   LanguagePreferencesMenu,
   type LanguagePreferencePatch,
+  type LanguagePreferenceBand,
 } from "@/app/(app)/(lingocafe)/_components/LanguagePreferencesMenu";
 import {
   CONVERSATIONS_POLICY,
-  buildBandHref,
   getVisibleConversationLibraryPathname,
-  isConversationBand,
-  type ConversationBand,
   type ConversationProfile,
 } from "@/app/(app)/(lingocafe)/conversations/_components/types";
 import { ConversationListSkeleton } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
@@ -58,7 +56,6 @@ export const ConversationLibraryShell = ({ children }: { children: React.ReactNo
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedBand = searchParams.get("band");
   const [profile, setProfile] = useState<ConversationProfile | null>(null);
   const [preferenceRevision, setPreferenceRevision] = useState(0);
   const [navigation, setNavigation] = useState<ConversationLibraryNavigation>({
@@ -66,9 +63,11 @@ export const ConversationLibraryShell = ({ children }: { children: React.ReactNo
     subtitle: "Pick an everyday situation to practice.",
   });
   const [pendingHref, setPendingHref] = useState<string | null>(null);
-  const band: ConversationBand = isConversationBand(requestedBand)
-    ? requestedBand
-    : profile?.defaultBand ?? "intermediate";
+  const preferenceBand: LanguagePreferenceBand = profile?.targetLevel === "a1"
+    ? "beginner"
+    : profile?.targetLevel === "b2"
+      ? "advanced"
+      : "intermediate";
   const visiblePathname = getVisibleConversationLibraryPathname(
     pathname,
     searchParams.get("returnTo")
@@ -102,15 +101,7 @@ export const ConversationLibraryShell = ({ children }: { children: React.ReactNo
     }
     if (patch.targetLevel) {
       const targetLevel = patch.targetLevel;
-      const nextBand: ConversationBand = targetLevel === "a1"
-        ? "beginner"
-        : targetLevel === "b2"
-          ? "advanced"
-          : "intermediate";
-      setProfile((current) => current
-        ? { ...current, targetLevel, defaultBand: nextBand }
-        : current);
-      router.replace(buildBandHref(pathname, nextBand), { scroll: false });
+      setProfile((current) => current ? { ...current, targetLevel } : current);
     }
   };
 
@@ -125,7 +116,7 @@ export const ConversationLibraryShell = ({ children }: { children: React.ReactNo
         component: LanguagePreferencesMenu,
         props: {
           targetLanguage: profile.targetLanguage,
-          band,
+          band: preferenceBand,
           onSaved: preferenceSaved,
         },
       }] : []}

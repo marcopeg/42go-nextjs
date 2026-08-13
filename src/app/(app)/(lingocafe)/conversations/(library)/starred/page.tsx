@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import { PlainList, PlainListItem } from "@/42go/components/PlainList";
 import { useConversationLibraryShell } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell";
@@ -12,31 +12,20 @@ import {
   ConversationListSkeleton,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
 import {
-  buildBandHref,
   buildConversationHref,
-  isConversationBand,
-  type ConversationBand,
   type ConversationDiscoveryResponse,
 } from "@/app/(app)/(lingocafe)/conversations/_components/types";
 import { useConversationBrowseData } from "@/app/(app)/(lingocafe)/conversations/_components/useConversationBrowseData";
 
 const StarredConversationsPage = () => {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const {
     cacheScope,
     preferenceRevision,
     reportNavigation,
     reportProfile,
   } = useConversationLibraryShell();
-  const requestedBand = searchParams.get("band");
-
-  const apiHref = useMemo(() => {
-    const query = new URLSearchParams();
-    if (isConversationBand(requestedBand)) query.set("band", requestedBand);
-    const encoded = query.toString();
-    return `/api/lingocafe/conversations${encoded ? `?${encoded}` : ""}`;
-  }, [requestedBand]);
+  const apiHref = useMemo(() => "/api/lingocafe/conversations", []);
 
   const receiveData = useCallback(
     (payload: ConversationDiscoveryResponse) => reportProfile(payload.profile),
@@ -55,11 +44,8 @@ const StarredConversationsPage = () => {
     onData: receiveData,
   });
 
-  const band: ConversationBand = isConversationBand(requestedBand)
-    ? requestedBand
-    : data?.selection.band ?? "intermediate";
-  const rootHref = buildBandHref("/conversations", band);
-  const currentHref = buildBandHref(pathname, band);
+  const rootHref = "/conversations";
+  const currentHref = pathname;
 
   useEffect(() => {
     reportNavigation({ title: "Starred", backTo: rootHref });
@@ -86,7 +72,7 @@ const StarredConversationsPage = () => {
                 <PlainListItem key={choice.id}>
                   <ConversationChoiceRow
                     choice={choice}
-                    href={buildConversationHref({ id: choice.id, band, returnTo: currentHref })}
+                    href={buildConversationHref({ id: choice.id, returnTo: currentHref })}
                     showContext
                   />
                 </PlainListItem>

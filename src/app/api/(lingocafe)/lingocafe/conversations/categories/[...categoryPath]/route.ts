@@ -26,10 +26,8 @@ const getCategory = async (
       );
     }
     const { categoryPath } = await params;
-    const requestedBand = new URL(req.url).searchParams.get("band");
     const validator = await loadConversationBrowseValidator({
       userId,
-      requestedBand,
       categoryPath,
     });
     const etag = createConversationBrowseETag(validator);
@@ -40,7 +38,6 @@ const getCategory = async (
       await loadConversationCategory({
         userId,
         categoryPath,
-        requestedBand,
       }),
       etag
     );

@@ -9,20 +9,9 @@ import {
 import { isTranslationEnabled } from "@/app/api/(lingocafe)/lingocafe/_lib/translation";
 import { resolveLingoCafeAssetUrl } from "@/lib/lingocafe/assets";
 
-export type ConversationBand = "beginner" | "intermediate" | "advanced";
 export type ConversationCefrLevel = "a1" | "a2" | "b1" | "b2";
 
-const bandLevels: Record<ConversationBand, ConversationCefrLevel[]> = {
-  beginner: ["a1"],
-  intermediate: ["a2", "b1"],
-  advanced: ["b2"],
-};
-
-const profileBand: Record<string, ConversationBand> = {
-  a1: "beginner",
-  a2: "intermediate",
-  b2: "advanced",
-};
+const conversationCefrLevels: ConversationCefrLevel[] = ["a1", "a2", "b1", "b2"];
 
 const idPattern = /^[a-z0-9][a-z0-9._-]{0,255}$/;
 export const CONVERSATION_READ_PROGRESS_THRESHOLD_BPS = 9500;
@@ -63,33 +52,6 @@ export const conversationErrorResponse = (error: unknown) => {
   );
 };
 
-export const resolveConversationBand = (
-  requestedBand: string | null | undefined,
-  targetLevel: string | null | undefined
-): ConversationBand => {
-  if (requestedBand !== null && requestedBand !== undefined) {
-    if (
-      requestedBand === "beginner" ||
-      requestedBand === "intermediate" ||
-      requestedBand === "advanced"
-    ) {
-      return requestedBand;
-    }
-
-    throw new ConversationApiError(
-      400,
-      "validation",
-      "Invalid conversation band."
-    );
-  }
-
-  return profileBand[targetLevel || ""] || "intermediate";
-};
-
-export const getConversationBandLevels = (band: ConversationBand) => [
-  ...bandLevels[band],
-];
-
 export const validateConversationId = (value: string, label: string) => {
   if (!idPattern.test(value)) {
     throw new ConversationApiError(400, "validation", `Invalid ${label}.`);
@@ -124,7 +86,6 @@ type ProfileContext = {
   ownLanguage: string;
   targetLanguage: string;
   targetLevel: string | null;
-  defaultBand: ConversationBand;
 };
 
 const loadConversationProfile = async (
@@ -148,27 +109,20 @@ const loadConversationProfile = async (
     ownLanguage,
     targetLanguage,
     targetLevel,
-    defaultBand: resolveConversationBand(null, targetLevel),
   };
 };
 
 export const loadConversationBrowseValidator = async ({
   userId,
-  requestedBand,
   categoryPath = [],
 }: {
   userId: string;
-  requestedBand?: string | null;
   categoryPath?: string[];
 }) => {
   const normalizedPath = categoryPath.length > 0
     ? validateConversationCategoryPath(categoryPath)
     : [];
-  const explicitBand = requestedBand === null || requestedBand === undefined
-    ? null
-    : resolveConversationBand(requestedBand, null);
   const profile = await loadConversationProfile(userId);
-  const band = explicitBand ?? resolveConversationBand(null, profile.targetLevel);
   const db = getDB();
   const [publication, learnerState] = await Promise.all([
     db("lingocafe.conversation_publication_state")
@@ -190,14 +144,12 @@ export const loadConversationBrowseValidator = async ({
   }
 
   return {
-    schema: "conversation-browse-v3",
+    schema: "conversation-browse-v4",
     sourceDigest: publication.source_digest,
     learnerStateVersion: String(learnerState?.version ?? 0),
     userId,
     targetLanguage: profile.targetLanguage,
     ownLanguage: profile.ownLanguage,
-    targetLevel: profile.targetLevel,
-    band,
     categoryPath: normalizedPath,
   };
 };
@@ -237,16 +189,16 @@ const mapCategory = (row: CategoryRow) => ({
 
 const joinCategoryAvailability = (
   query: Knex.QueryBuilder,
-  language: string,
-  levelKey: ConversationBand
+  language: string
 ) =>
-  query.join(
-    "lingocafe.conversation_category_availability as availability",
-    function joinAvailability() {
-      this.on("availability.category_id", "=", "category.id")
-        .andOnVal("availability.language", "=", language)
-        .andOnVal("availability.level_key", "=", levelKey);
-    }
+  query.joinRaw(
+    `JOIN (
+      SELECT category_id, SUM(conversation_count)::integer AS conversation_count
+      FROM lingocafe.conversation_category_availability
+      WHERE language = ? AND level_key IN (?, ?, ?, ?)
+      GROUP BY category_id
+    ) AS availability ON availability.category_id = category.id`,
+    [language, ...conversationCefrLevels]
   );
 
 type ConversationSummaryRow = {
@@ -273,8 +225,7 @@ const mapConversationSummary = (row: ConversationSummaryRow) => ({
 
 const applyEligibleConversation = (
   query: Knex.QueryBuilder,
-  language: string,
-  levels?: readonly ConversationCefrLevel[]
+  language: string
 ) => {
   query
     .where("c.is_visible", true)
@@ -286,7 +237,6 @@ const applyEligibleConversation = (
         .from("lingocafe.conversation_rounds as eligible_round")
         .whereRaw("eligible_round.conversation_id = c.id");
     });
-  if (levels) query.whereIn("c.cefr_level", levels);
   applyLanguageScope(query, "s", language);
   applyLanguageScope(query, "v", language);
   return query;
@@ -309,19 +259,10 @@ const conversationChain = (db: Knex | Knex.Transaction) =>
 
 export const loadConversationDiscovery = async ({
   userId,
-  requestedBand,
 }: {
   userId: string;
-  requestedBand?: string | null;
 }) => {
-  const explicitBand =
-    requestedBand === null || requestedBand === undefined
-      ? null
-      : resolveConversationBand(requestedBand, null);
   const profile = await loadConversationProfile(userId);
-  const band =
-    explicitBand ?? resolveConversationBand(null, profile.targetLevel);
-  const levels = getConversationBandLevels(band);
   const db = getDB();
 
   const rootsQuery = db("lingocafe.conversation_categories as category")
@@ -340,7 +281,7 @@ export const loadConversationDiscovery = async ({
         .whereRaw("parent_edge.category_id = category.id");
     })
     .orderBy([{ column: "category.title", order: "asc" }, { column: "category.id", order: "asc" }]);
-  joinCategoryAvailability(rootsQuery, profile.targetLanguage, band);
+  joinCategoryAvailability(rootsQuery, profile.targetLanguage);
   applyLanguageScope(rootsQuery, "category", profile.targetLanguage);
 
   const starsQuery = conversationChain(db)
@@ -417,9 +358,7 @@ export const loadConversationDiscovery = async ({
       targetLanguage: profile.targetLanguage,
       ownLanguage: profile.ownLanguage,
       targetLevel: profile.targetLevel,
-      defaultBand: profile.defaultBand,
     },
-    selection: { band, levels },
     starred: starred.map((row) =>
       mapConversationChoice(
         row,
@@ -564,21 +503,12 @@ const groupCategoryScenarios = (
 export const loadConversationCategory = async ({
   userId,
   categoryPath,
-  requestedBand,
 }: {
   userId: string;
   categoryPath: string[];
-  requestedBand?: string | null;
 }) => {
   const pathIds = validateConversationCategoryPath(categoryPath);
-  const explicitBand =
-    requestedBand === null || requestedBand === undefined
-      ? null
-      : resolveConversationBand(requestedBand, null);
   const profile = await loadConversationProfile(userId);
-  const band =
-    explicitBand ?? resolveConversationBand(null, profile.targetLevel);
-  const levels = getConversationBandLevels(band);
   const db = getDB();
 
   const pathQuery = db("lingocafe.conversation_categories as category")
@@ -591,7 +521,7 @@ export const loadConversationCategory = async ({
     )
     .whereIn("category.id", pathIds)
     .andWhere("category.is_visible", true);
-  joinCategoryAvailability(pathQuery, profile.targetLanguage, band);
+  joinCategoryAvailability(pathQuery, profile.targetLanguage);
   applyLanguageScope(pathQuery, "category", profile.targetLanguage);
   const pathRows = (await pathQuery) as CategoryRow[];
   const byId = new Map(pathRows.map((row) => [row.id, row]));
@@ -646,7 +576,7 @@ export const loadConversationCategory = async ({
     .andWhere("category.is_visible", true)
     .andWhere("availability.conversation_count", ">", 0)
     .orderBy([{ column: "category.title", order: "asc" }, { column: "category.id", order: "asc" }]);
-  joinCategoryAvailability(childrenQuery, profile.targetLanguage, band);
+  joinCategoryAvailability(childrenQuery, profile.targetLanguage);
   applyLanguageScope(childrenQuery, "category", profile.targetLanguage);
 
   const choicesQuery = conversationChain(db)
@@ -699,7 +629,7 @@ export const loadConversationCategory = async ({
     .orderByRaw("CASE c.cefr_level WHEN 'a1' THEN 1 WHEN 'a2' THEN 2 WHEN 'b1' THEN 3 WHEN 'b2' THEN 4 ELSE 5 END")
     .orderBy("c.title", "asc")
     .orderBy("c.id", "asc");
-  applyEligibleConversation(choicesQuery, profile.targetLanguage, levels);
+  applyEligibleConversation(choicesQuery, profile.targetLanguage);
 
   const [children, choices] = await Promise.all([
     childrenQuery as Promise<CategoryRow[]>,
@@ -715,9 +645,7 @@ export const loadConversationCategory = async ({
       targetLanguage: profile.targetLanguage,
       ownLanguage: profile.ownLanguage,
       targetLevel: profile.targetLevel,
-      defaultBand: profile.defaultBand,
     },
-    selection: { band, levels },
     path: pathIds.map((id) => mapCategory(byId.get(id)!)),
     category: mapCategory(byId.get(categoryId)!),
     children: children.map(mapCategory),
@@ -971,7 +899,7 @@ export const loadConversationDetail = async ({
     throw new ConversationApiError(404, "not_found", "Conversation not found.");
   }
 
-  const [actors, rounds] = await Promise.all([
+  const [actors, rounds, availableLevels] = await Promise.all([
     db("lingocafe.conversation_scenario_actors as actor")
       .leftJoin("lingocafe.conversation_variant_cast as cast", function joinCast() {
         this.on("cast.scenario_id", "=", "actor.scenario_id")
@@ -999,6 +927,19 @@ export const loadConversationDetail = async ({
       .select("position", "actor_id", "text")
       .where({ conversation_id: detail.id, scenario_id: detail.scenario_id })
       .orderBy("position", "asc"),
+    (() => {
+      const levelsQuery = conversationChain(db)
+        .select("c.id", "c.cefr_level")
+        .where({
+          "c.scenario_id": detail.scenario_id,
+          "c.variant_id": detail.variant_id,
+        })
+        .orderByRaw(
+          "CASE c.cefr_level WHEN 'a1' THEN 1 WHEN 'a2' THEN 2 WHEN 'b1' THEN 3 WHEN 'b2' THEN 4 ELSE 5 END"
+        );
+      applyEligibleConversation(levelsQuery, profile.targetLanguage);
+      return levelsQuery as Promise<Array<{ id: string; cefr_level: ConversationCefrLevel }>>;
+    })(),
   ]);
   const castIsMalformed = actors.some(
     (actor) =>
@@ -1120,6 +1061,10 @@ export const loadConversationDetail = async ({
       position: Number(round.position),
       actorId: String(round.actor_id),
       text: String(round.text),
+    })),
+    availableLevels: availableLevels.map((level) => ({
+      id: level.id,
+      cefrLevel: level.cefr_level,
     })),
     state: {
       isRead: !!detail.read_at,
