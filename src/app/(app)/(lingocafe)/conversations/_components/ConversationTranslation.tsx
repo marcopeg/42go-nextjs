@@ -24,7 +24,10 @@ import {
 import { ExpandableFab } from "@/components/ui/expandable-fab";
 import { TranslationScopeFab } from "@/components/ui/translation-scope-fab";
 import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
-import { splitLingoCafeSentenceDisplaySegments } from "@/lib/lingocafe/sentence-segmentation";
+import {
+  splitLingoCafeSentenceDisplaySegments,
+  type LingoCafeSentenceDisplaySegment,
+} from "@/lib/lingocafe/sentence-segmentation";
 import {
   filterLingoCafeTranslationTargets,
   isSameLingoCafeTranslationLanguage,
@@ -158,6 +161,7 @@ export const ConversationTranslatableText = ({
   onStartFromHere,
   onTranslationOpenChange,
   onTargetLanguageChange,
+  sentenceLines = false,
   headingLevel,
   className,
   style,
@@ -176,6 +180,7 @@ export const ConversationTranslatableText = ({
   onStartFromHere?: (sentenceId: string) => void;
   onTranslationOpenChange?: (isOpen: boolean) => void;
   onTargetLanguageChange?: (language: string) => void;
+  sentenceLines?: boolean;
   headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
   className?: string;
   style?: CSSProperties;
@@ -367,17 +372,20 @@ export const ConversationTranslatableText = ({
     await loadTranslation(next, targetLanguage);
   };
 
-  const renderSentence = (sentence: string, sentenceIndex: number) => {
+  const renderSentence = (
+    sentence: LingoCafeSentenceDisplaySegment,
+    sentenceIndex: number
+  ) => {
     const sentenceId = `${idPrefix}:sentence:${sentenceIndex + 1}`;
     const active = activeSentenceId === sentenceId;
     const playbackText =
       active && activeWordRange ? (
         <>
-          {sentence.slice(0, activeWordRange.start)}
+          {sentence.text.slice(0, activeWordRange.start)}
           <mark className="rounded-[2px] bg-primary/30 text-current">
-            {sentence.slice(activeWordRange.start, activeWordRange.end)}
+            {sentence.text.slice(activeWordRange.start, activeWordRange.end)}
           </mark>
-          {sentence.slice(activeWordRange.end)}
+          {sentence.text.slice(activeWordRange.end)}
         </>
       ) : null;
     if (scope === "word") {
@@ -385,9 +393,13 @@ export const ConversationTranslatableText = ({
         <span
           key={sentenceId}
           data-reader-sentence-id={sentenceId}
-          className={cn("rounded-sm", active && "bg-primary/15")}
+          className={cn(
+            "rounded-sm",
+            active && "bg-primary/15",
+            sentenceLines && "block"
+          )}
         >
-          {playbackText ?? sentence.split(/(\p{L}[\p{L}\p{M}'’\-]*|\p{N}+)/gu).map((part, wordIndex) => {
+          {playbackText ?? sentence.text.split(/(\p{L}[\p{L}\p{M}'’\-]*|\p{N}+)/gu).map((part, wordIndex) => {
             if (!/^(\p{L}|\p{N})/u.test(part)) return part;
             const wordId = `${sentenceId}:word:${wordIndex}`;
             const selected = selection?.id === wordId;
@@ -420,19 +432,20 @@ export const ConversationTranslatableText = ({
         data-reader-sentence-id={sentenceId}
         data-reader-translation-id={sentenceId}
         aria-pressed={selection?.id === sentenceId}
-        onClick={(event) => void translate({ id: sentenceId, sentenceId, text: sentence.trim() }, event.currentTarget)}
+        onClick={(event) => void translate({ id: sentenceId, sentenceId, text: sentence.text }, event.currentTarget)}
         onKeyDown={(event) => {
           if (event.key !== "Enter" && event.key !== " ") return;
           event.preventDefault();
-          void translate({ id: sentenceId, sentenceId, text: sentence.trim() }, event.currentTarget);
+          void translate({ id: sentenceId, sentenceId, text: sentence.text }, event.currentTarget);
         }}
         className={cn(
           "rounded-[3px] text-left outline-none transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:ring-2 focus-visible:ring-ring/60",
-          active && "bg-primary/15"
+          active && "bg-primary/15",
+          sentenceLines && "block"
         )}
         style={getTranslationSelectionStyle(selection?.id === sentenceId)}
       >
-        {playbackText ?? <ReactMarkdown components={inlineMarkdownComponents}>{sentence}</ReactMarkdown>}
+        {playbackText ?? <ReactMarkdown components={inlineMarkdownComponents}>{sentence.source}</ReactMarkdown>}
       </span>
     );
   };
@@ -445,8 +458,8 @@ export const ConversationTranslatableText = ({
       >
         {sentences.map((sentence, sentenceIndex) => (
           <Fragment key={`${idPrefix}:display:${sentenceIndex + 1}`}>
-            {sentence.separatorBefore}
-            {renderSentence(sentence.text, sentenceIndex)}
+            {sentenceLines ? null : sentence.separatorBefore}
+            {renderSentence(sentence, sentenceIndex)}
           </Fragment>
         ))}
       </div>

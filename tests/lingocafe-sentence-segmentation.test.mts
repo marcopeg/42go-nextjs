@@ -71,15 +71,81 @@ describe("LingoCafe sentence segmentation", () => {
         "Vanligtvis till klassrummet. I dag till biblioteket."
       ),
       [
-        { text: "Vanligtvis till klassrummet.", separatorBefore: "" },
-        { text: "I dag till biblioteket.", separatorBefore: " " },
+        {
+          source: "Vanligtvis till klassrummet.",
+          text: "Vanligtvis till klassrummet.",
+          separatorBefore: "",
+        },
+        {
+          source: "I dag till biblioteket.",
+          text: "I dag till biblioteket.",
+          separatorBefore: " ",
+        },
       ]
     );
     assert.deepEqual(
       splitLingoCafeSentenceDisplaySegments("これは文です。次の文です。"),
       [
-        { text: "これは文です。", separatorBefore: "" },
-        { text: "次の文です。", separatorBefore: "" },
+        { source: "これは文です。", text: "これは文です。", separatorBefore: "" },
+        { source: "次の文です。", text: "次の文です。", separatorBefore: "" },
+      ]
+    );
+  });
+
+  it("keeps inline Markdown inside its sentence while exposing plain translation text", () => {
+    assert.deepEqual(
+      splitLingoCafeSentenceDisplaySegments(
+        "Skeppet *Etna* krockade med saken. **Det** blev sent."
+      ),
+      [
+        {
+          source: "Skeppet *Etna* krockade med saken.",
+          text: "Skeppet Etna krockade med saken.",
+          separatorBefore: "",
+        },
+        {
+          source: "**Det** blev sent.",
+          text: "Det blev sent.",
+          separatorBefore: " ",
+        },
+      ]
+    );
+  });
+
+  it("keeps closing emphasis with the sentence that contains it", () => {
+    assert.deepEqual(
+      splitLingoCafeSentenceDisplaySegments("Det var *klart.* Nästa steg."),
+      [
+        {
+          source: "Det var *klart.*",
+          text: "Det var klart.",
+          separatorBefore: "",
+        },
+        {
+          source: "Nästa steg.",
+          text: "Nästa steg.",
+          separatorBefore: " ",
+        },
+      ]
+    );
+  });
+
+  it("does not let Markdown link destinations create sentence boundaries", () => {
+    assert.deepEqual(
+      splitLingoCafeSentenceDisplaySegments(
+        "Läs [det här](https://example.test/one.two). Sedan går vi."
+      ),
+      [
+        {
+          source: "Läs [det här](https://example.test/one.two).",
+          text: "Läs det här.",
+          separatorBefore: "",
+        },
+        {
+          source: "Sedan går vi.",
+          text: "Sedan går vi.",
+          separatorBefore: " ",
+        },
       ]
     );
   });

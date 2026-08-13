@@ -214,6 +214,7 @@
 
 ## Completed
 
+- [DW74: Render Each Conversation Sentence on Its Own Line](./tasks/DW74-render-each-conversation-sentence-on-its-own-line/DW74.task.md)
 - [TR73: Make the LingoCafe Translation-Scope FAB a One-Tap Toggle](./tasks/TR73-make-the-lingocafe-translation-scope-fab-a-one-tap-toggle/TR73.task.md)
 - [DX48: Make LingoCafe Conversation Favorites Level-Agnostic](./tasks/DX48-make-lingocafe-conversation-favorites-level-agnostic/DX48.task.md)
 - [FN40: Show all CEFR variants in the conversation library](./tasks/FN40-show-all-cefr-variants-in-the-conversation-library/FN40.task.md)

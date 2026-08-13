@@ -99,19 +99,80 @@ export const splitLingoCafeSentences = (text: string) => {
 };
 
 export type LingoCafeSentenceDisplaySegment = {
+  source: string;
   text: string;
   separatorBefore: string;
+};
+
+type LingoCafeMarkdownText = {
+  text: string;
+  sourceStarts: number[];
+};
+
+const markdownLinkPattern = /^!?\[([^\]]*)\]\([^)]*\)/u;
+
+const getLingoCafeMarkdownText = (source: string): LingoCafeMarkdownText => {
+  let text = "";
+  const sourceStarts: number[] = [];
+  const activeMarkdownDelimiters = new Set<string>();
+  let pendingSourceStart: number | null = null;
+  let cursor = 0;
+
+  const append = (value: string, sourceStart: number) => {
+    text += value;
+    sourceStarts.push(...Array.from({ length: value.length }, () => sourceStart));
+    pendingSourceStart = null;
+  };
+
+  while (cursor < source.length) {
+    const remaining = source.slice(cursor);
+    const link = remaining.match(markdownLinkPattern);
+    if (link) {
+      append(link[1], pendingSourceStart ?? cursor);
+      cursor += link[0].length;
+      continue;
+    }
+
+    if (source[cursor] === "\\" && cursor + 1 < source.length) {
+      append(source[cursor + 1], pendingSourceStart ?? cursor);
+      cursor += 2;
+      continue;
+    }
+
+    const delimiter = remaining.match(/^(?:\*+|_+|`+|~+)/u)?.[0];
+    if (delimiter) {
+      if (activeMarkdownDelimiters.has(delimiter)) {
+        activeMarkdownDelimiters.delete(delimiter);
+      } else {
+        activeMarkdownDelimiters.add(delimiter);
+        pendingSourceStart ??= cursor;
+      }
+      cursor += delimiter.length;
+      continue;
+    }
+
+    append(source[cursor], pendingSourceStart ?? cursor);
+    cursor += 1;
+  }
+
+  return { text, sourceStarts };
 };
 
 export const splitLingoCafeSentenceDisplaySegments = (
   text: string
 ): LingoCafeSentenceDisplaySegment[] => {
-  const rawSegments = splitLingoCafeSentences(text);
+  const markdownText = getLingoCafeMarkdownText(text);
+  const rawSegments = splitLingoCafeSentences(markdownText.text);
+  let textOffset = 0;
   const contentSegments = rawSegments
-    .map((segment, rawIndex) => ({ segment, rawIndex }))
+    .map((segment, rawIndex) => {
+      const textStart = textOffset;
+      textOffset += segment.length;
+      return { segment, rawIndex, textStart, textEnd: textOffset };
+    })
     .filter(({ segment }) => segment.trim());
 
-  return contentSegments.map(({ segment, rawIndex }, index) => {
+  return contentSegments.map(({ segment, rawIndex, textStart, textEnd }, index) => {
     const previous = contentSegments[index - 1];
     const hasSourceWhitespace = previous
       ? /\s$/u.test(previous.segment) ||
@@ -121,7 +182,11 @@ export const splitLingoCafeSentenceDisplaySegments = (
           .some((between) => /\s/u.test(between))
       : false;
 
+    const sourceStart = markdownText.sourceStarts[textStart] ?? text.length;
+    const sourceEnd = markdownText.sourceStarts[textEnd] ?? text.length;
+
     return {
+      source: text.slice(sourceStart, sourceEnd).trim(),
       text: segment.trim(),
       separatorBefore: hasSourceWhitespace ? " " : "",
     };

@@ -63,7 +63,7 @@ import {
 import { buildConversationThreadLayout } from "@/app/(app)/(lingocafe)/conversations/_components/thread-layout";
 import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
-import { splitLingoCafeSentences } from "@/lib/lingocafe/sentence-segmentation";
+import { splitLingoCafeSentenceDisplaySegments } from "@/lib/lingocafe/sentence-segmentation";
 import { cn } from "@/lib/utils";
 
 const READER_SCROLL_PROGRESS_IDLE_SAVE_MS = 4000;
@@ -426,11 +426,10 @@ export const ConversationReaderPage = ({
     if (!data) return [];
     let index = 0;
     return data.rounds.flatMap((round) =>
-      splitLingoCafeSentences(round.text)
-        .filter((sentence) => sentence.trim())
+      splitLingoCafeSentenceDisplaySegments(round.text)
         .map((sentence, sentenceIndex) => ({
           id: `conversation:${data.conversation.id}:round:${round.position}:sentence:${sentenceIndex + 1}`,
-          text: sentence.trim(),
+          text: sentence.text,
           index: index++,
           paragraphIndex: round.position - 1,
         }))
@@ -779,6 +778,7 @@ export const ConversationReaderPage = ({
                                   onTargetLanguageChange={updateTranslationTargetLanguage}
                                   context={{ kind: "conversation", conversationId: data.conversation.id }}
                                   scope={translationScope}
+                                  sentenceLines
                                   idPrefix={`conversation:${data.conversation.id}:round:${round.position}`}
                                   activeSentenceId={playback.activeSentenceId}
                                   activeWordRange={playback.activeWordRange}
