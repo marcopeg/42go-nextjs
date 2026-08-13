@@ -361,7 +361,7 @@ export const ConversationChoiceGroupRow = ({
     () => window.matchMedia("(min-width: 768px)").matches,
     () => false
   );
-  if (!firstChoice) return null;
+  if (!choices?.length || !firstChoice) return null;
 
   if (choices.length === 1) {
     return <ConversationChoiceRow choice={firstChoice} href={getHref(firstChoice)} />;

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import {
+  clearConversationBrowseCache,
+  conversationBrowseInvalidatedEvent,
   readConversationBrowseCache,
   writeConversationBrowseCache,
 } from "@/app/(app)/(lingocafe)/conversations/_components/conversation-browse-cache";
@@ -102,6 +104,23 @@ export const useConversationBrowseData = <T>({
     });
     return () => controller.abort();
   }, [cacheScope, load, revision]);
+
+  useEffect(() => {
+    if (!cacheScope) return;
+    const refreshAfterConversationMutation = () => {
+      clearConversationBrowseCache(cacheScope);
+      void load(undefined, true);
+    };
+    window.addEventListener(
+      conversationBrowseInvalidatedEvent,
+      refreshAfterConversationMutation
+    );
+    return () =>
+      window.removeEventListener(
+        conversationBrowseInvalidatedEvent,
+        refreshAfterConversationMutation
+      );
+  }, [cacheScope, load]);
 
   return {
     data: result?.identity === identity ? result.payload : null,

@@ -1,8 +1,11 @@
 "use client";
 
-const storageKey = "lingocafe.conversations.browse-cache.v2";
+const storageKey = "lingocafe.conversations.browse-cache.v3";
 const maxEntries = 32;
 const maxCacheBytes = 512 * 1024;
+
+export const conversationBrowseInvalidatedEvent =
+  "lingocafe:conversation-browse-invalidated";
 
 type BrowseCacheEntry<T = unknown> = {
   etag: string | null;
@@ -104,4 +107,8 @@ export const clearConversationBrowseCache = (userId: string) => {
     changed = true;
   }
   if (changed) writeStore(store);
+};
+
+export const notifyConversationBrowseInvalidated = () => {
+  window.dispatchEvent(new Event(conversationBrowseInvalidatedEvent));
 };

@@ -372,12 +372,15 @@ status. This table is application-owned and the publisher must not change it.
 | Column | Meaning |
 | --- | --- |
 | `user_id` | Authenticated `auth.users.id`. |
-| `conversation_id` | Exact conversation ID. |
+| `scenario_id`, `variant_id` | The semantic conversation variant; together they prove the variant ownership scope. |
+| `language` | The saved variant's exact conversation language. |
 | `starred_at` | Latest explicit star timestamp. |
 
-`(user_id, conversation_id)` is the primary key. Both foreign keys cascade on
-deletion. The `idx_lc_conversation_stars_user_time` index on
-`(user_id, starred_at DESC)` supports recent-star queries.
+`(user_id, scenario_id, variant_id, language)` is the primary key. The user
+and variant foreign keys cascade on deletion. A star deliberately spans every
+CEFR realization of that variant in its saved language; reads and progress
+remain exact-conversation state. The `idx_lc_conversation_stars_user_time`
+index on `(user_id, starred_at DESC)` supports recent-star queries.
 
 ## Constraint and index inventory
 
@@ -486,7 +489,8 @@ protocol:
 8. Never hard-delete a top-level content row merely because it is absent from a
    full or partial input. Withdraw normal content by changing status and
    `is_visible`. Hard deletion is a separate future operator workflow because
-   exact-conversation deletion cascades learner state.
+   exact-conversation deletion cascades reads and progress, while variant
+   deletion cascades its language-specific favorites.
 9. Never touch `conversation_reads`, `conversation_progress`,
    `conversation_stars`, or `conversation_user_state_versions`. Commit only
    after the complete scoped import succeeds.

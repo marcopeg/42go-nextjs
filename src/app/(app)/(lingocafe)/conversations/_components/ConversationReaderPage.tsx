@@ -53,6 +53,7 @@ import {
 import {
   ConversationError,
 } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI";
+import { notifyConversationBrowseInvalidated } from "@/app/(app)/(lingocafe)/conversations/_components/conversation-browse-cache";
 import {
   CONVERSATIONS_POLICY,
   buildConversationHref,
@@ -569,6 +570,7 @@ export const ConversationReaderPage = ({
         credentials: "same-origin",
       });
       if (!response.ok) throw new Error(await getResponseMessage(response, "Could not update star."));
+      notifyConversationBrowseInvalidated();
     } catch (caught) {
       setData((current) => current ? { ...current, state: { ...current.state, isStarred: previous }, conversation: { ...current.conversation, isStarred: previous } } : current);
       setMutationMessage(caught instanceof Error ? caught.message : "Could not update star.");

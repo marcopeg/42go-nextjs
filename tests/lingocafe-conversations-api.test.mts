@@ -13,7 +13,7 @@ test("conversation browse ignores profile level and preserves category-path vali
   assert.match(source, /level_key IN \(\?, \?, \?, \?\)/);
   assert.doesNotMatch(source, /requestedBand|resolveConversationBand|getConversationBandLevels|profileBand|defaultBand/);
   assert.doesNotMatch(source, /whereIn\("c\.cefr_level"/);
-  assert.match(source, /schema: "conversation-browse-v4"/);
+  assert.match(source, /schema: "conversation-browse-v5"/);
   assert.match(source, /path\.length === 0 \|\| path\.length > 32/);
   assert.match(source, /new Set\(normalized\)\.size !== normalized\.length/);
 });
@@ -94,7 +94,7 @@ test("conversation browse responses support private conditional revalidation", a
     readSource("src/app/api/(lingocafe)/lingocafe/conversations/categories/[...categoryPath]/route.ts"),
   ]);
   assert.match(readerSource, /"Cache-Control": "no-store"/);
-  assert.match(conversationSource, /schema: "conversation-browse-v4"/);
+  assert.match(conversationSource, /schema: "conversation-browse-v5"/);
   assert.match(browseSource, /"Cache-Control": "private, no-cache"/);
   assert.match(browseSource, /matchesConversationBrowseETag/);
   assert.match(browseSource, /status: 304/);
@@ -120,7 +120,7 @@ test("conversation library caches route data and starts category transitions imm
     readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell.tsx"),
     readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationSharedUI.tsx"),
   ]);
-  assert.match(cacheSource, /lingocafe\.conversations\.browse-cache\.v2/);
+  assert.match(cacheSource, /lingocafe\.conversations\.browse-cache\.v3/);
   assert.match(cacheSource, /cacheKey = \(userId: string, href: string\)/);
   assert.match(hookSource, /If-None-Match/);
   assert.match(hookSource, /response\.status === 304/);
@@ -128,6 +128,21 @@ test("conversation library caches route data and starts category transitions imm
   assert.match(shellSource, /setPendingHref\(href\)/);
   assert.match(shellSource, /<ConversationListSkeleton/);
   assert.match(sharedUi, /onNavigate\(category, href\)/);
+});
+
+test("star mutations invalidate active conversation lists", async () => {
+  const [cacheSource, hookSource, readerSource] = await Promise.all([
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/conversation-browse-cache.ts"),
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/useConversationBrowseData.ts"),
+    readSource("src/app/(app)/(lingocafe)/conversations/_components/ConversationReaderPage.tsx"),
+  ]);
+
+  assert.match(cacheSource, /conversationBrowseInvalidatedEvent/);
+  assert.match(cacheSource, /notifyConversationBrowseInvalidated/);
+  assert.match(hookSource, /clearConversationBrowseCache\(cacheScope\)/);
+  assert.match(hookSource, /conversationBrowseInvalidatedEvent/);
+  assert.match(hookSource, /void load\(undefined, true\)/);
+  assert.match(readerSource, /if \(!response\.ok\).*?notifyConversationBrowseInvalidated\(\)/s);
 });
 
 test("starred conversations are a root navigation entry with a dedicated list", async () => {
@@ -142,7 +157,9 @@ test("starred conversations are a root navigation entry with a dedicated list", 
   assert.doesNotMatch(rootPage, /data\.starred\.map/);
   assert.match(starredPage, /data\.starred\.map/);
   assert.match(starredPage, /title: "Starred"/);
-  assert.match(starredPage, /<ConversationChoiceRow/);
+  assert.match(starredPage, /<ConversationChoiceGroupRow/);
+  assert.match(starredPage, /choices=\{variant\.choices\}/);
+  assert.match(starredPage, /variant\.scenarioId.*variant\.id/);
   assert.doesNotMatch(starredPage, /onStarChange/);
   assert.doesNotMatch(starredPage, /method: "DELETE"/);
   assert.match(readerPage, /Unstar conversation/);
@@ -250,7 +267,12 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.match(dataSource, /description: row\.list_description/);
   assert.match(dataSource, /scenarioTitle: row\.scenario_title/);
   assert.match(dataSource, /variantTitle: row\.variant_title/);
-  assert.match(dataSource, /starred: starred\.map\(\(row\) =>/);
+  assert.match(dataSource, /starred: groupConversationVariants\(starred, participantPreviews\)/);
+  assert.match(dataSource, /const groupConversationVariants =/);
+  assert.match(dataSource, /\$\{getConversationVariantKey\(row\)\}\\u0000\$\{row\.language\}/);
+  assert.match(dataSource, /star\.scenario_id/);
+  assert.match(dataSource, /star\.variant_id/);
+  assert.match(dataSource, /star\.language/);
   assert.match(dataSource, /loadConversationParticipantPreviews/);
   assert.match(dataSource, /participantPreviews\.get\(getConversationVariantKey\(row\)\)/);
   assert.match(sharedUi, /<p className="font-medium text-foreground">\{choice\.title\}<\/p>/);
@@ -267,6 +289,7 @@ test("conversation traversal stays English and only detail exposes translation c
   assert.match(categoryPage, /<ConversationChoiceGroupRow/);
   assert.doesNotMatch(sharedUi, /<ConversationBadge>\{choice\.language\}<\/ConversationBadge>/);
   assert.match(sharedUi, /Choose a level for \$\{firstChoice\.title\}/);
+  assert.match(sharedUi, /if \(!choices\?\.length \|\| !firstChoice\) return null/);
   assert.match(sharedUi, /<SwipeableBottomSheet/);
   assert.match(bottomSheet, /inset-x-2\.5 bottom-0/);
   assert.match(bottomSheet, /rounded-t-3xl/);

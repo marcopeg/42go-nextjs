@@ -4,6 +4,8 @@ import test from "node:test";
 
 const migrationPath =
   "knex/migrations/20260806223000_lingocafe_conversations.js";
+const favoritesMigrationPath =
+  "knex/migrations/20260813115000_lingocafe_conversation_stars_by_variant_language.js";
 const seedPath = "knex/seeds/20260806224000.lingocafe.conversations.js";
 const seedDataPath = "knex/seeds/data/lingocafe.conversations.json";
 
@@ -172,6 +174,28 @@ test("migration isolates user state with cascading composite keys and time index
     migration,
     /idx_lc_conversation_progress_user_time[\s\S]*?\(user_id, updated_at DESC\)/
   );
+});
+
+test("favorites migrate from exact conversation rows to one variant-language row", async () => {
+  const migration = await readSource(favoritesMigrationPath);
+
+  assert.match(migration, /renameTable\("conversation_stars", "conversation_stars_legacy_exact"\)/);
+  assert.match(migration, /INSERT INTO lingocafe\.conversation_stars/);
+  assert.match(migration, /conversation\.scenario_id/);
+  assert.match(migration, /conversation\.variant_id/);
+  assert.match(migration, /conversation\.language/);
+  assert.match(migration, /MIN\(legacy\.starred_at\)/);
+  assert.match(
+    migration,
+    /table\.primary\(\["user_id", "scenario_id", "variant_id", "language"\]\)/
+  );
+  assert.match(
+    migration,
+    /foreign\(\["scenario_id", "variant_id"\]\)[\s\S]*?inTable\("lingocafe\.conversation_variants"\)[\s\S]*?onDelete\("CASCADE"\)/
+  );
+  assert.match(migration, /idx_lc_conversation_stars_user_time/);
+  assert.match(migration, /exports\.down/);
+  assert.match(migration, /conversation_stars_legacy_variant/);
 });
 
 test("migration rollback drops only conversation tables in dependency-safe order", async () => {

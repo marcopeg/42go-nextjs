@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { PlainList, PlainListItem } from "@/42go/components/PlainList";
 import { useConversationLibraryShell } from "@/app/(app)/(lingocafe)/conversations/_components/ConversationLibraryShell";
 import {
-  ConversationChoiceRow,
+  ConversationChoiceGroupRow,
   ConversationEmpty,
   ConversationError,
   ConversationListSkeleton,
@@ -68,12 +68,13 @@ const StarredConversationsPage = () => {
               hideMobileBottomBorder
               desktopVariant="contained"
             >
-              {data.starred.map((choice) => (
-                <PlainListItem key={choice.id}>
-                  <ConversationChoiceRow
-                    choice={choice}
-                    href={buildConversationHref({ id: choice.id, returnTo: currentHref })}
-                    showContext
+              {data.starred.map((variant) => (
+                <PlainListItem key={`${variant.scenarioId}:${variant.id}`}>
+                  <ConversationChoiceGroupRow
+                    choices={variant.choices}
+                    getHref={(choice) =>
+                      buildConversationHref({ id: choice.id, returnTo: currentHref })
+                    }
                   />
                 </PlainListItem>
               ))}

@@ -144,7 +144,7 @@ export const loadConversationBrowseValidator = async ({
   }
 
   return {
-    schema: "conversation-browse-v4",
+    schema: "conversation-browse-v5",
     sourceDigest: publication.source_digest,
     learnerStateVersion: String(learnerState?.version ?? 0),
     userId,
@@ -257,6 +257,18 @@ const conversationChain = (db: Knex | Knex.Transaction) =>
       "c.scenario_id"
     );
 
+const joinConversationStar = (
+  query: Knex.QueryBuilder,
+  userId: string,
+  joinType: "leftJoin" | "join" = "leftJoin"
+) =>
+  query[joinType]("lingocafe.conversation_stars as star", function joinStar() {
+    this.on("star.scenario_id", "=", "c.scenario_id")
+      .andOn("star.variant_id", "=", "c.variant_id")
+      .andOn("star.language", "=", "c.language")
+      .andOnVal("star.user_id", "=", userId);
+  });
+
 export const loadConversationDiscovery = async ({
   userId,
 }: {
@@ -290,13 +302,6 @@ export const loadConversationDiscovery = async ({
         .andOn("base.variant_id", "=", "c.variant_id")
         .andOn("base.cefr_level", "=", "c.cefr_level")
         .andOnVal("base.language", "=", "en");
-    })
-    .join("lingocafe.conversation_stars as star", function joinStar() {
-      this.on("star.conversation_id", "=", "c.id").andOnVal(
-        "star.user_id",
-        "=",
-        userId
-      );
     })
     .leftJoin("lingocafe.conversation_reads as reader_state", function joinRead() {
       this.on("reader_state.conversation_id", "=", "c.id").andOnVal(
@@ -342,6 +347,7 @@ export const loadConversationDiscovery = async ({
     )
     .orderBy("star.starred_at", "desc")
     .orderBy("c.id", "asc");
+  joinConversationStar(starsQuery, userId, "join");
   applyEligibleConversation(starsQuery, profile.targetLanguage);
 
   const [roots, starred] = await Promise.all([
@@ -359,12 +365,7 @@ export const loadConversationDiscovery = async ({
       ownLanguage: profile.ownLanguage,
       targetLevel: profile.targetLevel,
     },
-    starred: starred.map((row) =>
-      mapConversationChoice(
-        row,
-        participantPreviews.get(getConversationVariantKey(row))
-      )
-    ),
+    starred: groupConversationVariants(starred, participantPreviews),
     roots: roots.map(mapCategory),
   };
 };
@@ -441,6 +442,7 @@ const groupCategoryScenarios = (
     string,
     {
       id: string;
+      scenarioId: string;
       canonicalLanguage: string;
       canonicalTitle: string;
       canonicalDescription: string;
@@ -479,6 +481,7 @@ const groupCategoryScenarios = (
     if (!variant) {
       variant = {
         id: row.variant_id,
+        scenarioId: row.scenario_id,
         canonicalLanguage: row.variant_canonical_language,
         canonicalTitle: row.variant_title,
         canonicalDescription: row.variant_description,
@@ -498,6 +501,49 @@ const groupCategoryScenarios = (
   }
 
   return [...scenarios.values()];
+};
+
+const groupConversationVariants = (
+  rows: CategoryConversationRow[],
+  participantPreviews: Map<string, ConversationParticipantPreview[]>
+) => {
+  const variants = new Map<
+    string,
+    {
+      id: string;
+      canonicalLanguage: string;
+      canonicalTitle: string;
+      canonicalDescription: string;
+      title: string;
+      description: string;
+      choices: Array<ReturnType<typeof mapConversationChoice>>;
+    }
+  >();
+
+  for (const row of rows) {
+    const key = `${getConversationVariantKey(row)}\u0000${row.language}`;
+    let variant = variants.get(key);
+    if (!variant) {
+      variant = {
+        id: row.variant_id,
+        canonicalLanguage: row.variant_canonical_language,
+        canonicalTitle: row.variant_title,
+        canonicalDescription: row.variant_description,
+        title: row.variant_title,
+        description: row.variant_description,
+        choices: [],
+      };
+      variants.set(key, variant);
+    }
+    variant.choices.push(
+      mapConversationChoice(
+        row,
+        participantPreviews.get(getConversationVariantKey(row))
+      )
+    );
+  }
+
+  return [...variants.values()];
 };
 
 export const loadConversationCategory = async ({
@@ -605,9 +651,6 @@ export const loadConversationCategory = async ({
     .leftJoin("lingocafe.conversation_reads as reader_state", function joinRead() {
       this.on("reader_state.conversation_id", "=", "c.id").andOnVal("reader_state.user_id", "=", userId);
     })
-    .leftJoin("lingocafe.conversation_stars as star", function joinStar() {
-      this.on("star.conversation_id", "=", "c.id").andOnVal("star.user_id", "=", userId);
-    })
     .select(
       "c.id", "c.title", "c.description", "c.language", "c.cefr_level",
       db.raw("COALESCE(base.title, v.title) as list_title"),
@@ -629,6 +672,7 @@ export const loadConversationCategory = async ({
     .orderByRaw("CASE c.cefr_level WHEN 'a1' THEN 1 WHEN 'a2' THEN 2 WHEN 'b1' THEN 3 WHEN 'b2' THEN 4 ELSE 5 END")
     .orderBy("c.title", "asc")
     .orderBy("c.id", "asc");
+  joinConversationStar(choicesQuery, userId);
   applyEligibleConversation(choicesQuery, profile.targetLanguage);
 
   const [children, choices] = await Promise.all([
@@ -875,9 +919,6 @@ export const loadConversationDetail = async ({
     .leftJoin("lingocafe.conversation_reads as reader_state", function joinRead() {
       this.on("reader_state.conversation_id", "=", "c.id").andOnVal("reader_state.user_id", "=", userId);
     })
-    .leftJoin("lingocafe.conversation_stars as star", function joinStar() {
-      this.on("star.conversation_id", "=", "c.id").andOnVal("star.user_id", "=", userId);
-    })
     .leftJoin("lingocafe.conversation_progress as progress_state", function joinProgress() {
       this.on("progress_state.conversation_id", "=", "c.id").andOnVal("progress_state.user_id", "=", userId);
     })
@@ -893,6 +934,7 @@ export const loadConversationDetail = async ({
     )
     .where("c.id", conversationId)
     .first();
+  joinConversationStar(detailQuery, userId);
   applyEligibleConversation(detailQuery, profile.targetLanguage);
   const detail = (await detailQuery) as ConversationDetailRow | undefined;
   if (!detail) {
@@ -1172,20 +1214,91 @@ export const saveConversationProgress = async ({
 
 type StateKind = "read" | "star";
 
-const stateConfig = {
-  read: {
-    table: "lingocafe.conversation_reads",
-    timestamp: "read_at",
-    responseFlag: "isRead",
-    responseTime: "readAt",
-  },
-  star: {
-    table: "lingocafe.conversation_stars",
-    timestamp: "starred_at",
-    responseFlag: "isStarred",
-    responseTime: "starredAt",
-  },
-} as const;
+const incrementConversationUserStateVersion = async (
+  trx: Knex.Transaction,
+  userId: string
+) => {
+  await trx.raw(
+    `
+      INSERT INTO lingocafe.conversation_user_state_versions
+        (user_id, version, updated_at)
+      VALUES (?, 1, NOW())
+      ON CONFLICT (user_id) DO UPDATE
+      SET version = lingocafe.conversation_user_state_versions.version + 1,
+          updated_at = NOW()
+    `,
+    [userId]
+  );
+};
+
+const mutateConversationStar = async ({
+  userId,
+  conversationId,
+  active,
+}: {
+  userId: string;
+  conversationId: string;
+  active: boolean;
+}) => {
+  const db = getDB();
+  const profile = active ? await loadConversationProfile(userId) : null;
+
+  return db.transaction(async (trx) => {
+    const identityQuery = conversationChain(trx)
+      .select("c.scenario_id", "c.variant_id", "c.language")
+      .where("c.id", conversationId)
+      .first();
+    if (active) applyEligibleConversation(identityQuery, profile!.targetLanguage);
+    const identity = (await identityQuery) as
+      | { scenario_id: string; variant_id: string; language: string }
+      | undefined;
+    if (!identity) {
+      if (active) {
+        throw new ConversationApiError(404, "not_found", "Conversation not found.");
+      }
+      return { isStarred: false, starredAt: null, changed: false };
+    }
+
+    let changed = false;
+    let starredAt: string | null = null;
+    const where = {
+      user_id: userId,
+      scenario_id: identity.scenario_id,
+      variant_id: identity.variant_id,
+      language: identity.language,
+    };
+    if (active) {
+      const inserted = (await trx("lingocafe.conversation_stars")
+        .insert({ ...where, starred_at: trx.fn.now() })
+        .onConflict(["user_id", "scenario_id", "variant_id", "language"])
+        .ignore()
+        .returning("starred_at")) as Array<{ starred_at: Date | string }>;
+      changed = inserted.length > 0;
+      const value = changed
+        ? inserted[0].starred_at
+        : (
+            await trx("lingocafe.conversation_stars")
+              .select("starred_at")
+              .where(where)
+              .first()
+          )?.starred_at;
+      starredAt = toISO(value);
+    } else {
+      changed =
+        (await trx("lingocafe.conversation_stars")
+          .where(where)
+          .del()) > 0;
+    }
+
+    if (changed) await incrementConversationUserStateVersion(trx, userId);
+
+    return {
+      isStarred: active,
+      starredAt: active ? starredAt : null,
+      changed,
+    };
+  });
+};
 
 export const mutateConversationState = async ({
   userId,
@@ -1199,8 +1312,11 @@ export const mutateConversationState = async ({
   active: boolean;
 }) => {
   validateConversationId(conversationId, "conversation ID");
+  if (kind === "star") {
+    return mutateConversationStar({ userId, conversationId, active });
+  }
+
   const db = getDB();
-  const config = stateConfig[kind];
   const profile = active ? await loadConversationProfile(userId) : null;
 
   return db.transaction(async (trx) => {
@@ -1218,49 +1334,37 @@ export const mutateConversationState = async ({
     let changed = false;
     let timestamp: string | null = null;
     if (active) {
-      const inserted = (await trx(config.table)
+      const inserted = (await trx("lingocafe.conversation_reads")
         .insert({
           user_id: userId,
           conversation_id: conversationId,
-          [config.timestamp]: trx.fn.now(),
+          read_at: trx.fn.now(),
         })
         .onConflict(["user_id", "conversation_id"])
         .ignore()
-        .returning(config.timestamp)) as Array<Record<string, Date | string>>;
+        .returning("read_at")) as Array<{ read_at: Date | string }>;
       changed = inserted.length > 0;
       const value = changed
-        ? inserted[0][config.timestamp]
+        ? inserted[0].read_at
         : (
-            await trx(config.table)
-              .select(config.timestamp)
+            await trx("lingocafe.conversation_reads")
+              .select("read_at")
               .where({ user_id: userId, conversation_id: conversationId })
               .first()
-          )?.[config.timestamp];
+          )?.read_at;
       timestamp = toISO(value);
     } else {
       changed =
-        (await trx(config.table)
+        (await trx("lingocafe.conversation_reads")
           .where({ user_id: userId, conversation_id: conversationId })
           .del()) > 0;
     }
 
-    if (changed) {
-      await trx.raw(
-        `
-          INSERT INTO lingocafe.conversation_user_state_versions
-            (user_id, version, updated_at)
-          VALUES (?, 1, NOW())
-          ON CONFLICT (user_id) DO UPDATE
-          SET version = lingocafe.conversation_user_state_versions.version + 1,
-              updated_at = NOW()
-        `,
-        [userId]
-      );
-    }
+    if (changed) await incrementConversationUserStateVersion(trx, userId);
 
     return {
-      [config.responseFlag]: active,
-      [config.responseTime]: active ? timestamp : null,
+      isRead: active,
+      readAt: active ? timestamp : null,
       changed,
     };
   });

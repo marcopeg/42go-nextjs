@@ -53,6 +53,7 @@ export type ConversationPathItem = ConversationCategory;
 
 export type ConversationVariant = {
   id: string;
+  scenarioId?: string;
   canonicalLanguage?: string;
   canonicalTitle?: string;
   canonicalDescription?: string;
@@ -76,7 +77,7 @@ export type ConversationScenario = {
 
 export type ConversationDiscoveryResponse = {
   profile: ConversationProfile;
-  starred: ConversationChoice[];
+  starred: ConversationVariant[];
   roots: ConversationCategory[];
 };
 
