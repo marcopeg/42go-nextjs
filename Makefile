@@ -363,8 +363,26 @@ verify.deployment:
 ### DB Utilities
 ###
 
+.PHONY: prod.migrate prod.migrate.idangerouslyconfirm prod.seed prod.seed.idangerouslyconfirm prod.seed.file prod.seed.file.idangerouslyconfirm prod.lc.books prod.lc.books.idangerouslyconfirm prod.lc.convs prod.lc.convs.idangerouslyconfirm
+
+PROD_SEED_FILES := $(notdir $(wildcard knex/seeds/*.js))
+
+define confirm_production_action
+	@test -t 0 || (echo "$(1) requires an interactive terminal; use $(2) only from an approved automation workflow" && exit 1)
+	@printf '\nDANGER: %s will modify the database selected by .env.prod.\n' "$(1)"
+	@printf 'Type yes to continue: '; read -r confirmation; test "$$confirmation" = "yes" || (echo "Aborted." && exit 1)
+endef
+
 migrate:
 	npx knex migrate:latest
+
+prod.migrate:
+	$(call confirm_production_action,prod.migrate,prod.migrate.idangerouslyconfirm)
+	@$(MAKE) prod.migrate.idangerouslyconfirm
+
+prod.migrate.idangerouslyconfirm:
+	@test -f .env.prod || (echo ".env.prod is required" && exit 1)
+	DOTENV_CONFIG_PATH=.env.prod npx knex --env production migrate:latest
 
 migrate.up:
 	npx knex migrate:up
@@ -414,8 +432,60 @@ migrate.status:
 seed:
 	npx knex seed:run
 
+prod.seed:
+	$(call confirm_production_action,prod.seed,prod.seed.idangerouslyconfirm)
+	@$(MAKE) prod.seed.idangerouslyconfirm
+
+prod.seed.idangerouslyconfirm:
+	@test -f .env.prod || (echo ".env.prod is required" && exit 1)
+	DOTENV_CONFIG_PATH=.env.prod npx knex --env production seed:run
+
+prod.seed.file:
+ifneq ($(strip $(file)),)
+ifeq ($(filter $(file),$(PROD_SEED_FILES)),$(file))
+	$(call confirm_production_action,prod.seed.file file=$(file),prod.seed.file.idangerouslyconfirm file=$(file))
+	@$(MAKE) prod.seed.file.idangerouslyconfirm file="$(file)"
+else
+	@echo "file must name a committed seed in knex/seeds"
+	@exit 1
+endif
+else
+	@echo "file is required; available seeds: $(PROD_SEED_FILES)"
+	@exit 1
+endif
+
+prod.seed.file.idangerouslyconfirm:
+ifneq ($(strip $(file)),)
+ifeq ($(filter $(file),$(PROD_SEED_FILES)),$(file))
+	@test -f .env.prod || (echo ".env.prod is required" && exit 1)
+	DOTENV_CONFIG_PATH=.env.prod npx knex --env production seed:run --specific="$(file)"
+else
+	@echo "file must name a committed seed in knex/seeds"
+	@exit 1
+endif
+else
+	@echo "file is required; available seeds: $(PROD_SEED_FILES)"
+	@exit 1
+endif
+
 seed.file:
 	npx knex seed:run --specific=$(file)
+
+prod.lc.books:
+	$(call confirm_production_action,prod.lc.books,prod.lc.books.idangerouslyconfirm)
+	@$(MAKE) prod.lc.books.idangerouslyconfirm
+
+prod.lc.books.idangerouslyconfirm:
+	@test -f .env.prod || (echo ".env.prod is required" && exit 1)
+	DOTENV_CONFIG_PATH=.env.prod npx knex --env production seed:run --specific=20260709141319.lingocafe.books.js
+
+prod.lc.convs:
+	$(call confirm_production_action,prod.lc.convs,prod.lc.convs.idangerouslyconfirm)
+	@$(MAKE) prod.lc.convs.idangerouslyconfirm
+
+prod.lc.convs.idangerouslyconfirm:
+	@test -f .env.prod || (echo ".env.prod is required" && exit 1)
+	DOTENV_CONFIG_PATH=.env.prod npx knex --env production seed:run --specific=20260806224000.lingocafe.conversations.js
 
 db.start:
 	@echo "Starting PostgreSQL database..."

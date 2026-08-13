@@ -1,5 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-require("dotenv").config({ path: "./.env" });
+require("dotenv").config({
+  path: process.env.DOTENV_CONFIG_PATH || "./.env",
+});
 
 const createKnexConfig = (connString) => {
   if (!connString) {

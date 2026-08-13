@@ -54,6 +54,44 @@ uses the local CapRover CLI to deploy that immutable image, and performs the
 same public-version verification. Run the Docker security gate before this
 local image workflow. `make deploy` remains an alias for this path.
 
+## Production Database Deployments
+
+Treat a request to deploy migrations or seeded LingoCafe content as a
+production database mutation, not an application release. Do not bump a
+version, create a tag, build an image, or run `make deploy.github` for these
+requests.
+
+Recognize these request phrases and prepare exactly one matching command:
+
+| User request | Command after confirmation |
+| --- | --- |
+| `deploy migrations` or `deploy migration` | `make prod.migrate.idangerouslyconfirm` |
+| `deploy seed` | `make prod.seed.idangerouslyconfirm` |
+| `deploy seed <xxx>` | `make prod.seed.file.idangerouslyconfirm file=<exact committed seed basename>` |
+| `deploy books` | `make prod.lc.books.idangerouslyconfirm` |
+| `deploy convs`, `deploy conversations`, or `deploy conversation content` | `make prod.lc.convs.idangerouslyconfirm` |
+
+Before executing any command in this table, stop and ask for fresh, explicit
+confirmation in the conversation. State the exact command in backticks and
+that it modifies the database selected by `.env.prod`. Use this form:
+
+> Ready to run `<exact command>`. This modifies the database selected by
+> `.env.prod`. Reply `confirm` to run it.
+
+Execute only after the user replies `confirm` in a later message. A previous
+confirmation, a vague acknowledgement, or confirmation of a different command
+does not count. After confirmation, run the corresponding
+`.idangerouslyconfirm` target directly; it is intentionally non-interactive so
+the conversation confirmation is the authorization gate. Report the result
+without displaying environment values or database connection details.
+
+For `deploy seed <xxx>`, first resolve `<xxx>` to exactly one basename in
+`knex/seeds/*.js`. Never interpolate an unverified user-supplied string into a
+command. If it is not an exact unambiguous committed seed, list the matching
+filenames or ask the user to choose one; do not ask for confirmation yet. Once
+resolved, include that exact basename in the confirmation command. `deploy
+seed` without a basename runs the complete seed collection.
+
 ## Preconditions
 
 - The working tree must be clean.
