@@ -185,6 +185,8 @@ test("conversation reader persists scroll progress and marks read near the end",
   assert.match(detailPage, /pb-\[calc\(1\.75rem\+env\(safe-area-inset-bottom\)\)\]/);
   assert.match(detailPage, /pb-\[calc\(13rem\+env\(safe-area-inset-bottom\)\)\]/);
   assert.match(detailPage, /md:fixed md:top-1\/2/);
+  assert.match(detailPage, /md:right-4/);
+  assert.doesNotMatch(detailPage, /100vw-680px/);
   assert.match(detailPage, /md:flex-col/);
   assert.doesNotMatch(detailPage, /border-t pt-8 text-center/);
   assert.match(detailPage, /buildConversationHref\(\{/);

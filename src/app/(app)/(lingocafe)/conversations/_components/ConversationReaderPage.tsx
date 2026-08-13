@@ -796,7 +796,7 @@ export const ConversationReaderPage = ({
                   {data.availableLevels.length > 1 ? (
                     <nav
                       aria-label="Available conversation levels"
-                      className="mt-16 text-center md:fixed md:top-1/2 md:right-[max(1rem,calc((100vw-680px)/2-5rem))] md:z-20 md:mt-0 md:flex md:w-12 md:-translate-y-1/2 md:flex-col md:items-center"
+                      className="mt-16 text-center md:fixed md:top-1/2 md:right-4 md:z-20 md:mt-0 md:flex md:w-12 md:-translate-y-1/2 md:flex-col md:items-center"
                     >
                       <div className="flex flex-wrap justify-center gap-2 md:w-12 md:flex-col">
                         {data.availableLevels.map((level) => {
