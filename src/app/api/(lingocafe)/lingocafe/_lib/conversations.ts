@@ -442,7 +442,6 @@ const groupCategoryScenarios = (
     string,
     {
       id: string;
-      scenarioId: string;
       canonicalLanguage: string;
       canonicalTitle: string;
       canonicalDescription: string;
@@ -451,6 +450,7 @@ const groupCategoryScenarios = (
       learnerPromise: string;
       variants: Array<{
         id: string;
+        scenarioId: string;
         canonicalLanguage: string;
         canonicalTitle: string;
         canonicalDescription: string;
