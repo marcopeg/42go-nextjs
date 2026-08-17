@@ -1,7 +1,7 @@
 "use client";
 
-import { Play } from "lucide-react";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { Play, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import type { ReaderTranslationCacheEntry } from "@/app/(app)/(lingocafe)/books/_components/reader-translation-cache";
 import type { ReaderTranslationScope } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
@@ -115,6 +115,7 @@ const ReaderTranslationAction = ({
   active,
   activeAriaLabel,
   speaking = false,
+  icon,
   onClick,
 }: {
   label: string;
@@ -122,6 +123,7 @@ const ReaderTranslationAction = ({
   active?: boolean;
   activeAriaLabel?: string;
   speaking?: boolean;
+  icon?: ReactNode;
   onClick: () => void;
 }) => {
   const [pressed, setPressed] = useState(false);
@@ -149,7 +151,7 @@ const ReaderTranslationAction = ({
       }}
     >
       <span>{label}</span>
-      {speaking && active ? <ReaderSpeakingIndicator /> : <Play aria-hidden="true" className="size-3.5 shrink-0 fill-current" />}
+      {speaking && active ? <ReaderSpeakingIndicator /> : icon || <Play aria-hidden="true" className="size-3.5 shrink-0 fill-current" />}
     </button>
   );
 };
@@ -163,6 +165,7 @@ export const ReaderTranslationPopover = ({
   onDismiss,
   onPlaySelection,
   onStartAudiobook,
+  onExplain,
   onLanguageSelect,
 }: {
   state: ReaderTranslationPopoverState;
@@ -173,12 +176,13 @@ export const ReaderTranslationPopover = ({
   onDismiss: () => void;
   onPlaySelection?: () => void;
   onStartAudiobook?: () => void;
+  onExplain?: () => void;
   onLanguageSelect?: (language: string) => void;
 }) => {
   const audiobookStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [audiobookStarting, setAudiobookStarting] = useState(false);
   const hasLanguageForm = state.status === "choose-language" || state.status === "saving-language";
-  const hasActionLine = state.status === "success" && (state.source !== null || canListen);
+  const hasActionLine = state.status === "success" && (state.source !== null || canListen || onExplain);
 
   useEffect(() => () => {
     if (audiobookStartTimerRef.current) clearTimeout(audiobookStartTimerRef.current);
@@ -245,12 +249,15 @@ export const ReaderTranslationPopover = ({
       {hasActionLine ? (
         <div className="flex min-w-0 items-baseline gap-2 px-3 pb-[2px] font-sans">
           {state.source ? <span aria-hidden="true" className="mr-auto shrink-0 uppercase tracking-normal" style={{ color: "var(--reader-fg-muted)", fontSize: "6px", lineHeight: "6px", textSizeAdjust: "none", WebkitTextSizeAdjust: "none" }}>{getTranslationSourceLabel(state.source)}</span> : null}
-          {canListen && onPlaySelection ? (
-            <div className="ml-auto flex min-w-0 items-baseline justify-end gap-4">
+          <div className="ml-auto flex min-w-0 items-baseline justify-end gap-4">
+            {canListen && onPlaySelection ? (
+              <>
               <ReaderTranslationAction label={getTranslationPronunciationVisibleLabel(scope)} active={pronunciationPlaying} activeAriaLabel={getTranslationPronunciationAccessibleLabel(scope, true)} speaking onClick={onPlaySelection} />
-              {onStartAudiobook ? <ReaderTranslationAction label="Start audiobook from here" emphasis active={audiobookStarting} onClick={handleStartAudiobook} /> : null}
-            </div>
-          ) : null}
+                {onStartAudiobook ? <ReaderTranslationAction label="Start audiobook" emphasis active={audiobookStarting} onClick={handleStartAudiobook} /> : null}
+              </>
+            ) : null}
+            {onExplain ? <ReaderTranslationAction label="Explain" icon={<Sparkles aria-hidden="true" className="size-3.5 shrink-0" />} onClick={onExplain} /> : null}
+          </div>
         </div>
       ) : null}
     </div>

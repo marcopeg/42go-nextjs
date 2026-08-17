@@ -13,6 +13,7 @@ import {
   ReaderTranslationPopover,
   type ReaderTranslationAnchor,
 } from "@/app/(app)/(lingocafe)/books/_components/ReaderTranslationPopover";
+import { getReaderAiModeUrl } from "@/app/(app)/(lingocafe)/books/_components/reader-ai-mode";
 import {
   DEFAULT_READER_TRANSLATION_SCOPE,
   READER_TRANSLATION_SCOPE_EVENT,
@@ -42,11 +43,15 @@ type Selection = {
   id: string;
   sentenceId: string;
   text: string;
+  sentence: string;
   anchor: ReaderTranslationAnchor;
 };
 
 const conversationTranslationOpenEvent = "lingocafe:conversation-translation-open";
 const fluentLanguageOptions = getLingoCafeReaderLanguages().own;
+
+const getLanguageLabel = (language: string | null, fallback: string) =>
+  fluentLanguageOptions.find((option) => option.code === language)?.label || fallback;
 
 type ProfileApiResponse = {
   message?: unknown;
@@ -165,6 +170,7 @@ export const ConversationTranslatableText = ({
   headingLevel,
   className,
   style,
+  explanationContext,
 }: {
   text: string;
   sourceLanguage: string;
@@ -184,6 +190,7 @@ export const ConversationTranslatableText = ({
   headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
   className?: string;
   style?: CSSProperties;
+  explanationContext?: string;
 }) => {
   const sentences = splitLingoCafeSentenceDisplaySegments(text);
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -410,11 +417,11 @@ export const ConversationTranslatableText = ({
                 tabIndex={0}
                 data-reader-translation-id={wordId}
                 aria-pressed={selected}
-                onClick={(event) => void translate({ id: wordId, sentenceId, text: part }, event.currentTarget)}
+                onClick={(event) => void translate({ id: wordId, sentenceId, text: part, sentence: sentence.text }, event.currentTarget)}
                 onKeyDown={(event) => {
                   if (event.key !== "Enter" && event.key !== " ") return;
                   event.preventDefault();
-                  void translate({ id: wordId, sentenceId, text: part }, event.currentTarget);
+                  void translate({ id: wordId, sentenceId, text: part, sentence: sentence.text }, event.currentTarget);
                 }}
                 className="rounded-[3px] text-left outline-none transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:ring-2 focus-visible:ring-ring/60"
                 style={getTranslationSelectionStyle(selected)}
@@ -432,11 +439,11 @@ export const ConversationTranslatableText = ({
         data-reader-sentence-id={sentenceId}
         data-reader-translation-id={sentenceId}
         aria-pressed={selection?.id === sentenceId}
-        onClick={(event) => void translate({ id: sentenceId, sentenceId, text: sentence.text }, event.currentTarget)}
+        onClick={(event) => void translate({ id: sentenceId, sentenceId, text: sentence.text, sentence: sentence.text }, event.currentTarget)}
         onKeyDown={(event) => {
           if (event.key !== "Enter" && event.key !== " ") return;
           event.preventDefault();
-          void translate({ id: sentenceId, sentenceId, text: sentence.text }, event.currentTarget);
+          void translate({ id: sentenceId, sentenceId, text: sentence.text, sentence: sentence.text }, event.currentTarget);
         }}
         className={cn(
           "rounded-[3px] text-left outline-none transition-colors hover:bg-[var(--reader-hover-bg)] focus-visible:ring-2 focus-visible:ring-ring/60",
@@ -488,6 +495,19 @@ export const ConversationTranslatableText = ({
                 closeTranslation(false);
               }
             : undefined}
+          onExplain={() => {
+            const url = getReaderAiModeUrl({
+              scope,
+              selectedText: selection.text,
+              sentence: selection.sentence,
+              sourceLanguage: getLanguageLabel(sourceLanguage, sourceLanguage),
+              responseLanguage: getLanguageLabel(targetLanguage, "English"),
+              surroundingContext: explanationContext
+                ? { label: "nearby conversation turns", text: explanationContext }
+                : undefined,
+            });
+            window.open(url, "_blank", "noopener,noreferrer");
+          }}
           onLanguageSelect={(language) => {
             if (isSameLingoCafeTranslationLanguage(sourceLanguage, language)) {
               return;

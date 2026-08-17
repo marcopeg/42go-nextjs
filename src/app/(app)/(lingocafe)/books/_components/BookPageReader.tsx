@@ -30,6 +30,7 @@ import {
   ReaderTranslationPopover,
   type ReaderTranslationAnchor,
 } from "@/app/(app)/(lingocafe)/books/_components/ReaderTranslationPopover";
+import { getReaderAiModeUrl } from "@/app/(app)/(lingocafe)/books/_components/reader-ai-mode";
 import type {
   ReaderPlaybackSentence,
   ReaderPlaybackStatus,
@@ -74,6 +75,8 @@ type TranslationSelection = {
   id: string;
   sentenceId: string;
   text: string;
+  sentence: string;
+  paragraph: string;
   anchor: ReaderTranslationAnchor;
 };
 
@@ -123,6 +126,9 @@ type ProfileApiResponse = {
 
 const tapMovementThresholdPx = 10;
 const fluentLanguageOptions = getLingoCafeReaderLanguages().own;
+
+const getLanguageLabel = (language: string | null, fallback: string) =>
+  fluentLanguageOptions.find((option) => option.code === language)?.label || fallback;
 
 type TapCandidate = {
   pointerId: number;
@@ -218,6 +224,7 @@ type ReaderTranslationTargetProps = {
   id: string;
   sentenceId: string;
   text: string;
+  sentence: string;
   context: SentenceRenderContext;
   active: boolean;
   children: ReactNode;
@@ -227,6 +234,7 @@ const ReaderTranslationTarget = ({
   id,
   sentenceId,
   text,
+  sentence,
   context,
   active,
   children,
@@ -245,7 +253,16 @@ const ReaderTranslationTarget = ({
     if (!context.translationEnabled) return;
     const anchor = context.getSentenceAnchor(target);
     if (!anchor) return;
-    context.onTranslationSelect({ id, sentenceId, text, anchor });
+    const paragraph =
+      target.closest("h1,h2,h3,h4,h5,h6,p")?.textContent?.trim() || sentence;
+    context.onTranslationSelect({
+      id,
+      sentenceId,
+      text,
+      sentence,
+      paragraph,
+      anchor,
+    });
   };
 
   return (
@@ -329,6 +346,7 @@ const renderWordTargets = (
         id={id}
         sentenceId={sentenceId}
         text={word}
+        sentence={sentence}
         context={context}
         active={context.activeTranslationId === id}
       >
@@ -392,6 +410,7 @@ const renderSentenceText = (
         id={id}
         sentenceId={id}
         text={sentence}
+        sentence={sentence}
         context={context}
         active={context.activeTranslationId === id}
       >
@@ -992,6 +1011,26 @@ export const BookPageReader = ({
           onStartAudiobook={() => {
             onTranslationAudiobookStart(translationState.sentenceId);
             setTranslationState(null);
+          }}
+          onExplain={() => {
+            const url = getReaderAiModeUrl({
+              scope: translationScope,
+              selectedText: translationState.text,
+              sentence: translationState.sentence,
+              sourceLanguage: getLanguageLabel(
+                bookPage.translation.from,
+                bookPage.translation.from
+              ),
+              responseLanguage: getLanguageLabel(
+                translationTargetLanguage,
+                "English"
+              ),
+              surroundingContext:
+                translationScope === "sentence"
+                  ? { label: "paragraph context", text: translationState.paragraph }
+                  : undefined,
+            });
+            window.open(url, "_blank", "noopener,noreferrer");
           }}
           onLanguageSelect={(language) => {
             if (

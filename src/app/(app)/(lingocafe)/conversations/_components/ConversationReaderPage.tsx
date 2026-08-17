@@ -727,6 +727,17 @@ export const ConversationReaderPage = ({
                       const isRight = placement?.side === "right";
                       const startsActorRun = placement?.startsActorRun ?? true;
                       const displayName = actor?.identity.displayName || actor?.name || round.actorId;
+                      const explanationContext = data.rounds
+                        .slice(Math.max(0, roundIndex - 2), roundIndex + 3)
+                        .map((contextRound) => {
+                          const contextActor = actorMap.get(contextRound.actorId);
+                          const contextDisplayName =
+                            contextActor?.identity.displayName ||
+                            contextActor?.name ||
+                            contextRound.actorId;
+                          return `${contextDisplayName}: ${contextRound.text}`;
+                        })
+                        .join("\n");
                       const persona = actor?.identity.source === "persona"
                         ? actor.identity.persona
                         : null;
@@ -778,6 +789,7 @@ export const ConversationReaderPage = ({
                                   onTargetLanguageChange={updateTranslationTargetLanguage}
                                   context={{ kind: "conversation", conversationId: data.conversation.id }}
                                   scope={translationScope}
+                                  explanationContext={explanationContext}
                                   sentenceLines
                                   idPrefix={`conversation:${data.conversation.id}:round:${round.position}`}
                                   activeSentenceId={playback.activeSentenceId}

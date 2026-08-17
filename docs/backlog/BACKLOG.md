@@ -78,6 +78,7 @@
 
 ## WIP
 
+- [ZA10: Add an AI Mode explain action to the LingoCafe reader](./tasks/ZA10-add-an-ai-mode-explain-action-to-the-lingocafe-reader/ZA10.task.md)
 - [SE90: Restore Native Safari Browser-Chrome Collapse Across LingoCafe Mobile Reading Surfaces](./tasks/SE90-restore-native-safari-browser-chrome-collapse-across-lingocafe-mobile-reading-surfaces/SE90.task.md)
 
 ## Blocked
