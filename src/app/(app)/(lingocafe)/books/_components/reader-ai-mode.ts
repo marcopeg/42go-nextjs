@@ -29,10 +29,11 @@ export const buildReaderAiModePrompt = ({
     `Help me learn ${selectionDescription}.`,
     `Respond in ${responseLanguage}.`,
     "Give a full language-learning explanation in this order:",
-    "1. An accurate translation.",
-    "2. The intended meaning in context.",
-    "3. A separate explanation of any multi-word or composite expressions, when applicable.",
-    "4. A detailed grammar and sentence-parsing analysis explaining each component and how they work together in communication.",
+    `1. Repeat the complete original sentence verbatim in ${sourceLanguage}.`,
+    "2. An accurate translation.",
+    "3. The intended meaning in context.",
+    "4. A separate explanation of any multi-word or composite expressions, when applicable.",
+    "5. A detailed grammar and sentence-parsing analysis explaining each component and how they work together in communication.",
     ...(surroundingContext?.text.trim()
       ? [`Additional ${surroundingContext.label}:\n“${surroundingContext.text.trim()}”`]
       : []),

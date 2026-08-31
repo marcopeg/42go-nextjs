@@ -16,6 +16,14 @@ describe("reader AI Mode handoff", () => {
       responseLanguage: "English",
     });
 
+    assert.match(
+      prompt,
+      /1\. Repeat the complete original sentence verbatim in Swedish\./
+    );
+    assert.ok(
+      prompt.indexOf("Repeat the complete original sentence") <
+        prompt.indexOf("An accurate translation")
+    );
     assert.match(prompt, /complete Swedish sentence/);
     assert.match(prompt, /Respond in English/);
     assert.match(prompt, /accurate translation/);
