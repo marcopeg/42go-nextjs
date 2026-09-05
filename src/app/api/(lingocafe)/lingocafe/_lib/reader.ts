@@ -674,9 +674,11 @@ export const markBookRead = async ({
 export const markBookUnread = async ({
   userId,
   bookId,
+  resetProgress = false,
 }: {
   userId: string;
   bookId: string;
+  resetProgress?: boolean;
 }) => {
   const db = getDB();
 
@@ -690,7 +692,12 @@ export const markBookUnread = async ({
     const removed = await trx("lingocafe.books_completed")
       .where({ user_id: userId, book_id: bookId })
       .del();
-    const changed = removed > 0;
+    const removedProgress = resetProgress
+      ? await trx("lingocafe.books_progress")
+          .where({ user_id: userId, book_id: bookId })
+          .del()
+      : 0;
+    const changed = removed > 0 || removedProgress > 0;
 
     if (changed) {
       await trackReaderEvent({

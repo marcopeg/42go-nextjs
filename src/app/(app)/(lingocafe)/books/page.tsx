@@ -259,6 +259,10 @@ const BooksPage = () => {
       : [];
   const updateBookCompletedAt = useCallback(
     (bookId: string, completedAt: string | null) => {
+      if (completedAt === null) {
+        void loadBooks();
+        return;
+      }
       setData((current) =>
         current
           ? {
@@ -270,7 +274,7 @@ const BooksPage = () => {
           : current
       );
     },
-    []
+    [loadBooks]
   );
   const bookshelf = useMemo(() => {
     return buildBookshelfSections(data?.books ?? []);

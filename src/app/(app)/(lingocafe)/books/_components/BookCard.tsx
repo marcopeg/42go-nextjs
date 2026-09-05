@@ -135,6 +135,17 @@ export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
             )}
             {isCompleted ? "Mark as unread" : "Mark as read"}
           </DropdownMenuItem>
+          {isReading ? (
+            <DropdownMenuItem
+              disabled={pending}
+              onSelect={() => {
+                void setCompleted(false, { resetProgress: true });
+              }}
+            >
+              <Undo2 className="size-4" />
+              Mark as unread
+            </DropdownMenuItem>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
     </article>

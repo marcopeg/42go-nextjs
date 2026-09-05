@@ -48,8 +48,12 @@ const markUnread = async (
   req: Request,
   context: { params: Promise<{ bookId: string }> }
 ) => {
-  void req.url;
-  return mutateCompletion(markBookUnread, context);
+  const resetProgress = new URL(req.url).searchParams.get("resetProgress") === "true";
+  return mutateCompletion(
+    (input: Parameters<typeof markBookUnread>[0]) =>
+      markBookUnread({ ...input, resetProgress }),
+    context
+  );
 };
 
 export const PUT = protectRoute(markRead, {

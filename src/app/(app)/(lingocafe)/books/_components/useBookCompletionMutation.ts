@@ -24,13 +24,16 @@ export const useBookCompletionMutation = ({
   const { toast } = useToast();
   const [pending, setPending] = useState(false);
 
-  const setCompleted = async (completed: boolean) => {
+  const setCompleted = async (
+    completed: boolean,
+    { resetProgress = false }: { resetProgress?: boolean } = {}
+  ) => {
     if (pending) return false;
     setPending(true);
 
     try {
       const response = await fetch(
-        `/api/lingocafe/books/${encodeURIComponent(bookId)}/completion`,
+        `/api/lingocafe/books/${encodeURIComponent(bookId)}/completion${!completed && resetProgress ? "?resetProgress=true" : ""}`,
         {
           method: completed ? "PUT" : "DELETE",
           credentials: "same-origin",
