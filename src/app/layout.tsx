@@ -71,9 +71,10 @@ export const generateMetadata = async (): Promise<Metadata> => {
 
 export const generateViewport = async (): Promise<Viewport> => {
   const resolution = await getCurrentPWAInstallResolution();
-  if (!resolution) return {};
+  if (!resolution) return { viewportFit: "cover" };
 
   return {
+    viewportFit: "cover",
     themeColor: resolution.target.themeColor,
   };
 };

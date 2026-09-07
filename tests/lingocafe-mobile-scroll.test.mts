@@ -323,6 +323,12 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
     surfaces,
     /h-full min-h-0 min-w-0 w-full flex-1 flex-col bg-background md:hidden/
   );
+  assert.match(
+    await readSource(
+      "src/app/(app)/(lingocafe)/books/_components/BookReaderPaginatedToolbar.tsx"
+    ),
+    /calc\(0\.75rem \+ env\(safe-area-inset-bottom, 0px\)\)/
+  );
   assert.match(surfaces, /<DialogClose asChild>/);
   assert.match(surfaces, /<ReaderContentSkeleton variant="book" \/>/);
   assert.match(

@@ -178,6 +178,17 @@ describe("PWA installation instruction platform", () => {
   });
 });
 
+describe("PWA viewport safe areas", () => {
+  it("enables viewport cover so installed apps expose device insets", () => {
+    const layoutSource = readFileSync(
+      new URL("../src/app/layout.tsx", import.meta.url),
+      "utf8"
+    );
+
+    assert.match(layoutSource, /viewportFit: "cover"/);
+  });
+});
+
 describe("PWA installed-target launch context", () => {
   it("marks an installed target without changing its stable identity", () => {
     const targetId = "/quicklists/list-1";

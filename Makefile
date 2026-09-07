@@ -25,12 +25,17 @@ BACKLOG_ROOT := $(CURDIR)/docs/backlog
 SECURITY_CHECK := .agents/skills/42go-security-check/scripts/run_security_check.py
 SECURITY_IMAGE ?= 42go-next:latest
 DEV_LAUNCH_LABEL ?= 42go-nextjs.dev
+NGROK_LC_LAUNCH_LABEL ?= 42go-nextjs.ngrok.lc
 DEV_NODE_BIN := $(dir $(shell command -v node))
+NGROK_BIN := $(shell command -v ngrok)
 
 export CAPROVER_URL
 export CAPROVER_APP_TOKEN
 
 boot:
+	$(MAKE) boot.detached
+
+boot.foreground:
 	$(MAKE) start
 	$(MAKE) app.install
 	$(MAKE) migrate
@@ -163,6 +168,24 @@ ngrok.ql:
 
 ngrok.lc:
 	ngrok http --url=lc42go.ngrok.app 3000
+
+ngrok.lc.detached:
+	@mkdir -p .cache
+	@launchctl remove "$(NGROK_LC_LAUNCH_LABEL)" 2>/dev/null || true
+	@launchctl submit -l "$(NGROK_LC_LAUNCH_LABEL)" \
+		-o "$(CURDIR)/.cache/42go-ngrok-lc.log" \
+		-e "$(CURDIR)/.cache/42go-ngrok-lc.log" \
+		-- /bin/zsh -lc 'cd "$(CURDIR)" && exec "$(NGROK_BIN)" http --url=lc42go.ngrok.app 3000'
+	@echo "Starting LingoCafe ngrok tunnel through launchd (log: .cache/42go-ngrok-lc.log)..."
+	@for attempt in 1 2 3 4 5; do \
+		if curl -fsS http://127.0.0.1:4040/api/tunnels >/dev/null 2>&1; then \
+			echo "LingoCafe tunnel is running at https://lc42go.ngrok.app/."; \
+			exit 0; \
+		fi; \
+		sleep 1; \
+	done; \
+	echo "ngrok did not become ready; check .cache/42go-ngrok-lc.log"; \
+	exit 1
 
 ###
 ### JS Prod Tasks

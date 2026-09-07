@@ -28,7 +28,13 @@ export const BookReaderPaginatedToolbar = ({
   const chapterLabel = getReaderChapterLabel(bookPage);
   const canComplete = pagination.atEnd && !bookPage.next && !bookPage.completedAt;
   return (
-    <footer className="shrink-0 px-3" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+    <footer
+      className="shrink-0 px-3"
+      style={{
+        paddingBottom:
+          "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
+      }}
+    >
       <nav aria-label="Reader controls" className="mx-auto flex h-14 max-w-[680px] items-center gap-1">
         <div className="flex size-11 shrink-0 items-center justify-center">
           {bookPage.translation.enabled && bookPage.translation.to && (
