@@ -9,6 +9,8 @@ import {
   getDefaultReaderPreferences,
   getReaderThemeStyle,
   readStoredReaderPreferencesStore,
+  sanitizeReaderReadingMode,
+  type ReaderReadingMode,
   sanitizeReaderFontSizeIndex,
   sanitizeReaderPreferences,
   sanitizeReaderTranslationScope,
@@ -66,6 +68,7 @@ export const useReaderPreferences = ({
       sanitizeReaderFontSizeIndex(store.sharedFontSizeIndex) ??
       basePreferences.fontSizeIndex,
   };
+  const readingMode = sanitizeReaderReadingMode(store.readingMode);
   const translationScope = sanitizeReaderTranslationScope(
     store.translationScope ?? DEFAULT_READER_TRANSLATION_SCOPE
   );
@@ -92,12 +95,15 @@ export const useReaderPreferences = ({
   };
 
   useEffect(() => {
-    if (Object.keys(store).length === 0) {
-      localStorage.removeItem(READER_PREFERENCES_STORAGE_KEY);
-      return;
+    try {
+      if (Object.keys(store).length === 0) {
+        localStorage.removeItem(READER_PREFERENCES_STORAGE_KEY);
+        return;
+      }
+      localStorage.setItem(READER_PREFERENCES_STORAGE_KEY, JSON.stringify(store));
+    } catch {
+      // Preferences still work for this session when storage is unavailable.
     }
-
-    localStorage.setItem(READER_PREFERENCES_STORAGE_KEY, JSON.stringify(store));
   }, [store]);
 
   const updatePreferences = (next: Partial<ReaderPreferences>) => {
@@ -155,6 +161,18 @@ export const useReaderPreferences = ({
     }));
   };
 
+  const updateReadingMode = (next: ReaderReadingMode) => {
+    const mode = sanitizeReaderReadingMode(next);
+    if (readingMode === mode) return;
+    trackEvent("read.settings.changed", {
+      ...settingsEventData,
+      action: "update",
+      changed_fields: ["readingMode"],
+      next_values: { readingMode: mode },
+    });
+    setStore((current) => ({ ...current, readingMode: mode }));
+  };
+
   const resetPreferences = () => {
     trackEvent("read.settings.changed", {
       ...settingsEventData,
@@ -170,6 +188,8 @@ export const useReaderPreferences = ({
 
   return {
     preferences,
+    readingMode,
+    updateReadingMode,
     translationScope,
     readerThemeStyle,
     canResetPreferences,

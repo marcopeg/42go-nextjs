@@ -82,16 +82,19 @@ npx shadcn@latest add <component>   # Add shadcn/ui component
 
 ## Visual Verification
 
-Use the public test tunnels instead of fighting local hostname routing:
+Use `http://localhost:3000` for browser-based tests by default to conserve ngrok
+bandwidth. Verify that the expected app is selected locally; if routing needs
+adjustment, resolve it locally rather than automatically switching to a tunnel.
+Use ngrok only when the operator explicitly requests it or the test specifically
+requires external-device access.
 
-- LingoCafe: `https://lc42go.ngrok.app/`
-- QuickList: `https://ql42go.ngrok.app/`
+- Local test URL: `http://localhost:3000`
 - Normal user UI: `john` / `john`
 - Backoffice/admin UI: `admin` / `admin`
 
 Recommended browser flow:
 
-1. Open the tunnel for the app under test.
+1. Open `http://localhost:3000` and verify the app under test.
 2. Log out any existing browser session when it does not match the required role.
 3. Use `john` / `john` for normal user surfaces or `admin` / `admin` for
    backoffice surfaces.
@@ -104,8 +107,7 @@ development seed. Do not restore or reapply development seed data
 automatically. Ask the user for explicit permission first.
 
 If a task gives a different verification URL or account, follow the task.
-Chuck Norris does not lose time wrestling localhost when ngrok is already
-holding the door open.
+Chuck Norris tests locally. Ngrok keeps its bandwidth.
 
 ---
 

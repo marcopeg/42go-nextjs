@@ -32,7 +32,7 @@ test("book reader consumes the shared preference controller", async () => {
     source,
     /preserveMobileReaderScroll\(next, handlePreferencesOpenChange\)/
   );
-  assert.match(source, /onPreferencesChange=\{updateReaderPreferences\}/);
+  assert.match(source, /onPreferencesChange=\{\(next\) => \{ persistLocalReaderPosition\(\); updateReaderPreferences\(next\); \}\}/);
   assert.match(source, /onTranslationScopeChange=\{updateReaderTranslationScope\}/);
   assert.doesNotMatch(source, /localStorage\.setItem\(/);
   assert.doesNotMatch(source, /useState<ReaderPreferencesStore>/);

@@ -1,8 +1,12 @@
+import { captureReaderContentAnchor, isReaderContentAnchor, restoreReaderContentAnchor, type ReaderContentAnchor } from "./reader-content-anchor.ts";
 import type { ReaderScrollTarget } from "@/app/(app)/(lingocafe)/books/_components/reader-scroll-target";
 
 export type ReaderScrollSurface = "desktop" | "mobile";
 
 export type ReaderScrollMemory = {
+  anchor?: ReaderContentAnchor | null;
+  axis?: "horizontal" | "vertical";
+  savedAt?: number;
   scrollTop: number;
   contentWidth: number;
   progressBps: number;
@@ -48,6 +52,8 @@ const isReaderScrollMemory = (value: unknown): value is ReaderScrollMemory => {
   );
 };
 
+let sessionStore: ReaderScrollMemoryStore = {};
+
 const readStore = (): ReaderScrollMemoryStore => {
   if (typeof window === "undefined") return {};
 
@@ -55,13 +61,13 @@ const readStore = (): ReaderScrollMemoryStore => {
     const raw = window.localStorage.getItem(
       READER_SCROLL_MEMORY_STORAGE_KEY
     );
-    if (!raw) return {};
+    if (!raw) return sessionStore;
     const parsed: unknown = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
       return {};
     }
 
-    return Object.fromEntries(
+    const persisted = Object.fromEntries(
       Object.entries(parsed).flatMap(([contentKey, surfaces]) => {
         if (!surfaces || typeof surfaces !== "object" || Array.isArray(surfaces)) {
           return [];
@@ -79,15 +85,21 @@ const readStore = (): ReaderScrollMemoryStore => {
         return memory.mobile || memory.desktop ? [[contentKey, memory]] : [];
       })
     );
+    return { ...persisted, ...sessionStore };
   } catch {
-    return {};
+    return sessionStore;
   }
 };
 
 export const readReaderScrollMemory = (
   contentKey: string,
   surface: ReaderScrollSurface
-): ReaderScrollMemory | null => readStore()[contentKey]?.[surface] ?? null;
+): ReaderScrollMemory | null => {
+  const memories = readStore()[contentKey];
+  if (!memories) return null;
+  const latest = Object.values(memories).sort((a, b) => (b.savedAt ?? 0) - (a.savedAt ?? 0))[0];
+  return latest?.anchor ? latest : memories[surface] ?? null;
+};
 
 export const writeReaderScrollMemory = (
   contentKey: string,
@@ -101,12 +113,16 @@ export const writeReaderScrollMemory = (
   store[contentKey] = {
     ...store[contentKey],
     [surface]: {
+      ...(contentKey.startsWith("book:") ? {
+        anchor: captureReaderContentAnchor(target), axis: target.axis ?? "vertical", savedAt: Date.now(),
+      } : {}),
       scrollTop: target.getScrollTop(),
       contentWidth: target.contentRoot.clientWidth,
       progressBps,
     },
   };
 
+  sessionStore = store;
   try {
     window.localStorage.setItem(
       READER_SCROLL_MEMORY_STORAGE_KEY,
@@ -121,6 +137,10 @@ export const restoreReaderScrollMemory = (
   target: ReaderScrollTarget,
   memory: ReaderScrollMemory
 ) => {
+  if (isReaderContentAnchor(memory.anchor)) {
+    return restoreReaderContentAnchor(target, memory.anchor);
+  }
+  if ((memory.axis ?? "vertical") !== (target.axis ?? "vertical")) return false;
   if (
     Math.abs(target.contentRoot.clientWidth - memory.contentWidth) >
     READER_SCROLL_WIDTH_TOLERANCE_PX

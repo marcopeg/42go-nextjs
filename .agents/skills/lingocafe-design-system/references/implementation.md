@@ -125,7 +125,7 @@ For every meaningful UI change:
 5. Check long titles, empty data, loading, error, and disabled states.
 6. Check that sticky/fixed controls do not cover scrollable content.
 7. Compare computed tokens and major dimensions with the references.
-8. Use the source repository’s ngrok test URL for visual checks when available.
+8. Use `http://localhost:3000` for browser-based visual checks in the source repository by default to conserve ngrok bandwidth. Follow its AGENTS.md for local app routing and tunnel exceptions.
 
 ## Source anchors
 

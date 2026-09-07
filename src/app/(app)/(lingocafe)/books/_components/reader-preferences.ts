@@ -9,10 +9,15 @@ export type ReaderPreferences = {
 
 export type ReaderThemeMode = "light" | "dark";
 export type ReaderThemeProfileKey = "light" | "dark" | "system";
+export type ReaderReadingMode = "scroll" | "paginated";
+export const sanitizeReaderReadingMode = (value: unknown): ReaderReadingMode =>
+  value === "paginated" ? "paginated" : "scroll";
+
 export type ReaderTranslationScope = "sentence" | "word";
 export type ReaderPreferencesStore = Partial<
   Record<ReaderThemeProfileKey, ReaderPreferences>
 > & {
+  readingMode?: ReaderReadingMode;
   sharedFontSizeIndex?: number;
   translationScope?: ReaderTranslationScope;
 };
@@ -373,6 +378,7 @@ export const sanitizeReaderPreferencesStore = (
 
   const raw = input as Record<string, unknown>;
   const next: ReaderPreferencesStore = {};
+  if ("readingMode" in raw) next.readingMode = sanitizeReaderReadingMode(raw.readingMode);
   const sharedFontSizeIndex = sanitizeReaderFontSizeIndex(
     raw.sharedFontSizeIndex
   );

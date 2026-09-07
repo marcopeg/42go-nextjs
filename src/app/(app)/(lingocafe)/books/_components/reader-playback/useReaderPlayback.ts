@@ -1,5 +1,7 @@
 "use client";
 
+import { restoreReaderContentAnchor } from "@/app/(app)/(lingocafe)/books/_components/reader-content-anchor";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TEventJson } from "@/42go/events";
 
@@ -163,6 +165,8 @@ export const useReaderPlayback = (
   const pendingIndexRef = useRef<number | null>(null);
   const pausedFromDelayRef = useRef(false);
   const guidedScrollRef = useRef(true);
+  const manuallyPagedRef = useRef(false);
+  const spokenOffsetRef = useRef(0);
   const speakIndexRef = useRef<(index: number, autoScroll?: boolean) => void>(
     () => undefined
   );
@@ -370,6 +374,7 @@ export const useReaderPlayback = (
       clearGuidedScrollTimer();
       programmaticScrollRef.current = true;
       guidedScrollRef.current = true;
+      manuallyPagedRef.current = false;
       centerReaderElement(target, element, behavior);
       guidedScrollTimerRef.current = setTimeout(() => {
         guidedScrollTimerRef.current = null;
@@ -378,6 +383,26 @@ export const useReaderPlayback = (
     },
     [clearGuidedScrollTimer, getScrollTarget]
   );
+
+  const revealSpokenPosition = useCallback((sentence: ReaderPlaybackSentence, offset = 0) => {
+    const target = getScrollTarget();
+    if (target?.axis !== "horizontal") return;
+    const element = getSentenceElement(target, sentence.id);
+    const text = element?.textContent ?? "";
+    const prefix = text.indexOf(sentence.text);
+    if (!element || prefix < 0 || !sentence.text.length) return;
+    clearGuidedScrollTimer();
+    programmaticScrollRef.current = true;
+    restoreReaderContentAnchor(target, {
+      sentenceId: sentence.id, text,
+      offset: prefix + Math.min(sentence.text.length - 1, Math.max(0, offset)),
+      atStart: false,
+    });
+    guidedScrollTimerRef.current = setTimeout(() => {
+      programmaticScrollRef.current = false;
+      guidedScrollTimerRef.current = null;
+    }, 700);
+  }, [clearGuidedScrollTimer, getScrollTarget]);
 
   const speakIndex = useCallback(
     (index: number, autoScroll = false) => {
@@ -411,7 +436,11 @@ export const useReaderPlayback = (
         clearSentenceTimer();
         pendingIndexRef.current = null;
         pausedFromDelayRef.current = false;
-        if (autoScroll && guidedScrollRef.current) centerSentence(sentence.id);
+        spokenOffsetRef.current = 0;
+        if (guidedScrollRef.current) {
+          if (getScrollTarget()?.axis === "horizontal") revealSpokenPosition(sentence);
+          else if (autoScroll) centerSentence(sentence.id);
+        }
         const generation = generationRef.current + 1;
         generationRef.current = generation;
         setActiveIndex(index);
@@ -445,6 +474,10 @@ export const useReaderPlayback = (
             ) {
               return;
             }
+            if (Number.isFinite(boundary.charIndex) && boundary.charIndex >= 0 && boundary.charIndex < sentence.text.length) {
+              spokenOffsetRef.current = boundary.charIndex;
+              if (guidedScrollRef.current) revealSpokenPosition(sentence, boundary.charIndex);
+            }
             setActiveWordRange(
               getBoundaryWordRange(
                 sentence.text,
@@ -474,6 +507,8 @@ export const useReaderPlayback = (
     },
     [
       centerSentence,
+      revealSpokenPosition,
+      getScrollTarget,
       clearParagraphTimer,
       clearSentenceTimer,
       bookId,
@@ -506,6 +541,7 @@ export const useReaderPlayback = (
         ? getSentenceElement(target, current.id)
         : null;
       guidedScrollRef.current = Boolean(
+        !manuallyPagedRef.current &&
         target &&
         currentElement &&
         isReaderElementVisible(target, currentElement)
@@ -557,6 +593,7 @@ export const useReaderPlayback = (
         cancelCurrentSpeech();
         setIsOpen(true);
         guidedScrollRef.current = true;
+        manuallyPagedRef.current = false;
         const selectedIndex = selectedSentenceIdRef.current
           ? sentencesRef.current.findIndex(
               (sentence) => sentence.id === selectedSentenceIdRef.current
@@ -581,11 +618,16 @@ export const useReaderPlayback = (
           lastPlayedElement &&
           isReaderElementVisible(target, lastPlayedElement)
         );
+        const selectedElement = target && selectedIndex >= 0
+          ? getSentenceElement(target, sentencesRef.current[selectedIndex].id)
+          : null;
+        const useSelection = selectedIndex >= 0 && (target?.axis !== "horizontal" ||
+          Boolean(selectedElement && isReaderElementVisible(target, selectedElement)));
         const index =
-          selectedIndex >= 0
-            ? selectedIndex
-            : fromBeginning
-              ? 0
+          fromBeginning
+            ? 0
+            : useSelection
+              ? selectedIndex
               : lastPlayedIsVisible
                 ? lastPlayedIndex
                 : atTop
@@ -595,7 +637,7 @@ export const useReaderPlayback = (
                       target
                     );
         if (fromBeginning && target) target.setScrollTop(0);
-        speakIndexRef.current(index);
+        speakIndexRef.current(index, target?.axis === "horizontal");
       } catch (error) {
         reportPlaybackError("start", error);
       }
@@ -643,6 +685,12 @@ export const useReaderPlayback = (
       return;
     }
     if (statusRef.current === "paused") {
+      if (getScrollTarget()?.axis === "horizontal") {
+        manuallyPagedRef.current = false;
+        guidedScrollRef.current = true;
+        const sentence = sentencesRef.current[activeIndexRef.current];
+        if (sentence) revealSpokenPosition(sentence, spokenOffsetRef.current);
+      }
       if (
         restartSentenceOnManualResumeRef.current &&
         activeIndexRef.current >= 0
@@ -661,6 +709,10 @@ export const useReaderPlayback = (
       return;
     }
     if (statusRef.current === "completed" || statusRef.current === "error") {
+      if (getScrollTarget()?.axis === "horizontal") {
+        manuallyPagedRef.current = false;
+        guidedScrollRef.current = true;
+      }
       cancelCurrentSpeech();
       speakIndexRef.current(
         statusRef.current === "completed"
@@ -676,6 +728,8 @@ export const useReaderPlayback = (
     clearParagraphTimer,
     clearSentenceTimer,
     schedulePendingSentence,
+    getScrollTarget,
+    revealSpokenPosition,
     setStatus,
   ]);
 
@@ -760,6 +814,7 @@ export const useReaderPlayback = (
       restartSentenceOnManualResumeRef.current = false;
       setIsOpen(true);
       guidedScrollRef.current = true;
+      manuallyPagedRef.current = false;
       speakIndexRef.current(sentenceIndex);
     },
     [canPlay, cancelCurrentSpeech, reportPlaybackError, syncAutoPauseReason]
@@ -1035,6 +1090,7 @@ export const useReaderPlayback = (
     setActiveIndex(-1);
     setStatus("idle");
     guidedScrollRef.current = true;
+    manuallyPagedRef.current = false;
   }, [cancelCurrentSpeech, setActiveIndex, setStatus]);
 
   useEffect(() => {
@@ -1069,6 +1125,9 @@ export const useReaderPlayback = (
       ? getSentenceElement(target, sentenceId)
       : null;
     if (!sentenceExists || !target || !element) return;
+    // Paginated reopening already restored a content anchor (or an explicit
+    // chapter entry). Old audio memory must not override that reading position.
+    if (target.axis === "horizontal") return;
 
     centerReaderElement(target, element);
   }, [
@@ -1091,6 +1150,8 @@ export const useReaderPlayback = (
       return;
 
     autoStartedPageKeyRef.current = pageKey;
+    guidedScrollRef.current = true;
+    manuallyPagedRef.current = false;
     const target = getScrollTarget();
     target?.setScrollTop(0);
     pendingIndexRef.current = 0;
@@ -1124,7 +1185,7 @@ export const useReaderPlayback = (
     let frame = 0;
     const syncGuidedState = () => {
       frame = 0;
-      if (programmaticScrollRef.current) return;
+      if (programmaticScrollRef.current || manuallyPagedRef.current) return;
       const element = getSentenceElement(target, activeSentenceId);
       guidedScrollRef.current = Boolean(
         element && isReaderElementVisible(target, element)
@@ -1138,6 +1199,29 @@ export const useReaderPlayback = (
       clearGuidedScrollTimer();
       programmaticScrollRef.current = false;
     };
+    const manualPageTurn = () => {
+      markManualScroll();
+      manuallyPagedRef.current = true;
+      guidedScrollRef.current = false;
+    };
+    let layoutFrame = 0;
+    const followReflow = () => {
+      cancelAnimationFrame(layoutFrame);
+      layoutFrame = requestAnimationFrame(() => {
+        if (target.axis !== "horizontal" || manuallyPagedRef.current || !guidedScrollRef.current) return;
+        const sentence = sentencesRef.current[activeIndexRef.current];
+        if (sentence) revealSpokenPosition(sentence, spokenOffsetRef.current);
+      });
+    };
+    const resizeObserver = new ResizeObserver(followReflow);
+    resizeObserver.observe(target.contentRoot);
+    const article = target.contentRoot.querySelector("article");
+    const layoutObserver = new MutationObserver(followReflow);
+    if (article) {
+      resizeObserver.observe(article);
+      layoutObserver.observe(article, { attributes: true, attributeFilter: ["style"] });
+    }
+    target.contentRoot.addEventListener("reader-page-turn", manualPageTurn);
     syncGuidedState();
     const removeScrollListener = target.addScrollListener(schedule);
     target.contentRoot.addEventListener("pointerdown", markManualScroll, {
@@ -1152,13 +1236,17 @@ export const useReaderPlayback = (
     window.addEventListener("resize", schedule);
     return () => {
       if (frame) cancelAnimationFrame(frame);
+      cancelAnimationFrame(layoutFrame);
+      resizeObserver.disconnect();
+      layoutObserver.disconnect();
+      target.contentRoot.removeEventListener("reader-page-turn", manualPageTurn);
       removeScrollListener();
       target.contentRoot.removeEventListener("pointerdown", markManualScroll);
       target.contentRoot.removeEventListener("touchstart", markManualScroll);
       target.contentRoot.removeEventListener("wheel", markManualScroll);
       window.removeEventListener("resize", schedule);
     };
-  }, [activeSentenceId, clearGuidedScrollTimer, getScrollTarget, isOpen]);
+  }, [activeSentenceId, clearGuidedScrollTimer, getScrollTarget, isOpen, revealSpokenPosition]);
 
   return {
     isOpen,

@@ -1,5 +1,7 @@
 "use client";
 
+import { createPortal } from "react-dom";
+import { getVisibleReaderRect } from "@/app/(app)/(lingocafe)/books/_components/reader-pagination";
 import { Play, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
@@ -12,6 +14,7 @@ import {
 import type { LingoCafeLanguageOption } from "@/config/lingocafe/profile-options";
 
 export type ReaderTranslationAnchor = {
+  portal?: HTMLElement;
   left: number;
   top: number;
   bottom: number;
@@ -40,12 +43,15 @@ export const getReaderTranslationAnchor = (
   element: HTMLElement,
   container: HTMLElement
 ): ReaderTranslationAnchor => {
-  const rect = element.getBoundingClientRect();
-  const containerRect = container.getBoundingClientRect();
+  const viewport = element.closest<HTMLElement>('[data-reader-paginated="true"]');
+  const portal = viewport?.closest<HTMLElement>("[data-reader-surface]") ?? undefined;
+  const rect = (viewport && getVisibleReaderRect(element, viewport.getBoundingClientRect())) || element.getBoundingClientRect();
+  const containerRect = (portal ?? container).getBoundingClientRect();
   const spaceAbove = rect.top;
   const spaceBelow = window.innerHeight - rect.bottom;
 
   return {
+    portal,
     left: rect.left - containerRect.left,
     top: rect.top - containerRect.top,
     bottom: rect.bottom - containerRect.top,
@@ -197,7 +203,7 @@ export const ReaderTranslationPopover = ({
     }, audiobookStartFeedbackMs);
   };
 
-  return (
+  const popover = (
     <div
       data-reader-translation-popover
       className="relative flex flex-col overflow-hidden rounded-md border font-sans backdrop-blur"
@@ -262,4 +268,5 @@ export const ReaderTranslationPopover = ({
       ) : null}
     </div>
   );
+  return state.anchor.portal ? createPortal(popover, state.anchor.portal) : popover;
 };

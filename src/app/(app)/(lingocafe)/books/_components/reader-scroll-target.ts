@@ -1,3 +1,5 @@
+import { getReaderPagination, getVisibleReaderRect, isPaginatedReader, snapReaderOffset } from "./reader-pagination.ts";
+
 export type ReaderViewportRect = {
   top: number;
   bottom: number;
@@ -6,6 +8,7 @@ export type ReaderViewportRect = {
 
 export type ReaderScrollTarget = {
   kind: "document" | "element";
+  axis?: "vertical" | "horizontal";
   contentRoot: HTMLElement;
   getScrollTop: () => number;
   getScrollHeight: () => number;
@@ -30,17 +33,26 @@ export const createElementReaderScrollTarget = (
 ): ReaderScrollTarget => ({
   kind: "element",
   contentRoot: element,
-  getScrollTop: () => element.scrollTop,
-  getScrollHeight: () => element.scrollHeight,
-  getClientHeight: () => element.clientHeight,
+  get axis() { return isPaginatedReader(element) ? "horizontal" : "vertical"; },
+  getScrollTop: () => isPaginatedReader(element) ? element.scrollLeft : element.scrollTop,
+  getScrollHeight: () => isPaginatedReader(element) ? getReaderPagination(element).max + element.clientWidth : element.scrollHeight,
+  getClientHeight: () => isPaginatedReader(element) ? element.clientWidth : element.clientHeight,
   getViewportRect: () => {
     const rect = element.getBoundingClientRect();
     return { top: rect.top, bottom: rect.bottom, height: rect.height };
   },
   setScrollTop: (top) => {
-    element.scrollTop = normalizeScrollTop(top);
+    if (isPaginatedReader(element)) {
+      const { pitch, max } = getReaderPagination(element);
+      element.scrollLeft = snapReaderOffset(top, pitch, max);
+    } else element.scrollTop = normalizeScrollTop(top);
   },
-  scrollTo: (options) => element.scrollTo(options),
+  scrollTo: (options) => {
+    if (isPaginatedReader(element)) {
+      const { pitch, max } = getReaderPagination(element);
+      element.scrollTo({ left: snapReaderOffset(options.top ?? 0, pitch, max), behavior: "instant" });
+    } else element.scrollTo(options);
+  },
   addScrollListener: (listener) => {
     element.addEventListener("scroll", listener, { passive: true });
     return () => element.removeEventListener("scroll", listener);
@@ -110,6 +122,16 @@ export const centerReaderElement = (
   element: HTMLElement,
   behavior: ScrollBehavior = "auto"
 ) => {
+  if (target.axis === "horizontal") {
+    const viewport = target.contentRoot.getBoundingClientRect();
+    if (getVisibleReaderRect(element, viewport)) return;
+    const rect = element.getClientRects()[0];
+    if (rect) {
+      const position = target.getScrollTop() + rect.left - viewport.left;
+      target.setScrollTop(Math.floor((position + 1) / target.getClientHeight()) * target.getClientHeight());
+    }
+    return;
+  }
   const viewport = target.getViewportRect();
   const elementRect = element.getBoundingClientRect();
   const top =
@@ -125,6 +147,9 @@ export const isReaderElementVisible = (
   element: HTMLElement
 ) => {
   const elementRect = element.getBoundingClientRect();
+  if (target.axis === "horizontal") {
+    return Boolean(getVisibleReaderRect(element, target.contentRoot.getBoundingClientRect()));
+  }
   const viewport = target.getViewportRect();
   return elementRect.bottom > viewport.top && elementRect.top < viewport.bottom;
 };

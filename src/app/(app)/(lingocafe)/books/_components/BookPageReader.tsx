@@ -146,13 +146,13 @@ const hasActiveTextSelection = () => {
   );
 };
 
-const getReaderTranslationElement = (id: string) => {
+const getReaderTranslationElement = (id: string, root: HTMLElement) => {
   const escapedId =
     typeof CSS !== "undefined" && CSS.escape
       ? CSS.escape(id)
       : id.replace(/["\\]/g, "\\$&");
 
-  return document.querySelector<HTMLElement>(
+  return root.querySelector<HTMLElement>(
     `[data-reader-translation-id="${escapedId}"]`
   );
 };
@@ -814,14 +814,27 @@ export const BookPageReader = ({
   ]);
 
   useEffect(() => {
+    const viewport = articleRef.current?.closest<HTMLElement>('[data-reader-paginated="true"]');
+    if (!viewport) return;
+    const close = () => setTranslationState(null);
+    viewport.addEventListener("reader-page-turn", close);
+    viewport.addEventListener("scroll", close);
+    return () => {
+      viewport.removeEventListener("reader-page-turn", close);
+      viewport.removeEventListener("scroll", close);
+    };
+  });
+
+  useEffect(() => {
     if (!activeTranslationId) return;
 
     let frame = 0;
     const syncPopoverAnchor = () => {
       frame = 0;
-      const sentence = getReaderTranslationElement(activeTranslationId);
       const container = articleRef.current;
-      if (!sentence || !container) return;
+      if (!container) return;
+      const sentence = getReaderTranslationElement(activeTranslationId, container);
+      if (!sentence) return;
       const anchor = getReaderTranslationAnchor(sentence, container);
       setTranslationState((current) =>
         current?.id === activeTranslationId ? { ...current, anchor } : current

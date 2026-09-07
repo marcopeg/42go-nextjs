@@ -13,8 +13,10 @@ import { cn } from "@/lib/utils";
 
 export const BookReaderPlaybackControls = ({
   playback,
+  inline = false,
 }: {
   playback: ReaderPlaybackController;
+  inline?: boolean;
 }) => {
   const [draftProgress, setDraftProgress] = useState<number | null>(null);
   const [seeking, setSeeking] = useState(false);
@@ -50,8 +52,8 @@ export const BookReaderPlaybackControls = ({
 
   return (
     <div
-      className="pointer-events-auto flex min-w-0 touch-manipulation justify-center md:left-6 md:right-6"
-      style={floatingPlayerStyle}
+      className={cn("pointer-events-auto flex min-w-0 touch-manipulation justify-center", !inline && "md:left-6 md:right-6")}
+      style={inline ? { position: "relative", zIndex: 1000, paddingBottom: "0.5rem" } : floatingPlayerStyle}
     >
         <div
           role="region"

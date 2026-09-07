@@ -147,5 +147,7 @@ npm run test:email-validation
 npm run qa
 ```
 
-For LingoCafe visual/auth checks, use `https://lc42go.ngrok.app/`.
+For LingoCafe browser-based visual/auth checks, use `http://localhost:3000` by default.
+Follow AGENTS.md for local app routing and the limited exceptions for ngrok;
+conserve tunnel bandwidth.
 Credentials test user: `john` / `john`.

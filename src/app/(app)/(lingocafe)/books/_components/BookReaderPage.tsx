@@ -39,6 +39,7 @@ import {
 } from "@/app/(app)/(lingocafe)/books/_components/reader-scroll-memory";
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
 import { useBookCompletionMutation } from "@/app/(app)/(lingocafe)/books/_components/useBookCompletionMutation";
+import { captureReaderContentAnchor, restoreReaderContentAnchor, type ReaderContentAnchor } from "@/app/(app)/(lingocafe)/books/_components/reader-content-anchor";
 import { useReaderPreferences } from "@/app/(app)/(lingocafe)/books/_components/useReaderPreferences";
 import type {
   ReaderBookPage,
@@ -380,6 +381,9 @@ export const BookReadPage = ({
         : getMobileReaderScrollTarget(),
     [getDesktopReaderScrollTarget, getMobileReaderScrollTarget]
   );
+  const preferenceAnchorRef = useRef<ReaderContentAnchor | null>(null);
+  const restoredSurfaceRef = useRef<ReaderSurfaceKey | null>(null);
+  const restoredRouteRef = useRef("");
   const restoredKeyRef = useRef<Record<ReaderSurfaceKey, string>>({
     desktop: "",
     mobile: "",
@@ -419,6 +423,7 @@ export const BookReadPage = ({
     string | null
   >(null);
   const [playbackTopPageKey, setPlaybackTopPageKey] = useState("");
+  const [forceEndPageKey, setForceEndPageKey] = useState("");
   const [forceTopPageKey, setForceTopPageKey] = useState("");
   const [restoredPageKey, setRestoredPageKey] = useState("");
   const [readingProgressBps, setReadingProgressBps] = useState(0);
@@ -509,6 +514,8 @@ export const BookReadPage = ({
     },
   });
   const {
+    readingMode,
+    updateReadingMode,
     preferences: readerPreferences,
     translationScope: readerTranslationScope,
     canResetPreferences: canResetReaderPreferences,
@@ -598,9 +605,13 @@ export const BookReadPage = ({
   );
   const handlePreferencesPanelOpenChange = useCallback(
     (next: boolean) => {
+      if (next) {
+        const target = getActiveReaderScrollTarget();
+        preferenceAnchorRef.current = target ? captureReaderContentAnchor(target) : null;
+      } else preferenceAnchorRef.current = null;
       preserveMobileReaderScroll(next, handlePreferencesOpenChange);
     },
-    [handlePreferencesOpenChange, preserveMobileReaderScroll]
+    [getActiveReaderScrollTarget, handlePreferencesOpenChange, preserveMobileReaderScroll]
   );
   const handleContentsPanelOpenChange = useCallback(
     (next: boolean) => {
@@ -642,7 +653,7 @@ export const BookReadPage = ({
   }, []);
 
   const navigateToReaderPage = useCallback(
-    (href: string, preservePlaybackTop = false) => {
+    (href: string, preservePlaybackTop = false, entryProgress?: number) => {
       if (pendingReaderHrefRef.current) return;
       if (!preservePlaybackTop) setPlaybackTopPageKey("");
       const nextRoute = parseReaderRouteHref(href);
@@ -660,8 +671,9 @@ export const BookReadPage = ({
       scrollPersistenceSuspendedRef.current = true;
 
       const nextPageKey = `${nextRoute.bookId}:${nextRoute.pageId}`;
-      setForceTopPageKey(nextPageKey);
-      pendingServerTopPageKeyRef.current = nextPageKey;
+      setForceEndPageKey(entryProgress === 10000 ? nextPageKey : "");
+      setForceTopPageKey(entryProgress === 10000 ? "" : nextPageKey);
+      pendingServerTopPageKeyRef.current = entryProgress === 10000 ? "" : nextPageKey;
 
       latestRouteHrefRef.current = nextRoute.href;
       updatePendingReaderHref(nextRoute.href);
@@ -677,6 +689,11 @@ export const BookReadPage = ({
       syncReaderHistory,
       updatePendingReaderHref,
     ]
+  );
+
+  const navigateToReaderChapter = useCallback(
+    (href: string, entryProgress?: number) => navigateToReaderPage(href, false, entryProgress),
+    [navigateToReaderPage]
   );
 
   useEffect(() => {
@@ -814,7 +831,10 @@ export const BookReadPage = ({
       readerRoute.pageId === bookPage.page.pageId
         ? readerRoute.progressBps
         : null;
-    const restoreProgressBps = shouldForcePageTop
+    const shouldForcePageEnd = forceEndPageKey === currentBookPageKey;
+    const restoreProgressBps = shouldForcePageEnd
+      ? 10000
+      : shouldForcePageTop
       ? 0
       : routeProgressBps ??
         (bookPage.progress?.pageId === bookPage.page.pageId
@@ -823,9 +843,10 @@ export const BookReadPage = ({
     const surfaceKey: ReaderSurfaceKey = isDesktopReader
       ? "desktop"
       : "mobile";
-    const restoreKey = `${surfaceKey}:${bookPage.page.bookId}:${bookPage.page.pageId}:${restoreProgressBps}`;
+    const restoreKey = `${readingMode}:${readerPreferences.fontSizeIndex}:${readerPreferences.fontFamilyKey}:${surfaceKey}:${bookPage.page.bookId}:${bookPage.page.pageId}:${readerRoute?.href}`;
     if (
-      !shouldForcePageTop &&
+      !shouldForcePageTop && !shouldForcePageEnd &&
+      restoredSurfaceRef.current === surfaceKey &&
       restoredKeyRef.current[surfaceKey] === restoreKey
     ) {
       return;
@@ -862,19 +883,19 @@ export const BookReadPage = ({
         bookPage.page.bookId,
         bookPage.page.pageId
       );
-      const scrollMemory = shouldForcePageTop
+      const scrollMemory = (shouldForcePageTop || shouldForcePageEnd || (routeProgressBps !== null && restoredRouteRef.current !== readerRoute?.href))
         ? null
         : readReaderScrollMemory(scrollMemoryKey, surfaceKey);
-      const restoredFromMemory = scrollMemory
+      const restoredFromPreference = !shouldForcePageTop && !shouldForcePageEnd && preferenceAnchorRef.current
+        ? restoreReaderContentAnchor(target, preferenceAnchorRef.current) : false;
+      const restoredFromMemory = restoredFromPreference || (scrollMemory
         ? restoreReaderScrollMemory(target, scrollMemory)
-        : false;
+        : false);
       const restored =
         restoredFromMemory ||
         scrollReaderToProgressBps(target, restoreProgressBps);
       const scrollTop = target.getScrollTop();
-      const restoredProgressBps = restoredFromMemory && scrollMemory
-        ? scrollMemory.progressBps
-        : restoreProgressBps;
+      const restoredProgressBps = getReaderScrollProgressBps(target);
 
       if (restored) {
         lastScrollTopRef.current[surfaceKey] = scrollTop;
@@ -884,6 +905,8 @@ export const BookReadPage = ({
             ? "book"
             : "page"
         );
+        restoredSurfaceRef.current = surfaceKey;
+        restoredRouteRef.current = readerRoute?.href ?? "";
         restoredKeyRef.current[surfaceKey] = restoreKey;
         writeReaderScrollMemory(
           scrollMemoryKey,
@@ -891,6 +914,7 @@ export const BookReadPage = ({
           target,
           restoredProgressBps
         );
+        if (shouldForcePageEnd) setForceEndPageKey("");
         if (forceTopPageKey === currentBookPageKey) {
           setForceTopPageKey("");
         }
@@ -917,10 +941,15 @@ export const BookReadPage = ({
     isDesktopReader,
     currentBookPageKey,
     forceTopPageKey,
+    forceEndPageKey,
     shouldForcePageTop,
     readerRoute?.bookId,
     readerRoute?.pageId,
     readerRoute?.progressBps,
+    readerRoute?.href,
+    readingMode,
+    readerPreferences.fontSizeIndex,
+    readerPreferences.fontFamilyKey,
     updateDisplayedProgress,
     updateHeaderTitleMode,
   ]);
@@ -1089,11 +1118,13 @@ export const BookReadPage = ({
         open={isPreferencesOpen}
         onOpenChange={handlePreferencesPanelOpenChange}
         preferences={readerPreferences}
-        onPreferencesChange={updateReaderPreferences}
+        readingMode={readingMode}
+        onReadingModeChange={(mode) => { persistLocalReaderPosition(); updateReadingMode(mode); }}
+        onPreferencesChange={(next) => { persistLocalReaderPosition(); updateReaderPreferences(next); }}
         translationScope={readerTranslationScope}
         onTranslationScopeChange={updateReaderTranslationScope}
         canResetPreferences={canResetReaderPreferences}
-        onResetPreferences={resetReaderPreferences}
+        onResetPreferences={() => { persistLocalReaderPosition(); resetReaderPreferences(); }}
         playback={playback}
         preserveDocumentScroll={!isDesktopReader}
       />
@@ -1119,7 +1150,7 @@ export const BookReadPage = ({
       size="full"
       showClose={false}
       closeOnOverlayClick={false}
-      swipeToClose={!isDesktopReader}
+      swipeToClose={!isDesktopReader && readingMode !== "paginated"}
       swipeFromEdge={!isDesktopReader}
       onOpenAutoFocus={(event) => event.preventDefault()}
       skipOpenAnimation={isDesktopReader}
@@ -1129,6 +1160,7 @@ export const BookReadPage = ({
       bodyClassName="flex min-h-0 !overflow-hidden p-0"
     >
       <BookReaderMobileSurface
+        readingMode={readingMode}
         bookPage={bookPage}
         loading={readerSurfaceLoading}
         error={readerSurfaceError}
@@ -1143,7 +1175,7 @@ export const BookReadPage = ({
         pageTurnPending={pageTurnPending}
         onOpenTableOfContents={openTableOfContents}
         onOpenPreferences={openPreferencesPanel}
-        onNavigatePage={navigateToReaderPage}
+        onNavigatePage={navigateToReaderChapter}
         completionPending={completionPending}
         onMarkRead={() => {
           void setCompleted(true);
@@ -1151,6 +1183,7 @@ export const BookReadPage = ({
       />
 
       <BookReaderDesktopSurface
+        readingMode={readingMode}
         bookPage={bookPage}
         loading={readerSurfaceLoading}
         error={readerSurfaceError}
@@ -1165,7 +1198,7 @@ export const BookReadPage = ({
         pageTurnPending={pageTurnPending}
         onOpenTableOfContents={openTableOfContents}
         onOpenPreferences={openPreferencesPanel}
-        onNavigatePage={navigateToReaderPage}
+        onNavigatePage={navigateToReaderChapter}
         completionPending={completionPending}
         onMarkRead={() => {
           void setCompleted(true);

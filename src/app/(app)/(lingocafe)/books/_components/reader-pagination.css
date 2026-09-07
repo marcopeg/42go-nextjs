@@ -1,0 +1,50 @@
+/* Only the opted-in book canvas fragments. Chrome and popovers stay outside. */
+[data-reader-paginated="true"] {
+  width: calc(100% - 40px);
+  max-width: 680px;
+  margin: 16px auto 0;
+  padding: 0;
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+  overscroll-behavior: contain;
+}
+
+[data-reader-paginated="true"] > article {
+  display: block;
+  height: 100%;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  /* Safari does not fragment overflowing content with column-count: 1.
+     The controller sets one viewport-wide column; auto allows overflow pages. */
+  column-count: auto;
+  column-gap: 0;
+  column-fill: auto;
+}
+
+[data-reader-paginated="true"] :is(h1,h2,h3,h4,h5,h6) {
+  break-after: avoid;
+}
+
+[data-reader-paginated="true"] :is(p,li) {
+  orphans: 2;
+  widows: 2;
+}
+
+[data-reader-paginated="true"] :is(img,svg,video) {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+[data-reader-paginated="true"] pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+[data-reader-paginated="true"] table {
+  width: 100%;
+  table-layout: fixed;
+  overflow-wrap: anywhere;
+}

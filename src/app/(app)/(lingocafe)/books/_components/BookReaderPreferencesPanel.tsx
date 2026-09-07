@@ -29,6 +29,7 @@ import {
   READER_BACKGROUND_OPTIONS,
   READER_FONT_OPTIONS,
   READER_FONT_SIZE_OPTIONS,
+  type ReaderReadingMode,
   type ReaderPreferences,
   type ReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
@@ -39,6 +40,8 @@ import {
 } from "@/components/ui/navigational-tabs";
 
 type BookReaderPreferencesPanelProps = {
+  readingMode?: ReaderReadingMode;
+  onReadingModeChange?: (mode: ReaderReadingMode) => void;
   open: boolean;
   onOpenChange: (next: boolean) => void;
   preferences: ReaderPreferences;
@@ -208,6 +211,8 @@ export const BookReaderPreferencesTrigger = ({
 );
 
 export const BookReaderPreferencesPanel = ({
+  readingMode = "scroll",
+  onReadingModeChange,
   open,
   onOpenChange,
   preferences,
@@ -552,6 +557,24 @@ export const BookReaderPreferencesPanel = ({
             })}
           </div>
         </section>
+
+        {onReadingModeChange && (
+          <section className="mt-8 space-y-4">
+            <h3 className="font-semibold">Reading experience</h3>
+            <ReaderSettingSegmentedControl
+              ariaLabel="Reading experience"
+              value={readingMode}
+              options={[
+                { value: "scroll", label: "Vertical scroll" },
+                { value: "paginated", label: "Paginated (experimental)" },
+              ]}
+              onValueChange={onReadingModeChange}
+            />
+            <p className="text-xs text-muted-foreground">
+              Saved in this browser. You can switch back at any time.
+            </p>
+          </section>
+        )}
 
         <section className="mt-8 space-y-3">
           <Button

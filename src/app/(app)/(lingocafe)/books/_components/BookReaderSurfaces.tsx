@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import "@/app/(app)/(lingocafe)/books/_components/reader-pagination.css";
+import { useReaderPagination } from "@/app/(app)/(lingocafe)/books/_components/useReaderPagination";
 import {
   useLayoutEffect,
   useRef,
@@ -19,6 +21,7 @@ import {
 
 import { useTheme } from "@/42go/config/ThemeProvider";
 import { BookPageReader } from "@/app/(app)/(lingocafe)/books/_components/BookPageReader";
+import { BookReaderPaginatedToolbar } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPaginatedToolbar";
 import { BookReaderFloatingActionBar } from "@/app/(app)/(lingocafe)/books/_components/BookReaderFloatingActionBar";
 import { BookReaderPlaybackControls } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPlaybackControls";
 import { BookReaderPreferencesTrigger } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
@@ -29,6 +32,7 @@ import {
 import type { ReaderBookPage } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 import {
   getReaderThemeStyle,
+  type ReaderReadingMode,
   type ReaderPreferences,
   type ReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
@@ -37,6 +41,7 @@ import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
 
 type ReaderSurfaceProps = {
+  readingMode: ReaderReadingMode;
   bookPage: ReaderBookPage | null;
   loading: boolean;
   error: string | null;
@@ -51,7 +56,7 @@ type ReaderSurfaceProps = {
   pageTurnPending: boolean;
   onOpenTableOfContents: () => void;
   onOpenPreferences: () => void;
-  onNavigatePage: (href: string) => void;
+  onNavigatePage: (href: string, entryProgress?: number) => void;
   completionPending: boolean;
   onMarkRead: () => void;
 };
@@ -64,7 +69,7 @@ type PageProgressProps = {
 type ReaderNavButtonProps = {
   href: string | null;
   direction: "previous" | "next";
-  onNavigatePage: (href: string) => void;
+  onNavigatePage: (href: string, entryProgress?: number) => void;
   className?: string;
   disabled?: boolean;
 };
@@ -226,7 +231,7 @@ const BookProgress = ({
   compact = false,
   pageTurnPending,
 }: PageProgressProps & {
-  onNavigatePage: (href: string) => void;
+  onNavigatePage: (href: string, entryProgress?: number) => void;
   pageTurnPending: boolean;
 }) => (
   <div className={`flex min-w-0 items-center gap-4 ${compact ? "w-full" : "w-full max-w-sm"}`}>
@@ -444,6 +449,7 @@ const ReaderHeader = ({
 export type { ReaderHeaderTitleMode };
 
 export const BookReaderDesktopSurface = ({
+  readingMode,
   bookPage,
   loading,
   error,
@@ -469,10 +475,16 @@ export const BookReaderDesktopSurface = ({
   );
   const bookTitle = bookPage?.book.title || "Reading";
   const pageTitle = getReaderPageTitle(bookPage);
+  const paginated = readingMode === "paginated";
+  const pagination = useReaderPagination({
+    scrollRef, enabled: paginated, contentKey: `${bookPage?.page.pageId}:${loading}`,
+    pending: pageTurnPending, previousHref: bookPage?.previous?.href,
+    nextHref: bookPage?.next?.href, onNavigatePage,
+  });
   const levelLabel = bookPage ? formatLevelLabel(bookPage) : null;
 
   useLayoutEffect(() => {
-    if (!forceScrollTop || !bookPage) return;
+    if (!forceScrollTop || !bookPage || paginated) return;
     const container = scrollRef.current;
     if (!container) return;
     container.scrollTop = 0;
@@ -480,12 +492,13 @@ export const BookReaderDesktopSurface = ({
       container.scrollTop = 0;
     });
     return () => cancelAnimationFrame(frame);
-  }, [bookPage, forceScrollTop, scrollRef]);
+  }, [bookPage, forceScrollTop, paginated, scrollRef]);
 
   return (
     <div className="hidden min-h-0 flex-1 bg-background text-foreground md:flex">
       <section
-        className="relative flex min-w-0 flex-1 flex-col"
+        data-reader-surface
+        className="relative flex min-h-0 min-w-0 flex-1 flex-col"
         style={readerThemeStyle}
       >
         <ReaderHeader
@@ -525,6 +538,9 @@ export const BookReaderDesktopSurface = ({
         <div
           key={bookPage?.page.pageId || "reader-desktop"}
           ref={scrollRef}
+          data-reader-paginated={paginated ? "true" : undefined}
+          aria-label={paginated ? "Paginated chapter" : undefined}
+          tabIndex={paginated ? 0 : undefined}
           className="min-h-0 min-w-0 flex-1 overflow-y-auto"
           style={{ overflowAnchor: "none" }}
         >
@@ -578,7 +594,7 @@ export const BookReaderDesktopSurface = ({
                 onTranslationWordPlay={playback.playWordFromTranslation}
                 onTranslationOpenChange={playback.setTranslationPaused}
               />
-              {!playback.isOpen && (
+              {!paginated && !playback.isOpen && (
                 <div className="mx-auto flex w-full max-w-[680px] flex-col items-center justify-center gap-5 px-1 pb-24 pt-4">
                   <BookProgress
                     bookPage={bookPage}
@@ -595,7 +611,14 @@ export const BookReaderDesktopSurface = ({
             </>
           )}
         </div>
-        <BookReaderFloatingActionBar
+        {paginated && bookPage && (
+          <BookReaderPaginatedToolbar pagination={pagination} bookPage={bookPage}
+            playback={playback} translationScope={translationScope}
+            onTranslationScopeChange={onTranslationScopeChange}
+            onOpenTableOfContents={onOpenTableOfContents}
+            completionPending={completionPending} onMarkRead={onMarkRead} />
+        )}
+        {!paginated && <BookReaderFloatingActionBar
           key={`reader-actions-desktop:${bookPage?.page.pageId || "loading"}`}
           playback={playback}
           translationAvailable={Boolean(
@@ -604,14 +627,15 @@ export const BookReaderDesktopSurface = ({
           translationScope={translationScope}
           onTranslationScopeChange={onTranslationScopeChange}
           readerThemeStyle={readerThemeStyle}
-        />
-        <BookReaderPlaybackControls playback={playback} />
+        />}
+        {!paginated && <BookReaderPlaybackControls playback={playback} />}
       </section>
     </div>
   );
 };
 
 export const BookReaderMobileSurface = ({
+  readingMode,
   bookPage,
   loading,
   error,
@@ -640,6 +664,12 @@ export const BookReaderMobileSurface = ({
   );
   const bookTitle = bookPage?.book.title || "Reading";
   const pageTitle = getReaderPageTitle(bookPage);
+  const paginated = readingMode === "paginated";
+  const pagination = useReaderPagination({
+    scrollRef, enabled: paginated, contentKey: `${bookPage?.page.pageId}:${mobileLoading}`,
+    pending: pageTurnPending, previousHref: bookPage?.previous?.href,
+    nextHref: bookPage?.next?.href, onNavigatePage,
+  });
   const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
     if (pageTurnPending) return;
     if (hasActiveTextSelection()) return;
@@ -686,7 +716,8 @@ export const BookReaderMobileSurface = ({
 
   return (
     <div
-      className="flex h-full min-h-0 min-w-0 w-full flex-1 flex-col bg-background md:hidden"
+      data-reader-surface
+      className="relative flex h-full min-h-0 min-w-0 w-full flex-1 flex-col bg-background md:hidden"
       style={readerThemeStyle}
     >
       <div
@@ -719,10 +750,13 @@ export const BookReaderMobileSurface = ({
       <div
         key={bookPage?.page.pageId || "reader-mobile"}
         ref={scrollRef}
+          data-reader-paginated={paginated ? "true" : undefined}
+          aria-label={paginated ? "Paginated chapter" : undefined}
+          tabIndex={paginated ? 0 : undefined}
         className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6"
         style={{ overflowAnchor: "none" }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        onTouchStart={paginated ? undefined : handleTouchStart}
+        onTouchEnd={paginated ? undefined : handleTouchEnd}
       >
           {(!bookPage || mobileLoading || mobileError) && (
             <ReaderState loading={mobileLoading} error={mobileError} />
@@ -774,7 +808,7 @@ export const BookReaderMobileSurface = ({
                 onTranslationWordPlay={playback.playWordFromTranslation}
                 onTranslationOpenChange={playback.setTranslationPaused}
               />
-              {!playback.isOpen && (
+              {!paginated && !playback.isOpen && (
                 <div className="space-y-5 pb-24 pt-4">
                   <BookProgress
                     bookPage={bookPage}
@@ -792,7 +826,14 @@ export const BookReaderMobileSurface = ({
             </>
           )}
       </div>
-      <BookReaderFloatingActionBar
+      {paginated && bookPage && (
+          <BookReaderPaginatedToolbar pagination={pagination} bookPage={bookPage}
+            playback={playback} translationScope={translationScope}
+            onTranslationScopeChange={onTranslationScopeChange}
+            onOpenTableOfContents={onOpenTableOfContents}
+            completionPending={completionPending} onMarkRead={onMarkRead} />
+        )}
+        {!paginated && <BookReaderFloatingActionBar
         key={`reader-actions-mobile:${bookPage?.page.pageId || "loading"}`}
         playback={playback}
         translationAvailable={Boolean(
@@ -801,8 +842,8 @@ export const BookReaderMobileSurface = ({
         translationScope={translationScope}
         onTranslationScopeChange={onTranslationScopeChange}
         readerThemeStyle={readerThemeStyle}
-      />
-      <BookReaderPlaybackControls playback={playback} />
+      />}
+      {!paginated && <BookReaderPlaybackControls playback={playback} />}
     </div>
   );
 };

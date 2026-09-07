@@ -40,7 +40,7 @@ Do not load irrelevant references. Do not invent a new visual language when a do
 3. Select the documented layout and component patterns.
 4. Implement structure first, then tokens, responsive behavior, states, and motion.
 5. Check loading, empty, error, disabled, hover, focus, active, and dark-mode states.
-6. Verify at mobile and desktop widths. For this repository, use `https://lc42go.ngrok.app/` for visual checks when available.
+6. Verify at mobile and desktop widths. For this repository, use `http://localhost:3000` for browser-based visual checks by default to conserve ngrok bandwidth. Follow AGENTS.md for local app routing and tunnel exceptions.
 7. Run the repository quality gate after code changes.
 
 ## Replicate in another project

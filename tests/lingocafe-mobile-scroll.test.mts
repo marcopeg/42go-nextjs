@@ -20,6 +20,8 @@ import {
 import { getVisibleConversationLibraryPathname } from "../src/app/(app)/(lingocafe)/conversations/_components/types.ts";
 
 class FakeHTMLElement extends EventTarget {
+  dataset: Record<string, string> = {};
+  querySelectorAll() { return []; }
   clientHeight = 0;
   clientWidth = 0;
   scrollHeight = 0;
@@ -141,6 +143,9 @@ test("reader positions share one durable local-storage object", () => {
     writeReaderScrollMemory(conversationKey, "desktop", target, 5200);
 
     assert.deepEqual(readReaderScrollMemory(bookKey, "mobile"), {
+      anchor: null,
+      axis: "vertical",
+      savedAt: readReaderScrollMemory(bookKey, "mobile")?.savedAt,
       scrollTop: 437.25,
       contentWidth: 390,
       progressBps: 4373,
@@ -305,9 +310,9 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
   assert.match(reader, /restoredKeyRef\.current\[surfaceKey\]/);
   assert.match(reader, /restoreReaderScrollMemory/);
   assert.match(reader, /writeReaderScrollMemory/);
-  assert.match(reader, /setForceTopPageKey\(nextPageKey\)/);
+  assert.match(reader, /setForceTopPageKey\(entryProgress === 10000 \? "" : nextPageKey\)/);
   assert.match(reader, /pendingServerTopPageKeyRef\.current/);
-  assert.match(reader, /swipeToClose=\{!isDesktopReader\}/);
+  assert.match(reader, /swipeToClose=\{!isDesktopReader && readingMode !== "paginated"\}/);
   assert.match(reader, /swipeFromEdge=\{!isDesktopReader\}/);
   assert.match(reader, /\{readerOverlays\}/);
   assert.match(reader, /preserveDocumentScroll=\{!isDesktopReader\}/);
