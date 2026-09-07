@@ -76,7 +76,7 @@ export const restoreReaderContentAnchor = (target: ReaderScrollTarget, anchor: R
   if (!element || element.textContent !== anchor.text) return false;
   if (anchor.atStart) {
     target.setScrollTop(0);
-    return true;
+    return target.getScrollTop() <= 1;
   }
   const range = characterRange(element, anchor.offset);
   if (!range) return false;
@@ -86,8 +86,9 @@ export const restoreReaderContentAnchor = (target: ReaderScrollTarget, anchor: R
     ? rect.left - viewport.left
     : rect.top - target.getViewportRect().top;
   const position = target.getScrollTop() + offset;
-  target.setScrollTop(target.axis === "horizontal"
+  const requestedPosition = target.axis === "horizontal"
     ? Math.floor((position + 1) / target.getClientHeight()) * target.getClientHeight()
-    : position);
-  return true;
+    : position;
+  target.setScrollTop(requestedPosition);
+  return Math.abs(target.getScrollTop() - requestedPosition) <= 1;
 };

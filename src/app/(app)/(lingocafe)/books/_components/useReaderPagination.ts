@@ -30,6 +30,7 @@ export const useReaderPagination = ({
     const next = current + direction * pitch;
     if (next >= 0 && next <= max) {
       element.scrollTo({ left: next, behavior: "instant" });
+      element.dispatchEvent(new Event("reader-page-change"));
     } else {
       const href = direction > 0 ? nextHref : previousHref;
       if (!href) return;
@@ -88,11 +89,15 @@ export const useReaderPagination = ({
       contentReflow = true;
       schedule();
     };
+    const adoptRestoredPosition = () => {
+      anchor = captureReaderContentAnchor(target);
+    };
     const observer = new ResizeObserver(schedule);
     observer.observe(element);
     const article = element.querySelector("article");
     if (article) observer.observe(article);
     element.addEventListener("scroll", sync);
+    element.addEventListener("reader-page-change", adoptRestoredPosition);
     element.addEventListener("load", scheduleContentReflow, true);
     document.fonts.addEventListener("loadingdone", scheduleContentReflow);
     document.fonts.addEventListener("loadingerror", scheduleContentReflow);
@@ -103,6 +108,7 @@ export const useReaderPagination = ({
       cancelAnimationFrame(frame);
       observer.disconnect();
       element.removeEventListener("scroll", sync);
+      element.removeEventListener("reader-page-change", adoptRestoredPosition);
       element.removeEventListener("load", scheduleContentReflow, true);
       document.fonts.removeEventListener("loadingdone", scheduleContentReflow);
       document.fonts.removeEventListener("loadingerror", scheduleContentReflow);

@@ -40,6 +40,7 @@ import {
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
 import { useBookCompletionMutation } from "@/app/(app)/(lingocafe)/books/_components/useBookCompletionMutation";
 import { captureReaderContentAnchor, restoreReaderContentAnchor, type ReaderContentAnchor } from "@/app/(app)/(lingocafe)/books/_components/reader-content-anchor";
+import { sizeReaderColumns } from "@/app/(app)/(lingocafe)/books/_components/reader-pagination";
 import { useReaderPreferences } from "@/app/(app)/(lingocafe)/books/_components/useReaderPreferences";
 import type {
   ReaderBookPage,
@@ -383,7 +384,6 @@ export const BookReadPage = ({
   );
   const preferenceAnchorRef = useRef<ReaderContentAnchor | null>(null);
   const restoredSurfaceRef = useRef<ReaderSurfaceKey | null>(null);
-  const restoredRouteRef = useRef("");
   const restoredKeyRef = useRef<Record<ReaderSurfaceKey, string>>({
     desktop: "",
     mobile: "",
@@ -879,11 +879,14 @@ export const BookReadPage = ({
         retryRestore();
         return;
       }
+      if (readingMode === "paginated") {
+        sizeReaderColumns(target.contentRoot);
+      }
       const scrollMemoryKey = getBookPageScrollMemoryKey(
         bookPage.page.bookId,
         bookPage.page.pageId
       );
-      const scrollMemory = (shouldForcePageTop || shouldForcePageEnd || (routeProgressBps !== null && restoredRouteRef.current !== readerRoute?.href))
+      const scrollMemory = (shouldForcePageTop || shouldForcePageEnd)
         ? null
         : readReaderScrollMemory(scrollMemoryKey, surfaceKey);
       const restoredFromPreference = !shouldForcePageTop && !shouldForcePageEnd && preferenceAnchorRef.current
@@ -899,6 +902,7 @@ export const BookReadPage = ({
 
       if (restored) {
         lastScrollTopRef.current[surfaceKey] = scrollTop;
+        target.contentRoot.dispatchEvent(new Event("reader-page-change"));
         updateDisplayedProgress(restoredProgressBps);
         updateHeaderTitleMode(
           scrollTop <= READER_HEADER_TITLE_TOP_THRESHOLD_PX
@@ -906,7 +910,6 @@ export const BookReadPage = ({
             : "page"
         );
         restoredSurfaceRef.current = surfaceKey;
-        restoredRouteRef.current = readerRoute?.href ?? "";
         restoredKeyRef.current[surfaceKey] = restoreKey;
         writeReaderScrollMemory(
           scrollMemoryKey,
@@ -1061,6 +1064,7 @@ export const BookReadPage = ({
     };
 
     const removeScrollListener = activeTarget?.addScrollListener(onScroll);
+    activeTarget?.contentRoot.addEventListener("reader-page-change", onScroll);
 
     if (pendingServerTopPageKeyRef.current === currentBookPageKey) {
       pendingServerTopPageKeyRef.current = "";
@@ -1069,6 +1073,10 @@ export const BookReadPage = ({
 
     return () => {
       removeScrollListener?.();
+      activeTarget?.contentRoot.removeEventListener(
+        "reader-page-change",
+        onScroll
+      );
 
       if (scrollTimerRef.current) {
         clearTimeout(scrollTimerRef.current);

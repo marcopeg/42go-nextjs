@@ -310,6 +310,11 @@ test("targeted mobile surfaces keep their intended scroll containment", async ()
   assert.match(reader, /restoredKeyRef\.current\[surfaceKey\]/);
   assert.match(reader, /restoreReaderScrollMemory/);
   assert.match(reader, /writeReaderScrollMemory/);
+  assert.match(reader, /reader-page-change/);
+  assert.doesNotMatch(
+    reader,
+    /routeProgressBps !== null[\s\S]{0,200}readReaderScrollMemory/
+  );
   assert.match(reader, /setForceTopPageKey\(entryProgress === 10000 \? "" : nextPageKey\)/);
   assert.match(reader, /pendingServerTopPageKeyRef\.current/);
   assert.match(reader, /swipeToClose=\{!isDesktopReader && readingMode !== "paginated"\}/);

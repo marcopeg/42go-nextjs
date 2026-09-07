@@ -88,6 +88,9 @@ test("content anchors survive reflow and reject changed text or invalid offsets"
     }});
     const anchor={sentenceId:"book:chapter:3",text,offset:24,atStart:false};
     assert.equal(restoreReaderContentAnchor(target,anchor),true);assert.equal(e.scrollLeft,700);
+    e.scrollLeft=0;e.scrollWidth=350;
+    assert.equal(restoreReaderContentAnchor(target,anchor),false);assert.equal(e.scrollLeft,0);
+    e.scrollWidth=1400;
     charactersPerPage=20;
     assert.equal(restoreReaderContentAnchor(target,anchor),true);assert.equal(e.scrollLeft,350);
     assert.equal(restoreReaderContentAnchor(target,{...anchor,text:"changed"}),false);
