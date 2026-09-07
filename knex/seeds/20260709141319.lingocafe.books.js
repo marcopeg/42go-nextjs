@@ -11461,7 +11461,7 @@ const books = [
     "project": "nemo",
     "lang": "sv",
     "level": "a2",
-    "title": "En världs omsegling under havet",
+    "title": "En världsomsegling under havet",
     "description": "Börja med 20 000 mil under havet. Följ professor Aronnax, Conseil och Ned Land. De är ombord på Nautilus. Kapten Nemo tar dem under havet. Där möter de fara och hemligheter.\n\nDen här A2-versionen har enkel svenska. Meningarna är korta och scenerna är tydliga. Resan börjar snabbt och är lätt att följa.",
     "author": "Jules Verne",
     "tags": [
