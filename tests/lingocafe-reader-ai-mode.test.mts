@@ -18,18 +18,22 @@ describe("reader AI Mode handoff", () => {
 
     assert.match(
       prompt,
-      /1\. Repeat the complete original sentence verbatim in Swedish\./
+      /1\. Original: Repeat the complete original sentence verbatim in Swedish\./
     );
     assert.ok(
       prompt.indexOf("Repeat the complete original sentence") <
-        prompt.indexOf("An accurate translation")
+        prompt.indexOf("Translation: Give an accurate natural translation")
     );
     assert.match(prompt, /complete Swedish sentence/);
     assert.match(prompt, /Respond in English/);
-    assert.match(prompt, /accurate translation/);
+    assert.match(prompt, /accurate natural translation/);
     assert.match(prompt, /intended meaning in context/);
     assert.match(prompt, /multi-word or composite expressions/);
-    assert.match(prompt, /grammar and sentence-parsing analysis/);
+    assert.match(prompt, /Do not merely name grammar rules/);
+    assert.match(prompt, /all six numbered headings/);
+    assert.match(prompt, /Cover every part/);
+    assert.match(prompt, /two short new Swedish example sentences/);
+    assert.match(prompt, /Do not identify the book, invent motives or add later plot events/);
   });
 
   it("adds the enclosing sentence when explaining a selected word", () => {
@@ -42,6 +46,8 @@ describe("reader AI Mode handoff", () => {
     });
 
     assert.match(prompt, /Swedish word “ordnade”/);
+    assert.match(prompt, /3\. Selected word: Explain “ordnade”/);
+    assert.doesNotMatch(prompt, /3\. Phrase by phrase/);
     assert.match(
       prompt,
       /complete sentence: “Jag ordnade med pengar till min Babirussa\.”/
