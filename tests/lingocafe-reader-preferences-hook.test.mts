@@ -17,6 +17,7 @@ test("shared reader preferences own storage, theme profiles, and panel coordinat
   assert.match(source, /setSettingsSurfaceOpen\("preferences", next\)/);
   assert.match(source, /getReaderThemeStyle\(preferences, themeMode\)/);
   assert.match(source, /translationScope: sanitizeReaderTranslationScope\(next\)/);
+  assert.match(source, /translationGestures: enabled/);
   assert.match(source, /delete next\[themeProfile\]/);
 });
 
@@ -34,6 +35,7 @@ test("book reader consumes the shared preference controller", async () => {
   );
   assert.match(source, /onPreferencesChange=\{\(next\) => \{ persistLocalReaderPosition\(\); updateReaderPreferences\(next\); \}\}/);
   assert.match(source, /onTranslationScopeChange=\{updateReaderTranslationScope\}/);
+  assert.match(source, /onTranslationGesturesChange=\{updateReaderTranslationGestures\}/);
   assert.doesNotMatch(source, /localStorage\.setItem\(/);
   assert.doesNotMatch(source, /useState<ReaderPreferencesStore>/);
 });

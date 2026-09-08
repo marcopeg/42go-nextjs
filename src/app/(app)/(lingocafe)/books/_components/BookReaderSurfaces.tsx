@@ -50,6 +50,7 @@ type ReaderSurfaceProps = {
   headerTitleMode: ReaderHeaderTitleMode;
   preferences: ReaderPreferences;
   translationScope: ReaderTranslationScope;
+  translationGestures: boolean;
   onTranslationScopeChange: (scope: ReaderTranslationScope) => void;
   playback: ReaderPlaybackController;
   forceScrollTop: boolean;
@@ -458,6 +459,7 @@ export const BookReaderDesktopSurface = ({
   headerTitleMode,
   preferences,
   translationScope,
+  translationGestures,
   onTranslationScopeChange,
   playback,
   forceScrollTop,
@@ -553,6 +555,7 @@ export const BookReaderDesktopSurface = ({
                 bookPage={bookPage}
                 preferences={preferences}
                 translationScope={translationScope}
+                translationGestures={translationGestures}
                 playbackSentenceId={playback.activeSentenceId}
                 playbackCanPlay={playback.canPlay}
                 playbackStatus={playback.status}
@@ -613,7 +616,7 @@ export const BookReaderDesktopSurface = ({
         </div>
         {paginated && bookPage && (
           <BookReaderPaginatedToolbar pagination={pagination} bookPage={bookPage}
-            playback={playback} translationScope={translationScope}
+            playback={playback} translationScope={translationScope} translationGestures={translationGestures}
             onTranslationScopeChange={onTranslationScopeChange}
             onOpenTableOfContents={onOpenTableOfContents}
             completionPending={completionPending} onMarkRead={onMarkRead} />
@@ -625,6 +628,7 @@ export const BookReaderDesktopSurface = ({
             bookPage?.translation.enabled && bookPage.translation.to
           )}
           translationScope={translationScope}
+          translationGestures={translationGestures}
           onTranslationScopeChange={onTranslationScopeChange}
           readerThemeStyle={readerThemeStyle}
         />}
@@ -644,6 +648,7 @@ export const BookReaderMobileSurface = ({
   headerTitleMode,
   preferences,
   translationScope,
+  translationGestures,
   onTranslationScopeChange,
   playback,
   pageTurnPending,
@@ -767,6 +772,7 @@ export const BookReaderMobileSurface = ({
                 bookPage={bookPage}
                 preferences={preferences}
                 translationScope={translationScope}
+                translationGestures={translationGestures}
                 playbackSentenceId={playback.activeSentenceId}
                 playbackCanPlay={playback.canPlay}
                 playbackStatus={playback.status}
@@ -828,7 +834,7 @@ export const BookReaderMobileSurface = ({
       </div>
       {paginated && bookPage && (
           <BookReaderPaginatedToolbar pagination={pagination} bookPage={bookPage}
-            playback={playback} translationScope={translationScope}
+            playback={playback} translationScope={translationScope} translationGestures={translationGestures}
             onTranslationScopeChange={onTranslationScopeChange}
             onOpenTableOfContents={onOpenTableOfContents}
             completionPending={completionPending} onMarkRead={onMarkRead} />
@@ -840,6 +846,7 @@ export const BookReaderMobileSurface = ({
           bookPage?.translation.enabled && bookPage.translation.to
         )}
         translationScope={translationScope}
+        translationGestures={translationGestures}
         onTranslationScopeChange={onTranslationScopeChange}
         readerThemeStyle={readerThemeStyle}
       />}

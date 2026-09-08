@@ -22,6 +22,32 @@ export const getVisibleReaderRect = (element: Element, viewport: DOMRect) =>
       rect.bottom > viewport.top + 1 && rect.top < viewport.bottom - 1
   );
 
+export const getVisibleReaderBounds = (element: Element, viewport: DOMRect) => {
+  const rects = Array.from(element.getClientRects()).filter(
+    (rect) => rect.width > 0 && rect.height > 0 &&
+      rect.right > viewport.left + 1 && rect.left < viewport.right - 1 &&
+      rect.bottom > viewport.top + 1 && rect.top < viewport.bottom - 1
+  );
+  if (rects.length === 0) return undefined;
+
+  const left = Math.max(viewport.left, Math.min(...rects.map((rect) => rect.left)));
+  const right = Math.min(viewport.right, Math.max(...rects.map((rect) => rect.right)));
+  const top = Math.max(viewport.top, Math.min(...rects.map((rect) => rect.top)));
+  const bottom = Math.min(viewport.bottom, Math.max(...rects.map((rect) => rect.bottom)));
+
+  return {
+    left,
+    right,
+    top,
+    bottom,
+    width: right - left,
+    height: bottom - top,
+    x: left,
+    y: top,
+    toJSON: () => ({}),
+  } as DOMRect;
+};
+
 // Percentage heights inside nested flex layouts can remain indefinite. Give
 // the multicol element a definite block size before measuring its overflow.
 export const sizeReaderColumns = (element: HTMLElement) => {

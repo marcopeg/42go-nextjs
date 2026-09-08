@@ -10,7 +10,8 @@ test("the shared translation-scope FAB is a direct one-tap circular toggle", asy
 
   assert.match(source, /export const TranslationScopeFab/);
   assert.match(source, /scope === "sentence" \? "word" : "sentence"/);
-  assert.match(source, /onClick=\{\(\) => onScopeChange\(nextScope\)\}/);
+  assert.match(source, /triggerInteractionHaptic\(\);/);
+  assert.match(source, /onScopeChange\(nextScope\);/);
   assert.match(source, /Translation mode: \$\{scope\}/);
   assert.match(source, /aria-pressed=\{scope === "word"\}/);
   assert.match(source, /<Languages aria-hidden/);
@@ -55,6 +56,8 @@ test("Conversations and Book Reader share the one-tap translation-scope FAB", as
   assert.match(conversation, /scope=\{scope\} onScopeChange=\{onScopeChange\}/);
   assert.match(bookReader, /scope=\{translationScope\}/);
   assert.match(bookReader, /onScopeChange=\{onTranslationScopeChange\}/);
+  assert.match(bookReader, /const showTranslation = translationAvailable && !translationGestures/);
+  assert.match(bookReader, /!showTranslation && !playback\.canPlay/);
 });
 
 test("conversation reader reserves room for its fixed floating actions", async () => {

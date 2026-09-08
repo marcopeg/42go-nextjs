@@ -30,6 +30,13 @@ import {
   ReaderTranslationPopover,
   type ReaderTranslationAnchor,
 } from "@/app/(app)/(lingocafe)/books/_components/ReaderTranslationPopover";
+import {
+  READER_TRANSLATION_SINGLE_CLICK_DELAY_MS,
+  READER_TRANSLATION_TOUCH_DOUBLE_TAP_MS,
+  getMouseTranslationGesture,
+  getTouchTranslationGesture,
+  isTouchTranslationDoubleTap,
+} from "@/app/(app)/(lingocafe)/books/_components/reader-translation-gesture";
 import { getReaderAiModeUrl } from "@/app/(app)/(lingocafe)/books/_components/reader-ai-mode";
 import type {
   ReaderPlaybackSentence,
@@ -46,11 +53,13 @@ import {
   filterLingoCafeTranslationTargets,
   isSameLingoCafeTranslationLanguage,
 } from "@/lib/lingocafe/translation-language";
+import { triggerInteractionHaptic } from "@/lib/interaction-haptics";
 
 type BookPageReaderProps = {
   bookPage: ReaderBookPage;
   preferences: ReaderPreferences;
   translationScope: ReaderTranslationScope;
+  translationGestures?: boolean;
   playbackSentenceId: string | null;
   playbackCanPlay: boolean;
   playbackStatus: ReaderPlaybackStatus;
@@ -77,6 +86,7 @@ type TranslationSelection = {
   text: string;
   sentence: string;
   paragraph: string;
+  scope: ReaderTranslationScope;
   anchor: ReaderTranslationAnchor;
 };
 
@@ -98,6 +108,7 @@ type SentenceRenderContext = {
   bookPage: ReaderBookPage;
   translationEnabled: boolean;
   translationScope: ReaderTranslationScope;
+  translationGestures: boolean;
   activeTranslationId: string | null;
   playbackSentenceId: string | null;
   playbackSentenceHighlighting: boolean;
@@ -135,6 +146,16 @@ type TapCandidate = {
   clientX: number;
   clientY: number;
   cancelled: boolean;
+  startedAt?: number;
+  secondTap?: boolean;
+};
+
+type PendingSentenceTap = {
+  completedAt: number;
+  clientX: number;
+  clientY: number;
+  wordTarget: HTMLElement | null;
+  timer: ReturnType<typeof setTimeout> | null;
 };
 
 const hasActiveTextSelection = () => {
@@ -153,8 +174,48 @@ const getReaderTranslationElement = (id: string, root: HTMLElement) => {
       : id.replace(/["\\]/g, "\\$&");
 
   return root.querySelector<HTMLElement>(
-    `[data-reader-translation-id="${escapedId}"]`
+    `[data-reader-translation-id="${escapedId}"], [data-reader-sentence-id="${escapedId}"]`
   );
+};
+
+const selectReaderTranslation = ({
+  target,
+  anchorTarget = target,
+  id,
+  sentenceId,
+  text,
+  sentence,
+  scope,
+  context,
+  allowActiveSelection = false,
+}: {
+  target: HTMLElement;
+  anchorTarget?: HTMLElement;
+  id: string;
+  sentenceId: string;
+  text: string;
+  sentence: string;
+  scope: ReaderTranslationScope;
+  context: SentenceRenderContext;
+  allowActiveSelection?: boolean;
+}) => {
+  if (!allowActiveSelection && hasActiveTextSelection()) return;
+  context.onSentenceActivate(sentenceId);
+  if (!context.translationEnabled) return;
+  const anchor = context.getSentenceAnchor(anchorTarget);
+  if (!anchor) return;
+  const paragraph =
+    target.closest("h1,h2,h3,h4,h5,h6,p")?.textContent?.trim() || sentence;
+  context.onTranslationSelect({
+    id,
+    sentenceId,
+    text,
+    sentence,
+    paragraph,
+    scope,
+    anchor,
+  });
+  triggerInteractionHaptic();
 };
 
 const normalizeApiTranslation = (
@@ -240,6 +301,8 @@ const ReaderTranslationTarget = ({
   children,
 }: ReaderTranslationTargetProps) => {
   const tapCandidateRef = useRef<TapCandidate | null>(null);
+  const mouseClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ignoreClickRef = useRef(false);
   const isTapMovement = (event: ReactPointerEvent<HTMLSpanElement>) =>
     !!tapCandidateRef.current &&
     tapCandidateRef.current.pointerId === event.pointerId &&
@@ -247,23 +310,31 @@ const ReaderTranslationTarget = ({
       tapMovementThresholdPx &&
     Math.abs(event.clientY - tapCandidateRef.current.clientY) <=
       tapMovementThresholdPx;
-  const handleSelect = (target: HTMLSpanElement) => {
-    if (hasActiveTextSelection()) return;
-    context.onSentenceActivate(sentenceId);
-    if (!context.translationEnabled) return;
-    const anchor = context.getSentenceAnchor(target);
-    if (!anchor) return;
-    const paragraph =
-      target.closest("h1,h2,h3,h4,h5,h6,p")?.textContent?.trim() || sentence;
-    context.onTranslationSelect({
-      id,
+  const handleSelect = (
+    target: HTMLSpanElement,
+    scope: ReaderTranslationScope = context.translationScope,
+    allowActiveSelection = false
+  ) => {
+    const anchorTarget =
+      scope === "sentence"
+        ? target.closest<HTMLElement>("[data-reader-sentence-id]") ?? target
+        : target;
+    selectReaderTranslation({
+      target,
+      anchorTarget,
+      id: scope === "sentence" ? sentenceId : id,
       sentenceId,
-      text,
+      text: scope === "sentence" ? sentence : text,
       sentence,
-      paragraph,
-      anchor,
+      scope,
+      context,
+      allowActiveSelection,
     });
   };
+
+  useEffect(() => () => {
+    if (mouseClickTimerRef.current) clearTimeout(mouseClickTimerRef.current);
+  }, []);
 
   return (
     <span
@@ -273,15 +344,15 @@ const ReaderTranslationTarget = ({
       data-reader-translation-id={id}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
-        if (event.pointerType === "mouse") {
-          handleSelect(event.currentTarget);
-          return;
-        }
+        if (event.pointerType === "mouse") return;
+        ignoreClickRef.current = true;
+        if (context.translationGestures) return;
         tapCandidateRef.current = {
           pointerId: event.pointerId,
           clientX: event.clientX,
           clientY: event.clientY,
           cancelled: false,
+          startedAt: event.timeStamp,
         };
       }}
       onPointerMove={(event) => {
@@ -301,9 +372,36 @@ const ReaderTranslationTarget = ({
         if (event.pointerType === "mouse") return;
         const tapCandidate = tapCandidateRef.current;
         if (!tapCandidate || tapCandidate.pointerId !== event.pointerId) return;
-        const shouldSelect = !tapCandidate.cancelled && isTapMovement(event);
+        const moved = tapCandidate.cancelled || !isTapMovement(event);
+        const target = event.currentTarget;
         tapCandidateRef.current = null;
-        if (shouldSelect) handleSelect(event.currentTarget);
+        if (!moved) handleSelect(target);
+      }}
+      onClick={(event) => {
+        if (ignoreClickRef.current) {
+          ignoreClickRef.current = false;
+          return;
+        }
+        if (event.detail !== 1) return;
+        const target = event.currentTarget;
+        if (mouseClickTimerRef.current) clearTimeout(mouseClickTimerRef.current);
+        mouseClickTimerRef.current = setTimeout(() => {
+          mouseClickTimerRef.current = null;
+          const scope = getMouseTranslationGesture(1);
+          if (scope) handleSelect(target, scope);
+        }, READER_TRANSLATION_SINGLE_CLICK_DELAY_MS);
+      }}
+      onDoubleClick={(event) => {
+        if (mouseClickTimerRef.current) {
+          clearTimeout(mouseClickTimerRef.current);
+          mouseClickTimerRef.current = null;
+        }
+        window.getSelection()?.removeAllRanges();
+        const scope = getMouseTranslationGesture(event.detail);
+        if (scope) handleSelect(event.currentTarget, scope, true);
+      }}
+      onContextMenu={() => {
+        tapCandidateRef.current = null;
       }}
       onKeyDown={(event) => {
         if (event.key !== "Enter" && event.key !== " ") return;
@@ -360,6 +458,177 @@ const renderWordTargets = (
   return nodes.length > 0 ? nodes : [sentence];
 };
 
+const ReaderSentenceTranslationTarget = ({
+  id,
+  sentence,
+  context,
+  playbackActive,
+  style,
+  children,
+}: {
+  id: string;
+  sentence: string;
+  context: SentenceRenderContext;
+  playbackActive: boolean;
+  style: CSSProperties;
+  children: ReactNode;
+}) => {
+  const tapCandidateRef = useRef<TapCandidate | null>(null);
+  const pendingTapRef = useRef<PendingSentenceTap | null>(null);
+  const suppressDoubleClickRef = useRef(false);
+  const suppressDoubleClickTimerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPendingTap = () => {
+    if (pendingTapRef.current?.timer) {
+      clearTimeout(pendingTapRef.current.timer);
+    }
+    pendingTapRef.current = null;
+  };
+
+  useEffect(
+    () => () => {
+      clearPendingTap();
+      if (suppressDoubleClickTimerRef.current) {
+        clearTimeout(suppressDoubleClickTimerRef.current);
+      }
+    },
+    []
+  );
+
+  return (
+    <span
+      data-reader-sentence-id={id}
+      aria-current={playbackActive ? "true" : undefined}
+      className={context.translationGestures ? "touch-manipulation" : undefined}
+      style={style}
+      onPointerDown={(event) => {
+        if (
+          !context.translationGestures ||
+          event.pointerType === "mouse" ||
+          event.button !== 0
+        ) {
+          return;
+        }
+
+        const pendingTap = pendingTapRef.current;
+        const secondTap = isTouchTranslationDoubleTap(pendingTap, {
+          startedAt: event.timeStamp,
+          clientX: event.clientX,
+          clientY: event.clientY,
+        });
+        if (secondTap) clearPendingTap();
+
+        tapCandidateRef.current = {
+          pointerId: event.pointerId,
+          clientX: event.clientX,
+          clientY: event.clientY,
+          cancelled: false,
+          startedAt: event.timeStamp,
+          secondTap,
+        };
+      }}
+      onPointerMove={(event) => {
+        const candidate = tapCandidateRef.current;
+        if (!candidate || candidate.pointerId !== event.pointerId) return;
+        if (
+          Math.abs(event.clientX - candidate.clientX) > tapMovementThresholdPx ||
+          Math.abs(event.clientY - candidate.clientY) > tapMovementThresholdPx
+        ) {
+          candidate.cancelled = true;
+        }
+      }}
+      onPointerCancel={(event) => {
+        if (tapCandidateRef.current?.pointerId === event.pointerId) {
+          tapCandidateRef.current = null;
+        }
+      }}
+      onPointerUp={(event) => {
+        const candidate = tapCandidateRef.current;
+        if (!candidate || candidate.pointerId !== event.pointerId) return;
+        tapCandidateRef.current = null;
+
+        const durationMs =
+          event.timeStamp - (candidate.startedAt ?? event.timeStamp);
+        const tapCount = candidate.secondTap ? 2 : 1;
+        const scope = getTouchTranslationGesture({
+          tapCount,
+          durationMs,
+          moved: candidate.cancelled,
+          selectionActive: tapCount === 1 && hasActiveTextSelection(),
+        });
+        if (!scope) return;
+
+        if (scope === "sentence") {
+          event.preventDefault();
+          window.getSelection()?.removeAllRanges();
+          suppressDoubleClickRef.current = true;
+          if (suppressDoubleClickTimerRef.current) {
+            clearTimeout(suppressDoubleClickTimerRef.current);
+          }
+          suppressDoubleClickTimerRef.current = setTimeout(() => {
+            suppressDoubleClickRef.current = false;
+            suppressDoubleClickTimerRef.current = null;
+          }, READER_TRANSLATION_TOUCH_DOUBLE_TAP_MS * 2);
+          selectReaderTranslation({
+            target: event.currentTarget,
+            id,
+            sentenceId: id,
+            text: sentence,
+            sentence,
+            scope,
+            context,
+            allowActiveSelection: true,
+          });
+          return;
+        }
+
+        const eventTarget =
+          event.target instanceof Element ? event.target : null;
+        const wordTarget = eventTarget?.closest<HTMLElement>(
+          "[data-reader-translation-id]"
+        );
+        const pendingTap: PendingSentenceTap = {
+          completedAt: event.timeStamp,
+          clientX: event.clientX,
+          clientY: event.clientY,
+          wordTarget: wordTarget ?? null,
+          timer: null,
+        };
+        pendingTapRef.current = pendingTap;
+        pendingTap.timer = setTimeout(() => {
+          if (pendingTapRef.current !== pendingTap) return;
+          pendingTapRef.current = null;
+          const wordId = pendingTap.wordTarget?.dataset.readerTranslationId;
+          const word = pendingTap.wordTarget?.textContent?.trim();
+          if (!pendingTap.wordTarget || !wordId || !word) return;
+          selectReaderTranslation({
+            target: pendingTap.wordTarget,
+            id: wordId,
+            sentenceId: id,
+            text: word,
+            sentence,
+            scope: "word",
+            context,
+          });
+        }, READER_TRANSLATION_TOUCH_DOUBLE_TAP_MS);
+      }}
+      onDoubleClickCapture={(event) => {
+        if (!suppressDoubleClickRef.current) return;
+        event.preventDefault();
+        event.stopPropagation();
+        window.getSelection()?.removeAllRanges();
+        suppressDoubleClickRef.current = false;
+      }}
+      onContextMenu={() => {
+        tapCandidateRef.current = null;
+      }}
+    >
+      {children}
+    </span>
+  );
+};
+
 const renderSentenceText = (
   text: string,
   context: SentenceRenderContext
@@ -389,43 +658,28 @@ const renderSentenceText = (
       zIndex: playbackSentenceHighlighted || playbackWordHighlighted ? 40 : undefined,
     };
 
-    if (context.translationScope === "word") {
-      return (
-        <span
-          key={id}
-          data-reader-sentence-id={id}
-          aria-current={playbackActive ? "true" : undefined}
-          style={sentenceStyle}
-        >
-          {playbackWordHighlighted
-            ? renderPlaybackText(segment, sentence, context.playbackWordRange)
-            : renderWordTargets(segment, id, context)}
-        </span>
-      );
-    }
-
+    const translationActive = context.activeTranslationId === id;
     return (
-      <ReaderTranslationTarget
+      <ReaderSentenceTranslationTarget
         key={id}
         id={id}
-        sentenceId={id}
-        text={sentence}
         sentence={sentence}
         context={context}
-        active={context.activeTranslationId === id}
+        playbackActive={playbackActive}
+        style={{
+          ...sentenceStyle,
+          backgroundColor: translationActive
+            ? "var(--reader-highlight-bg)"
+            : sentenceStyle.backgroundColor,
+          color: translationActive
+            ? "var(--reader-highlight-fg)"
+            : sentenceStyle.color,
+        }}
       >
-        <span
-          data-reader-sentence-id={id}
-          aria-current={playbackActive ? "true" : undefined}
-          style={sentenceStyle}
-        >
-          {renderPlaybackText(
-            segment,
-            sentence,
-            playbackActive ? context.playbackWordRange : null
-          )}
-        </span>
-      </ReaderTranslationTarget>
+        {playbackWordHighlighted
+          ? renderPlaybackText(segment, sentence, context.playbackWordRange)
+          : renderWordTargets(segment, id, context)}
+      </ReaderSentenceTranslationTarget>
     );
   });
 
@@ -535,6 +789,7 @@ export const BookPageReader = ({
   bookPage,
   preferences,
   translationScope,
+  translationGestures = false,
   playbackSentenceId,
   playbackCanPlay,
   playbackStatus,
@@ -581,6 +836,7 @@ export const BookPageReader = ({
     bookPage,
     translationEnabled,
     translationScope,
+    translationGestures,
     activeTranslationId,
     playbackSentenceId,
     playbackSentenceHighlighting,
@@ -593,7 +849,7 @@ export const BookPageReader = ({
     onTranslationSelect: (selection) => {
       setTranslationState((current) =>
         current?.id === selection.id
-          ? null
+          ? current
           : {
               ...selection,
               status: isSameLingoCafeTranslationLanguage(
@@ -641,6 +897,7 @@ export const BookPageReader = ({
     playbackSentenceId,
     preferences,
     translationScope,
+    translationGestures,
   ]);
 
   useEffect(() => {
@@ -783,7 +1040,12 @@ export const BookPageReader = ({
             : current
         );
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (
+          controller.signal.aborted ||
+          (error instanceof DOMException && error.name === "AbortError")
+        ) {
+          return;
+        }
 
         setTranslationState((current) =>
           current?.id === translationState.id
@@ -1005,9 +1267,9 @@ export const BookPageReader = ({
         <ReaderTranslationPopover
           key={translationState.id}
           state={translationState}
-          scope={translationScope}
+          scope={translationState.scope}
           pronunciationPlaying={
-            playbackTranslationPronunciationType === translationScope
+            playbackTranslationPronunciationType === translationState.scope
           }
           canListen={
             canListenFromTranslation && translationState.status === "success"
@@ -1015,7 +1277,7 @@ export const BookPageReader = ({
           languageOptions={availableTranslationLanguages}
           onDismiss={() => setTranslationState(null)}
           onPlaySelection={() => {
-            if (translationScope === "word") {
+            if (translationState.scope === "word") {
               onTranslationWordPlay(translationState.text);
               return;
             }
@@ -1027,7 +1289,7 @@ export const BookPageReader = ({
           }}
           onExplain={() => {
             const url = getReaderAiModeUrl({
-              scope: translationScope,
+              scope: translationState.scope,
               selectedText: translationState.text,
               sentence: translationState.sentence,
               sourceLanguage: getLanguageLabel(
@@ -1039,7 +1301,7 @@ export const BookPageReader = ({
                 "English"
               ),
               surroundingContext:
-                translationScope === "sentence"
+                translationState.scope === "sentence"
                   ? { label: "paragraph context", text: translationState.paragraph }
                   : undefined,
             });

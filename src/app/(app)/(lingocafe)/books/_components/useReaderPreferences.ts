@@ -72,6 +72,7 @@ export const useReaderPreferences = ({
   const translationScope = sanitizeReaderTranslationScope(
     store.translationScope ?? DEFAULT_READER_TRANSLATION_SCOPE
   );
+  const translationGestures = store.translationGestures === true;
   const readerThemeStyle = getReaderThemeStyle(preferences, themeMode);
   const settingsEventData = {
     ...eventContext,
@@ -161,6 +162,21 @@ export const useReaderPreferences = ({
     }));
   };
 
+  const updateTranslationGestures = (enabled: boolean) => {
+    if (translationGestures === enabled) return;
+
+    trackEvent("read.settings.changed", {
+      ...settingsEventData,
+      action: "update",
+      changed_fields: ["translationGestures"],
+      next_values: { translationGestures: enabled },
+    });
+    setStore((current) => ({
+      ...current,
+      translationGestures: enabled,
+    }));
+  };
+
   const updateReadingMode = (next: ReaderReadingMode) => {
     const mode = sanitizeReaderReadingMode(next);
     if (readingMode === mode) return;
@@ -191,6 +207,7 @@ export const useReaderPreferences = ({
     readingMode,
     updateReadingMode,
     translationScope,
+    translationGestures,
     readerThemeStyle,
     canResetPreferences,
     isOpen,
@@ -198,6 +215,7 @@ export const useReaderPreferences = ({
     onOpenChange,
     updatePreferences,
     updateTranslationScope,
+    updateTranslationGestures,
     resetPreferences,
   };
 };

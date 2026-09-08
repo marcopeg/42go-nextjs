@@ -5,6 +5,7 @@ import { useId, type CSSProperties } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/42go/utils/utils";
+import { triggerInteractionHaptic } from "@/lib/interaction-haptics";
 
 export type TranslationScopeFabScope = "sentence" | "word";
 
@@ -40,7 +41,10 @@ export const TranslationScopeFab = ({
         aria-pressed={scope === "word"}
         aria-label={accessibleLabel}
         aria-describedby={tooltipId}
-        onClick={() => onScopeChange(nextScope)}
+        onClick={() => {
+          triggerInteractionHaptic();
+          onScopeChange(nextScope);
+        }}
         className={cn(
           "relative size-14 touch-manipulation rounded-full p-0 shadow-xl transition-[background-color,box-shadow,transform] duration-150 active:scale-[0.98]",
           className

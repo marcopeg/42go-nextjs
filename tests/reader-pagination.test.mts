@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getPaginationGeometry, snapReaderOffset, getVisibleReaderRect, sizeReaderColumns } from "../src/app/(app)/(lingocafe)/books/_components/reader-pagination.ts";
+import { getPaginationGeometry, snapReaderOffset, getVisibleReaderBounds, getVisibleReaderRect, sizeReaderColumns } from "../src/app/(app)/(lingocafe)/books/_components/reader-pagination.ts";
 import { sanitizeReaderReadingMode, sanitizeReaderPreferencesStore, readStoredReaderPreferencesStore } from "../src/app/(app)/(lingocafe)/books/_components/reader-preferences.ts";
 import { createElementReaderScrollTarget, getReaderScrollProgressBps, scrollReaderToProgressBps, isReaderElementVisible, centerReaderElement } from "../src/app/(app)/(lingocafe)/books/_components/reader-scroll-target.ts";
 import { restoreReaderContentAnchor, isReaderContentAnchor } from "../src/app/(app)/(lingocafe)/books/_components/reader-content-anchor.ts";
@@ -52,6 +52,20 @@ test("a sentence bounding box spanning hidden columns does not imply visibility"
   assert.equal(e.scrollLeft,350);
 });
 
+test("translation placement clears every visible line of a sentence", () => {
+  const viewport = { left: 20, right: 370, top: 80, bottom: 680 } as DOMRect;
+  const hidden = { left: 390, right: 700, top: 90, bottom: 120, width: 310, height: 30 } as DOMRect;
+  const first = { left: 30, right: 350, top: 410, bottom: 440, width: 320, height: 30 } as DOMRect;
+  const second = { left: 30, right: 220, top: 450, bottom: 480, width: 190, height: 30 } as DOMRect;
+  const sentence = { getClientRects: () => [hidden, first, second] } as unknown as HTMLElement;
+  const bounds = getVisibleReaderBounds(sentence, viewport);
+
+  assert.equal(bounds?.left, 30);
+  assert.equal(bounds?.right, 350);
+  assert.equal(bounds?.top, 410);
+  assert.equal(bounds?.bottom, 480);
+});
+
 test("pagination requires exact opt-in and is independent of theme profiles",()=>{
   for(const value of [undefined,null,true,"pages","",{},1]) assert.equal(sanitizeReaderReadingMode(value),"scroll");
   assert.equal(sanitizeReaderReadingMode("paginated"),"paginated");
@@ -60,6 +74,8 @@ test("pagination requires exact opt-in and is independent of theme profiles",()=
   assert.equal(store.light?.fontSizeIndex,2);
   assert.equal(store.dark?.fontSizeIndex,7);
   assert.equal(sanitizeReaderPreferencesStore({readingMode:"invalid"}).readingMode,"scroll");
+  assert.equal(sanitizeReaderPreferencesStore({translationGestures:true}).translationGestures,true);
+  assert.equal(sanitizeReaderPreferencesStore({translationGestures:false}).translationGestures,undefined);
 });
 
 test("blocked or malformed local storage safely defaults to vertical reading",()=>{

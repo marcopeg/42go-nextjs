@@ -15,6 +15,7 @@ type Props = {
   bookPage: ReaderBookPage;
   playback: ReaderPlaybackController;
   translationScope: ReaderTranslationScope;
+  translationGestures: boolean;
   onTranslationScopeChange: (scope: ReaderTranslationScope) => void;
   onOpenTableOfContents: () => void;
   completionPending: boolean;
@@ -22,14 +23,14 @@ type Props = {
 };
 
 export const BookReaderPaginatedToolbar = ({
-  pagination, bookPage, playback, translationScope, onTranslationScopeChange,
+  pagination, bookPage, playback, translationScope, translationGestures, onTranslationScopeChange,
   onOpenTableOfContents, completionPending, onMarkRead,
 }: Props) => {
   const chapterLabel = getReaderChapterLabel(bookPage);
   const canComplete = pagination.atEnd && !bookPage.next && !bookPage.completedAt;
   return (
     <footer
-      className="shrink-0 px-3"
+      className="shrink-0 px-3 pt-3"
       style={{
         paddingBottom:
           "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
@@ -37,7 +38,7 @@ export const BookReaderPaginatedToolbar = ({
     >
       <nav aria-label="Reader controls" className="mx-auto flex h-14 max-w-[680px] items-center gap-1">
         <div className="flex size-11 shrink-0 items-center justify-center">
-          {bookPage.translation.enabled && bookPage.translation.to && (
+          {bookPage.translation.enabled && bookPage.translation.to && !translationGestures && (
             <TranslationScopeFab scope={translationScope} onScopeChange={onTranslationScopeChange}
               className="size-11 shadow-none [&>svg]:size-5"
               tooltipClassName="border-[var(--reader-popover-border)] bg-[var(--reader-popover-bg)] text-[var(--reader-fg)]" />

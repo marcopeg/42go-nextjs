@@ -19,6 +19,7 @@ export type ReaderPreferencesStore = Partial<
 > & {
   readingMode?: ReaderReadingMode;
   sharedFontSizeIndex?: number;
+  translationGestures?: boolean;
   translationScope?: ReaderTranslationScope;
 };
 
@@ -389,6 +390,9 @@ export const sanitizeReaderPreferencesStore = (
 
   if (typeof raw.translationScope === "string") {
     next.translationScope = sanitizeReaderTranslationScope(raw.translationScope);
+  }
+  if (raw.translationGestures === true) {
+    next.translationGestures = true;
   }
 
   if (isReaderPreferencesRecord(raw.light)) {

@@ -518,11 +518,13 @@ export const BookReadPage = ({
     updateReadingMode,
     preferences: readerPreferences,
     translationScope: readerTranslationScope,
+    translationGestures: readerTranslationGestures,
     canResetPreferences: canResetReaderPreferences,
     isOpen: isPreferencesOpen,
     onOpenChange: handlePreferencesOpenChange,
     updatePreferences: updateReaderPreferences,
     updateTranslationScope: updateReaderTranslationScope,
+    updateTranslationGestures: updateReaderTranslationGestures,
     resetPreferences: resetReaderPreferences,
   } = useReaderPreferences({
     trackEvent,
@@ -1131,6 +1133,8 @@ export const BookReadPage = ({
         onPreferencesChange={(next) => { persistLocalReaderPosition(); updateReaderPreferences(next); }}
         translationScope={readerTranslationScope}
         onTranslationScopeChange={updateReaderTranslationScope}
+        translationGestures={readerTranslationGestures}
+        onTranslationGesturesChange={updateReaderTranslationGestures}
         canResetPreferences={canResetReaderPreferences}
         onResetPreferences={() => { persistLocalReaderPosition(); resetReaderPreferences(); }}
         playback={playback}
@@ -1177,6 +1181,7 @@ export const BookReadPage = ({
         headerTitleMode={headerTitleMode}
         preferences={readerPreferences}
         translationScope={readerTranslationScope}
+        translationGestures={readerTranslationGestures}
         onTranslationScopeChange={updateReaderTranslationScope}
         playback={playback}
         forceScrollTop={shouldForcePageTop}
@@ -1200,6 +1205,7 @@ export const BookReadPage = ({
         headerTitleMode={headerTitleMode}
         preferences={readerPreferences}
         translationScope={readerTranslationScope}
+        translationGestures={readerTranslationGestures}
         onTranslationScopeChange={updateReaderTranslationScope}
         playback={playback}
         forceScrollTop={shouldForcePageTop}

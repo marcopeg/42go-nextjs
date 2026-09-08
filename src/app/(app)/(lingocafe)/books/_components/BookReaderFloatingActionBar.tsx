@@ -11,6 +11,7 @@ import { TranslationScopeFab } from "@/components/ui/translation-scope-fab";
 type BookReaderFloatingActionBarProps = {
   playback: ReaderPlaybackController;
   translationAvailable: boolean;
+  translationGestures?: boolean;
   translationScope: ReaderTranslationScope;
   onTranslationScopeChange: (scope: ReaderTranslationScope) => void;
   readerThemeStyle: CSSProperties;
@@ -37,16 +38,18 @@ const getReaderThemeVariables = (style: CSSProperties): CSSProperties =>
 export const BookReaderFloatingActionBar = ({
   playback,
   translationAvailable,
+  translationGestures = false,
   translationScope,
   onTranslationScopeChange,
   readerThemeStyle,
 }: BookReaderFloatingActionBarProps) => {
-  if (playback.isOpen || (!translationAvailable && !playback.canPlay)) {
+  const showTranslation = translationAvailable && !translationGestures;
+  if (playback.isOpen || (!showTranslation && !playback.canPlay)) {
     return null;
   }
 
   const renderTranslationFab = () =>
-    translationAvailable ? (
+    showTranslation ? (
       <TranslationScopeFab
         scope={translationScope}
         onScopeChange={onTranslationScopeChange}

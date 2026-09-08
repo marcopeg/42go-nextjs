@@ -1,7 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { getVisibleReaderRect } from "@/app/(app)/(lingocafe)/books/_components/reader-pagination";
+import { getVisibleReaderBounds } from "@/app/(app)/(lingocafe)/books/_components/reader-pagination";
 import { Play, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
@@ -22,6 +22,8 @@ export type ReaderTranslationAnchor = {
   containerWidth: number;
   containerViewportLeft: number;
   viewportWidth: number;
+  spaceAbove: number;
+  spaceBelow: number;
   showBelow: boolean;
 };
 
@@ -45,7 +47,10 @@ export const getReaderTranslationAnchor = (
 ): ReaderTranslationAnchor => {
   const viewport = element.closest<HTMLElement>('[data-reader-paginated="true"]');
   const portal = viewport?.closest<HTMLElement>("[data-reader-surface]") ?? undefined;
-  const rect = (viewport && getVisibleReaderRect(element, viewport.getBoundingClientRect())) || element.getBoundingClientRect();
+  const rect =
+    (viewport &&
+      getVisibleReaderBounds(element, viewport.getBoundingClientRect())) ||
+    element.getBoundingClientRect();
   const containerRect = (portal ?? container).getBoundingClientRect();
   const spaceAbove = rect.top;
   const spaceBelow = window.innerHeight - rect.bottom;
@@ -59,11 +64,17 @@ export const getReaderTranslationAnchor = (
     containerWidth: containerRect.width,
     containerViewportLeft: containerRect.left,
     viewportWidth: window.innerWidth,
+    spaceAbove,
+    spaceBelow,
     showBelow: spaceBelow >= 160 || spaceBelow >= spaceAbove,
   };
 };
 
 const getPopoverStyle = (anchor: ReaderTranslationAnchor): CSSProperties => {
+  const availableHeight = Math.max(
+    48,
+    (anchor.showBelow ? anchor.spaceBelow : anchor.spaceAbove) - 16
+  );
   if (anchor.viewportWidth < mobilePopoverBreakpointPx) {
     return {
       position: "absolute",
@@ -75,6 +86,8 @@ const getPopoverStyle = (anchor: ReaderTranslationAnchor): CSSProperties => {
       borderLeftWidth: 0,
       borderRightWidth: 0,
       borderRadius: 0,
+      maxHeight: availableHeight,
+      overflowY: "auto",
     };
   }
 
@@ -101,6 +114,8 @@ const getPopoverStyle = (anchor: ReaderTranslationAnchor): CSSProperties => {
     width,
     transform: anchor.showBelow ? "translateX(-50%)" : "translate(-50%, -100%)",
     zIndex: 60,
+    maxHeight: availableHeight,
+    overflowY: "auto",
   };
 };
 

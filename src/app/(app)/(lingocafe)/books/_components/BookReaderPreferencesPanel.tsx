@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CaseSensitive,
   LoaderCircle,
@@ -34,6 +34,7 @@ import {
   type ReaderTranslationScope,
 } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   NavigationalTabs,
   type NavigationalTabOption,
@@ -48,13 +49,15 @@ type BookReaderPreferencesPanelProps = {
   onPreferencesChange: (next: Partial<ReaderPreferences>) => void;
   translationScope: ReaderTranslationScope;
   onTranslationScopeChange: (next: ReaderTranslationScope) => void;
+  translationGestures?: boolean;
+  onTranslationGesturesChange?: (enabled: boolean) => void;
   canResetPreferences: boolean;
   onResetPreferences: () => void;
   playback: ReaderPlaybackController;
   preserveDocumentScroll?: boolean;
 };
 
-type ReaderPreferencesTab = "reading" | "listening";
+type ReaderPreferencesTab = "reading" | "listening" | "translate";
 type ListeningAvailability = "pending" | "available" | "unavailable";
 
 const readerPreferencesTabs: NavigationalTabOption<ReaderPreferencesTab>[] = [
@@ -69,6 +72,12 @@ const readerPreferencesTabs: NavigationalTabOption<ReaderPreferencesTab>[] = [
     label: "Listening",
     tabId: "reader-preferences-listening-tab",
     panelId: "reader-preferences-listening-panel",
+  },
+  {
+    value: "translate",
+    label: "Translate",
+    tabId: "reader-preferences-translate-tab",
+    panelId: "reader-preferences-translate-panel",
   },
 ];
 
@@ -219,6 +228,8 @@ export const BookReaderPreferencesPanel = ({
   onPreferencesChange,
   translationScope,
   onTranslationScopeChange,
+  translationGestures = false,
+  onTranslationGesturesChange,
   canResetPreferences,
   onResetPreferences,
   playback,
@@ -229,6 +240,7 @@ export const BookReaderPreferencesPanel = ({
   const [listeningAvailability, setListeningAvailability] =
     useState<ListeningAvailability>("pending");
   const [previousOpen, setPreviousOpen] = useState(open);
+  const [touchGesturesAvailable, setTouchGesturesAvailable] = useState(false);
   const { mounted, resolvedTheme, setTheme, theme } = useTheme();
   const currentTheme = normalizeTheme(theme);
   const font = getReaderFont(preferences);
@@ -243,6 +255,17 @@ export const BookReaderPreferencesPanel = ({
       ),
     [preferences.backgroundKey, resolvedTheme]
   );
+  useEffect(() => {
+    const coarsePointer = window.matchMedia("(hover: none) and (pointer: coarse)");
+    const update = () => {
+      setTouchGesturesAvailable(
+        coarsePointer.matches || navigator.maxTouchPoints > 0
+      );
+    };
+    update();
+    coarsePointer.addEventListener("change", update);
+    return () => coarsePointer.removeEventListener("change", update);
+  }, []);
   const selectBackground = (backgroundKey: string) => {
     if (backgroundKey === READER_APP_BACKGROUND_KEY) {
       onPreferencesChange({
@@ -299,8 +322,7 @@ export const BookReaderPreferencesPanel = ({
     );
   }
 
-  const showTabs = listeningAvailability === "available";
-  const showReading = !showTabs || activeTab === "reading";
+  const showReading = activeTab === "reading";
 
   return (
     <Modal
@@ -315,35 +337,19 @@ export const BookReaderPreferencesPanel = ({
       headerClassName="md:h-[68px] md:px-8"
       bodyClassName="px-0 py-0 md:pb-6"
     >
-      {listeningAvailability === "pending" ? (
-        <div
-          role="status"
-          className="flex min-h-48 flex-col items-center justify-center gap-3 px-5 py-10 text-center text-sm text-muted-foreground"
-        >
-          <LoaderCircle
-            className="h-6 w-6 animate-spin text-primary"
-            aria-hidden="true"
-          />
-          <span>Checking listening availability...</span>
-        </div>
-      ) : (
-        <>
-          {showTabs ? (
-            <NavigationalTabs
-              ariaLabel="Reader preferences"
-              value={activeTab}
-              options={readerPreferencesTabs}
-              onValueChange={setActiveTab}
-            />
-          ) : null}
+      <>
+        <NavigationalTabs
+          ariaLabel="Reader preferences"
+          value={activeTab}
+          options={readerPreferencesTabs}
+          onValueChange={setActiveTab}
+        />
 
           {showReading ? (
             <div
-              id={showTabs ? "reader-preferences-reading-panel" : undefined}
-              role={showTabs ? "tabpanel" : undefined}
-              aria-labelledby={
-                showTabs ? "reader-preferences-reading-tab" : undefined
-              }
+              id="reader-preferences-reading-panel"
+              role="tabpanel"
+              aria-labelledby="reader-preferences-reading-tab"
             >
               <div className="sticky top-0 z-10 border-b bg-background px-5 py-4 md:mb-6 md:border-0 md:pb-4 md:pt-6">
                 <PreviewCard preferences={preferences} />
@@ -514,50 +520,6 @@ export const BookReaderPreferencesPanel = ({
           </section>
         </div>
 
-        <section className="mt-8 space-y-4">
-          <div>
-            <h3 className="font-semibold">Translation</h3>
-            <p className="text-sm text-muted-foreground">
-              Choose how much text is translated when you tap the reader.
-            </p>
-          </div>
-          <div
-            role="tablist"
-            aria-label="Translation scope"
-            className="flex flex-nowrap items-stretch gap-1 overflow-x-auto rounded-lg border border-border bg-muted/20 p-1"
-          >
-            {[
-              { value: "sentence", label: "Translate full sentence" },
-              { value: "word", label: "Translate single word" },
-            ].map(({ value, label }) => {
-              const selected = translationScope === value;
-
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  onClick={() =>
-                    onTranslationScopeChange(
-                      value === "word" ? "word" : "sentence"
-                    )
-                  }
-                  className={cn(
-                    "flex min-h-10 min-w-0 flex-1 items-center justify-center rounded-md border px-2 text-center text-xs font-medium transition-colors outline-none sm:text-sm",
-                    "focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-                    selected
-                      ? "border-[var(--primary)] bg-primary/5 text-foreground"
-                      : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <span className="leading-tight">{label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
         {onReadingModeChange && (
           <section className="mt-8 space-y-4">
             <h3 className="font-semibold">Reading experience</h3>
@@ -602,21 +564,81 @@ export const BookReaderPreferencesPanel = ({
         </p>
               </div>
             </div>
-          ) : (
+          ) : activeTab === "listening" ? (
             <div
               id="reader-preferences-listening-panel"
               role="tabpanel"
               aria-labelledby="reader-preferences-listening-tab"
               className="px-5 py-6"
             >
-              <BookReaderPlaybackPreferencesEditor
-                playback={playback}
-                variant="panel"
-              />
+              {listeningAvailability === "pending" ? (
+                <div role="status" className="flex min-h-48 flex-col items-center justify-center gap-3 text-center text-sm text-muted-foreground">
+                  <LoaderCircle className="h-6 w-6 animate-spin text-primary" aria-hidden="true" />
+                  <span>Checking listening availability...</span>
+                </div>
+              ) : listeningAvailability === "available" ? (
+                <BookReaderPlaybackPreferencesEditor playback={playback} variant="panel" />
+              ) : (
+                <p role="status" className="py-10 text-center text-sm text-muted-foreground">
+                  Listening is unavailable on this device.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div
+              id="reader-preferences-translate-panel"
+              role="tabpanel"
+              aria-labelledby="reader-preferences-translate-tab"
+              className="space-y-8 px-5 py-6"
+            >
+              <section className="space-y-4">
+                <div>
+                  <h3 className="font-semibold">Translation selection</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Choose how much text is translated by the standard reader action.
+                  </p>
+                </div>
+                <ReaderSettingSegmentedControl
+                  ariaLabel="Translation scope"
+                  value={translationScope}
+                  options={[
+                    { value: "sentence", label: "Full sentence" },
+                    { value: "word", label: "Single word" },
+                  ]}
+                  onValueChange={onTranslationScopeChange}
+                />
+              </section>
+
+              {touchGesturesAvailable && onTranslationGesturesChange ? (
+                <section className="space-y-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <label htmlFor="reader-translation-gestures" className="font-semibold">
+                        Tap gestures <span className="text-xs font-normal text-muted-foreground">Experimental</span>
+                      </label>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Tap a word to translate it. Double tap anywhere in a sentence to translate the full sentence.
+                      </p>
+                    </div>
+                    <Switch
+                      id="reader-translation-gestures"
+                      checked={translationGestures}
+                      onCheckedChange={onTranslationGesturesChange}
+                      aria-label="Tap gestures"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Long press stays available for native text selection.
+                  </p>
+                </section>
+              ) : null}
+
+              <p className="text-center text-xs text-muted-foreground/60">
+                These preferences are stored on your device.
+              </p>
             </div>
           )}
-        </>
-      )}
+      </>
     </Modal>
   );
 };
