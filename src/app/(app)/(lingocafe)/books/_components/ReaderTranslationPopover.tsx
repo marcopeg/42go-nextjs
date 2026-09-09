@@ -29,7 +29,7 @@ export type ReaderTranslationAnchor = {
 
 export type ReaderTranslationPopoverState = {
   anchor: ReaderTranslationAnchor;
-  status: "choose-language" | "saving-language" | "loading" | "success" | "error";
+  status: "pending-gesture" | "choose-language" | "saving-language" | "loading" | "success" | "error";
   translation: string | null;
   source: ReaderTranslationCacheEntry["source"] | null;
   error: string | null;
@@ -261,7 +261,7 @@ export const ReaderTranslationPopover = ({
         </div>
       ) : (
         <button type="button" aria-label="Close translation" onClick={onDismiss} className="block min-w-0 px-5 py-3 text-left outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60 md:px-4">
-          {state.status === "loading" ? <span style={{ color: "var(--reader-fg-muted)" }}>Translating...</span> : null}
+          {(state.status === "pending-gesture" || state.status === "loading") ? <span style={{ color: "var(--reader-fg-muted)" }}>Translating...</span> : null}
           {state.status === "error" ? <span className="text-destructive">{state.error || "Could not translate."}</span> : null}
           {state.status === "success" ? <span>{state.translation}</span> : null}
         </button>

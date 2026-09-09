@@ -2,6 +2,8 @@
 
 import {
   Children,
+  createContext,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -91,6 +93,7 @@ type TranslationSelection = {
 };
 
 type TranslationStatus =
+  | "pending-gesture"
   | "choose-language"
   | "saving-language"
   | "loading"
@@ -99,6 +102,7 @@ type TranslationStatus =
 
 type TranslationState = TranslationSelection & {
   status: TranslationStatus;
+  pendingSelection?: TranslationSelection;
   translation: string | null;
   source: ReaderTranslationCacheEntry["source"] | null;
   error: string | null;
@@ -115,7 +119,7 @@ type SentenceRenderContext = {
   playbackWordRange: ReaderPlaybackWordRange | null;
   index: number;
   getSentenceAnchor: (element: HTMLElement) => ReaderTranslationAnchor | null;
-  onTranslationSelect: (selection: TranslationSelection) => void;
+  onTranslationSelect: (selection: TranslationSelection, pending?: boolean) => (cancel?: boolean) => void;
   onSentenceActivate: (sentenceId: string) => void;
 };
 
@@ -148,13 +152,14 @@ type TapCandidate = {
   cancelled: boolean;
   startedAt?: number;
   secondTap?: boolean;
+  finishPending?: (cancel?: boolean) => void;
 };
 
 type PendingSentenceTap = {
   completedAt: number;
   clientX: number;
   clientY: number;
-  wordTarget: HTMLElement | null;
+  finish: (cancel?: boolean) => void;
   timer: ReturnType<typeof setTimeout> | null;
 };
 
@@ -188,6 +193,7 @@ const selectReaderTranslation = ({
   scope,
   context,
   allowActiveSelection = false,
+  pending = false,
 }: {
   target: HTMLElement;
   anchorTarget?: HTMLElement;
@@ -198,6 +204,7 @@ const selectReaderTranslation = ({
   scope: ReaderTranslationScope;
   context: SentenceRenderContext;
   allowActiveSelection?: boolean;
+  pending?: boolean;
 }) => {
   if (!allowActiveSelection && hasActiveTextSelection()) return;
   context.onSentenceActivate(sentenceId);
@@ -206,7 +213,7 @@ const selectReaderTranslation = ({
   if (!anchor) return;
   const paragraph =
     target.closest("h1,h2,h3,h4,h5,h6,p")?.textContent?.trim() || sentence;
-  context.onTranslationSelect({
+  const finish = context.onTranslationSelect({
     id,
     sentenceId,
     text,
@@ -214,8 +221,9 @@ const selectReaderTranslation = ({
     paragraph,
     scope,
     anchor,
-  });
+  }, pending);
   triggerInteractionHaptic();
+  return finish;
 };
 
 const normalizeApiTranslation = (
@@ -313,13 +321,14 @@ const ReaderTranslationTarget = ({
   const handleSelect = (
     target: HTMLSpanElement,
     scope: ReaderTranslationScope = context.translationScope,
-    allowActiveSelection = false
+    allowActiveSelection = false,
+    pending = false
   ) => {
     const anchorTarget =
       scope === "sentence"
         ? target.closest<HTMLElement>("[data-reader-sentence-id]") ?? target
         : target;
-    selectReaderTranslation({
+    return selectReaderTranslation({
       target,
       anchorTarget,
       id: scope === "sentence" ? sentenceId : id,
@@ -329,12 +338,15 @@ const ReaderTranslationTarget = ({
       scope,
       context,
       allowActiveSelection,
+      pending,
     });
   };
 
   useEffect(() => () => {
     if (mouseClickTimerRef.current) clearTimeout(mouseClickTimerRef.current);
-  }, []);
+    tapCandidateRef.current = null;
+    ignoreClickRef.current = false;
+  }, [context.translationGestures, context.translationScope]);
 
   return (
     <span
@@ -384,14 +396,19 @@ const ReaderTranslationTarget = ({
         }
         if (event.detail !== 1) return;
         const target = event.currentTarget;
+        if (!context.translationGestures) {
+          handleSelect(target);
+          return;
+        }
         if (mouseClickTimerRef.current) clearTimeout(mouseClickTimerRef.current);
+        const finish = handleSelect(target, "word", false, true);
         mouseClickTimerRef.current = setTimeout(() => {
           mouseClickTimerRef.current = null;
-          const scope = getMouseTranslationGesture(1);
-          if (scope) handleSelect(target, scope);
+          finish?.(hasActiveTextSelection());
         }, READER_TRANSLATION_SINGLE_CLICK_DELAY_MS);
       }}
       onDoubleClick={(event) => {
+        if (!context.translationGestures) return;
         if (mouseClickTimerRef.current) {
           clearTimeout(mouseClickTimerRef.current);
           mouseClickTimerRef.current = null;
@@ -488,12 +505,16 @@ const ReaderSentenceTranslationTarget = ({
 
   useEffect(
     () => () => {
+      pendingTapRef.current?.finish(true);
       clearPendingTap();
+      tapCandidateRef.current?.finishPending?.(true);
+      tapCandidateRef.current = null;
+      suppressDoubleClickRef.current = false;
       if (suppressDoubleClickTimerRef.current) {
         clearTimeout(suppressDoubleClickTimerRef.current);
       }
     },
-    []
+    [context.translationGestures, context.translationScope]
   );
 
   return (
@@ -526,6 +547,7 @@ const ReaderSentenceTranslationTarget = ({
           cancelled: false,
           startedAt: event.timeStamp,
           secondTap,
+          finishPending: secondTap ? pendingTap?.finish : undefined,
         };
       }}
       onPointerMove={(event) => {
@@ -540,11 +562,13 @@ const ReaderSentenceTranslationTarget = ({
       }}
       onPointerCancel={(event) => {
         if (tapCandidateRef.current?.pointerId === event.pointerId) {
+          tapCandidateRef.current.finishPending?.(true);
           tapCandidateRef.current = null;
         }
       }}
       onPointerUp={(event) => {
         const candidate = tapCandidateRef.current;
+        if (!context.translationGestures) return;
         if (!candidate || candidate.pointerId !== event.pointerId) return;
         tapCandidateRef.current = null;
 
@@ -557,7 +581,10 @@ const ReaderSentenceTranslationTarget = ({
           moved: candidate.cancelled,
           selectionActive: tapCount === 1 && hasActiveTextSelection(),
         });
-        if (!scope) return;
+        if (!scope) {
+          candidate.finishPending?.(true);
+          return;
+        }
 
         if (scope === "sentence") {
           event.preventDefault();
@@ -588,29 +615,32 @@ const ReaderSentenceTranslationTarget = ({
         const wordTarget = eventTarget?.closest<HTMLElement>(
           "[data-reader-translation-id]"
         );
+        const wordId = wordTarget?.dataset.readerTranslationId;
+        const word = wordTarget?.textContent?.trim();
+        const finish = wordTarget && wordId && word
+          ? selectReaderTranslation({
+              target: wordTarget,
+              id: wordId,
+              sentenceId: id,
+              text: word,
+              sentence,
+              scope: "word",
+              context,
+              pending: true,
+            })
+          : undefined;
         const pendingTap: PendingSentenceTap = {
           completedAt: event.timeStamp,
           clientX: event.clientX,
           clientY: event.clientY,
-          wordTarget: wordTarget ?? null,
+          finish: finish ?? (() => {}),
           timer: null,
         };
         pendingTapRef.current = pendingTap;
         pendingTap.timer = setTimeout(() => {
           if (pendingTapRef.current !== pendingTap) return;
           pendingTapRef.current = null;
-          const wordId = pendingTap.wordTarget?.dataset.readerTranslationId;
-          const word = pendingTap.wordTarget?.textContent?.trim();
-          if (!pendingTap.wordTarget || !wordId || !word) return;
-          selectReaderTranslation({
-            target: pendingTap.wordTarget,
-            id: wordId,
-            sentenceId: id,
-            text: word,
-            sentence,
-            scope: "word",
-            context,
-          });
+          pendingTap.finish(hasActiveTextSelection());
         }, READER_TRANSLATION_TOUCH_DOUBLE_TAP_MS);
       }}
       onDoubleClickCapture={(event) => {
@@ -621,6 +651,7 @@ const ReaderSentenceTranslationTarget = ({
         suppressDoubleClickRef.current = false;
       }}
       onContextMenu={() => {
+        tapCandidateRef.current?.finishPending?.(true);
         tapCandidateRef.current = null;
       }}
     >
@@ -691,78 +722,128 @@ const renderSentenceChildren = (
     typeof child === "string" ? renderSentenceText(child, context) : child
   );
 
-const createMarkdownComponents = (
-  preferences: ReaderPreferences,
-  context: SentenceRenderContext
-): Components => {
-  const font = getReaderFont(preferences);
+const ReaderMarkdownContext = createContext<{
+  preferences: ReaderPreferences;
+  context: SentenceRenderContext;
+} | null>(null);
 
-  return {
-    h1: ({ children }) => (
-      <h1
-        className="mb-5 mt-8 text-[2em] font-semibold tracking-normal"
-        style={{ fontFamily: font.family, lineHeight: 1.15 }}
-      >
-        {renderSentenceChildren(children, context)}
-      </h1>
-    ),
-    h2: ({ children }) => (
-      <h2
-        className="mb-4 mt-7 text-[1.75em] font-semibold tracking-normal"
-        style={{ fontFamily: font.family, lineHeight: 1.2 }}
-      >
-        {renderSentenceChildren(children, context)}
-      </h2>
-    ),
-    h3: ({ children }) => (
-      <h3
-        className="mb-3 mt-6 text-[1.35em] font-semibold tracking-normal"
-        style={{ fontFamily: font.family, lineHeight: 1.28 }}
-      >
-        {renderSentenceChildren(children, context)}
-      </h3>
-    ),
-    h4: ({ children }) => (
-      <h4
-        className="mb-3 mt-5 text-[1.15em] font-semibold tracking-normal"
-        style={{ fontFamily: font.family, lineHeight: 1.32 }}
-      >
-        {renderSentenceChildren(children, context)}
-      </h4>
-    ),
-    h5: ({ children }) => (
-      <h5
-        className="mb-2 mt-4 text-[1em] font-semibold tracking-normal"
-        style={{ fontFamily: font.family, lineHeight: 1.35 }}
-      >
-        {renderSentenceChildren(children, context)}
-      </h5>
-    ),
-    h6: ({ children }) => (
-      <h6
-        className="mb-2 mt-4 text-[0.92em] font-semibold tracking-normal"
-        style={{ fontFamily: font.family, lineHeight: 1.35 }}
-      >
-        {renderSentenceChildren(children, context)}
-      </h6>
-    ),
-    p: ({ children }) => (
-      <p
-        className="my-7 break-words text-[1em] leading-[1.85]"
-        style={{ fontFamily: font.family }}
-      >
-        {renderSentenceChildren(children, context)}
-      </p>
-    ),
-    strong: ({ children }) => (
-      <strong className="font-semibold">
-        {renderSentenceChildren(children, context)}
-      </strong>
-    ),
-    em: ({ children }) => (
-      <em className="italic">{renderSentenceChildren(children, context)}</em>
-    ),
-  };
+const useReaderMarkdownContext = () => {
+  const value = useContext(ReaderMarkdownContext);
+  if (!value) throw new Error("Reader markdown requires its render context.");
+  return { context: value.context, font: getReaderFont(value.preferences) };
+};
+
+const ReaderMarkdownH1 = ({ children }: { children?: ReactNode }) => {
+  const { font, context } = useReaderMarkdownContext();
+  return (
+    <h1
+      className="mb-5 mt-8 text-[2em] font-semibold tracking-normal"
+      style={{ fontFamily: font.family, lineHeight: 1.15 }}
+    >
+      {renderSentenceChildren(children, context)}
+    </h1>
+  );
+};
+
+const ReaderMarkdownH2 = ({ children }: { children?: ReactNode }) => {
+  const { font, context } = useReaderMarkdownContext();
+  return (
+    <h2
+      className="mb-4 mt-7 text-[1.75em] font-semibold tracking-normal"
+      style={{ fontFamily: font.family, lineHeight: 1.2 }}
+    >
+      {renderSentenceChildren(children, context)}
+    </h2>
+  );
+};
+
+const ReaderMarkdownH3 = ({ children }: { children?: ReactNode }) => {
+  const { font, context } = useReaderMarkdownContext();
+  return (
+    <h3
+      className="mb-3 mt-6 text-[1.35em] font-semibold tracking-normal"
+      style={{ fontFamily: font.family, lineHeight: 1.28 }}
+    >
+      {renderSentenceChildren(children, context)}
+    </h3>
+  );
+};
+
+const ReaderMarkdownH4 = ({ children }: { children?: ReactNode }) => {
+  const { font, context } = useReaderMarkdownContext();
+  return (
+    <h4
+      className="mb-3 mt-5 text-[1.15em] font-semibold tracking-normal"
+      style={{ fontFamily: font.family, lineHeight: 1.32 }}
+    >
+      {renderSentenceChildren(children, context)}
+    </h4>
+  );
+};
+
+const ReaderMarkdownH5 = ({ children }: { children?: ReactNode }) => {
+  const { font, context } = useReaderMarkdownContext();
+  return (
+    <h5
+      className="mb-2 mt-4 text-[1em] font-semibold tracking-normal"
+      style={{ fontFamily: font.family, lineHeight: 1.35 }}
+    >
+      {renderSentenceChildren(children, context)}
+    </h5>
+  );
+};
+
+const ReaderMarkdownH6 = ({ children }: { children?: ReactNode }) => {
+  const { font, context } = useReaderMarkdownContext();
+  return (
+    <h6
+      className="mb-2 mt-4 text-[0.92em] font-semibold tracking-normal"
+      style={{ fontFamily: font.family, lineHeight: 1.35 }}
+    >
+      {renderSentenceChildren(children, context)}
+    </h6>
+  );
+};
+
+const ReaderMarkdownP = ({ children }: { children?: ReactNode }) => {
+  const { font, context } = useReaderMarkdownContext();
+  return (
+    <p
+      className="my-7 break-words text-[1em] leading-[1.85]"
+      style={{ fontFamily: font.family }}
+    >
+      {renderSentenceChildren(children, context)}
+    </p>
+  );
+};
+
+const ReaderMarkdownStrong = ({ children }: { children?: ReactNode }) => {
+  const { context } = useReaderMarkdownContext();
+  return (
+    <strong className="font-semibold">
+      {renderSentenceChildren(children, context)}
+    </strong>
+  );
+};
+
+const ReaderMarkdownEm = ({ children }: { children?: ReactNode }) => {
+  const { context } = useReaderMarkdownContext();
+  return (
+    <em className="italic">{renderSentenceChildren(children, context)}</em>
+  );
+};
+
+// Stable component types preserve in-flight tap timers when the scaffold opens.
+const readerMarkdownComponents: Components = {
+  h1: ReaderMarkdownH1,
+  h2: ReaderMarkdownH2,
+  h3: ReaderMarkdownH3,
+  h4: ReaderMarkdownH4,
+  h5: ReaderMarkdownH5,
+  h6: ReaderMarkdownH6,
+  p: ReaderMarkdownP,
+  strong: ReaderMarkdownStrong,
+  em: ReaderMarkdownEm,
 };
 
 const BookPageMarkdown = ({
@@ -775,13 +856,15 @@ const BookPageMarkdown = ({
   context: SentenceRenderContext;
 }) => (
   <div className="min-w-0 max-w-none">
-    <ReactMarkdown
-      allowedElements={["h1", "h2", "h3", "h4", "h5", "h6", "p", "em", "strong"]}
-      components={createMarkdownComponents(preferences, context)}
-      skipHtml
-    >
-      {source}
-    </ReactMarkdown>
+    <ReaderMarkdownContext.Provider value={{ preferences, context }}>
+      <ReactMarkdown
+        allowedElements={["h1", "h2", "h3", "h4", "h5", "h6", "p", "em", "strong"]}
+        components={readerMarkdownComponents}
+        skipHtml
+      >
+        {source}
+      </ReactMarkdown>
+    </ReaderMarkdownContext.Provider>
   </div>
 );
 
@@ -846,23 +929,34 @@ export const BookPageReader = ({
       articleRef.current
         ? getReaderTranslationAnchor(element, articleRef.current)
         : null,
-    onTranslationSelect: (selection) => {
+    onTranslationSelect: (selection, pending = false) => {
+      const status = isSameLingoCafeTranslationLanguage(
+        bookPage.translation.from,
+        translationTargetLanguage
+      ) ? "choose-language" : "loading";
       setTranslationState((current) =>
-        current?.id === selection.id
+        current?.id === selection.id && current.status !== "pending-gesture"
           ? current
           : {
               ...selection,
-              status: isSameLingoCafeTranslationLanguage(
-                bookPage.translation.from,
-                translationTargetLanguage
-              )
-                ? "choose-language"
-                : "loading",
+              status: pending ? "pending-gesture" : status,
+              pendingSelection: pending ? selection : undefined,
               translation: null,
               source: null,
               error: null,
             }
       );
+      // Only this gesture may resolve its scaffold. Dismissed or replaced
+      // selections must never reopen when an old timer finishes.
+      return (cancel = false) => {
+        setTranslationState((current) =>
+          current?.pendingSelection === selection
+            ? cancel
+              ? null
+              : { ...current, status, pendingSelection: undefined }
+            : current
+        );
+      };
     },
     onSentenceActivate,
   };
@@ -978,6 +1072,7 @@ export const BookPageReader = ({
     const loadTranslation = async () => {
       try {
         const cached = await readCachedReaderTranslation(input);
+        if (controller.signal.aborted) return;
         if (cached) {
           trackEvent("page.translate", {
             cache_type: cached.source,
@@ -1022,6 +1117,7 @@ export const BookPageReader = ({
           );
         }
 
+        if (controller.signal.aborted) return;
         const translation = payload ? normalizeApiTranslation(payload) : null;
         if (!translation) {
           throw new Error("Invalid translation response.");
