@@ -935,8 +935,8 @@ export const BookPageReader = ({
         translationTargetLanguage
       ) ? "choose-language" : "loading";
       setTranslationState((current) =>
-        current?.id === selection.id && current.status !== "pending-gesture"
-          ? current
+        current && current.status !== "pending-gesture"
+          ? null
           : {
               ...selection,
               status: pending ? "pending-gesture" : status,

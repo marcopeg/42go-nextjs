@@ -221,6 +221,14 @@ export const ReaderTranslationPopover = ({
   const popover = (
     <div
       data-reader-translation-popover
+      onClick={(event) => {
+        event.stopPropagation();
+        // The language picker must stay open long enough to choose a language.
+        if (hasLanguageForm && event.target instanceof Element && event.target.closest("label")) return;
+        // Starting the audiobook already dismisses after its action feedback.
+        if (audiobookStartTimerRef.current) return;
+        onDismiss();
+      }}
       className="relative flex flex-col overflow-hidden rounded-md border font-sans backdrop-blur"
       style={{
         ...getPopoverStyle(state.anchor),
@@ -260,7 +268,7 @@ export const ReaderTranslationPopover = ({
           </div>
         </div>
       ) : (
-        <button type="button" aria-label="Close translation" onClick={onDismiss} className="block min-w-0 px-5 py-3 text-left outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60 md:px-4">
+        <button type="button" aria-label="Close translation" className="block min-w-0 px-5 py-3 text-left outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60 md:px-4">
           {(state.status === "pending-gesture" || state.status === "loading") ? <span style={{ color: "var(--reader-fg-muted)" }}>Translating...</span> : null}
           {state.status === "error" ? <span className="text-destructive">{state.error || "Could not translate."}</span> : null}
           {state.status === "success" ? <span>{state.translation}</span> : null}

@@ -271,18 +271,22 @@ export const ConversationTranslatableText = ({
 
   useEffect(() => {
     if (!selection) return;
-    const closeOnOutsidePointerDown = (event: PointerEvent) => {
+    const closeOnOutsideClick = (event: MouseEvent) => {
       const target = event.target;
       if (
         target instanceof Element &&
-        target.closest("[data-reader-translation-id], [data-reader-translation-popover]")
+        target.closest("[data-reader-translation-popover]")
       ) {
         return;
       }
+      // Dismiss before another conversation turn can open a new translation.
+      if (target instanceof Element && target.closest("[data-reader-translation-id]")) {
+        event.stopPropagation();
+      }
       closeTranslation(false);
     };
-    document.addEventListener("pointerdown", closeOnOutsidePointerDown);
-    return () => document.removeEventListener("pointerdown", closeOnOutsidePointerDown);
+    document.addEventListener("click", closeOnOutsideClick, true);
+    return () => document.removeEventListener("click", closeOnOutsideClick, true);
   }, [closeTranslation, selection]);
 
   useEffect(() => {
