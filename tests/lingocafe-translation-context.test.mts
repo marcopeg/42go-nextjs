@@ -97,13 +97,17 @@ test("books and conversations share the anchored reader translation popover", as
   assert.match(popover, /maxHeight: availableHeight/);
   assert.match(popover, /label="Start audiobook"/);
   assert.match(popover, /label="Explain"/);
+  assert.match(popover, /data-reader-translation-popover-action/);
+  assert.match(popover, /closest\("\[data-reader-translation-popover-action\]"\)/);
   assert.match(bookReader, /getReaderAiModeUrl/);
   assert.match(bookReader, /<ReaderTranslationPopover/);
-  assert.match(bookReader, /current\?\.id === selection\.id[\s\S]*\? current/);
+  assert.match(bookReader, /window\.open\(url, "_blank", "noopener,noreferrer"\)/);
+  assert.match(bookReader, /current && current\.status !== "pending-gesture"[\s\S]*\? null/);
   assert.match(bookReader, /triggerInteractionHaptic\(\)/);
   assert.match(conversationText, /<ReaderTranslationPopover/);
   assert.match(conversationText, /onTranslationOpenChange/);
   assert.match(conversationText, /getReaderAiModeUrl/);
+  assert.match(conversationText, /window\.open\(url, "_blank", "noopener,noreferrer"\)/);
   assert.match(conversationText, /explanationContext/);
   assert.match(conversationPage, /slice\(Math\.max\(0, roundIndex - 2\), roundIndex \+ 3\)/);
   assert.match(conversationText, /backgroundColor: selected \? "var\(--reader-fg-soft\)"/);

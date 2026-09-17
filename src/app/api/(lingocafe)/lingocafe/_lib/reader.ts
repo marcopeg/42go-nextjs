@@ -10,6 +10,7 @@ import type { TProfileLoadResult } from "@/42go/profile";
 import { getAppConfig } from "@/42go/config/app-config";
 import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
 import { resolveLingoCafeAssetUrl } from "@/lib/lingocafe/assets";
+import { getReaderCoverOverride } from "@/lib/lingocafe/book-presentation";
 
 type BookRow = {
   id: string;
@@ -166,7 +167,9 @@ const normalizeBookInfo = (info: unknown): Record<string, unknown> => {
   return info as Record<string, unknown>;
 };
 
-const resolveBookCover = (book: Pick<BookRow, "project">) => {
+const resolveBookCover = (book: Pick<BookRow, "project" | "info">) => {
+  const override = getReaderCoverOverride(book.info);
+  if (override) return override;
   const project = book.project.trim().replace(/^\/+|\/+$/g, "");
   if (!project) return null;
   return resolveLingoCafeAssetUrl(`${project}/reader`);

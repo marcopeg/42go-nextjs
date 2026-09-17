@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
+import { readerBookAllowedElements } from "@/lib/lingocafe/book-presentation";
 
 import { useEventTracker } from "@/42go/events/use-events";
 import type { ReaderBookPage } from "@/app/(app)/(lingocafe)/books/_components/book-types";
@@ -855,10 +856,10 @@ const BookPageMarkdown = ({
   preferences: ReaderPreferences;
   context: SentenceRenderContext;
 }) => (
-  <div className="min-w-0 max-w-none">
+  <div className="min-w-0 max-w-none [&_img]:h-auto [&_img]:max-w-full [&_a]:underline [&_a]:underline-offset-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-2">
     <ReaderMarkdownContext.Provider value={{ preferences, context }}>
       <ReactMarkdown
-        allowedElements={["h1", "h2", "h3", "h4", "h5", "h6", "p", "em", "strong"]}
+        allowedElements={readerBookAllowedElements}
         components={readerMarkdownComponents}
         skipHtml
       >

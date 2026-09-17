@@ -153,6 +153,7 @@ const ReaderTranslationAction = ({
   return (
     <button
       type="button"
+      data-reader-translation-popover-action
       aria-label={active ? activeAriaLabel : undefined}
       aria-pressed={active === undefined ? undefined : active}
       onPointerDown={() => setPressed(true)}
@@ -225,6 +226,8 @@ export const ReaderTranslationPopover = ({
         event.stopPropagation();
         // The language picker must stay open long enough to choose a language.
         if (hasLanguageForm && event.target instanceof Element && event.target.closest("label")) return;
+        // Playback and Explain operate inside the popover without dismissing it.
+        if (event.target instanceof Element && event.target.closest("[data-reader-translation-popover-action]")) return;
         // Starting the audiobook already dismisses after its action feedback.
         if (audiobookStartTimerRef.current) return;
         onDismiss();
