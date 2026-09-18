@@ -18,6 +18,37 @@ type BookReaderTableOfContentsProps = {
   preserveDocumentScroll?: boolean;
 };
 
+type ContentsGroup =
+  | {
+      kind: "section";
+      page: ReaderBookPageSummary;
+      chapters: ReaderBookPageSummary[];
+    }
+  | {
+      kind: "chapter";
+      page: ReaderBookPageSummary;
+    };
+
+const isSection = (page: ReaderBookPageSummary) =>
+  page.kind.toLowerCase() === "part";
+
+const buildContentsGroups = (pages: ReaderBookPageSummary[]) =>
+  pages.reduce<ContentsGroup[]>((groups, page) => {
+    if (isSection(page)) {
+      groups.push({ kind: "section", page, chapters: [] });
+      return groups;
+    }
+
+    const previousGroup = groups[groups.length - 1];
+    if (previousGroup?.kind === "section") {
+      previousGroup.chapters.push(page);
+    } else {
+      groups.push({ kind: "chapter", page });
+    }
+
+    return groups;
+  }, []);
+
 const getCurrentPageIndex = (bookPage: ReaderBookPage) => {
   const currentIndex = bookPage.pages.findIndex(
     (page) => page.pageId === bookPage.page.pageId
@@ -37,11 +68,13 @@ const TableOfContentsRow = ({
   currentPageId,
   onSelect,
   onNavigatePage,
+  variant = "chapter",
 }: {
   page: ReaderBookPageSummary;
   currentPageId: string;
   onSelect: () => void;
   onNavigatePage: (href: string) => void;
+  variant?: "section" | "chapter";
 }) => {
   const current = page.pageId === currentPageId;
   const handleClick = (event: ReactMouseEvent<HTMLAnchorElement>) => {
@@ -64,12 +97,23 @@ const TableOfContentsRow = ({
     <Link
       href={page.href}
       onClick={handleClick}
-      className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition hover:bg-muted/60 ${
+      className={`group flex min-w-0 items-center gap-3 rounded-xl border px-4 text-sm outline-none transition hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50 ${
+        variant === "section" ? "min-h-12 py-3" : "min-h-11 py-2.5"
+      } ${
         current ? "border-foreground/20 bg-muted text-foreground" : "text-muted-foreground"
       }`}
     >
-      <span className="w-6 shrink-0 text-xs font-medium">{page.position}.</span>
-      <span className="min-w-0 flex-1 truncate">{page.title}</span>
+      <span className="w-6 shrink-0 text-xs font-medium tabular-nums">{page.position}.</span>
+      <span className="min-w-0 flex-1">
+        {variant === "section" && (
+          <span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            Section
+          </span>
+        )}
+        <span className={variant === "section" ? "block truncate font-semibold text-foreground" : "block truncate"}>
+          {page.title}
+        </span>
+      </span>
       {current && (
         <span
           className="flex h-4 w-4 items-end gap-0.5 text-muted-foreground"
@@ -95,6 +139,7 @@ export const BookReaderTableOfContents = ({
   const handleSelectPage = () => {
     onOpenChange(false);
   };
+  const contentsGroups = bookPage ? buildContentsGroups(bookPage.pages) : [];
 
   return (
     <Modal
@@ -159,16 +204,43 @@ export const BookReaderTableOfContents = ({
             <span>Contents</span>
           </div>
 
-          <div className="space-y-2">
-            {bookPage.pages.map((page) => (
-              <TableOfContentsRow
-                key={page.pageId}
-                page={page}
-                currentPageId={bookPage.page.pageId}
-                onSelect={handleSelectPage}
-                onNavigatePage={onNavigatePage}
-              />
-            ))}
+          <div className="space-y-4">
+            {contentsGroups.map((group) =>
+              group.kind === "section" ? (
+                <section key={group.page.pageId} className="space-y-2" aria-label={`Section: ${group.page.title}`}>
+                  <TableOfContentsRow
+                    page={group.page}
+                    variant="section"
+                    currentPageId={bookPage.page.pageId}
+                    onSelect={handleSelectPage}
+                    onNavigatePage={onNavigatePage}
+                  />
+                  {group.chapters.length > 0 && (
+                    <div className="ml-5 border-l border-border pl-3" aria-label={`Chapters in ${group.page.title}`}>
+                      <div className="space-y-1.5">
+                        {group.chapters.map((chapter) => (
+                          <TableOfContentsRow
+                            key={chapter.pageId}
+                            page={chapter}
+                            currentPageId={bookPage.page.pageId}
+                            onSelect={handleSelectPage}
+                            onNavigatePage={onNavigatePage}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </section>
+              ) : (
+                <TableOfContentsRow
+                  key={group.page.pageId}
+                  page={group.page}
+                  currentPageId={bookPage.page.pageId}
+                  onSelect={handleSelectPage}
+                  onNavigatePage={onNavigatePage}
+                />
+              )
+            )}
           </div>
         </div>
       )}
