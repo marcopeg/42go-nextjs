@@ -60,6 +60,7 @@ The event pull uses the same source database env var as `42go backup`. The CLI r
 - JSONB `data` and `meta` are stored as JSON strings in Parquet.
 - Monthly files are named after the event partition strategy: `events_YYYYMM.parquet`.
 - Existing monthly files are merged by event `id` and rewritten atomically.
+- `user.deleted` events purge their target accounts from the local auth users and accounts Parquet caches; the event archive itself remains intact for audit and analytics.
 - State advances only after every touched Parquet file is written and smoke-read.
 - `_state.json` stores the progressive cursor and latest completed batch summary.
 - Incomplete reruns reuse the inflight run ID.

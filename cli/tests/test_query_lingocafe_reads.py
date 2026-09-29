@@ -63,6 +63,10 @@ def test_query_lingocafe_reads_counts_first_started_and_first_completed_user_pag
     data_dir = tmp_path / "42go-data"
     query_dir = tmp_path / "42go-query"
     write_parquet(
+        data_dir / "lingocafe" / "books.parquet",
+        [{"id": "book-1", "title": "Italian Stories", "lang": "it"}],
+    )
+    write_parquet(
         data_dir / "events" / "events_202606.parquet",
         [
             event_row("e1", event_at="2026-06-01T08:00:00Z", name="page.open", progress_bps=0),
@@ -90,12 +94,15 @@ def test_query_lingocafe_reads_counts_first_started_and_first_completed_user_pag
 
     result = query_lingocafe_reads(QueryLingocafeReadsOptions(data_dir=data_dir, query_dir=query_dir))
     rows = read_rows(query_dir / "lingocafe-reads.parquet")
+    book_rows = read_rows(query_dir / "lingocafe-reads--books.parquet")
 
     assert result == {
         "rows": 5,
+        "book_rows": 2,
         "events": 6,
         "bps": 8000,
         "parquet": str(query_dir / "lingocafe-reads.parquet"),
+        "books_parquet": str(query_dir / "lingocafe-reads--books.parquet"),
     }
     assert row_by_day(rows, "2026-06-01") == {
         "day": datetime.fromisoformat("2026-06-01").date(),
@@ -110,6 +117,24 @@ def test_query_lingocafe_reads_counts_first_started_and_first_completed_user_pag
     assert row_by_day(rows, "2026-06-04")["user_pages_completed"] == 0
     assert row_by_day(rows, "2026-06-05")["user_pages_started"] == 0
     assert row_by_day(rows, "2026-06-05")["user_pages_completed"] == 0
+    assert book_rows == [
+        {
+            "day": datetime.fromisoformat("2026-06-01").date(),
+            "book_id": "book-1",
+            "book_title": "Italian Stories",
+            "book_language": "it",
+            "user_id": "u1",
+            "user_pages_started": 1,
+        },
+        {
+            "day": datetime.fromisoformat("2026-06-02").date(),
+            "book_id": "book-1",
+            "book_title": "Italian Stories",
+            "book_language": "it",
+            "user_id": "u1",
+            "user_pages_started": 1,
+        },
+    ]
 
 
 def test_query_lingocafe_reads_custom_bps_changes_completion_day(tmp_path: Path) -> None:

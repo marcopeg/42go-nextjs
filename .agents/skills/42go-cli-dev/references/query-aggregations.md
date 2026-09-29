@@ -226,6 +226,9 @@ lingocafe-subscribers--state.parquet
 - `user_pages_completed` counts the first historical event for each user/page key where `progress_bps` is at or above `--bps`.
 - Re-reads do not create new started or completed counts after the first historical start/completion for that user/page key.
 - Required output columns: `day`, `user_pages_started`, and `user_pages_completed`.
+- The same command also writes `lingocafe-reads--books.parquet`, with one row per
+  `day + book_id + user_id`; it must include `book_title`, `book_language`, and
+  `user_pages_started` so consumers can build weekly and monthly book leaderboards.
 
 ## Users Growth Query
 

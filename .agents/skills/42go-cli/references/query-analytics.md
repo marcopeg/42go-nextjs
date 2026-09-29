@@ -249,10 +249,11 @@ Rules:
 - Re-reading the same page later does not create a new started or completed count.
 - Days use `Europe/Rome` boundaries.
 
-Output file:
+Output files:
 
 ```text
 .local/42go-query/lingocafe-reads.parquet
+.local/42go-query/lingocafe-reads--books.parquet
 ```
 
 Columns:
@@ -260,6 +261,12 @@ Columns:
 - `day`
 - `user_pages_started`
 - `user_pages_completed`
+
+The per-book aggregate has one row per `day + book_id + user_id` and retains the
+number of first-started pages for that user/book/day. It includes `book_title`
+and `book_language` from the local book catalog when available. Consumers use
+it for weekly and monthly book leaderboards, where `user_pages_started` is
+summed and readers are counted distinctly across the selected period.
 
 ## Users Growth
 

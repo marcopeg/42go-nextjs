@@ -9,6 +9,7 @@ from typing import Any, Iterable
 
 from fortytwogo_cli.events.dependencies import import_duckdb, import_psycopg, import_pyarrow
 from fortytwogo_cli.events.paths import ArchivePaths, ensure_dirs, get_database_url, resolve_paths
+from fortytwogo_cli.users.deleted import deleted_user_keys, purge_deleted_user_rows
 from fortytwogo_cli.users.paths import resolve_paths as resolve_auth_paths
 
 DEFAULT_LIMIT = 10000
@@ -404,6 +405,42 @@ def reset_archive(paths: ArchivePaths) -> None:
         path.unlink(missing_ok=True)
 
 
+def purge_deleted_auth_cache(data_dir: Path | None) -> tuple[int, int]:
+    auth_paths = resolve_auth_paths(data_dir)
+    if not auth_paths.users_parquet.exists() and not auth_paths.accounts_parquet.exists():
+        return 0, 0
+    _pa, pq = import_pyarrow()
+    deleted_keys = deleted_user_keys(data_dir)
+    from fortytwogo_cli.users.pull import (
+        ACCOUNT_COLUMNS,
+        USER_COLUMNS,
+        account_schema,
+        smoke_read_parquet,
+        user_schema,
+        write_parquet_file,
+    )
+
+    removed_users = 0
+    if auth_paths.users_parquet.exists():
+        user_rows = pq.read_table(auth_paths.users_parquet).to_pylist()
+        retained_users = purge_deleted_user_rows(user_rows, deleted_keys)
+        removed_users = len(user_rows) - len(retained_users)
+        if removed_users:
+            write_parquet_file(auth_paths.users_parquet, retained_users, USER_COLUMNS, user_schema)
+            smoke_read_parquet(auth_paths.users_parquet, len(retained_users))
+
+    removed_accounts = 0
+    if auth_paths.accounts_parquet.exists():
+        account_rows = pq.read_table(auth_paths.accounts_parquet).to_pylist()
+        retained_accounts = purge_deleted_user_rows(account_rows, deleted_keys)
+        removed_accounts = len(account_rows) - len(retained_accounts)
+        if removed_accounts:
+            write_parquet_file(auth_paths.accounts_parquet, retained_accounts, ACCOUNT_COLUMNS, account_schema)
+            smoke_read_parquet(auth_paths.accounts_parquet, len(retained_accounts))
+
+    return removed_users, removed_accounts
+
+
 def pull_events(options: PullOptions) -> dict[str, Any]:
     database_url = get_database_url()
     paths = resolve_paths(options.data_dir)
@@ -453,6 +490,7 @@ def pull_events(options: PullOptions) -> dict[str, Any]:
     updates = [updates_by_month[month] for month in sorted(updates_by_month)]
 
     removed_legacy_files = remove_legacy_batches(paths)
+    purged_deleted_users, purged_deleted_accounts = purge_deleted_auth_cache(options.data_dir)
     write_state(paths, run_id, raw_rows, len(rows), updates)
     paths.inflight.unlink(missing_ok=True)
 
@@ -466,4 +504,6 @@ def pull_events(options: PullOptions) -> dict[str, Any]:
         "last_id": last["id"],
         "reconciled_user_ids": reconciled_user_ids,
         "skipped_unresolved_user_ids": skipped_unresolved_user_ids,
+        "purged_deleted_users": purged_deleted_users,
+        "purged_deleted_accounts": purged_deleted_accounts,
     }

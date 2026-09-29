@@ -186,3 +186,22 @@ Columns:
 - `day`
 - `user_pages_started`
 - `user_pages_completed`
+
+### `.local/42go-query/lingocafe-reads--books.parquet`
+
+Command: `42go query lingocafe reads`
+
+Stores the prepared book-leaderboard source at one row per `day + book_id + user_id`.
+`user_pages_started` counts the user's first historical starts for pages in that
+book on that day. `book_title` and `book_language` come from the locally pulled
+book catalog when available. Consumers can sum started pages and count distinct
+users for calendar-week and calendar-month book leaderboards.
+
+Columns:
+
+- `day`
+- `book_id`
+- `book_title`
+- `book_language`
+- `user_id`
+- `user_pages_started`

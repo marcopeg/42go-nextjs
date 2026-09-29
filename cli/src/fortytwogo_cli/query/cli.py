@@ -301,7 +301,7 @@ def lingocafe_growth(
         handle_query_error("lingocafe growth", error)
 
 
-@lingocafe_app.command(name="reads", help="Build LingoCafe daily page read aggregate.")
+@lingocafe_app.command(name="reads", help="Build LingoCafe daily and per-book page read aggregates.")
 def lingocafe_reads(
     data_dir: Annotated[
         Path | None,

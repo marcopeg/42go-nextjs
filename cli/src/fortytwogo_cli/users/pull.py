@@ -9,6 +9,7 @@ from typing import Any, Iterable
 
 from fortytwogo_cli.events.dependencies import import_duckdb, import_psycopg, import_pyarrow
 from fortytwogo_cli.users.paths import AuthExportPaths, ensure_dirs, get_database_url, resolve_paths
+from fortytwogo_cli.users.deleted import deleted_user_keys, purge_deleted_user_rows
 
 DEFAULT_LIMIT = 10000
 STATE_VERSION = 2
@@ -355,27 +356,34 @@ def pull_users(options: PullUsersOptions) -> dict[str, Any]:
 
     existing_users = [] if options.reset else read_parquet_rows(paths.users_parquet, normalize_user)
     existing_accounts = [] if options.reset else read_parquet_rows(paths.accounts_parquet, normalize_account)
-    merged_users = merge_rows(existing_users, changed_users, lambda row: row["id"], sort_users)
-    merged_accounts = merge_rows(
+    unpurged_users = merge_rows(existing_users, changed_users, lambda row: row["id"], sort_users)
+    deleted_keys = deleted_user_keys(options.data_dir)
+    merged_users = purge_deleted_user_rows(unpurged_users, deleted_keys)
+    unpurged_accounts = merge_rows(
         existing_accounts,
         changed_accounts,
         lambda row: (row["app_id"], row["account_id"], row["provider"]),
         sort_accounts,
     )
+    merged_accounts = purge_deleted_user_rows(unpurged_accounts, deleted_keys)
+    deleted_users = len(unpurged_users) - len(merged_users)
+    deleted_accounts = len(unpurged_accounts) - len(merged_accounts)
 
     if options.dry_run:
         return {
             "users_changed": len(changed_users),
+            "users_purged": deleted_users,
             "accounts_changed": len(changed_accounts),
+            "accounts_purged": deleted_accounts,
             "users_total": len(merged_users),
             "accounts_total": len(merged_accounts),
-            "would_write": bool(options.reset or changed_users or changed_accounts),
+            "would_write": bool(options.reset or changed_users or changed_accounts or deleted_users or deleted_accounts),
         }
 
-    if options.reset or changed_users or not paths.users_parquet.exists():
+    if options.reset or changed_users or deleted_users or not paths.users_parquet.exists():
         write_parquet_file(paths.users_parquet, merged_users, USER_COLUMNS, user_schema)
         smoke_read_parquet(paths.users_parquet, len(merged_users))
-    if options.reset or changed_accounts or not paths.accounts_parquet.exists():
+    if options.reset or changed_accounts or deleted_accounts or not paths.accounts_parquet.exists():
         write_parquet_file(paths.accounts_parquet, merged_accounts, ACCOUNT_COLUMNS, account_schema)
         smoke_read_parquet(paths.accounts_parquet, len(merged_accounts))
 
@@ -385,7 +393,9 @@ def pull_users(options: PullUsersOptions) -> dict[str, Any]:
         "users_changed": len(changed_users),
         "accounts_changed": len(changed_accounts),
         "users_total": len(merged_users),
+        "users_purged": deleted_users,
         "accounts_total": len(merged_accounts),
+        "accounts_purged": deleted_accounts,
         "users_parquet": str(paths.users_parquet),
         "accounts_parquet": str(paths.accounts_parquet),
         "state": str(paths.state),

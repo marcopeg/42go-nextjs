@@ -6,6 +6,7 @@ from pathlib import Path
 from threading import Event
 from typing import Any
 
+import pyarrow as pa
 import pyarrow.parquet as pq
 
 from fortytwogo_cli.users import pull as users_pull
@@ -70,6 +71,21 @@ def account_row(
 
 def read_parquet_rows(path: Path) -> list[dict[str, Any]]:
     return pq.read_table(path).to_pylist()
+
+
+def write_deleted_event(data_dir: Path, user_id: str) -> None:
+    events_dir = data_dir / "events"
+    events_dir.mkdir(parents=True, exist_ok=True)
+    pq.write_table(
+        pa.table(
+            {
+                "app_id": ["lingocafe"],
+                "name": ["user.deleted"],
+                "data": [json.dumps({"targetUserId": user_id})],
+            }
+        ),
+        events_dir / "events_202609.parquet",
+    )
 
 
 def test_default_paths_use_local_data_root() -> None:
@@ -232,6 +248,25 @@ def test_pull_users_reset_rebuilds_without_existing_rows(monkeypatch, tmp_path: 
     assert not legacy_users.exists()
     assert not legacy_accounts.exists()
     assert not legacy_state.exists()
+
+
+def test_pull_users_purges_accounts_deleted_in_event_archive(monkeypatch, tmp_path: Path) -> None:
+    data_dir = tmp_path / ".local" / "42go-data"
+    monkeypatch.setenv("BACKUP_DATABASE_URL", "postgres://example")
+    monkeypatch.setattr(users_pull, "fetch_users", lambda database_url, cursor, limit: [user_row("u1", name="John")])
+    monkeypatch.setattr(users_pull, "fetch_accounts", lambda database_url, cursor, limit: [account_row("acc1", user_id="u1")])
+    pull_users(PullUsersOptions(data_dir=data_dir))
+    write_deleted_event(data_dir, "u1")
+    monkeypatch.setattr(users_pull, "fetch_users", lambda database_url, cursor, limit: [])
+    monkeypatch.setattr(users_pull, "fetch_accounts", lambda database_url, cursor, limit: [])
+
+    result = pull_users(PullUsersOptions(data_dir=data_dir))
+    paths = resolve_paths(data_dir)
+
+    assert result["users_purged"] == 1
+    assert result["accounts_purged"] == 1
+    assert read_parquet_rows(paths.users_parquet) == []
+    assert read_parquet_rows(paths.accounts_parquet) == []
 
 
 def test_write_failure_does_not_advance_state(monkeypatch, tmp_path: Path) -> None:

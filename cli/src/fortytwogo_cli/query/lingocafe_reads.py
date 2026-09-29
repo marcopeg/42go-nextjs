@@ -22,6 +22,14 @@ LINGOCAFE_READS_COLUMNS = [
     "user_pages_started",
     "user_pages_completed",
 ]
+LINGOCAFE_BOOK_READS_COLUMNS = [
+    "day",
+    "book_id",
+    "book_title",
+    "book_language",
+    "user_id",
+    "user_pages_started",
+]
 
 
 @dataclass(frozen=True)
@@ -136,6 +144,45 @@ def count_by_day(days_by_key: dict[tuple[str, str, str], date]) -> dict[date, in
     return counts
 
 
+def read_book_catalog(data_dir: Path | None) -> dict[str, dict[str, str]]:
+    data_root = resolve_paths(data_dir).root
+    path = data_root / "lingocafe" / "books.parquet"
+    if not path.exists():
+        return {}
+
+    _pa, pq = import_pyarrow()
+    catalog: dict[str, dict[str, str]] = {}
+    for row in pq.read_table(path, columns=["id", "title", "lang"]).to_pylist():
+        book_id = row.get("id")
+        if not isinstance(book_id, str) or not book_id:
+            continue
+        catalog[book_id] = {
+            "title": row.get("title") if isinstance(row.get("title"), str) else book_id,
+            "language": row.get("lang") if isinstance(row.get("lang"), str) else "",
+        }
+    return catalog
+
+
+def build_book_read_rows(events: list[dict[str, Any]], catalog: dict[str, dict[str, str]]) -> list[dict[str, Any]]:
+    started = first_started_days(events)
+    counts: dict[tuple[date, str, str], int] = {}
+    for (user_id, book_id, _page_id), day in started.items():
+        key = (day, book_id, user_id)
+        counts[key] = counts.get(key, 0) + 1
+
+    return [
+        {
+            "day": day,
+            "book_id": book_id,
+            "book_title": catalog.get(book_id, {}).get("title", book_id),
+            "book_language": catalog.get(book_id, {}).get("language", ""),
+            "user_id": user_id,
+            "user_pages_started": pages_started,
+        }
+        for (day, book_id, user_id), pages_started in sorted(counts.items())
+    ]
+
+
 def build_read_rows(events: list[dict[str, Any]], bps: int) -> list[dict[str, Any]]:
     if bps < 0 or bps > 10000:
         raise RuntimeError("--bps must be between 0 and 10000.")
@@ -173,6 +220,28 @@ def write_reads(path: Path, rows: list[dict[str, Any]]) -> None:
     tmp.replace(path)
 
 
+def write_book_reads(path: Path, rows: list[dict[str, Any]]) -> None:
+    pa, pq = import_pyarrow()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.unlink(missing_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    schema = pa.schema(
+        [
+            ("day", pa.date32()),
+            ("book_id", pa.string()),
+            ("book_title", pa.string()),
+            ("book_language", pa.string()),
+            ("user_id", pa.string()),
+            ("user_pages_started", pa.int64()),
+        ]
+    )
+    table = pa.table(
+        {column: [row.get(column) for row in rows] for column in LINGOCAFE_BOOK_READS_COLUMNS}, schema=schema
+    )
+    pq.write_table(table, tmp, compression="zstd")
+    tmp.replace(path)
+
+
 def smoke_read_reads(path: Path, expected_rows: int) -> None:
     duckdb = import_duckdb()
     with duckdb.connect(":memory:") as connection:
@@ -185,11 +254,16 @@ def query_lingocafe_reads(options: QueryLingocafeReadsOptions) -> dict[str, Any]
     events = read_read_events(options.data_dir)
     rows = build_read_rows(events, options.bps)
     output_path = query_output_path(["lingocafe", "reads"], options.query_dir)
+    book_output_path = query_output_path(["lingocafe", "reads"], options.query_dir, suffix="books")
     write_reads(output_path, rows)
+    book_rows = build_book_read_rows(events, read_book_catalog(options.data_dir))
+    write_book_reads(book_output_path, book_rows)
     smoke_read_reads(output_path, len(rows))
     return {
         "rows": len(rows),
+        "book_rows": len(book_rows),
         "events": len(events),
         "bps": options.bps,
         "parquet": str(output_path),
+        "books_parquet": str(book_output_path),
     }
