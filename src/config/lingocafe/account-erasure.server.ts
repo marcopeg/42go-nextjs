@@ -24,6 +24,24 @@ export const accountErasureHandlers: AccountErasureHandler[] = [
         .where({ user_id: targetUser.id })
         .delete();
 
+      const deletedQuestionnaireMemory = await trx(
+        "lingocafe.questionnaire_learning_item_memory"
+      )
+        .where({ user_id: targetUser.id })
+        .delete();
+
+      const deletedQuestionnaireReviews = await trx(
+        "lingocafe.questionnaire_learning_item_reviews"
+      )
+        .where({ user_id: targetUser.id })
+        .delete();
+
+      const deletedQuestionnaireRounds = await trx(
+        "lingocafe.questionnaire_rounds"
+      )
+        .where({ user_id: targetUser.id })
+        .delete();
+
       return {
         id: "lingocafe.account-erasure",
         label: "LingoCafe reading state",
@@ -31,6 +49,9 @@ export const accountErasureHandlers: AccountErasureHandler[] = [
           conversationReads: deletedConversationReads,
           conversationStars: deletedConversationStars,
           booksProgress: deletedProgress,
+          questionnaireMemory: deletedQuestionnaireMemory,
+          questionnaireReviews: deletedQuestionnaireReviews,
+          questionnaireRounds: deletedQuestionnaireRounds,
         },
       };
     },

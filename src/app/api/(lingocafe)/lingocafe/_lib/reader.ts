@@ -83,6 +83,12 @@ type BookCompletionRow = {
   completed_at: Date | string;
 };
 
+type BookQuestionnaireSummaryRow = {
+  id: string;
+  title: string;
+  question_count: number | string;
+};
+
 type BookReadingAction = {
   kind: "start" | "resume" | "unavailable";
   label: "Read now" | "Continue reading" | "No pages available";
@@ -100,6 +106,12 @@ type BookPageNeighbor = {
   prefix: string | null;
   title: string;
   href: string;
+};
+
+type BookPageTrainingAction = {
+  scope: "chapter" | "part";
+  pageId: string;
+  label: "Train on this chapter" | "Train on this part";
 };
 
 export type BookPageDetail = {
@@ -132,6 +144,7 @@ export type BookPageDetail = {
     from: string;
     to: string | null;
   };
+  training: BookPageTrainingAction | null;
 };
 
 const coverFallbackUrl = "/images/lingocafe/placeholder.jpg";
@@ -220,12 +233,14 @@ const mapBookPageDetail = ({
   previous,
   next,
   pages,
+  training,
 }: {
   book: BookPageBookRow;
   page: BookPageDetailRow;
   previous?: BookPageDetailRow;
   next?: BookPageDetailRow;
   pages: BookInfoPageRow[];
+  training: BookPageTrainingAction | null;
 }): BookPageDetail => ({
   book: {
     id: book.id,
@@ -251,12 +266,89 @@ const mapBookPageDetail = ({
   previous: mapBookPageNeighbor(previous, book.id),
   next: mapBookPageNeighbor(next, book.id),
   pages: pages.map(mapBookInfoPage),
+  training,
   translation: {
     enabled: false,
     from: book.lang,
     to: null,
   },
 });
+
+const getBookPageTrainingScope = (
+  page: BookPageDetailRow,
+  pages: BookInfoPageRow[]
+): { action: BookPageTrainingAction; questionPageIds: string[] } | null => {
+  const kind = page.kind.toLowerCase();
+  if (kind === "chapter") {
+    return {
+      action: { scope: "chapter", pageId: page.id, label: "Train on this chapter" },
+      questionPageIds: [page.id],
+    };
+  }
+  if (kind !== "part") return null;
+
+  const partIndex = pages.findIndex((candidate) => candidate.id === page.id);
+  const chapterPages: string[] = [];
+  for (const candidate of pages.slice(partIndex + 1)) {
+    if (candidate.kind.toLowerCase() === "part") break;
+    if (candidate.kind.toLowerCase() === "chapter") chapterPages.push(candidate.id);
+  }
+  if (chapterPages.length === 0) return null;
+
+  return {
+    action: { scope: "part", pageId: page.id, label: "Train on this part" },
+    questionPageIds: chapterPages,
+  };
+};
+
+const loadBookPageTrainingAction = async ({
+  bookId,
+  page,
+  pages,
+}: {
+  bookId: string;
+  page: BookPageDetailRow;
+  pages: BookInfoPageRow[];
+}): Promise<BookPageTrainingAction | null> => {
+  const scope = getBookPageTrainingScope(page, pages);
+  if (!scope) return null;
+  const db = getDB();
+  const available = await db("lingocafe.questionnaires as questionnaire")
+    .join("lingocafe.questionnaire_questions as question", function joinQuestion() {
+      this.on("question.questionnaire_id", "=", "questionnaire.id")
+        .andOnVal("question.status", "=", "active");
+    })
+    .join("lingocafe.questionnaire_question_revisions as revision", function joinRevision() {
+      this.on("revision.questionnaire_id", "=", "question.questionnaire_id")
+        .andOn("revision.question_id", "=", "question.id")
+        .andOn("revision.revision_digest", "=", "question.current_revision_digest")
+        .andOnVal("revision.response_mode", "=", "single-select");
+    })
+    .join("lingocafe.questionnaire_answer_sets as answerSet", function joinAnswerSet() {
+      this.on("answerSet.questionnaire_id", "=", "revision.questionnaire_id")
+        .andOn("answerSet.question_id", "=", "revision.question_id")
+        .andOn("answerSet.revision_digest", "=", "revision.revision_digest");
+    })
+    .join("lingocafe.questionnaire_question_revision_learning_items as relation", function joinRelation() {
+      this.on("relation.questionnaire_id", "=", "revision.questionnaire_id")
+        .andOn("relation.question_id", "=", "revision.question_id")
+        .andOn("relation.revision_digest", "=", "revision.revision_digest");
+    })
+    .join("lingocafe.questionnaire_learning_items as learningItem", function joinLearningItem() {
+      this.on("learningItem.questionnaire_id", "=", "relation.questionnaire_id")
+        .andOn("learningItem.id", "=", "relation.learning_item_id")
+        .andOnVal("learningItem.status", "=", "active");
+    })
+    .join("lingocafe.questionnaire_learning_item_pages as pageLink", function joinPageLink() {
+      this.on("pageLink.questionnaire_id", "=", "learningItem.questionnaire_id")
+        .andOn("pageLink.learning_item_id", "=", "learningItem.id")
+        .andOn("pageLink.book_id", "=", "questionnaire.book_id");
+    })
+    .where({ "questionnaire.book_id": bookId, "questionnaire.status": "active" })
+    .whereIn("pageLink.page_id", scope.questionPageIds)
+    .first("question.id");
+  return available ? scope.action : null;
+};
 
 const createReadingAction = ({
   bookId,
@@ -553,6 +645,34 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
     .where({ book_id: bookId })
     .orderBy("position", "asc")) as BookInfoPageRow[];
 
+  const questionnaire = (await db("lingocafe.questionnaires as questionnaire")
+    .join("lingocafe.questionnaire_questions as question", function joinQuestion() {
+      this.on("question.questionnaire_id", "=", "questionnaire.id").andOnVal(
+        "question.status",
+        "=",
+        "active"
+      );
+    })
+    .join(
+      "lingocafe.questionnaire_question_revision_learning_items as relation",
+      function joinRelation() {
+        this.on("relation.questionnaire_id", "=", "question.questionnaire_id")
+          .andOn("relation.question_id", "=", "question.id")
+          .andOn("relation.revision_digest", "=", "question.current_revision_digest");
+      }
+    )
+    .join("lingocafe.questionnaire_learning_items as learning_item", function joinItem() {
+      this.on("learning_item.questionnaire_id", "=", "relation.questionnaire_id")
+        .andOn("learning_item.id", "=", "relation.learning_item_id")
+        .andOnVal("learning_item.status", "=", "active");
+    })
+    .select("questionnaire.id", "questionnaire.title")
+    .countDistinct({ question_count: "question.id" })
+    .where({ "questionnaire.book_id": bookId, "questionnaire.status": "active" })
+    .whereNotNull("question.current_revision_digest")
+    .groupBy("questionnaire.id", "questionnaire.title")
+    .first()) as BookQuestionnaireSummaryRow | undefined;
+
   return {
     ...mapBookInfo(
       book,
@@ -564,6 +684,15 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
       toISO(completion?.completed_at ?? null)
     ),
     pages: pages.map(mapBookInfoPage),
+    questionnaire:
+      questionnaire && Number(questionnaire.question_count) > 0
+        ? {
+            id: questionnaire.id,
+            title: questionnaire.title,
+            questionCount: Number(questionnaire.question_count),
+            href: `/books/${encodeURIComponent(bookId)}/questionnaire`,
+          }
+        : null,
   };
 };
 
@@ -602,7 +731,8 @@ export const loadBookPage = async (bookId: string, pageId: string) => {
     .where({ book_id: bookId })
     .orderBy("position", "asc")) as BookInfoPageRow[];
 
-  return mapBookPageDetail({ book, page, previous, next, pages });
+  const training = await loadBookPageTrainingAction({ bookId, page, pages });
+  return mapBookPageDetail({ book, page, previous, next, pages, training });
 };
 
 export const loadBookProgress = async (userId: string, bookId: string) => {

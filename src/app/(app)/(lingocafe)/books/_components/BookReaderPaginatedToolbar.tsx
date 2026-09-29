@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { TranslationScopeFab } from "@/components/ui/translation-scope-fab";
 import { BookReaderPlaybackControls } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPlaybackControls";
 import { getReaderChapterLabel } from "@/app/(app)/(lingocafe)/books/_components/reader-chapter-label";
+import { useReaderTraining } from "@/app/(app)/(lingocafe)/books/_components/reader-training-context";
 import type { ReaderBookPage } from "@/app/(app)/(lingocafe)/books/_components/book-types";
 import type { ReaderTranslationScope } from "@/app/(app)/(lingocafe)/books/_components/reader-preferences";
 import type { ReaderPlaybackController } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/types";
@@ -26,8 +27,10 @@ export const BookReaderPaginatedToolbar = ({
   pagination, bookPage, playback, translationScope, translationGestures, onTranslationScopeChange,
   onOpenTableOfContents, completionPending, onMarkRead,
 }: Props) => {
+  const startTraining = useReaderTraining();
   const chapterLabel = getReaderChapterLabel(bookPage);
   const canComplete = pagination.atEnd && !bookPage.next && !bookPage.completedAt;
+  const training = pagination.atEnd ? bookPage.training : null;
   return (
     <footer
       className="shrink-0 px-3 pt-3"
@@ -66,6 +69,13 @@ export const BookReaderPaginatedToolbar = ({
           )}
         </div>
       </nav>
+      {training && startTraining && (
+        <div className="flex justify-center pt-1">
+          <Button type="button" variant="neutralLink" className="min-h-11" style={{ color: "var(--reader-fg-muted)" }} onClick={() => startTraining({ kind: training.scope, pageId: training.pageId })}>
+            {training.label}
+          </Button>
+        </div>
+      )}
       <BookReaderPlaybackControls playback={playback} inline />
     </footer>
   );

@@ -23,6 +23,8 @@ import {
 } from "@/app/(app)/(lingocafe)/books/_components/BookReaderSurfaces";
 import { BookReaderPreferencesPanel } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
 import { BookReaderTableOfContents } from "@/app/(app)/(lingocafe)/books/_components/BookReaderTableOfContents";
+import { QuestionnaireExperience } from "@/app/(app)/(lingocafe)/books/_components/QuestionnaireExperience";
+import { ReaderTrainingContext, type ReaderTrainingScope } from "@/app/(app)/(lingocafe)/books/_components/reader-training-context";
 import { useReaderPlayback } from "@/app/(app)/(lingocafe)/books/_components/reader-playback/useReaderPlayback";
 import {
   createElementReaderScrollTarget,
@@ -297,6 +299,13 @@ const normalizeBookPage = (
     progress: normalizeProgress(bookPage.progress),
     completedAt:
       typeof bookPage.completedAt === "string" ? bookPage.completedAt : null,
+    training:
+      bookPage.training &&
+      (bookPage.training.scope === "chapter" || bookPage.training.scope === "part") &&
+      typeof bookPage.training.pageId === "string" &&
+      (bookPage.training.label === "Train on this chapter" || bookPage.training.label === "Train on this part")
+        ? bookPage.training
+        : null,
   };
 };
 
@@ -430,6 +439,7 @@ export const BookReadPage = ({
   const [headerTitleMode, setHeaderTitleMode] =
     useState<ReaderHeaderTitleMode>("book");
   const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
+  const [trainingScope, setTrainingScope] = useState<ReaderTrainingScope | null>(null);
   const updateDisplayedProgress = useCallback((progressBps: number) => {
     if (displayedProgressRef.current === progressBps) return;
     displayedProgressRef.current = progressBps;
@@ -1171,7 +1181,8 @@ export const BookReadPage = ({
       className="h-[100dvh] min-h-0 will-change-transform md:!transform-none md:!w-screen md:!max-w-none md:!border-l-0"
       bodyClassName="flex min-h-0 !overflow-hidden p-0"
     >
-      <BookReaderMobileSurface
+      <ReaderTrainingContext.Provider value={setTrainingScope}>
+        <BookReaderMobileSurface
         readingMode={readingMode}
         bookPage={bookPage}
         loading={readerSurfaceLoading}
@@ -1195,7 +1206,7 @@ export const BookReadPage = ({
         }}
       />
 
-      <BookReaderDesktopSurface
+        <BookReaderDesktopSurface
         readingMode={readingMode}
         bookPage={bookPage}
         loading={readerSurfaceLoading}
@@ -1219,7 +1230,16 @@ export const BookReadPage = ({
         }}
       />
 
-      {readerOverlays}
+        {readerOverlays}
+      </ReaderTrainingContext.Provider>
+      {trainingScope && bookPage && (
+        <QuestionnaireExperience
+          key={`${trainingScope.kind}:${trainingScope.pageId}`}
+          bookId={bookPage.book.id}
+          trainingScope={trainingScope}
+          onExit={() => setTrainingScope(null)}
+        />
+      )}
     </Modal>
   );
 

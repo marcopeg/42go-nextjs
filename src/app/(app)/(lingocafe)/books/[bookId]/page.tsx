@@ -80,6 +80,15 @@ const normalizeBookInfo = (payload: Partial<BookInfoResponse>) => {
         bookId: book.id,
       }
     : createUnavailableReadingAction(book.id);
+  const questionnaire =
+    book.questionnaire &&
+    typeof book.questionnaire.id === "string" &&
+    typeof book.questionnaire.title === "string" &&
+    typeof book.questionnaire.questionCount === "number" &&
+    book.questionnaire.questionCount > 0 &&
+    typeof book.questionnaire.href === "string"
+      ? book.questionnaire
+      : null;
 
   return {
     ...book,
@@ -92,6 +101,7 @@ const normalizeBookInfo = (payload: Partial<BookInfoResponse>) => {
     completedAt:
       typeof book.completedAt === "string" ? book.completedAt : null,
     pages: Array.isArray(book.pages) ? book.pages.filter(isBookInfoPage) : [],
+    questionnaire,
   };
 };
 

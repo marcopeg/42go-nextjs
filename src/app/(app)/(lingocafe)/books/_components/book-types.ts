@@ -42,6 +42,12 @@ export type ReaderBookInfo = ReaderBook & {
   description: string;
   readingAction: ReaderBookReadingAction;
   pages: ReaderBookInfoPage[];
+  questionnaire: {
+    id: string;
+    title: string;
+    questionCount: number;
+    href: string;
+  } | null;
 };
 
 export type ReaderBookPageNeighbor = {
@@ -89,4 +95,9 @@ export type ReaderBookPage = {
     progressBps: number;
   } | null;
   completedAt: string | null;
+  training: {
+    scope: "chapter" | "part";
+    pageId: string;
+    label: "Train on this chapter" | "Train on this part";
+  } | null;
 };

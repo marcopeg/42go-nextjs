@@ -8,6 +8,7 @@ import {
   BookCheck,
   ChevronDown,
   ChevronRight,
+  CircleHelp,
   FileText,
   Globe2,
   GraduationCap,
@@ -523,6 +524,14 @@ export const BookInfoContent = ({
           <div className="sticky bottom-0 z-20 -mx-4 bg-background/95 px-4 py-3 backdrop-blur md:mx-0 md:flex md:justify-end md:px-0">
             <div className="grid gap-2 md:w-64">
               <BookReadingAction action={book.readingAction} />
+              {book.questionnaire && (
+                <Button asChild type="button" variant="secondary" className="h-10 w-full">
+                  <Link href={book.questionnaire.href}>
+                    <CircleHelp className="size-4" />
+                    Practice questions
+                  </Link>
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"

@@ -28,6 +28,8 @@ export type SwipeableBottomSheetProps = {
   children: ReactNode;
   id?: string;
   className?: string;
+  /** Place a sheet above an existing modal while keeping its backdrop immediately below it. */
+  zIndex?: number;
   onCloseComplete?: () => void;
   onCloseAutoFocus?: ComponentProps<typeof DialogContent>["onCloseAutoFocus"];
 };
@@ -42,6 +44,7 @@ export const SwipeableBottomSheet = forwardRef<
   children,
   id,
   className,
+  zIndex = 710,
   onCloseComplete,
   onCloseAutoFocus,
 }, forwardedRef) => {
@@ -77,9 +80,9 @@ export const SwipeableBottomSheet = forwardRef<
         overlayProps={{
           disableExitAnimation: true,
           onPointerDown: (event) => swipe.beginDrag(event, "backdrop"),
-          style: swipe.overlayStyle,
+          style: { ...swipe.overlayStyle, zIndex: zIndex - 10 },
         }}
-        style={swipe.surfaceStyle}
+        style={{ ...swipe.surfaceStyle, zIndex }}
         className={cn(
           "inset-x-2.5 bottom-0 max-h-[85dvh] w-auto overflow-hidden rounded-t-3xl border bg-background px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 will-change-transform data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=open]:duration-300 data-[state=open]:ease-out",
           className

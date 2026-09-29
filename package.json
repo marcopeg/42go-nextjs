@@ -18,6 +18,8 @@
     "test:lingocafe-translation-context": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-translation-context.test.mts",
     "test:lingocafe-translation-scope-fab": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-translation-scope-fab.test.mts",
     "test:lingocafe-book-completion": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-book-completion.test.mts",
+    "test:lingocafe-questionnaire-runtime": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-questionnaire-runtime.test.mts",
+    "test:lingocafe-questionnaire-ui": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-questionnaire-ui.test.mts",
     "test:lingocafe-conversations-schema": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-conversations-schema.test.mts",
     "test:lingocafe-personas-schema": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-personas-schema.test.mts",
     "test:lingocafe-conversations-api": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-conversations-api.test.mts",
@@ -61,6 +63,7 @@
     "sanitize-html": "2.17.6",
     "sonner": "2.0.7",
     "tailwind-merge": "3.6.0",
+    "ts-fsrs": "5.4.2",
     "uuid": "14.0.1",
     "zod": "4.4.3"
   },

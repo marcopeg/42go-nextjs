@@ -22,6 +22,7 @@ import {
 import { useTheme } from "@/42go/config/ThemeProvider";
 import { BookPageReader } from "@/app/(app)/(lingocafe)/books/_components/BookPageReader";
 import { BookReaderPaginatedToolbar } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPaginatedToolbar";
+import { useReaderTraining } from "@/app/(app)/(lingocafe)/books/_components/reader-training-context";
 import { BookReaderFloatingActionBar } from "@/app/(app)/(lingocafe)/books/_components/BookReaderFloatingActionBar";
 import { BookReaderPlaybackControls } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPlaybackControls";
 import { BookReaderPreferencesTrigger } from "@/app/(app)/(lingocafe)/books/_components/BookReaderPreferencesPanel";
@@ -297,6 +298,20 @@ const FinalPageCompletionAction = ({
       <BookCheck className="size-4" />
       {pending ? "Marking as read..." : "Mark as read"}
     </Button>
+  );
+};
+
+const ReaderTrainingAction = ({ bookPage }: { bookPage: ReaderBookPage }) => {
+  const startTraining = useReaderTraining();
+  const training = bookPage.training;
+  if (!training || !startTraining) return null;
+
+  return (
+    <div className="flex w-full justify-center">
+      <Button type="button" variant="neutralLink" className="min-h-11" onClick={() => startTraining({ kind: training.scope, pageId: training.pageId })}>
+        {training.label}
+      </Button>
+    </div>
   );
 };
 
@@ -604,6 +619,7 @@ export const BookReaderDesktopSurface = ({
                     onNavigatePage={onNavigatePage}
                     pageTurnPending={pageTurnPending}
                   />
+                  <ReaderTrainingAction bookPage={bookPage} />
                   <FinalPageCompletionAction
                     bookPage={bookPage}
                     pending={completionPending}
@@ -822,6 +838,7 @@ export const BookReaderMobileSurface = ({
                     pageTurnPending={pageTurnPending}
                     compact
                   />
+                  <ReaderTrainingAction bookPage={bookPage} />
                   <FinalPageCompletionAction
                     bookPage={bookPage}
                     pending={completionPending}
