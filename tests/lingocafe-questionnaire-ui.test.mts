@@ -90,6 +90,36 @@ test("round normalization preserves resume position without deriving grades", ()
   assert.equal(getSelectedQuestionnaireOption(round.items[0])?.text, "Wrong choice");
 });
 
+test("answer display order varies by round and stays stable when a round reloads", () => {
+  const payload = roundPayload();
+  payload.round.items[1].options = [
+    { id: "A", text: "First" },
+    { id: "B", text: "Second" },
+    { id: "C", text: "Third" },
+  ];
+  const originalIds = payload.round.items[1].options.map((option) => option.id);
+  const first = normalizeQuestionnaireRound(payload);
+  assert.ok(first);
+  assert.deepEqual(
+    normalizeQuestionnaireRound(payload)?.items[1].options,
+    first.items[1].options
+  );
+  assert.deepEqual(
+    first.items[1].options.map((option) => option.id).sort(),
+    [...originalIds].sort()
+  );
+  assert.deepEqual(payload.round.items[1].options.map((option) => option.id), originalIds);
+
+  const firstPositions = new Set<string>();
+  for (let index = 0; index < 60; index += 1) {
+    payload.round.id = `round-${index}`;
+    const round = normalizeQuestionnaireRound(payload);
+    assert.ok(round);
+    firstPositions.add(round.items[1].options[0].id);
+  }
+  assert.deepEqual(firstPositions, new Set(originalIds));
+});
+
 test("completed results identify mistakes and exact remediation links", () => {
   const round = normalizeQuestionnaireRound(roundPayload({ completed: true }));
   assert.ok(round);

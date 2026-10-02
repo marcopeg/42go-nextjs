@@ -70,6 +70,31 @@ const normalizeOption = (value: unknown): QuestionnaireOption | null => {
   return id && text ? { id, text } : null;
 };
 
+const shuffleOptionsForRound = (
+  options: QuestionnaireOption[],
+  roundId: string,
+  questionId: string
+): QuestionnaireOption[] => {
+  let seed = 2166136261;
+  for (const character of `${roundId}:${questionId}`) {
+    seed = Math.imul(seed ^ character.charCodeAt(0), 16777619);
+  }
+  const nextRandom = () => {
+    seed += 0x6d2b79f5;
+    let value = seed;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 0x100000000;
+  };
+
+  const shuffled = [...options];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(nextRandom() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+};
+
 const normalizePageLink = (value: unknown): QuestionnairePageLink | null => {
   const link = objectValue(value);
   if (!link) return null;
@@ -125,7 +150,7 @@ const normalizeAnswer = (
   };
 };
 
-const normalizeItem = (value: unknown): QuestionnaireRoundItem | null => {
+const normalizeItem = (value: unknown, roundId: string): QuestionnaireRoundItem | null => {
   const item = objectValue(value);
   if (!item) return null;
   const position = finiteNumber(item.position);
@@ -148,17 +173,20 @@ const normalizeItem = (value: unknown): QuestionnaireRoundItem | null => {
   ) {
     return null;
   }
-  const answer = item.answer === null ? null : normalizeAnswer(item.answer, options);
+  const displayOptions = shuffleOptionsForRound(options, roundId, questionId);
+  const answer = item.answer === null ? null : normalizeAnswer(item.answer, displayOptions);
   if (item.answer !== null && !answer) return null;
-  return { position, questionId, prompt, responseMode, options, answer };
+  return { position, questionId, prompt, responseMode, options: displayOptions, answer };
 };
 
 export const normalizeQuestionnaireRound = (payload: unknown): QuestionnaireRound | null => {
   const root = objectValue(payload);
   const round = objectValue(root?.round);
   if (!round || !Array.isArray(round.items)) return null;
+  const roundId = stringValue(round.id);
+  if (!roundId) return null;
   const items = round.items
-    .map(normalizeItem)
+    .map((item) => normalizeItem(item, roundId))
     .filter((item): item is QuestionnaireRoundItem => item !== null)
     .sort((left, right) => left.position - right.position);
   const status = round.status;
