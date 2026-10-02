@@ -19,7 +19,9 @@ exports.seed = async (knex) => {
     if (revisionGuards.length !== 2472) {
       throw new Error(`Expected 2472 immutable question checks; found ${revisionGuards.length}`);
     }
-    await trx.raw(insertSql);
-    await trx.raw(revisionGuards.join("\n"));
+    // Knex treats unescaped question marks in raw SQL string literals as bind
+    // markers, including the punctuation at the end of each prompt.
+    await trx.raw(insertSql.replaceAll("?", "\\?"));
+    await trx.raw(revisionGuards.join("\n").replaceAll("?", "\\?"));
   });
 };
