@@ -45,10 +45,65 @@ export const TaskItem = ({
 }: TaskItemProps) => {
   const isCompleted = task.completed_at !== null;
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const longPressOriginRef = useRef<{ x: number; y: number } | null>(null);
+  const didLongPressRef = useRef(false);
   const isDesktop = typeof window !== "undefined" && window.innerWidth >= 768;
+
+  const clearLongPress = () => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+
+    longPressOriginRef.current = null;
+  };
+
+  const isInteractiveTarget = (target: EventTarget | null) =>
+    target instanceof Element &&
+    target.closest("button, input, textarea, a, [data-task-row-action]") !== null;
 
   const handleToggle = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    onToggle(task.id, !isCompleted);
+  };
+
+  const handleMobilePointerDown = (e: React.PointerEvent<HTMLLIElement>) => {
+    if (isDesktop || isEditing || isInteractiveTarget(e.target)) return;
+
+    didLongPressRef.current = false;
+    longPressOriginRef.current = { x: e.clientX, y: e.clientY };
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressTimerRef.current = null;
+      longPressOriginRef.current = null;
+      didLongPressRef.current = true;
+      onStartEdit(task);
+    }, 450);
+  };
+
+  const handleMobilePointerMove = (e: React.PointerEvent<HTMLLIElement>) => {
+    const origin = longPressOriginRef.current;
+
+    if (!origin) return;
+
+    const movedX = e.clientX - origin.x;
+    const movedY = e.clientY - origin.y;
+
+    if (Math.hypot(movedX, movedY) > 10) {
+      clearLongPress();
+    }
+  };
+
+  const handleMobileRowClick = (e: React.MouseEvent<HTMLLIElement>) => {
+    if (isDesktop || isEditing || isInteractiveTarget(e.target)) return;
+
+    if (didLongPressRef.current) {
+      e.preventDefault();
+      didLongPressRef.current = false;
+      return;
+    }
+
     onToggle(task.id, !isCompleted);
   };
 
@@ -66,10 +121,17 @@ export const TaskItem = ({
     }
   }, [isEditing]);
 
+  useEffect(
+    () => () => {
+      clearLongPress();
+    },
+    []
+  );
+
   return (
     <li
       ref={sortable?.setNodeRef}
-      className={`group flex items-center gap-3 p-3 hover:bg-muted/20 min-h-16 ${
+      className={`group flex items-center gap-3 p-3 hover:bg-muted/20 min-h-16 touch-pan-y select-none ${
         sortable && !sortable.disabled && !isEditing
           ? "select-none touch-pan-y md:hover:cursor-grab md:active:cursor-grabbing py-4"
           : ""
@@ -83,6 +145,16 @@ export const TaskItem = ({
         transition: sortable?.transition,
       }}
       data-taskid={task.id}
+      onPointerDown={handleMobilePointerDown}
+      onPointerMove={handleMobilePointerMove}
+      onPointerUp={clearLongPress}
+      onPointerCancel={clearLongPress}
+      onClick={handleMobileRowClick}
+      onContextMenu={(e) => {
+        if (!isDesktop && !isInteractiveTarget(e.target)) {
+          e.preventDefault();
+        }
+      }}
       {...(isDesktop && !isEditing && sortable && !sortable.disabled
         ? ({
             ...(sortable.attributes as unknown as Record<string, unknown>),
@@ -143,8 +215,8 @@ export const TaskItem = ({
           )}
         </div>
 
-        {/* Mobile view: tap title to edit */}
-        <div className="md:hidden" onClick={() => onStartEdit(task)}>
+        {/* Mobile view: tap the row to toggle; long press the row to edit */}
+        <div className="md:hidden">
           <p
             className={`font-medium leading-tight m-0 ${
               isCompleted ? "line-through text-muted-foreground" : ""
