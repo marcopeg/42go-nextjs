@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Card from "@/components/ui/card";
 import { Markdown } from "@/42go/components/Markdown/Markdown";
-import matter from "gray-matter";
+import { parseFrontmatter } from "@/42go/utils/frontmatter";
 import { useToast } from "@/components/ui/toast";
 
 type Props = { bucket: string; uuid: string };
@@ -55,7 +55,7 @@ export default function NoteView({ bucket, uuid }: Props) {
           const rawBody = data.body ?? "";
           let parsed;
           try {
-            parsed = matter(String(rawBody));
+            parsed = parseFrontmatter(String(rawBody));
           } catch {
             parsed = { content: rawBody, data: {} };
           }

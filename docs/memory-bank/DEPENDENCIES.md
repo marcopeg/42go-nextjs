@@ -2,6 +2,18 @@
 
 This file captures macro dependencies and the proven update playbook from the PE62 -> XI41 sequence.
 
+## Release-age policy (2026-10-22)
+
+- Use Node 24 LTS, pinned by `.nvmrc` and the production image digest.
+- Use npm 12.2.0 (`packageManager`); npm 11.12.1 is the minimum supported npm version for this repository’s release-age setting.
+- Keep `min-release-age=7` and `save-exact=true` in the repository `.npmrc`. Docker repeats the age setting explicitly because `.npmrc` stays outside the build context.
+- Check publication timestamps for the complete lockfile, including optional packages, during dependency maintenance. A lockfile can preserve previously selected versions; install flags alone are not the evidence.
+- Record any urgent security exception with an official advisory, affected versions, fixed version, release date, and reason to act before seven days. No npm-package age exception was used in this maintenance cycle.
+- npm 12 blocks unreviewed dependency lifecycle scripts. Keep `allowScripts` approvals restricted to reviewed exact versions and review them when upgrading those dependencies.
+- Keep Node API types on the runtime major. ESLint 10 and TypeScript 7 remain deferred while the Next lint plugin peers exclude them.
+
+See the [2026-10-22 maintenance report](../security/2026-10-22-dependency-update.md) for versions, advisories, compatibility holds, and verification results.
+
 ## Update Guidelines
 
 Use this process when running a full dependency maintenance cycle.
@@ -23,7 +35,7 @@ Classify each candidate dependency:
 - Toolchain strictness: TypeScript, ESLint, eslint-config-next.
 - Data-path critical: knex, pg, pg-query-stream.
 - UI surface: Radix/shadcn, lucide-react, Tailwind stack.
-- Utility/low blast radius: date-fns, clsx, cva, gray-matter, sanitize-html.
+- Utility/low blast radius: date-fns, clsx, cva, vfile-matter, sanitize-html.
 
 Use this confidence model:
 
@@ -146,7 +158,7 @@ Why it matters: determines client-side fetch/cache behavior and server payload v
 - `remark-gfm`
 - `rehype-sanitize`
 - `sanitize-html`
-- `gray-matter`
+- `vfile` and `vfile-matter` (YAML frontmatter; `yaml` is transitive)
 
 Why it matters: docs/content rendering and sanitization are both functionality and security concerns.
 
@@ -169,3 +181,9 @@ Why it matters: powers drag-drop flows, iconography, date and id handling, and U
 - JWT-first NextAuth session model.
 - Absolute import conventions and repository lint policy.
 - Dependency updates must stay observable through task-level notes and qa proofs.
+
+## Frontmatter cleanup (2026-10-22)
+
+Documentation and public notes share `src/42go/utils/frontmatter.ts`. It parses standard YAML frontmatter with timestamps and merge keys, validates mapping-shaped metadata, and retains the note viewer's raw-text fallback on invalid YAML. Keep server filesystem reads outside this helper because the note viewer imports it in the browser.
+
+`gray-matter`, legacy `js-yaml` 3.x, `argparse` 1.x, and `sprintf-js` were removed. The production npm audit is now clean. The remaining `braces` advisory belongs to development lint tooling. See the [cleanup report](../security/2026-10-22-frontmatter-cleanup.md).

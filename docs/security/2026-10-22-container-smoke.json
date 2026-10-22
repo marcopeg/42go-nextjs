@@ -1,0 +1,61 @@
+{
+  "image": "42go-next:dependency-review-20261022",
+  "imageId": "sha256:2824f0c4d0a5c499f9d664907e2e813ae1014cdb6f09dc4924195856c2246ff5",
+  "checks": [
+    {
+      "host": "localhost:3318",
+      "path": "/api/health",
+      "expected": 200,
+      "status": 200,
+      "pass": true
+    },
+    {
+      "host": "read.lingocafe.app",
+      "path": "/login",
+      "expected": 200,
+      "status": 200,
+      "pass": true,
+      "lingocafeIdentity": true
+    },
+    {
+      "host": "read.lingocafe.app",
+      "path": "/api/auth/providers",
+      "expected": 200,
+      "status": 200,
+      "pass": true,
+      "providers": [
+        "credentials",
+        "email",
+        "google"
+      ]
+    },
+    {
+      "host": "read.lingocafe.app",
+      "path": "/api/lingocafe/books",
+      "expected": 401,
+      "status": 401,
+      "pass": true
+    },
+    {
+      "host": "quicklist.42go.dev",
+      "path": "/login",
+      "expected": 200,
+      "status": 200,
+      "pass": true
+    },
+    {
+      "host": "quicklist.42go.dev",
+      "path": "/api/quicklists",
+      "expected": 401,
+      "status": 401,
+      "pass": true
+    },
+    {
+      "host": "next.42go.dev",
+      "path": "/login",
+      "expected": 200,
+      "status": 200,
+      "pass": true
+    }
+  ]
+}

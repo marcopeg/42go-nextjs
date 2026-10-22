@@ -1,0 +1,75 @@
+{
+  "image": "42go-next:frontmatter-cleanup-20261022",
+  "checks": [
+    {
+      "host": "localhost:3319",
+      "path": "/api/health",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "host": "read.lingocafe.app",
+      "path": "/login",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "host": "read.lingocafe.app",
+      "path": "/api/auth/providers",
+      "status": 200,
+      "pass": true,
+      "providers": [
+        "credentials",
+        "email",
+        "google"
+      ]
+    },
+    {
+      "host": "read.lingocafe.app",
+      "path": "/api/lingocafe/books",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "host": "quicklist.42go.dev",
+      "path": "/login",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "host": "quicklist.42go.dev",
+      "path": "/api/quicklists",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "host": "next.42go.dev",
+      "path": "/login",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "host": "next.42go.dev",
+      "path": "/docs",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "host": "next.42go.dev",
+      "path": "/docs/getting-started",
+      "status": 200,
+      "pass": true,
+      "headings": [
+        "Documentation",
+        "Features",
+        "UI & Experience",
+        "Page Blocks",
+        "Getting Started",
+        "Development Environment",
+        "Dynamic Configuration",
+        "Feature Flags",
+        "Reusable & Configurable Features"
+      ]
+    }
+  ]
+}

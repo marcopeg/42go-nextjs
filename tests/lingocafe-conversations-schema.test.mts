@@ -258,17 +258,50 @@ test("development seed payload is the complete deterministic corpus", async () =
   assert.equal(payload.visibility_policy, "all-active");
   assert.equal(payload.categories.length, 79);
   assert.equal(payload.parents.length, 71);
-  assert.equal(payload.scenarios.length, 61);
-  assert.equal(payload.scenario_localizations.length, 708);
-  assert.equal(payload.memberships.length, 66);
-  assert.equal(payload.actors.length, 122);
+  assert.equal(payload.scenarios.length, 174);
+  assert.equal(payload.scenario_localizations.length, 2068);
+  assert.equal(payload.memberships.length, 201);
+  assert.equal(payload.actors.length, 348);
   assert.equal(payload.variants.length, 67);
   assert.equal(payload.variant_cast.length, 134);
-  assert.equal(payload.variant_localizations.length, 708);
+  assert.equal(payload.variant_localizations.length, 712);
   assert.equal(payload.conversations.length, 724);
-  assert.equal(payload.rounds.length, 7317);
+  assert.equal(payload.rounds.length, 7422);
   assert.equal(payload.availability.length, 1659);
   assert.ok(payload.variant_cast.some((row: { persona_id: string | null }) => row.persona_id));
   assert.ok(payload.variant_cast.some((row: { persona_id: string | null }) => row.persona_id === null));
   assert.ok(payload.categories.every((row: { source_path: string }) => !row.source_path.startsWith("fixture://")));
+
+  const scopedKey = (scenarioId: string, id: string) => JSON.stringify([scenarioId, id]);
+  const scenarioIds = new Set(payload.scenarios.map((row: { id: string }) => row.id));
+  const actorKeys = new Set(
+    payload.actors.map((row: { scenario_id: string; id: string }) => scopedKey(row.scenario_id, row.id))
+  );
+  const variantKeys = new Set(
+    payload.variants.map((row: { scenario_id: string; id: string }) => scopedKey(row.scenario_id, row.id))
+  );
+  const conversations = new Map<string, string>();
+  assert.equal(scenarioIds.size, payload.scenarios.length, "scenario IDs must be unique");
+  assert.equal(actorKeys.size, payload.actors.length, "actor IDs must be unique within each scenario");
+  assert.equal(variantKeys.size, payload.variants.length, "variant IDs must be unique within each scenario");
+  for (const variant of payload.variants) {
+    assert.ok(scenarioIds.has(variant.scenario_id), `missing scenario for variant ${variant.id}`);
+  }
+  for (const conversation of payload.conversations) {
+    assert.ok(variantKeys.has(scopedKey(conversation.scenario_id, conversation.variant_id)), `missing variant for ${conversation.id}`);
+    conversations.set(conversation.id, conversation.scenario_id);
+  }
+  assert.equal(conversations.size, payload.conversations.length, "conversation IDs must be unique");
+  const roundKeys = new Set<string>();
+  const conversationsWithRounds = new Set<string>();
+  for (const round of payload.rounds) {
+    assert.equal(conversations.get(round.conversation_id), round.scenario_id, `invalid conversation scope for ${round.conversation_id}`);
+    assert.ok(actorKeys.has(scopedKey(round.scenario_id, round.actor_id)), `missing actor for ${round.conversation_id}`);
+    assert.ok(Number.isInteger(round.position) && round.position > 0);
+    assert.ok(round.text.trim(), `empty round in ${round.conversation_id}`);
+    roundKeys.add(JSON.stringify([round.conversation_id, round.position]));
+    conversationsWithRounds.add(round.conversation_id);
+  }
+  assert.equal(roundKeys.size, payload.rounds.length, "round positions must be unique within each conversation");
+  assert.equal(conversationsWithRounds.size, conversations.size, "every conversation must contain dialogue");
 });

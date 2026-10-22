@@ -66,4 +66,5 @@ test("conversation reader reserves room for its fixed floating actions", async (
   );
 
   assert.match(source, /pb-\[calc\(7\.5rem\+env\(safe-area-inset-bottom\)\)\]/);
+  assert.match(source, /playback\.isOpen\s*\? "pb-\[calc\(13rem\+env\(safe-area-inset-bottom\)\)\]"/);
 });

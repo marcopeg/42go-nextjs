@@ -1,5 +1,5 @@
 import path from "path";
-import matter from "gray-matter";
+import { parseFrontmatter } from "@/42go/utils/frontmatter";
 import { read as readFile, scanDir as scanFileDir } from "./fs";
 import { Cache } from "./cache";
 
@@ -67,13 +67,12 @@ export const read = async (
   }
 
   // Parse & cache the content
-  const parsed = matter(rawContent as string);
+  const parsed = parseFrontmatter<Record<string, string>>(rawContent as string);
   const returnValue = {
     path: rawPath,
     content: parsed.content,
     data: parsed.data,
     isEmpty: parsed.content.trim().length === 0,
-    excerpt: parsed.excerpt,
   };
   if (expiry !== -1) cache.set(inputPath, returnValue);
   return returnValue;

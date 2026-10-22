@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { describe, it } from "node:test";
+import { runInNewContext } from "node:vm";
+import ts from "typescript";
+
+import { cn } from "../src/lib/utils.ts";
 
 import {
   communicationDraftSchema,
@@ -16,6 +21,8 @@ import {
   MIN_INTERSECTION_RATIO,
   QUALIFIED_DISPLAY_MS,
 } from "../src/42go/components/Notifications/useQualifiedDisplay.ts";
+
+const require = createRequire(import.meta.url);
 
 const notification = {
   kind: "notification",
@@ -416,7 +423,30 @@ describe("notification container behavior", () => {
     assert.match(admin, /sticky top-0 z-10 border-b/);
     assert.match(admin, /\["Communication", "Type", "Status", "Audience", "Priority", "Date"\]/);
     assert.match(admin, /<PlainList flushMobileTop>/);
-    assert.match(plainList, /flushMobileTop && "border-t-0 md:border-t"/);
+    const listModule = {} as {
+      PlainList: (props: { flushMobileTop?: boolean }) => {
+        props: { className: string };
+      };
+    };
+    const compiled = ts.transpileModule(plainList, {
+      compilerOptions: {
+        module: ts.ModuleKind.CommonJS,
+        jsx: ts.JsxEmit.ReactJSX,
+      },
+    }).outputText;
+    runInNewContext(compiled, {
+      exports: listModule,
+      require: (id: string) => id === "@/lib/utils" ? { cn } : require(id),
+    });
+    const regularClasses = new Set(listModule.PlainList({}).props.className.split(/\s+/));
+    const flushClasses = new Set(
+      listModule.PlainList({ flushMobileTop: true }).props.className.split(/\s+/)
+    );
+    assert.equal(regularClasses.has("border-t"), true);
+    assert.equal(regularClasses.has("border-t-0"), false);
+    assert.equal(flushClasses.has("border-t"), false);
+    assert.equal(flushClasses.has("border-t-0"), true);
+    assert.equal(flushClasses.has("md:border"), true);
     assert.doesNotMatch(plainList, /-mt-6/);
     assert.match(appLayout, /flushMobileTop \? "pt-0 md:pt-6" : "pt-6"/);
   });

@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.7
 
-# Keep the release image on the stable Node LTS line. Newer Node lines have
-# shown intermittent Next.js build-worker SIGSEGVs under linux/amd64 buildx
-# emulation.
-ARG NODE_IMAGE=node:22-alpine
+# Node 24 LTS security release (2026-10-21): fixes CVE-2026-111497 (Brotli
+# remote code execution), TLS validation, and DNS flaws. See the dependency
+# maintenance report for the evidence supporting this release-age exception.
+ARG NODE_IMAGE=node:24.22.1-alpine3.24@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
 ARG APP_VERSION
 
 # ==========================================
@@ -14,7 +14,8 @@ WORKDIR /app
 
 # Install all dependencies (including devDependencies)
 COPY package.json package-lock.json* ./
-RUN --mount=type=cache,id=npm-build,target=/root/.npm,sharing=locked npm ci
+RUN npm install --global npm@12.2.0 --min-release-age=7
+RUN --mount=type=cache,id=npm-build,target=/root/.npm,sharing=locked npm ci --min-release-age=7
 
 # ==========================================
 # STAGE 2: Builder Stage
