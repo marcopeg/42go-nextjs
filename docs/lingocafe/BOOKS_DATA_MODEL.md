@@ -105,6 +105,8 @@ The export application is responsible for turning those source files into SQL ro
 
 Cover bytes are not stored in `lingocafe.books`. Optional `info.cover_url` selects an explicit HTTP(S) URL or a single-slash same-origin path. Invalid or absent overrides fall back to `<LC_ASSETS_BASE_PATH>/<project>/reader` (the default origin is `https://assets.lingocafe.app`); the UI retains its placeholder fallback. Exporters may use content-addressed same-origin paths for local editions without changing the global asset origin.
 
+> **Important (Artwork vs. Retail Cover):** The reader UI dynamically overlays the book title, author, and reading badges directly over the cover image via HTML and CSS. The image served at `<project>/reader` or configured via `info.cover_url` must **always be plain, uncomposited background artwork** without titles, subtitles, or level badges baked in. Never supply composited retail or KDP covers (`.../cover.jpg`) to the reader.
+
 Reader Markdown supports headings, paragraphs, emphasis, figures with alt text, links and ordered/unordered lists. Raw HTML remains disabled. Exporters must resolve relative image references into actual public URLs before storing page content; reviewed source Markdown can retain its canonical relative paths.
 
 ## Ownership Boundaries
