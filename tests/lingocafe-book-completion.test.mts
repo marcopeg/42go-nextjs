@@ -3,7 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import type { ReaderBook } from "../src/app/(app)/(lingocafe)/books/_components/book-types.ts";
-import { buildBookshelfSections } from "../src/app/(app)/(lingocafe)/books/_components/bookshelf.ts";
+import {
+  buildBookshelfSections,
+  parseBookTitle,
+} from "../src/app/(app)/(lingocafe)/books/_components/bookshelf.ts";
 
 const readSource = (path: string) =>
   readFile(new URL(`../${path}`, import.meta.url), "utf8");
@@ -165,3 +168,89 @@ test("bookshelf filters by target level and falls back from a1 to a2 when a1 has
     ["book-a1"]
   );
 });
+
+test("parseBookTitle automatically infers volume 1 badge for -01 series books without explicit volume in title", () => {
+  // 1. Figures series: volume 1 has no volume in title, volume 2 has "Del 2"
+  const figures01 = parseBookTitle(
+    "Bakom myten: 20 historiska personer som förändrade världen",
+    "figures-01",
+    "sv",
+    "bakom-myten-sv-b2"
+  );
+  assert.equal(figures01.mainTitle, "Bakom myten");
+  assert.equal(figures01.volumeLabel, "Del 1");
+
+  const figures02 = parseBookTitle(
+    "Bakom myten: 20 historiska personer som förändrade världen, Del 2",
+    "figures-02",
+    "sv",
+    "bakom-myten-2-sv-b2"
+  );
+  assert.equal(figures02.mainTitle, "Bakom myten");
+  assert.equal(figures02.volumeLabel, "Del 2");
+
+  // 2. Discoveries series: volume 1 has (Del 1), volume 2 has (Del 2)
+  const discoveries01 = parseBookTitle(
+    "Stora upptäckter som förändrade världen (Del 1)",
+    "discoveries-01",
+    "sv"
+  );
+  assert.equal(discoveries01.mainTitle, "Stora upptäckter som förändrade världen");
+  assert.equal(discoveries01.volumeLabel, "Del 1");
+
+  const discoveries02 = parseBookTitle(
+    "Stora upptäckter som förändrade världen (Del 2)",
+    "discoveries-02",
+    "sv"
+  );
+  assert.equal(discoveries02.mainTitle, "Stora upptäckter som förändrade världen");
+  assert.equal(discoveries02.volumeLabel, "Del 2");
+
+  // 3. Startups series: startups-01 infers Del 1, startups-02 parses Volym 2
+  const startups01 = parseBookTitle(
+    "Från garage till imperium: 20 startups som förändrade världen",
+    "startups-01",
+    "sv"
+  );
+  assert.equal(startups01.mainTitle, "Från garage till imperium");
+  assert.equal(startups01.volumeLabel, "Del 1");
+
+  const startups02 = parseBookTitle(
+    "Från idé till succé: 20 startup-resor som förändrade världen, Volym 2",
+    "startups-02",
+    "sv"
+  );
+  assert.equal(startups02.mainTitle, "Från idé till succé");
+  assert.equal(startups02.volumeLabel, "Volym 2");
+
+  // 4. Multilingual volume 1 inference (German, English)
+  const figuresEn01 = parseBookTitle(
+    "Behind the Myth: 20 Historical Figures Who Changed the World",
+    "figures-01",
+    "en"
+  );
+  assert.equal(figuresEn01.mainTitle, "Behind the Myth");
+  assert.equal(figuresEn01.volumeLabel, "Vol. 1");
+
+  const figuresDe01 = parseBookTitle(
+    "Hinter dem Mythos: 20 historische Persönlichkeiten",
+    "figures-01",
+    "de"
+  );
+  assert.equal(figuresDe01.mainTitle, "Hinter dem Mythos");
+  assert.equal(figuresDe01.volumeLabel, "Band 1");
+
+  // 5. Standalone non-series books do NOT get a volume badge
+  const nemo = parseBookTitle(
+    "En världsomsegling under havet: Kapten Nemos hemlighet",
+    "nemo",
+    "sv"
+  );
+  assert.equal(nemo.mainTitle, "En världsomsegling under havet");
+  assert.equal(nemo.volumeLabel, null);
+
+  const dracula = parseBookTitle("Dracula", "dracula", "sv");
+  assert.equal(dracula.mainTitle, "Dracula");
+  assert.equal(dracula.volumeLabel, null);
+});
+

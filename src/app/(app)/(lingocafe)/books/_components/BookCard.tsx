@@ -3,6 +3,10 @@ import { BookCheck, MoreHorizontal, Undo2 } from "lucide-react";
 
 import { BookCover } from "@/app/(app)/(lingocafe)/books/_components/BookCover";
 import type { ReaderBook } from "@/app/(app)/(lingocafe)/books/_components/book-types";
+import {
+  getTitleTypography,
+  parseBookTitle,
+} from "@/app/(app)/(lingocafe)/books/_components/bookshelf";
 import { useBookCompletionMutation } from "@/app/(app)/(lingocafe)/books/_components/useBookCompletionMutation";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,64 +28,15 @@ const getBookLevelLabel = (book: ReaderBook) => {
   return level ? level.toUpperCase() : null;
 };
 
-const parseBookTitle = (rawTitle: string) => {
-  // 1. Check parenthesized volume: e.g. "Stora upptäckter som förändrade världen (Del 2)"
-  const parenMatch = rawTitle.match(/\s*\(((?:Volume|Vol\.|Del|Band|Parte|Volumen)\s*\d+)\)\s*$/i);
-  if (parenMatch) {
-    const mainTitle = rawTitle.replace(parenMatch[0], "").trim();
-    return { mainTitle, volumeLabel: parenMatch[1], subtitle: null };
-  }
-
-  // 2. Check colon with volume: e.g. "Världens vackraste städer: 40 fantastiska platser, Del 5"
-  const colonIdx = rawTitle.indexOf(":");
-  if (colonIdx !== -1) {
-    const mainTitle = rawTitle.slice(0, colonIdx).trim();
-    const rest = rawTitle.slice(colonIdx + 1).trim();
-    const volMatch = rest.match(/\b((?:Volume|Vol\.|Del|Band|Parte|Volumen)\s*\d+)\b/i);
-    const volumeLabel = volMatch ? volMatch[1] : null;
-    return { mainTitle, volumeLabel, subtitle: rest };
-  }
-
-  // 3. Check trailing volume without paren or colon: e.g. "... Del 1" or "... Vol. 2"
-  const trailMatch = rawTitle.match(/\s+((?:Volume|Vol\.|Del|Band|Parte|Volumen)\s*\d+)\s*$/i);
-  if (trailMatch) {
-    const mainTitle = rawTitle.slice(0, trailMatch.index).trim();
-    return { mainTitle, volumeLabel: trailMatch[1], subtitle: null };
-  }
-
-  return { mainTitle: rawTitle, volumeLabel: null, subtitle: null };
-};
-
-const getTitleTypography = (title: string) => {
-  const len = title.length;
-  const words = title.split(/\s+/);
-  const maxWordLen = words.reduce((max, w) => Math.max(max, w.length), 0);
-
-  if (len > 32 || maxWordLen >= 14) {
-    // Very long title or long compound word (e.g. "världsomsegling")
-    return {
-      sizeClass: "text-[0.74rem] sm:text-[0.92rem] md:text-base leading-tight",
-      clampClass: "line-clamp-4",
-    };
-  }
-  if (len > 20 || maxWordLen >= 9) {
-    // Medium title (e.g. "Världens vackraste städer", "Baskervilles hund")
-    return {
-      sizeClass: "text-[0.82rem] sm:text-base md:text-lg leading-snug",
-      clampClass: "line-clamp-3 sm:line-clamp-4",
-    };
-  }
-  // Short title (e.g. "En studie i rött", "Från idé till succé")
-  return {
-    sizeClass: "text-[0.94rem] sm:text-lg md:text-xl leading-snug",
-    clampClass: "line-clamp-3",
-  };
-};
-
 export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
   const coverTags = book.tags.slice(0, 3);
   const levelLabel = getBookLevelLabel(book);
-  const { mainTitle, volumeLabel } = parseBookTitle(book.title);
+  const { mainTitle, volumeLabel } = parseBookTitle(
+    book.title,
+    book.project,
+    book.lang,
+    book.id
+  );
   const { sizeClass, clampClass } = getTitleTypography(mainTitle);
   const author = book.author.trim();
   const readingHref = book.readingAction.href;

@@ -100,3 +100,117 @@ export const buildBookshelfSections = (
     hasCompleted: completed.length > 0,
   };
 };
+
+export const VOLUME_KEYWORD_PATTERN =
+  "(?:Volume|Vol\\.|Vol|Volym|Del|Band|Teil|Bd\\.|Parte|Part|Pt\\.|Volumen|Tomo)";
+
+export const isVolume1Candidate = (
+  project?: string | null,
+  id?: string | null
+): boolean => {
+  if (project && /(?:^|[-_])0?1$/i.test(project.trim())) {
+    return true;
+  }
+  if (id && /(?:^|[-_])0?1(?:$|[-_])/i.test(id.trim())) {
+    return true;
+  }
+  return false;
+};
+
+export const getDefaultVolume1Label = (lang?: string | null): string => {
+  const normalized = (lang ?? "").trim().toLowerCase();
+  switch (normalized) {
+    case "sv":
+      return "Del 1";
+    case "de":
+      return "Band 1";
+    case "es":
+    case "it":
+    case "fr":
+    default:
+      return "Vol. 1";
+  }
+};
+
+export type ParsedBookTitle = {
+  mainTitle: string;
+  volumeLabel: string | null;
+  subtitle: string | null;
+};
+
+export const parseBookTitle = (
+  rawTitle: string,
+  project?: string | null,
+  lang?: string | null,
+  id?: string | null
+): ParsedBookTitle => {
+  // 1. Check parenthesized volume: e.g. "Stora upptäckter som förändrade världen (Del 2)"
+  const parenRegex = new RegExp(
+    `\\s*\\((${VOLUME_KEYWORD_PATTERN}\\s*\\d+)\\)\\s*$`,
+    "i"
+  );
+  const parenMatch = rawTitle.match(parenRegex);
+  if (parenMatch) {
+    const mainTitle = rawTitle.replace(parenMatch[0], "").trim();
+    return { mainTitle, volumeLabel: parenMatch[1], subtitle: null };
+  }
+
+  // 2. Check colon with volume: e.g. "Världens vackraste städer: 40 fantastiska platser, Del 5"
+  const colonIdx = rawTitle.indexOf(":");
+  if (colonIdx !== -1) {
+    const mainTitle = rawTitle.slice(0, colonIdx).trim();
+    const rest = rawTitle.slice(colonIdx + 1).trim();
+    const volRegex = new RegExp(`\\b(${VOLUME_KEYWORD_PATTERN}\\s*\\d+)\\b`, "i");
+    const volMatch = rest.match(volRegex);
+    const volumeLabel = volMatch
+      ? volMatch[1]
+      : isVolume1Candidate(project, id)
+        ? getDefaultVolume1Label(lang)
+        : null;
+    return { mainTitle, volumeLabel, subtitle: rest };
+  }
+
+  // 3. Check trailing volume without paren or colon: e.g. "... Del 1" or "... Vol. 2"
+  const trailRegex = new RegExp(
+    `\\s+(${VOLUME_KEYWORD_PATTERN}\\s*\\d+)\\s*$`,
+    "i"
+  );
+  const trailMatch = rawTitle.match(trailRegex);
+  if (trailMatch) {
+    const mainTitle = rawTitle.slice(0, trailMatch.index).trim();
+    return { mainTitle, volumeLabel: trailMatch[1], subtitle: null };
+  }
+
+  // 4. Default: check if candidate for Volume 1
+  const volumeLabel = isVolume1Candidate(project, id)
+    ? getDefaultVolume1Label(lang)
+    : null;
+  return { mainTitle: rawTitle, volumeLabel, subtitle: null };
+};
+
+export const getTitleTypography = (title: string) => {
+  const len = title.length;
+  const words = title.split(/\s+/);
+  const maxWordLen = words.reduce((max, w) => Math.max(max, w.length), 0);
+
+  if (len > 32 || maxWordLen >= 14) {
+    // Very long title or long compound word (e.g. "världsomsegling")
+    return {
+      sizeClass: "text-[0.74rem] sm:text-[0.92rem] md:text-base leading-tight",
+      clampClass: "line-clamp-4",
+    };
+  }
+  if (len > 20 || maxWordLen >= 9) {
+    // Medium title (e.g. "Världens vackraste städer", "Baskervilles hund")
+    return {
+      sizeClass: "text-[0.82rem] sm:text-base md:text-lg leading-snug",
+      clampClass: "line-clamp-3 sm:line-clamp-4",
+    };
+  }
+  // Short title (e.g. "En studie i rött", "Från idé till succé")
+  return {
+    sizeClass: "text-[0.94rem] sm:text-lg md:text-xl leading-snug",
+    clampClass: "line-clamp-3",
+  };
+};
+
