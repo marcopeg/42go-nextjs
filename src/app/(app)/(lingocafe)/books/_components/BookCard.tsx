@@ -24,9 +24,52 @@ const getBookLevelLabel = (book: ReaderBook) => {
   return level ? level.toUpperCase() : null;
 };
 
+const parseBookTitle = (rawTitle: string) => {
+  const colonIdx = rawTitle.indexOf(":");
+  if (colonIdx === -1) {
+    return { mainTitle: rawTitle, volumeLabel: null, subtitle: null };
+  }
+  const mainTitle = rawTitle.slice(0, colonIdx).trim();
+  const rest = rawTitle.slice(colonIdx + 1).trim();
+
+  // Extract volume, e.g. "Del 5", "Vol. 5", "Volume 5", "Band 5", "Parte 5", "Volumen 5"
+  const volMatch = rest.match(/\b((?:Volume|Vol\.|Del|Band|Parte|Volumen)\s*\d+)\b/i);
+  const volumeLabel = volMatch ? volMatch[1] : null;
+
+  return { mainTitle, volumeLabel, subtitle: rest };
+};
+
+const getTitleTypography = (title: string) => {
+  const len = title.length;
+  const words = title.split(/\s+/);
+  const maxWordLen = words.reduce((max, w) => Math.max(max, w.length), 0);
+
+  if (len > 32 || maxWordLen >= 14) {
+    // Very long title or long compound word (e.g. "världsomsegling")
+    return {
+      sizeClass: "text-[0.74rem] sm:text-[0.92rem] md:text-base leading-tight",
+      clampClass: "line-clamp-4",
+    };
+  }
+  if (len > 20 || maxWordLen >= 9) {
+    // Medium title (e.g. "Världens vackraste städer", "Baskervilles hund")
+    return {
+      sizeClass: "text-[0.82rem] sm:text-base md:text-lg leading-snug",
+      clampClass: "line-clamp-3 sm:line-clamp-4",
+    };
+  }
+  // Short title (e.g. "En studie i rött", "Från idé till succé")
+  return {
+    sizeClass: "text-[0.94rem] sm:text-lg md:text-xl leading-snug",
+    clampClass: "line-clamp-3",
+  };
+};
+
 export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
   const coverTags = book.tags.slice(0, 3);
   const levelLabel = getBookLevelLabel(book);
+  const { mainTitle, volumeLabel } = parseBookTitle(book.title);
+  const { sizeClass, clampClass } = getTitleTypography(mainTitle);
   const author = book.author.trim();
   const readingHref = book.readingAction.href;
   const isReading =
@@ -61,24 +104,31 @@ export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
 
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-black/70 via-black/35 to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 h-3/5 bg-gradient-to-b from-black/85 via-black/45 to-transparent"
         />
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/75 via-black/35 to-transparent"
         />
         {isReading ? (
-          <div className="pointer-events-none absolute right-0 top-14 z-10 bg-green-600 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-white shadow-md sm:text-xs">
+          <div className="pointer-events-none absolute right-0 top-12 z-10 bg-green-600 px-2.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide text-white shadow-md sm:top-14 sm:px-3 sm:py-1 sm:text-xs">
             Reading
           </div>
         ) : null}
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 p-3 pr-16 sm:p-4 sm:pr-16">
-          <h2 className="line-clamp-3 break-words font-serif text-[1.05rem] font-bold leading-tight tracking-normal text-amber-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] sm:text-xl md:text-2xl">
-            {book.title}
+        <div className="pointer-events-none absolute inset-x-0 top-0 p-2.5 pr-10 sm:p-4 sm:pr-14">
+          {volumeLabel ? (
+            <div className="mb-0.5 inline-flex items-center">
+              <span className="rounded bg-amber-400/95 px-1.5 py-0.5 text-[0.62rem] font-extrabold uppercase tracking-wider text-black shadow-sm sm:text-xs">
+                {volumeLabel}
+              </span>
+            </div>
+          ) : null}
+          <h2 className={`${clampClass} ${sizeClass} [overflow-wrap:anywhere] font-serif font-bold tracking-normal text-amber-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)]`}>
+            {mainTitle}
           </h2>
           {author ? (
-            <p className="mt-1 line-clamp-1 truncate text-xs font-medium text-amber-100/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] sm:text-sm">
+            <p className="mt-0.5 line-clamp-1 truncate text-[0.68rem] font-medium text-amber-100/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] sm:text-xs">
               by {author}
             </p>
           ) : null}
@@ -87,11 +137,11 @@ export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
         {(coverTags.length > 0 || levelLabel) && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0">
             {coverTags.length > 0 ? (
-              <div className="flex min-w-0 flex-wrap gap-1.5 p-3 pr-12 sm:gap-2 sm:p-4 sm:pr-14">
+              <div className="flex min-w-0 flex-wrap gap-1 p-2.5 pr-11 sm:gap-2 sm:p-4 sm:pr-14">
                 {coverTags.map((tag) => (
                   <span
                     key={tag}
-                    className="max-w-full truncate rounded-md bg-black/45 px-2 py-1 text-[0.65rem] font-medium leading-none text-amber-50 shadow-sm backdrop-blur-sm sm:text-xs"
+                    className="max-w-full truncate rounded bg-black/50 px-1.5 py-0.5 text-[0.62rem] font-medium leading-none text-amber-50 shadow-sm backdrop-blur-sm sm:rounded-md sm:px-2 sm:py-1 sm:text-xs"
                   >
                     {tag}
                   </span>
@@ -100,7 +150,7 @@ export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
             ) : null}
 
             {levelLabel ? (
-              <span className="absolute right-0 bottom-0 grid size-9 place-items-center rounded-tl-md bg-white text-sm font-extrabold leading-none text-black shadow-md ring-1 ring-black/10 sm:size-10 sm:text-base">
+              <span className="absolute right-0 bottom-0 grid size-8 place-items-center rounded-tl-md bg-white text-xs font-extrabold leading-none text-black shadow-md ring-1 ring-black/10 sm:size-10 sm:text-base">
                 {levelLabel}
               </span>
             ) : null}
@@ -116,9 +166,9 @@ export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
             size="icon"
             disabled={pending}
             aria-label={`More actions for ${book.title}`}
-            className="absolute right-3 top-3 z-20 size-10 rounded-full border border-white/30 bg-black/55 text-white shadow-sm backdrop-blur-sm hover:bg-black/70 hover:text-white focus-visible:ring-white/70"
+            className="absolute right-2 top-2 z-20 size-8 rounded-full border border-white/30 bg-black/55 text-white shadow-sm backdrop-blur-sm hover:bg-black/70 hover:text-white focus-visible:ring-white/70 sm:right-3 sm:top-3 sm:size-10"
           >
-            <MoreHorizontal className="size-5" />
+            <MoreHorizontal className="size-4 sm:size-5" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
