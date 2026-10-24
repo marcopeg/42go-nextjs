@@ -25,18 +25,31 @@ const getBookLevelLabel = (book: ReaderBook) => {
 };
 
 const parseBookTitle = (rawTitle: string) => {
-  const colonIdx = rawTitle.indexOf(":");
-  if (colonIdx === -1) {
-    return { mainTitle: rawTitle, volumeLabel: null, subtitle: null };
+  // 1. Check parenthesized volume: e.g. "Stora upptäckter som förändrade världen (Del 2)"
+  const parenMatch = rawTitle.match(/\s*\(((?:Volume|Vol\.|Del|Band|Parte|Volumen)\s*\d+)\)\s*$/i);
+  if (parenMatch) {
+    const mainTitle = rawTitle.replace(parenMatch[0], "").trim();
+    return { mainTitle, volumeLabel: parenMatch[1], subtitle: null };
   }
-  const mainTitle = rawTitle.slice(0, colonIdx).trim();
-  const rest = rawTitle.slice(colonIdx + 1).trim();
 
-  // Extract volume, e.g. "Del 5", "Vol. 5", "Volume 5", "Band 5", "Parte 5", "Volumen 5"
-  const volMatch = rest.match(/\b((?:Volume|Vol\.|Del|Band|Parte|Volumen)\s*\d+)\b/i);
-  const volumeLabel = volMatch ? volMatch[1] : null;
+  // 2. Check colon with volume: e.g. "Världens vackraste städer: 40 fantastiska platser, Del 5"
+  const colonIdx = rawTitle.indexOf(":");
+  if (colonIdx !== -1) {
+    const mainTitle = rawTitle.slice(0, colonIdx).trim();
+    const rest = rawTitle.slice(colonIdx + 1).trim();
+    const volMatch = rest.match(/\b((?:Volume|Vol\.|Del|Band|Parte|Volumen)\s*\d+)\b/i);
+    const volumeLabel = volMatch ? volMatch[1] : null;
+    return { mainTitle, volumeLabel, subtitle: rest };
+  }
 
-  return { mainTitle, volumeLabel, subtitle: rest };
+  // 3. Check trailing volume without paren or colon: e.g. "... Del 1" or "... Vol. 2"
+  const trailMatch = rawTitle.match(/\s+((?:Volume|Vol\.|Del|Band|Parte|Volumen)\s*\d+)\s*$/i);
+  if (trailMatch) {
+    const mainTitle = rawTitle.slice(0, trailMatch.index).trim();
+    return { mainTitle, volumeLabel: trailMatch[1], subtitle: null };
+  }
+
+  return { mainTitle: rawTitle, volumeLabel: null, subtitle: null };
 };
 
 const getTitleTypography = (title: string) => {
@@ -110,10 +123,9 @@ export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/75 via-black/35 to-transparent"
         />
+
         {isReading ? (
-          <div className="pointer-events-none absolute right-0 top-12 z-10 bg-green-600 px-2.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide text-white shadow-md sm:top-14 sm:px-3 sm:py-1 sm:text-xs">
-            Reading
-          </div>
+          <div className="absolute inset-x-0 bottom-0 z-20 h-0.5 bg-emerald-500 shadow-sm" />
         ) : null}
 
         <div className="pointer-events-none absolute inset-x-0 top-0 p-2.5 pr-10 sm:p-4 sm:pr-14">
@@ -134,20 +146,24 @@ export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
           ) : null}
         </div>
 
-        {(coverTags.length > 0 || levelLabel) && (
+        {(coverTags.length > 0 || levelLabel || isReading) && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0">
-            {coverTags.length > 0 ? (
-              <div className="flex min-w-0 flex-wrap gap-1 p-2.5 pr-11 sm:gap-2 sm:p-4 sm:pr-14">
-                {coverTags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="max-w-full truncate rounded bg-black/50 px-1.5 py-0.5 text-[0.62rem] font-medium leading-none text-amber-50 shadow-sm backdrop-blur-sm sm:rounded-md sm:px-2 sm:py-1 sm:text-xs"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            ) : null}
+            <div className="flex min-w-0 flex-wrap items-center gap-1 p-2.5 pr-11 sm:gap-2 sm:p-4 sm:pr-14">
+              {isReading ? (
+                <span className="inline-flex items-center gap-1 rounded bg-emerald-600 px-1.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm sm:px-2 sm:text-xs">
+                  <span className="size-1.5 rounded-full bg-white animate-pulse" />
+                  Reading
+                </span>
+              ) : null}
+              {coverTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="max-w-full truncate rounded bg-black/50 px-1.5 py-0.5 text-[0.62rem] font-medium leading-none text-amber-50 shadow-sm backdrop-blur-sm sm:rounded-md sm:px-2 sm:py-1 sm:text-xs"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
 
             {levelLabel ? (
               <span className="absolute right-0 bottom-0 grid size-8 place-items-center rounded-tl-md bg-white text-xs font-extrabold leading-none text-black shadow-md ring-1 ring-black/10 sm:size-10 sm:text-base">
