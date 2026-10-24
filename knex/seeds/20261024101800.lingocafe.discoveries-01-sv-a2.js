@@ -16,8 +16,7 @@ const books = [
   ],
   "info": {
     "chapters_count": 20,
-    "words_count": 6241,
-    "cover_url": "https://assets.lingocafe.app/discoveries-01/sv-a2/cover.jpg"
+    "words_count": 6241
   },
   "published_at": "2026-10-24T10:00:00.000Z",
   "questionnaireSql": null,
