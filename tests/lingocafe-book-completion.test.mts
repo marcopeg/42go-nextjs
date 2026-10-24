@@ -11,18 +11,20 @@ const readSource = (path: string) =>
 const makeBook = ({
   id,
   title,
+  level = "a2",
   completedAt = null,
   readingUpdatedAt = null,
 }: {
   id: string;
   title: string;
+  level?: string;
   completedAt?: string | null;
   readingUpdatedAt?: string | null;
 }): ReaderBook => ({
   id,
   project: id,
   lang: "en",
-  level: "a2",
+  level,
   title,
   author: "Author",
   tags: [],
@@ -123,4 +125,43 @@ test("completion API exposes both protected mutations and canonical events", asy
   assert.match(reader, /name: "book\.mark\.read"/);
   assert.match(reader, /name: "book\.mark\.unread"/);
   assert.match(reader, /onConflict\(\["user_id", "book_id"\]\)/);
+});
+
+test("bookshelf filters by target level and falls back from a1 to a2 when a1 has no results", () => {
+  const books = [
+    makeBook({ id: "book-a2", title: "Book A2", level: "a2" }),
+    makeBook({ id: "book-b2", title: "Book B2", level: "b2" }),
+  ];
+
+  // 1. When targetLevel is "b2", returns only B2 books
+  const b2Sections = buildBookshelfSections(books, "b2");
+  assert.deepEqual(
+    b2Sections.catalog.map((b) => b.id),
+    ["book-b2"]
+  );
+
+  // 2. When targetLevel is "a2", returns only A2 books
+  const a2Sections = buildBookshelfSections(books, "a2");
+  assert.deepEqual(
+    a2Sections.catalog.map((b) => b.id),
+    ["book-a2"]
+  );
+
+  // 3. When targetLevel is "a1" and no A1 books exist, automatically falls back to A2
+  const a1Sections = buildBookshelfSections(books, "a1");
+  assert.deepEqual(
+    a1Sections.catalog.map((b) => b.id),
+    ["book-a2"]
+  );
+
+  // 4. If an actual A1 book exists, it shows A1
+  const booksWithA1 = [
+    makeBook({ id: "book-a1", title: "Book A1", level: "a1" }),
+    ...books,
+  ];
+  const actualA1Sections = buildBookshelfSections(booksWithA1, "a1");
+  assert.deepEqual(
+    actualA1Sections.catalog.map((b) => b.id),
+    ["book-a1"]
+  );
 });

@@ -277,8 +277,11 @@ const BooksPage = () => {
     [loadBooks]
   );
   const bookshelf = useMemo(() => {
-    return buildBookshelfSections(data?.books ?? []);
-  }, [data?.books]);
+    return buildBookshelfSections(
+      data?.books ?? [],
+      data?.profile?.targetLevel
+    );
+  }, [data?.books, data?.profile?.targetLevel]);
 
   return (
     <AppLayout

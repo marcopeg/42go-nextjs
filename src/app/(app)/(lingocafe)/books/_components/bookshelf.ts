@@ -34,14 +34,61 @@ const isCurrentlyReadingBook = (book: ReaderBook) =>
   book.readingAction.kind === "resume" &&
   typeof book.readingAction.href === "string";
 
-export const buildBookshelfSections = (books: ReaderBook[]) => {
-  const currentlyReading = books
+export const getTargetLevelsForPreference = (
+  targetLevel: string | null | undefined
+): string[] => {
+  const normalized = (targetLevel ?? "").trim().toLowerCase();
+  if (normalized === "a1") return ["a1"];
+  if (normalized === "b2") return ["b2", "c1", "c2"];
+  // Default to intermediate: a2, b1
+  return ["a2", "b1"];
+};
+
+export const filterBooksByLevel = (
+  books: ReaderBook[],
+  targetLevel: string | null | undefined
+): ReaderBook[] => {
+  if (books.length === 0 || !targetLevel) return books;
+
+  const desiredLevels = getTargetLevelsForPreference(targetLevel);
+
+  // 1. Filter by desired level band
+  const matched = books.filter((book) => {
+    const bookLevel = (book.level ?? "").trim().toLowerCase();
+    return desiredLevels.includes(bookLevel);
+  });
+
+  if (matched.length > 0) {
+    return matched;
+  }
+
+  // 2. If no results (e.g. A1 has no books), automatically fallback to A2
+  const a2Fallback = books.filter((book) => {
+    const bookLevel = (book.level ?? "").trim().toLowerCase();
+    return bookLevel === "a2" || bookLevel === "b1";
+  });
+
+  if (a2Fallback.length > 0) {
+    return a2Fallback;
+  }
+
+  // 3. Fallback to all books if neither desired nor A2 exist
+  return books;
+};
+
+export const buildBookshelfSections = (
+  books: ReaderBook[],
+  targetLevel?: string | null
+) => {
+  const filtered = targetLevel ? filterBooksByLevel(books, targetLevel) : books;
+
+  const currentlyReading = filtered
     .filter(isCurrentlyReadingBook)
     .sort(compareBooksByRecentReading);
-  const catalog = books
+  const catalog = filtered
     .filter((book) => !book.completedAt && !isCurrentlyReadingBook(book))
     .sort(compareBooksByTitle);
-  const completed = books
+  const completed = filtered
     .filter((book) => book.completedAt)
     .sort(compareBooksByRecentCompletion);
 
