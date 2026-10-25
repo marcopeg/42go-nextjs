@@ -839,18 +839,20 @@ const stripDuplicateLeadingHeader = (source: string | null | undefined): string 
   return source.replace(/^\s*#{1,6}\s+[^\r\n]*(?:\r?\n)+/, "");
 };
 
-const ReaderMarkdownImg = ({
+const ReaderMarkdownImg: Components["img"] = ({
   src,
   alt,
-}: {
-  src?: string;
-  alt?: string;
+  node,
+  ...props
 }) => {
   if (!src) return null;
+  const imageSrc = typeof src === "string" ? src : undefined;
+  if (!imageSrc) return null;
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={src}
+      {...props}
+      src={imageSrc}
       alt={alt || ""}
       loading="lazy"
       className="-mx-6 my-4 block w-[calc(100%+3rem)] max-w-none object-cover shadow-sm md:mx-0 md:my-6 md:w-full md:max-w-full md:rounded-xl"
