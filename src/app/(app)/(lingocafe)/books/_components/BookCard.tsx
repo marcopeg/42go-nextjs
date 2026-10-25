@@ -29,7 +29,20 @@ const getBookLevelLabel = (book: ReaderBook) => {
 };
 
 export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
-  const coverTags = book.tags.slice(0, 3);
+  const coverTags = (book.tags ?? [])
+    .flatMap((t) => {
+      if (typeof t !== "string") return [];
+      if (t.startsWith("{") || t.startsWith("[")) {
+        return t
+          .replace(/^[{[]|[}\]]$/g, "")
+          .split(",")
+          .map((s) => s.replace(/^["'\s]+|["'\s]+$/g, ""))
+          .filter(Boolean);
+      }
+      return [t.replace(/^["'\s]+|["'\s]+$/g, "")];
+    })
+    .filter(Boolean)
+    .slice(0, 3);
   const levelLabel = getBookLevelLabel(book);
   const { mainTitle, volumeLabel, subtitle } = parseBookTitle(
     book.title,

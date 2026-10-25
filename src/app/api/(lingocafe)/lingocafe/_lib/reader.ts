@@ -166,13 +166,19 @@ const toISO = (value: Date | string | null): string | null => {
 };
 
 const normalizeTags = (tags: BookRow["tags"]): string[] => {
-  if (Array.isArray(tags)) return tags;
   if (!tags) return [];
-  return tags
-    .replace(/[{}]/g, "")
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter(Boolean);
+  const rawList = Array.isArray(tags) ? tags : [tags];
+  const result: string[] = [];
+  for (const item of rawList) {
+    if (typeof item === "string") {
+      const cleaned = item.replace(/^[{[]|[}\]]$/g, "");
+      for (const part of cleaned.split(",")) {
+        const tag = part.replace(/^["'\s]+|["'\s]+$/g, "");
+        if (tag) result.push(tag);
+      }
+    }
+  }
+  return result;
 };
 
 const normalizeBookInfo = (info: unknown): Record<string, unknown> => {
