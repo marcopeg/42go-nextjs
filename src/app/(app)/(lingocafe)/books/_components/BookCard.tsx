@@ -31,7 +31,7 @@ const getBookLevelLabel = (book: ReaderBook) => {
 export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
   const coverTags = book.tags.slice(0, 3);
   const levelLabel = getBookLevelLabel(book);
-  const { mainTitle, volumeLabel } = parseBookTitle(
+  const { mainTitle, volumeLabel, subtitle } = parseBookTitle(
     book.title,
     book.project,
     book.lang,
@@ -94,7 +94,11 @@ export const BookCard = ({ book, onCompletedAtChange }: BookCardProps) => {
           <h2 className={`${clampClass} ${sizeClass} [overflow-wrap:anywhere] font-serif font-bold tracking-normal text-amber-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)]`}>
             {mainTitle}
           </h2>
-          {author ? (
+          {subtitle ? (
+            <p className="mt-0.5 line-clamp-1 truncate text-[0.68rem] font-medium text-amber-100/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] sm:text-xs">
+              {subtitle}
+            </p>
+          ) : author ? (
             <p className="mt-0.5 line-clamp-1 truncate text-[0.68rem] font-medium text-amber-100/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] sm:text-xs">
               by {author}
             </p>

@@ -5,8 +5,193 @@ const collator = new Intl.Collator(undefined, {
   numeric: true,
 });
 
-const compareBooksByTitle = (left: ReaderBook, right: ReaderBook) =>
-  collator.compare(left.title, right.title);
+export const VOLUME_KEYWORD_PATTERN =
+  "(?:Volume|Vol\\.|Vol|Volym|Del|Band|Teil|Bd\\.|Parte|Part|Pt\\.|Volumen|Tomo)";
+
+export type CollectionInfo = {
+  isCollection: boolean;
+  collectionKey: string | null;
+  volumeNumber: number | null;
+  volumeLabel: string | null;
+};
+
+export const formatVolumeLabel = (
+  vol: number,
+  lang?: string | null
+): string => {
+  const normalized = (lang ?? "").trim().toLowerCase();
+  switch (normalized) {
+    case "sv":
+      return `Del ${vol}`;
+    case "de":
+      return `Band ${vol}`;
+    case "es":
+    case "it":
+    case "fr":
+    default:
+      return `Vol. ${vol}`;
+  }
+};
+
+export const extractCollectionInfo = (
+  project?: string | null,
+  id?: string | null,
+  rawTitle?: string | null,
+  lang?: string | null
+): CollectionInfo => {
+  // 1. Try project matching <name>-<vol> (e.g. "vehicles-01", "cities-03", "sports-02")
+  const projTrimmed = (project ?? "").trim().toLowerCase();
+  const projMatch = projTrimmed.match(/^([a-z0-9_-]+?)[-_](\d+)$/i);
+  if (projMatch) {
+    const collectionKey = projMatch[1];
+    const volumeNumber = parseInt(projMatch[2], 10);
+    return {
+      isCollection: true,
+      collectionKey,
+      volumeNumber,
+      volumeLabel: formatVolumeLabel(volumeNumber, lang),
+    };
+  }
+
+  // 2. Try id matching <name>-<vol>-<lang>-<level>
+  const idTrimmed = (id ?? "").trim().toLowerCase();
+  const idMatch = idTrimmed.match(
+    /^([a-z0-9_-]+?)[-_](\d+)[-_](?:[a-z]{2})[-_](?:[a-z0-9]+)$/i
+  );
+  if (idMatch) {
+    const collectionKey = idMatch[1];
+    const volumeNumber = parseInt(idMatch[2], 10);
+    return {
+      isCollection: true,
+      collectionKey,
+      volumeNumber,
+      volumeLabel: formatVolumeLabel(volumeNumber, lang),
+    };
+  }
+
+  // 3. Try title matching volume pattern e.g. "(Del 2)", "Volym 2", "Vol. 3", "Del 1"
+  if (rawTitle) {
+    const volRegex = new RegExp(
+      `\\b${VOLUME_KEYWORD_PATTERN}\\s*(\\d+)\\b`,
+      "i"
+    );
+    const titleMatch = rawTitle.match(volRegex);
+    if (titleMatch) {
+      const volumeNumber = parseInt(titleMatch[1], 10);
+      return {
+        isCollection: true,
+        collectionKey: projTrimmed || null,
+        volumeNumber,
+        volumeLabel: formatVolumeLabel(volumeNumber, lang),
+      };
+    }
+  }
+
+  return {
+    isCollection: false,
+    collectionKey: null,
+    volumeNumber: null,
+    volumeLabel: null,
+  };
+};
+
+const SERIES_SORT_NAMES: Record<string, Record<string, string>> = {
+  sv: {
+    cities: "Världens vackraste städer",
+    discoveries: "Stora upptäckter som förändrade världen",
+    figures: "Bakom myten",
+    professions: "Yrken som bygger världen",
+    sports: "Sportens värld",
+    startups: "Startups som förändrade världen",
+    vehicles: "Maskiner i rörelse",
+  },
+  en: {
+    cities: "Most Beautiful Cities",
+    discoveries: "Great Discoveries",
+    figures: "Behind the Myth",
+    professions: "Professions That Build the World",
+    sports: "World of Sports",
+    startups: "Startups That Changed the World",
+    vehicles: "Machines of Motion",
+  },
+  de: {
+    cities: "Die schönsten Städte der Welt",
+    discoveries: "Große Entdeckungen",
+    figures: "Hinter dem Mythos",
+    professions: "Berufe, die die Welt bewegen",
+    sports: "Die Welt des Sports",
+    startups: "Startups, die die Welt veränderten",
+    vehicles: "Maschinen in Bewegung",
+  },
+  it: {
+    cities: "Le città più belle del mondo",
+    discoveries: "Grandi scoperte",
+    figures: "Dietro il mito",
+    professions: "Professioni che muovono il mondo",
+    sports: "Il mondo dello sport",
+    startups: "Startup che hanno cambiato il mondo",
+    vehicles: "Macchine in movimento",
+  },
+  es: {
+    cities: "Las ciudades más bellas del mundo",
+    discoveries: "Grandes descubrimientos",
+    figures: "Detrás del mito",
+    professions: "Profesiones que mueven el mundo",
+    sports: "El mundo del deporte",
+    startups: "Startups que cambiaron el mundo",
+    vehicles: "Máquinas en movimiento",
+  },
+};
+
+export const compareBooksForCatalog = (left: ReaderBook, right: ReaderBook) => {
+  const leftCol = extractCollectionInfo(
+    left.project,
+    left.id,
+    left.title,
+    left.lang
+  );
+  const rightCol = extractCollectionInfo(
+    right.project,
+    right.id,
+    right.title,
+    right.lang
+  );
+
+  // If both books belong to the SAME collection, sort strictly by volumeNumber ascending:
+  if (
+    leftCol.collectionKey &&
+    rightCol.collectionKey &&
+    leftCol.collectionKey === rightCol.collectionKey
+  ) {
+    const volDiff = (leftCol.volumeNumber ?? 0) - (rightCol.volumeNumber ?? 0);
+    if (volDiff !== 0) return volDiff;
+  }
+
+  // To group collections together contiguously, determine a collection sort key:
+  const getSortKey = (book: ReaderBook, col: CollectionInfo) => {
+    const lang = (book.lang ?? "en").trim().toLowerCase();
+    if (col.collectionKey) {
+      const canonicalName =
+        SERIES_SORT_NAMES[lang]?.[col.collectionKey] ||
+        SERIES_SORT_NAMES.en?.[col.collectionKey];
+      if (canonicalName) {
+        return canonicalName;
+      }
+      return col.collectionKey;
+    }
+    return book.title;
+  };
+
+  const leftKey = getSortKey(left, leftCol);
+  const rightKey = getSortKey(right, rightCol);
+
+  const keyDiff = collator.compare(leftKey, rightKey);
+  if (keyDiff !== 0) {
+    return keyDiff;
+  }
+
+  return collator.compare(left.title, right.title);
+};
 
 const getReadingActionTime = (book: ReaderBook) => {
   const updatedAt = book.readingAction.updatedAt;
@@ -18,15 +203,18 @@ const getReadingActionTime = (book: ReaderBook) => {
 
 const compareBooksByRecentReading = (left: ReaderBook, right: ReaderBook) => {
   const timeDelta = getReadingActionTime(right) - getReadingActionTime(left);
-  return timeDelta || compareBooksByTitle(left, right);
+  return timeDelta || compareBooksForCatalog(left, right);
 };
 
-const compareBooksByRecentCompletion = (left: ReaderBook, right: ReaderBook) => {
+const compareBooksByRecentCompletion = (
+  left: ReaderBook,
+  right: ReaderBook
+) => {
   const leftTime = left.completedAt ? new Date(left.completedAt).getTime() : 0;
   const rightTime = right.completedAt
     ? new Date(right.completedAt).getTime()
     : 0;
-  return rightTime - leftTime || compareBooksByTitle(left, right);
+  return rightTime - leftTime || compareBooksForCatalog(left, right);
 };
 
 const isCurrentlyReadingBook = (book: ReaderBook) =>
@@ -87,7 +275,7 @@ export const buildBookshelfSections = (
     .sort(compareBooksByRecentReading);
   const catalog = filtered
     .filter((book) => !book.completedAt && !isCurrentlyReadingBook(book))
-    .sort(compareBooksByTitle);
+    .sort(compareBooksForCatalog);
   const completed = filtered
     .filter((book) => book.completedAt)
     .sort(compareBooksByRecentCompletion);
@@ -101,41 +289,23 @@ export const buildBookshelfSections = (
   };
 };
 
-export const VOLUME_KEYWORD_PATTERN =
-  "(?:Volume|Vol\\.|Vol|Volym|Del|Band|Teil|Bd\\.|Parte|Part|Pt\\.|Volumen|Tomo)";
-
-export const isVolume1Candidate = (
-  project?: string | null,
-  id?: string | null
-): boolean => {
-  if (project && /(?:^|[-_])0?1$/i.test(project.trim())) {
-    return true;
-  }
-  if (id && /(?:^|[-_])0?1(?:$|[-_])/i.test(id.trim())) {
-    return true;
-  }
-  return false;
-};
-
-export const getDefaultVolume1Label = (lang?: string | null): string => {
-  const normalized = (lang ?? "").trim().toLowerCase();
-  switch (normalized) {
-    case "sv":
-      return "Del 1";
-    case "de":
-      return "Band 1";
-    case "es":
-    case "it":
-    case "fr":
-    default:
-      return "Vol. 1";
-  }
-};
-
 export type ParsedBookTitle = {
   mainTitle: string;
   volumeLabel: string | null;
   subtitle: string | null;
+};
+
+const cleanVolumeSuffix = (str: string) => {
+  return str
+    .replace(
+      new RegExp(`\\s*\\(${VOLUME_KEYWORD_PATTERN}\\s*\\d+\\)\\s*$`, "i"),
+      ""
+    )
+    .replace(
+      new RegExp(`[,\\s]+${VOLUME_KEYWORD_PATTERN}\\s*\\d+\\s*$`, "i"),
+      ""
+    )
+    .trim();
 };
 
 export const parseBookTitle = (
@@ -144,48 +314,34 @@ export const parseBookTitle = (
   lang?: string | null,
   id?: string | null
 ): ParsedBookTitle => {
-  // 1. Check parenthesized volume: e.g. "Stora upptäckter som förändrade världen (Del 2)"
-  const parenRegex = new RegExp(
-    `\\s*\\((${VOLUME_KEYWORD_PATTERN}\\s*\\d+)\\)\\s*$`,
-    "i"
-  );
-  const parenMatch = rawTitle.match(parenRegex);
-  if (parenMatch) {
-    const mainTitle = rawTitle.replace(parenMatch[0], "").trim();
-    return { mainTitle, volumeLabel: parenMatch[1], subtitle: null };
-  }
+  const colInfo = extractCollectionInfo(project, id, rawTitle, lang);
+  const volumeLabel = colInfo.volumeLabel;
 
-  // 2. Check colon with volume: e.g. "Världens vackraste städer: 40 fantastiska platser, Del 5"
   const colonIdx = rawTitle.indexOf(":");
   if (colonIdx !== -1) {
-    const mainTitle = rawTitle.slice(0, colonIdx).trim();
-    const rest = rawTitle.slice(colonIdx + 1).trim();
-    const volRegex = new RegExp(`\\b(${VOLUME_KEYWORD_PATTERN}\\s*\\d+)\\b`, "i");
-    const volMatch = rest.match(volRegex);
-    const volumeLabel = volMatch
-      ? volMatch[1]
-      : isVolume1Candidate(project, id)
-        ? getDefaultVolume1Label(lang)
-        : null;
+    let mainTitle = cleanVolumeSuffix(rawTitle.slice(0, colonIdx));
+    const rest = cleanVolumeSuffix(rawTitle.slice(colonIdx + 1));
+
+    // Normalize Swedish series titles if divergent:
+    if (
+      colInfo.collectionKey === "vehicles" &&
+      (lang ?? "").toLowerCase() === "sv"
+    ) {
+      mainTitle = "Maskiner i rörelse";
+    }
+
     return { mainTitle, volumeLabel, subtitle: rest };
   }
 
-  // 3. Check trailing volume without paren or colon: e.g. "... Del 1" or "... Vol. 2"
-  const trailRegex = new RegExp(
-    `\\s+(${VOLUME_KEYWORD_PATTERN}\\s*\\d+)\\s*$`,
-    "i"
-  );
-  const trailMatch = rawTitle.match(trailRegex);
-  if (trailMatch) {
-    const mainTitle = rawTitle.slice(0, trailMatch.index).trim();
-    return { mainTitle, volumeLabel: trailMatch[1], subtitle: null };
+  let cleaned = cleanVolumeSuffix(rawTitle);
+  if (
+    colInfo.collectionKey === "vehicles" &&
+    (lang ?? "").toLowerCase() === "sv"
+  ) {
+    cleaned = "Maskiner i rörelse";
   }
 
-  // 4. Default: check if candidate for Volume 1
-  const volumeLabel = isVolume1Candidate(project, id)
-    ? getDefaultVolume1Label(lang)
-    : null;
-  return { mainTitle: rawTitle, volumeLabel, subtitle: null };
+  return { mainTitle: cleaned, volumeLabel, subtitle: null };
 };
 
 export const getTitleTypography = (title: string) => {
@@ -194,23 +350,19 @@ export const getTitleTypography = (title: string) => {
   const maxWordLen = words.reduce((max, w) => Math.max(max, w.length), 0);
 
   if (len > 32 || maxWordLen >= 14) {
-    // Very long title or long compound word (e.g. "världsomsegling")
     return {
       sizeClass: "text-[0.74rem] sm:text-[0.92rem] md:text-base leading-tight",
       clampClass: "line-clamp-4",
     };
   }
   if (len > 20 || maxWordLen >= 9) {
-    // Medium title (e.g. "Världens vackraste städer", "Baskervilles hund")
     return {
       sizeClass: "text-[0.82rem] sm:text-base md:text-lg leading-snug",
       clampClass: "line-clamp-3 sm:line-clamp-4",
     };
   }
-  // Short title (e.g. "En studie i rött", "Från idé till succé")
   return {
     sizeClass: "text-[0.94rem] sm:text-lg md:text-xl leading-snug",
     clampClass: "line-clamp-3",
   };
 };
-
