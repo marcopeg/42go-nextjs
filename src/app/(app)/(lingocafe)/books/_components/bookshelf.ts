@@ -39,8 +39,32 @@ export const extractCollectionInfo = (
   rawTitle?: string | null,
   lang?: string | null
 ): CollectionInfo => {
-  // 1. Try project matching <name>-<vol> (e.g. "vehicles-01", "cities-03", "sports-02")
   const projTrimmed = (project ?? "").trim().toLowerCase();
+  const idTrimmed = (id ?? "").trim().toLowerCase();
+
+  // 1. If title explicitly contains a volume keyword (e.g. "Volym 2", "(Del 2)", "Vol. 1"), preserve that explicit label
+  if (rawTitle) {
+    const volRegex = new RegExp(
+      `\\b(${VOLUME_KEYWORD_PATTERN}\\s*(\\d+))\\b`,
+      "i"
+    );
+    const titleMatch = rawTitle.match(volRegex);
+    if (titleMatch) {
+      const volumeNumber = parseInt(titleMatch[2], 10);
+      const collectionKey =
+        projTrimmed.replace(/[-_]\d+$/, "") ||
+        idTrimmed.replace(/[-_]\d+.*$/, "") ||
+        null;
+      return {
+        isCollection: true,
+        collectionKey,
+        volumeNumber,
+        volumeLabel: titleMatch[1].trim(),
+      };
+    }
+  }
+
+  // 2. Try project matching <name>-<vol> (e.g. "vehicles-01", "cities-03", "sports-02")
   const projMatch = projTrimmed.match(/^([a-z0-9_-]+?)[-_](\d+)$/i);
   if (projMatch) {
     const collectionKey = projMatch[1];
@@ -53,8 +77,7 @@ export const extractCollectionInfo = (
     };
   }
 
-  // 2. Try id matching <name>-<vol>-<lang>-<level>
-  const idTrimmed = (id ?? "").trim().toLowerCase();
+  // 3. Try id matching <name>-<vol>-<lang>-<level>
   const idMatch = idTrimmed.match(
     /^([a-z0-9_-]+?)[-_](\d+)[-_](?:[a-z]{2})[-_](?:[a-z0-9]+)$/i
   );
@@ -69,24 +92,6 @@ export const extractCollectionInfo = (
     };
   }
 
-  // 3. Try title matching volume pattern e.g. "(Del 2)", "Volym 2", "Vol. 3", "Del 1"
-  if (rawTitle) {
-    const volRegex = new RegExp(
-      `\\b${VOLUME_KEYWORD_PATTERN}\\s*(\\d+)\\b`,
-      "i"
-    );
-    const titleMatch = rawTitle.match(volRegex);
-    if (titleMatch) {
-      const volumeNumber = parseInt(titleMatch[1], 10);
-      return {
-        isCollection: true,
-        collectionKey: projTrimmed || null,
-        volumeNumber,
-        volumeLabel: formatVolumeLabel(volumeNumber, lang),
-      };
-    }
-  }
-
   return {
     isCollection: false,
     collectionKey: null,
@@ -95,55 +100,27 @@ export const extractCollectionInfo = (
   };
 };
 
-const SERIES_SORT_NAMES: Record<string, Record<string, string>> = {
-  sv: {
-    cities: "Världens vackraste städer",
-    discoveries: "Stora upptäckter som förändrade världen",
-    figures: "Bakom myten",
-    professions: "Yrken som bygger världen",
-    sports: "Sportens värld",
-    startups: "Startups som förändrade världen",
-    vehicles: "Maskiner i rörelse",
-  },
-  en: {
-    cities: "Most Beautiful Cities",
-    discoveries: "Great Discoveries",
-    figures: "Behind the Myth",
-    professions: "Professions That Build the World",
-    sports: "World of Sports",
-    startups: "Startups That Changed the World",
-    vehicles: "Machines of Motion",
-  },
-  de: {
-    cities: "Die schönsten Städte der Welt",
-    discoveries: "Große Entdeckungen",
-    figures: "Hinter dem Mythos",
-    professions: "Berufe, die die Welt bewegen",
-    sports: "Die Welt des Sports",
-    startups: "Startups, die die Welt veränderten",
-    vehicles: "Maschinen in Bewegung",
-  },
-  it: {
-    cities: "Le città più belle del mondo",
-    discoveries: "Grandi scoperte",
-    figures: "Dietro il mito",
-    professions: "Professioni che muovono il mondo",
-    sports: "Il mondo dello sport",
-    startups: "Startup che hanno cambiato il mondo",
-    vehicles: "Macchine in movimento",
-  },
-  es: {
-    cities: "Las ciudades más bellas del mundo",
-    discoveries: "Grandes descubrimientos",
-    figures: "Detrás del mito",
-    professions: "Profesiones que mueven el mundo",
-    sports: "El mundo del deporte",
-    startups: "Startups que cambiaron el mundo",
-    vehicles: "Máquinas en movimiento",
-  },
-};
-
 export const compareBooksForCatalog = (left: ReaderBook, right: ReaderBook) => {
+  const leftParsed = parseBookTitle(
+    left.title,
+    left.project,
+    left.lang,
+    left.id
+  );
+  const rightParsed = parseBookTitle(
+    right.title,
+    right.project,
+    right.lang,
+    right.id
+  );
+
+  // 1. Sort primarily by the main displayed title in alphabetical order
+  const titleDiff = collator.compare(leftParsed.mainTitle, rightParsed.mainTitle);
+  if (titleDiff !== 0) {
+    return titleDiff;
+  }
+
+  // 2. If main titles are identical (e.g. multi-volume series), sort by volume number ascending
   const leftCol = extractCollectionInfo(
     left.project,
     left.id,
@@ -157,39 +134,12 @@ export const compareBooksForCatalog = (left: ReaderBook, right: ReaderBook) => {
     right.lang
   );
 
-  // If both books belong to the SAME collection, sort strictly by volumeNumber ascending:
-  if (
-    leftCol.collectionKey &&
-    rightCol.collectionKey &&
-    leftCol.collectionKey === rightCol.collectionKey
-  ) {
-    const volDiff = (leftCol.volumeNumber ?? 0) - (rightCol.volumeNumber ?? 0);
+  if (leftCol.volumeNumber != null && rightCol.volumeNumber != null) {
+    const volDiff = leftCol.volumeNumber - rightCol.volumeNumber;
     if (volDiff !== 0) return volDiff;
   }
 
-  // To group collections together contiguously, determine a collection sort key:
-  const getSortKey = (book: ReaderBook, col: CollectionInfo) => {
-    const lang = (book.lang ?? "en").trim().toLowerCase();
-    if (col.collectionKey) {
-      const canonicalName =
-        SERIES_SORT_NAMES[lang]?.[col.collectionKey] ||
-        SERIES_SORT_NAMES.en?.[col.collectionKey];
-      if (canonicalName) {
-        return canonicalName;
-      }
-      return col.collectionKey;
-    }
-    return book.title;
-  };
-
-  const leftKey = getSortKey(left, leftCol);
-  const rightKey = getSortKey(right, rightCol);
-
-  const keyDiff = collator.compare(leftKey, rightKey);
-  if (keyDiff !== 0) {
-    return keyDiff;
-  }
-
+  // 3. Tie-breaker by full raw title
   return collator.compare(left.title, right.title);
 };
 

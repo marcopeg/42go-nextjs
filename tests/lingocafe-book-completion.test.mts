@@ -254,3 +254,27 @@ test("parseBookTitle automatically infers volume 1 badge for -01 series books wi
   assert.equal(dracula.volumeLabel, null);
 });
 
+test("compareBooksForCatalog sorts bookshelf titles strictly alphabetically while preserving volume order", () => {
+  const books = [
+    makeBook({ id: "vehicles-02", title: "Machines of Motion: Giants of Water", project: "vehicles-02" }),
+    makeBook({ id: "dracula", title: "Dracula", project: "dracula" }),
+    makeBook({ id: "vehicles-01", title: "Machines of Motion: Iron Rails & Open Roads", project: "vehicles-01" }),
+    makeBook({ id: "crusoe", title: "Robinson Crusoe", project: "crusoe" }),
+    makeBook({ id: "home-01", title: "The World at Home: Family, Spaces & Everyday Life", project: "home-01" }),
+    makeBook({ id: "cities-01", title: "Cities of Wonder: Ancient Marvels", project: "cities-01" }),
+  ];
+
+  const sections = buildBookshelfSections(books);
+  const titles = sections.catalog.map((b) => b.title);
+
+  assert.deepEqual(titles, [
+    "Cities of Wonder: Ancient Marvels",
+    "Dracula",
+    "Machines of Motion: Iron Rails & Open Roads",
+    "Machines of Motion: Giants of Water",
+    "Robinson Crusoe",
+    "The World at Home: Family, Spaces & Everyday Life",
+  ]);
+});
+
+
