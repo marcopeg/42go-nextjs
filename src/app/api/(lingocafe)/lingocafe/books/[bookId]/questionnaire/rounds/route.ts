@@ -1,4 +1,5 @@
 import { protectRoute } from "@/42go/policy";
+import { decodeReaderSlug } from "@/lib/lingocafe/slug";
 import { getSessionUserId } from "@/app/api/(lingocafe)/lingocafe/_lib/reader";
 import {
   questionnaireErrorResponse,
@@ -11,12 +12,12 @@ import {
 const readTrainingScope = (req: Request): QuestionnaireTrainingScope | undefined => {
   const url = new URL(req.url);
   const kind = url.searchParams.get("scope");
-  const pageId = url.searchParams.get("scope_page");
-  if (!kind && !pageId) return undefined;
-  if ((kind !== "chapter" && kind !== "part") || !pageId) {
+  const rawPageId = url.searchParams.get("scope_page");
+  if (!kind && !rawPageId) return undefined;
+  if ((kind !== "chapter" && kind !== "part") || !rawPageId) {
     throw new QuestionnaireServiceError("validation", "Invalid training scope.");
   }
-  return { kind, pageId };
+  return { kind, pageId: decodeReaderSlug(rawPageId) };
 };
 
 const startRound = async (
@@ -32,7 +33,8 @@ const startRound = async (
         { status: 401 }
       );
     }
-    const { bookId } = await params;
+    const { bookId: rawBookId } = await params;
+    const bookId = decodeReaderSlug(rawBookId);
     const scope = readTrainingScope(req);
     return questionnaireJson(await startQuestionnaireRound({
       userId,

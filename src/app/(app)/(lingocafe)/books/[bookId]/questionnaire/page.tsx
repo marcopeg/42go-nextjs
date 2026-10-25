@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { AppLayout } from "@/42go/layouts/app";
 import type { Policy } from "@/42go/policy/types";
+import { decodeReaderSlug } from "@/lib/lingocafe/slug";
 import { QuestionnaireExperience } from "@/app/(app)/(lingocafe)/books/_components/QuestionnaireExperience";
 
 const QUESTIONNAIRE_PAGE_POLICY: Policy = {
@@ -13,8 +14,7 @@ const QUESTIONNAIRE_PAGE_POLICY: Policy = {
 
 const QuestionnairePage = () => {
   const params = useParams<{ bookId: string | string[] }>();
-  const bookIdParam = params?.bookId;
-  const bookId = Array.isArray(bookIdParam) ? bookIdParam[0] : bookIdParam || "";
+  const bookId = decodeReaderSlug(params?.bookId);
 
   return (
     <AppLayout

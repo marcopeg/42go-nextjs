@@ -20,6 +20,7 @@ import {
   rankQuestionnaireCandidates,
   type QuestionnaireCandidate,
 } from "@/lib/lingocafe/questionnaire-selection";
+import { decodeReaderSlug } from "@/lib/lingocafe/slug";
 
 const DEFAULT_ROUND_SIZE = 10;
 const STANDARD_MODE = "standard";
@@ -274,11 +275,20 @@ const resolveTrainingScopePageIds = async (
   bookId: string,
   scope: QuestionnaireTrainingScope
 ) => {
+  const normalizedBookId = decodeReaderSlug(bookId);
+  const normalizedScopePageId = decodeReaderSlug(scope.pageId);
   const pages = (await db("lingocafe.books_pages")
     .select("id", "position", "kind")
-    .where({ book_id: bookId })
+    .where((builder) => {
+      builder.where({ book_id: normalizedBookId });
+      if (bookId && bookId !== normalizedBookId) {
+        builder.orWhere({ book_id: bookId });
+      }
+    })
     .orderBy("position", "asc")) as Array<{ id: string; position: number; kind: string }>;
-  const scopePage = pages.find((page) => page.id === scope.pageId);
+  const scopePage = pages.find(
+    (page) => page.id === normalizedScopePageId || page.id === scope.pageId
+  );
   if (!scopePage || scopePage.kind.toLowerCase() !== scope.kind) {
     throw new QuestionnaireServiceError("validation", "This training scope is not available.");
   }
@@ -489,9 +499,15 @@ export const startQuestionnaireRound = async ({
   }
   const db = getDB();
   return db.transaction(async (trx) => {
+    const decodedBookId = decodeReaderSlug(bookId);
     const questionnaire = (await trx("lingocafe.questionnaires")
       .select("id", "book_id", "title")
-      .where({ book_id: bookId, status: "active" })
+      .where((builder) => {
+        builder.where({ book_id: decodedBookId, status: "active" });
+        if (bookId && bookId !== decodedBookId) {
+          builder.orWhere({ book_id: bookId, status: "active" });
+        }
+      })
       .first()) as { id: string; book_id: string; title: string } | undefined;
     if (!questionnaire) {
       throw new QuestionnaireServiceError("not_found", "Questionnaire not found.");
@@ -502,9 +518,9 @@ export const startQuestionnaireRound = async ({
     if (active) return loadRound(trx, active);
 
     const pageIds = scope
-      ? await resolveTrainingScopePageIds(trx, bookId, scope)
+      ? await resolveTrainingScopePageIds(trx, questionnaire.book_id, scope)
       : undefined;
-    const candidates = await loadCandidates(trx, userId, questionnaire.id, now, pageIds, bookId);
+    const candidates = await loadCandidates(trx, userId, questionnaire.id, now, pageIds, questionnaire.book_id);
     const selected = (scope ? shuffleCandidates(candidates) : candidates).slice(0, DEFAULT_ROUND_SIZE);
     if (selected.length === 0) {
       throw new QuestionnaireServiceError("unavailable", "No questionnaire questions are available.");

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { protectRoute } from "@/42go/policy";
+import { decodeReaderSlug } from "@/lib/lingocafe/slug";
 import {
   getSessionUserId,
   getReaderProfileStringValue,
@@ -41,7 +42,9 @@ const getBookPage = async (
     );
   }
 
-  const { bookId, pageId } = await params;
+  const { bookId: rawBookId, pageId: rawPageId } = await params;
+  const bookId = decodeReaderSlug(rawBookId);
+  const pageId = decodeReaderSlug(rawPageId);
   if (!bookId || !pageId) return notFound();
 
   const bookPage = await loadBookPage(bookId, pageId);
@@ -51,15 +54,19 @@ const getBookPage = async (
   const targetLang = getReaderProfileStringValue(profile, "ownLang");
   const canTranslate = !!targetLang && isTranslationEnabled();
   const [progress, completedAt] = await Promise.all([
-    saveBookOpenProgress({ userId, bookId, pageId }),
-    loadBookCompletion(userId, bookId),
+    saveBookOpenProgress({
+      userId,
+      bookId: bookPage.book.id,
+      pageId: bookPage.page.pageId,
+    }),
+    loadBookCompletion(userId, bookPage.book.id),
   ]);
 
   await trackReaderEvent({
     userId,
     name: "page.open",
-    bookId,
-    pageId,
+    bookId: bookPage.book.id,
+    pageId: bookPage.page.pageId,
     data: { progress_bps: progress.progressBps },
   });
 
@@ -89,7 +96,9 @@ const trackPageScroll = async (
     );
   }
 
-  const { bookId, pageId } = await params;
+  const { bookId: rawBookId, pageId: rawPageId } = await params;
+  const bookId = decodeReaderSlug(rawBookId);
+  const pageId = decodeReaderSlug(rawPageId);
   if (!bookId || !pageId) return notFound();
 
   const parsed = progressPayloadSchema.safeParse(
@@ -112,16 +121,16 @@ const trackPageScroll = async (
 
   const progressBps = await saveBookProgress({
     userId,
-    bookId,
-    pageId,
+    bookId: bookPage.book.id,
+    pageId: bookPage.page.pageId,
     progressBps: parsed.data.progress_bps,
   });
 
   await trackReaderEvent({
     userId,
     name: "page.scroll",
-    bookId,
-    pageId,
+    bookId: bookPage.book.id,
+    pageId: bookPage.page.pageId,
     data: { progress_bps: progressBps },
   });
 

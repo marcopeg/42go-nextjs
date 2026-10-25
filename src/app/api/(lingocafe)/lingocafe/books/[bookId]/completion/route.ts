@@ -1,4 +1,5 @@
 import { protectRoute } from "@/42go/policy";
+import { decodeReaderSlug } from "@/lib/lingocafe/slug";
 import {
   getSessionUserId,
   json,
@@ -27,7 +28,8 @@ const mutateCompletion = async (
     );
   }
 
-  const { bookId } = await params;
+  const { bookId: rawBookId } = await params;
+  const bookId = decodeReaderSlug(rawBookId);
   if (!bookId) return notFound();
 
   const result = await operation({ userId, bookId });

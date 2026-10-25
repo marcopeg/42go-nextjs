@@ -27,6 +27,7 @@ import { SwipeableBottomSheet, type SwipeableBottomSheetHandle } from "@/42go/co
 import { cn } from "@/lib/utils";
 import { triggerInteractionHaptic } from "@/lib/interaction-haptics";
 import { DEFAULT_QUESTIONNAIRE_AUTO_SUBMIT_SECONDS } from "@/lib/lingocafe/questionnaire-preferences";
+import { decodeReaderSlug } from "@/lib/lingocafe/slug";
 import type { ReaderTrainingScope } from "@/app/(app)/(lingocafe)/books/_components/reader-training-context";
 
 type QuestionnaireExperienceProps = {
@@ -146,11 +147,15 @@ const loadRoundFromResponse = async (response: Response, fallback: string) => {
 };
 
 const requestStartOrResume = async (bookId: string, scope: QuestionnaireTrainingScope | null) => {
+  const decodedBookId = decodeReaderSlug(bookId);
   const search = scope
-    ? `?${new URLSearchParams({ scope: scope.kind, scope_page: scope.pageId }).toString()}`
+    ? `?${new URLSearchParams({
+        scope: scope.kind,
+        scope_page: decodeReaderSlug(scope.pageId),
+      }).toString()}`
     : "";
   const response = await fetch(
-    `/api/lingocafe/books/${encodeURIComponent(bookId)}/questionnaire/rounds${search}`,
+    `/api/lingocafe/books/${encodeURIComponent(decodedBookId)}/questionnaire/rounds${search}`,
     { method: "POST", credentials: "same-origin", cache: "no-store" }
   );
   return loadRoundFromResponse(response, "Could not start this questionnaire.");
@@ -165,10 +170,14 @@ const requestRound = async (roundId: string) => {
 };
 
 const buildQuestionnaireHref = (bookId: string, roundId: string, scope: QuestionnaireTrainingScope | null) => {
+  const decodedBookId = decodeReaderSlug(bookId);
   const scopeSearch = scope
-    ? `&${new URLSearchParams({ scope: scope.kind, scope_page: scope.pageId }).toString()}`
+    ? `&${new URLSearchParams({
+        scope: scope.kind,
+        scope_page: decodeReaderSlug(scope.pageId),
+      }).toString()}`
     : "";
-  return `/books/${encodeURIComponent(bookId)}/questionnaire?round=${encodeURIComponent(roundId)}${scopeSearch}`;
+  return `/books/${encodeURIComponent(decodedBookId)}/questionnaire?round=${encodeURIComponent(roundId)}${scopeSearch}`;
 };
 
 const SingleSelectQuestion = ({
@@ -399,8 +408,8 @@ export const QuestionnaireExperience = ({
     [embeddedTrainingScope, scopeKind, scopePageId]
   );
   const returnHref = trainingScope
-    ? `/books/read/${encodeURIComponent(bookId)}/${encodeURIComponent(trainingScope.pageId)}`
-    : `/books/${encodeURIComponent(bookId)}`;
+    ? `/books/read/${encodeURIComponent(decodeReaderSlug(bookId))}/${encodeURIComponent(decodeReaderSlug(trainingScope.pageId))}`
+    : `/books/${encodeURIComponent(decodeReaderSlug(bookId))}`;
   const [panelOpen, setPanelOpen] = useState(true);
   const exitTimerRef = useRef<number | null>(null);
   const returnToSource = () => {

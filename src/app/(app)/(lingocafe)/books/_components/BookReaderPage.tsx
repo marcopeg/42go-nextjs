@@ -44,6 +44,7 @@ import { useBookCompletionMutation } from "@/app/(app)/(lingocafe)/books/_compon
 import { captureReaderContentAnchor, restoreReaderContentAnchor, type ReaderContentAnchor } from "@/app/(app)/(lingocafe)/books/_components/reader-content-anchor";
 import { sizeReaderColumns } from "@/app/(app)/(lingocafe)/books/_components/reader-pagination";
 import { useReaderPreferences } from "@/app/(app)/(lingocafe)/books/_components/useReaderPreferences";
+import { decodeReaderSlug } from "@/lib/lingocafe/slug";
 import type {
   ReaderBookPage,
   ReaderBookPageNeighbor,
@@ -78,7 +79,7 @@ const clampProgressBps = (value: number) =>
   Math.min(10000, Math.max(0, Math.round(value)));
 
 const parseParam = (value: string | string[] | undefined) =>
-  Array.isArray(value) ? value[0] || "" : value || "";
+  decodeReaderSlug(value);
 
 const parseProgressParam = (value: string | null) => {
   if (value === null) return null;
@@ -112,8 +113,8 @@ const parseReaderRouteHref = (href: string): ReaderRouteState | null => {
     const rawPageId = isCurrentRoute ? fourth : third;
     if (!rawBookId || !rawPageId) return null;
 
-    const routeBookId = decodeURIComponent(rawBookId);
-    const routePageId = decodeURIComponent(rawPageId);
+    const routeBookId = decodeReaderSlug(rawBookId);
+    const routePageId = decodeReaderSlug(rawPageId);
     const pathname = `/books/read/${encodeURIComponent(
       routeBookId
     )}/${encodeURIComponent(routePageId)}`;
@@ -132,16 +133,21 @@ const parseReaderRouteHref = (href: string): ReaderRouteState | null => {
   }
 };
 
-const buildBookPageApiHref = (bookId: string, pageId: string) =>
-  `/api/lingocafe/books/${encodeURIComponent(bookId)}/pages/${encodeURIComponent(
-    pageId
-  )}`;
+const buildBookPageApiHref = (bookId: string, pageId: string) => {
+  const decodedBookId = decodeReaderSlug(bookId);
+  const decodedPageId = decodeReaderSlug(pageId);
+  return `/api/lingocafe/books/${encodeURIComponent(
+    decodedBookId
+  )}/pages/${encodeURIComponent(decodedPageId)}`;
+};
 
 const buildReaderRouteState = (
-  bookId: string,
-  pageId: string,
+  rawBookId: string,
+  rawPageId: string,
   progressBps: number | null
 ): ReaderRouteState | null => {
+  const bookId = decodeReaderSlug(rawBookId);
+  const pageId = decodeReaderSlug(rawPageId);
   if (!bookId || !pageId) return null;
 
   const pathname = `/books/read/${encodeURIComponent(
@@ -545,7 +551,7 @@ export const BookReadPage = ({
     setSettingsSurfaceOpen: playback.setSettingsSurfaceOpen,
   });
   const bookInfoHref = activeBookId
-    ? `/books/${encodeURIComponent(activeBookId)}`
+    ? `/books/${encodeURIComponent(decodeReaderSlug(activeBookId))}`
     : bookshelfHref;
   const persistLocalReaderPosition = useCallback(() => {
     if (!bookPage) return;

@@ -18,6 +18,7 @@
     "test:lingocafe-translation-context": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-translation-context.test.mts",
     "test:lingocafe-translation-scope-fab": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-translation-scope-fab.test.mts",
     "test:lingocafe-book-completion": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-book-completion.test.mts",
+    "test:lingocafe-book-slugs": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-book-slugs.test.mts",
     "test:lingocafe-questionnaire-runtime": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-questionnaire-runtime.test.mts",
     "test:lingocafe-questionnaire-seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-questionnaire-seed.test.mts",
     "test:lingocafe-questionnaire-ui": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-questionnaire-ui.test.mts",

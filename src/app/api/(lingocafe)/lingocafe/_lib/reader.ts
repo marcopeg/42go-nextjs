@@ -11,6 +11,9 @@ import { getAppConfig } from "@/42go/config/app-config";
 import { getLingoCafeReaderLanguages } from "@/config/lingocafe/profile-options";
 import { resolveLingoCafeAssetUrl } from "@/lib/lingocafe/assets";
 import { getReaderCoverOverride } from "@/lib/lingocafe/book-presentation";
+import { decodeReaderSlug } from "@/lib/lingocafe/slug";
+
+export { decodeReaderSlug } from "@/lib/lingocafe/slug";
 
 type BookRow = {
   id: string;
@@ -607,7 +610,10 @@ export const loadReaderData = async (userId: string) => {
   };
 };
 
-export const loadBookInfo = async (bookId: string, userId: string) => {
+export const loadBookInfo = async (rawBookId: string, userId: string) => {
+  const bookId = decodeReaderSlug(rawBookId);
+  if (!bookId) return null;
+
   const db = getDB();
   const book = (await db("lingocafe.books")
     .select(
@@ -624,31 +630,36 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
       "created_at",
       "updated_at"
     )
-    .where({ id: bookId })
+    .where((builder) => {
+      builder.where({ id: bookId });
+      if (rawBookId && rawBookId !== bookId) {
+        builder.orWhere({ id: rawBookId });
+      }
+    })
     .first()) as BookInfoRow | undefined;
 
   if (!book) return null;
 
   const progress = (await db("lingocafe.books_progress")
     .select("book_id", "page_id", "progress_bps", "updated_at")
-    .where({ user_id: userId, book_id: bookId })
+    .where({ user_id: userId, book_id: book.id })
     .first()) as BookProgressRow | undefined;
   const completion = (await db("lingocafe.books_completed")
     .select("book_id", "completed_at")
-    .where({ user_id: userId, book_id: bookId })
+    .where({ user_id: userId, book_id: book.id })
     .first()) as BookCompletionRow | undefined;
 
   const firstPage = progress
     ? null
     : ((await db("lingocafe.books_pages")
         .select("book_id", "id", "position")
-        .where({ book_id: bookId })
+        .where({ book_id: book.id })
         .orderBy("position", "asc")
         .first()) as BookPageRow | undefined);
 
   const pages = (await db("lingocafe.books_pages")
     .select("book_id", "id", "position", "kind", "prefix", "title")
-    .where({ book_id: bookId })
+    .where({ book_id: book.id })
     .orderBy("position", "asc")) as BookInfoPageRow[];
 
   const questionnaire = (await db("lingocafe.questionnaires as questionnaire")
@@ -674,7 +685,7 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
     })
     .select("questionnaire.id", "questionnaire.title")
     .countDistinct({ question_count: "question.id" })
-    .where({ "questionnaire.book_id": bookId, "questionnaire.status": "active" })
+    .where({ "questionnaire.book_id": book.id, "questionnaire.status": "active" })
     .whereNotNull("question.current_revision_digest")
     .groupBy("questionnaire.id", "questionnaire.title")
     .first()) as BookQuestionnaireSummaryRow | undefined;
@@ -696,56 +707,78 @@ export const loadBookInfo = async (bookId: string, userId: string) => {
             id: questionnaire.id,
             title: questionnaire.title,
             questionCount: Number(questionnaire.question_count),
-            href: `/books/${encodeURIComponent(bookId)}/questionnaire`,
+            href: `/books/${encodeURIComponent(book.id)}/questionnaire`,
           }
         : null,
   };
 };
 
-export const loadBookPage = async (bookId: string, pageId: string) => {
+export const loadBookPage = async (rawBookId: string, rawPageId: string) => {
+  const bookId = decodeReaderSlug(rawBookId);
+  const pageId = decodeReaderSlug(rawPageId);
+  if (!bookId || !pageId) return null;
+
   const db = getDB();
   const book = (await db("lingocafe.books")
     .select("id", "project", "lang", "level", "title", "author", "info")
-    .where({ id: bookId })
+    .where((builder) => {
+      builder.where({ id: bookId });
+      if (rawBookId && rawBookId !== bookId) {
+        builder.orWhere({ id: rawBookId });
+      }
+    })
     .first()) as BookPageBookRow | undefined;
 
   if (!book) return null;
 
   const page = (await db("lingocafe.books_pages")
     .select("book_id", "id", "position", "kind", "prefix", "title", "summary", "content")
-    .where({ book_id: bookId, id: pageId })
+    .where({ book_id: book.id })
+    .where((builder) => {
+      builder.where({ id: pageId });
+      if (rawPageId && rawPageId !== pageId) {
+        builder.orWhere({ id: rawPageId });
+      }
+    })
     .first()) as BookPageDetailRow | undefined;
 
   if (!page) return null;
 
   const previous = (await db("lingocafe.books_pages")
     .select("book_id", "id", "position", "kind", "prefix", "title", "summary", "content")
-    .where({ book_id: bookId })
+    .where({ book_id: book.id })
     .where("position", "<", page.position)
     .orderBy("position", "desc")
     .first()) as BookPageDetailRow | undefined;
 
   const next = (await db("lingocafe.books_pages")
     .select("book_id", "id", "position", "kind", "prefix", "title", "summary", "content")
-    .where({ book_id: bookId })
+    .where({ book_id: book.id })
     .where("position", ">", page.position)
     .orderBy("position", "asc")
     .first()) as BookPageDetailRow | undefined;
 
   const pages = (await db("lingocafe.books_pages")
     .select("book_id", "id", "position", "kind", "prefix", "title")
-    .where({ book_id: bookId })
+    .where({ book_id: book.id })
     .orderBy("position", "asc")) as BookInfoPageRow[];
 
-  const training = await loadBookPageTrainingAction({ bookId, page, pages });
+  const training = await loadBookPageTrainingAction({ bookId: book.id, page, pages });
   return mapBookPageDetail({ book, page, previous, next, pages, training });
 };
 
-export const loadBookProgress = async (userId: string, bookId: string) => {
+export const loadBookProgress = async (userId: string, rawBookId: string) => {
+  const bookId = decodeReaderSlug(rawBookId);
   const db = getDB();
   const progress = (await db("lingocafe.books_progress")
     .select("book_id", "page_id", "progress_bps", "updated_at")
-    .where({ user_id: userId, book_id: bookId })
+    .where({ user_id: userId })
+    .where((builder) => {
+      builder.where({ book_id: bookId });
+      if (rawBookId && rawBookId !== bookId) {
+        builder.orWhere({ book_id: rawBookId });
+      }
+    })
     .first()) as BookProgressRow | undefined;
 
   return progress ? mapBookProgress(progress) : null;
@@ -753,12 +786,19 @@ export const loadBookProgress = async (userId: string, bookId: string) => {
 
 export const loadBookCompletion = async (
   userId: string,
-  bookId: string,
+  rawBookId: string,
   db: Knex | Knex.Transaction = getDB()
 ) => {
+  const bookId = decodeReaderSlug(rawBookId);
   const completion = (await db("lingocafe.books_completed")
     .select("book_id", "completed_at")
-    .where({ user_id: userId, book_id: bookId })
+    .where({ user_id: userId })
+    .where((builder) => {
+      builder.where({ book_id: bookId });
+      if (rawBookId && rawBookId !== bookId) {
+        builder.orWhere({ book_id: rawBookId });
+      }
+    })
     .first()) as BookCompletionRow | undefined;
 
   return toISO(completion?.completed_at ?? null);
@@ -766,24 +806,31 @@ export const loadBookCompletion = async (
 
 export const markBookRead = async ({
   userId,
-  bookId,
+  bookId: rawBookId,
 }: {
   userId: string;
   bookId: string;
 }) => {
+  const bookId = decodeReaderSlug(rawBookId);
   const db = getDB();
 
   return db.transaction(async (trx) => {
     const book = await trx("lingocafe.books")
       .select("id")
-      .where({ id: bookId })
+      .where((builder) => {
+        builder.where({ id: bookId });
+        if (rawBookId && rawBookId !== bookId) {
+          builder.orWhere({ id: rawBookId });
+        }
+      })
       .first();
     if (!book) return null;
+    const canonicalBookId = book.id as string;
 
     const inserted = (await trx("lingocafe.books_completed")
       .insert({
         user_id: userId,
-        book_id: bookId,
+        book_id: canonicalBookId,
         completed_at: trx.fn.now(),
       })
       .onConflict(["user_id", "book_id"])
@@ -795,13 +842,13 @@ export const markBookRead = async ({
     const changed = inserted.length > 0;
     const completedAt = changed
       ? toISO(inserted[0].completed_at)
-      : await loadBookCompletion(userId, bookId, trx);
+      : await loadBookCompletion(userId, canonicalBookId, trx);
 
     if (changed) {
       await trackReaderEvent({
         userId,
         name: "book.mark.read",
-        bookId,
+        bookId: canonicalBookId,
         db: trx,
       });
     }
@@ -812,28 +859,35 @@ export const markBookRead = async ({
 
 export const markBookUnread = async ({
   userId,
-  bookId,
+  bookId: rawBookId,
   resetProgress = false,
 }: {
   userId: string;
   bookId: string;
   resetProgress?: boolean;
 }) => {
+  const bookId = decodeReaderSlug(rawBookId);
   const db = getDB();
 
   return db.transaction(async (trx) => {
     const book = await trx("lingocafe.books")
       .select("id")
-      .where({ id: bookId })
+      .where((builder) => {
+        builder.where({ id: bookId });
+        if (rawBookId && rawBookId !== bookId) {
+          builder.orWhere({ id: rawBookId });
+        }
+      })
       .first();
     if (!book) return null;
+    const canonicalBookId = book.id as string;
 
     const removed = await trx("lingocafe.books_completed")
-      .where({ user_id: userId, book_id: bookId })
+      .where({ user_id: userId, book_id: canonicalBookId })
       .del();
     const removedProgress = resetProgress
       ? await trx("lingocafe.books_progress")
-          .where({ user_id: userId, book_id: bookId })
+          .where({ user_id: userId, book_id: canonicalBookId })
           .del()
       : 0;
     const changed = removed > 0 || removedProgress > 0;
@@ -842,7 +896,7 @@ export const markBookUnread = async ({
       await trackReaderEvent({
         userId,
         name: "book.mark.unread",
-        bookId,
+        bookId: canonicalBookId,
         db: trx,
       });
     }
@@ -853,8 +907,8 @@ export const markBookUnread = async ({
 
 export const saveBookProgress = async ({
   userId,
-  bookId,
-  pageId,
+  bookId: rawBookId,
+  pageId: rawPageId,
   progressBps,
 }: {
   userId: string;
@@ -862,6 +916,8 @@ export const saveBookProgress = async ({
   pageId: string;
   progressBps: number;
 }) => {
+  const bookId = decodeReaderSlug(rawBookId);
+  const pageId = decodeReaderSlug(rawPageId);
   const db = getDB();
   const normalizedProgressBps = clampProgressBps(progressBps);
 
@@ -885,13 +941,15 @@ export const saveBookProgress = async ({
 
 export const saveBookOpenProgress = async ({
   userId,
-  bookId,
-  pageId,
+  bookId: rawBookId,
+  pageId: rawPageId,
 }: {
   userId: string;
   bookId: string;
   pageId: string;
 }) => {
+  const bookId = decodeReaderSlug(rawBookId);
+  const pageId = decodeReaderSlug(rawPageId);
   const progress = await loadBookProgress(userId, bookId);
 
   if (progress?.pageId === pageId) {
@@ -930,8 +988,8 @@ export const trackReaderEvent = async ({
     userId,
     name: name.replace(/^lingocafe\./, ""),
     data: {
-      ...(bookId ? { book_id: bookId } : {}),
-      ...(pageId ? { page_id: pageId } : {}),
+      ...(bookId ? { book_id: decodeReaderSlug(bookId) } : {}),
+      ...(pageId ? { page_id: decodeReaderSlug(pageId) } : {}),
       ...data,
     },
     meta,

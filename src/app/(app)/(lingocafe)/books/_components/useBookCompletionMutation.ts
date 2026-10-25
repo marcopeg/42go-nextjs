@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { useToast } from "@/components/ui/toast";
+import { decodeReaderSlug } from "@/lib/lingocafe/slug";
 
 type UseBookCompletionMutationOptions = {
   bookId: string;
@@ -33,7 +34,7 @@ export const useBookCompletionMutation = ({
 
     try {
       const response = await fetch(
-        `/api/lingocafe/books/${encodeURIComponent(bookId)}/completion${!completed && resetProgress ? "?resetProgress=true" : ""}`,
+        `/api/lingocafe/books/${encodeURIComponent(decodeReaderSlug(bookId))}/completion${!completed && resetProgress ? "?resetProgress=true" : ""}`,
         {
           method: completed ? "PUT" : "DELETE",
           credentials: "same-origin",

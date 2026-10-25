@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 
 import { AppLayout } from "@/42go/layouts/app";
 import type { Policy } from "@/42go/policy/types";
+import { decodeReaderSlug } from "@/lib/lingocafe/slug";
 import { BookInfoContent } from "@/app/(app)/(lingocafe)/books/_components/BookInfoContent";
 import { useLingocafeRouteLoading } from "@/app/(app)/(lingocafe)/books/_components/useLingocafeRouteLoading";
 import type {
@@ -142,8 +143,7 @@ const MobileBookInfo = ({
 const BookInfoPage = () => {
   const params = useParams<{ bookId: string | string[] }>();
   const { status } = useSession();
-  const bookIdParam = params?.bookId;
-  const bookId = Array.isArray(bookIdParam) ? bookIdParam[0] : bookIdParam || "";
+  const bookId = decodeReaderSlug(params?.bookId);
   const [book, setBook] = useState<ReaderBookInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
