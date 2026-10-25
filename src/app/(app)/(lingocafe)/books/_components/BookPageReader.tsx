@@ -834,6 +834,30 @@ const ReaderMarkdownEm = ({ children }: { children?: ReactNode }) => {
   );
 };
 
+const stripDuplicateLeadingHeader = (source: string | null | undefined): string => {
+  if (!source) return "";
+  return source.replace(/^\s*#{1,6}\s+[^\r\n]*(?:\r?\n)+/, "");
+};
+
+const ReaderMarkdownImg = ({
+  src,
+  alt,
+}: {
+  src?: string;
+  alt?: string;
+}) => {
+  if (!src) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt || ""}
+      loading="lazy"
+      className="-mx-6 my-4 block w-[calc(100%+3rem)] max-w-none object-cover shadow-sm md:mx-0 md:my-6 md:w-full md:max-w-full md:rounded-xl"
+    />
+  );
+};
+
 // Stable component types preserve in-flight tap timers when the scaffold opens.
 const readerMarkdownComponents: Components = {
   h1: ReaderMarkdownH1,
@@ -845,6 +869,7 @@ const readerMarkdownComponents: Components = {
   p: ReaderMarkdownP,
   strong: ReaderMarkdownStrong,
   em: ReaderMarkdownEm,
+  img: ReaderMarkdownImg,
 };
 
 const BookPageMarkdown = ({
@@ -856,14 +881,14 @@ const BookPageMarkdown = ({
   preferences: ReaderPreferences;
   context: SentenceRenderContext;
 }) => (
-  <div className="min-w-0 max-w-none [&_img]:h-auto [&_img]:max-w-full [&_a]:underline [&_a]:underline-offset-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-2">
+  <div className="min-w-0 max-w-none [&_img]:h-auto [&_img]:max-w-none md:[&_img]:max-w-full [&_a]:underline [&_a]:underline-offset-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-2">
     <ReaderMarkdownContext.Provider value={{ preferences, context }}>
       <ReactMarkdown
         allowedElements={readerBookAllowedElements}
         components={readerMarkdownComponents}
         skipHtml
       >
-        {source}
+        {stripDuplicateLeadingHeader(source)}
       </ReactMarkdown>
     </ReaderMarkdownContext.Provider>
   </div>
