@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  inspectBookCatalogPublicationSeedSource,
   inspectBookSeedSource,
   inspectBookTitleMetadataSeedSource,
 } from "../scripts/production-book-seed.mjs";
@@ -52,6 +53,23 @@ exports.seed = async function (knex) {
     }
   })
 }
+`;
+
+const validCatalogPublicationSeed = `
+const publication = {
+  "publishedAt": "2026-10-26T17:45:00.000Z"
+};
+
+exports.seed = async function (knex) {
+  await knex.transaction(async (trx) => {
+    await trx.withSchema('lingocafe').table('books')
+      .whereNull('published_at')
+      .update({
+        published_at: publication.publishedAt,
+        updated_at: knex.fn.now(),
+      });
+  });
+};
 `;
 
 test("accepts one generated new-book seed limited to the books tables", () => {
@@ -162,6 +180,27 @@ test("rejects a title metadata update that touches book pages", () => {
       inspectBookTitleMetadataSeedSource(
         "20261027120000.lingocafe.startups-titles.js",
         validTitleMetadataSeed.replace(".table('books')", ".table('books_pages')")
+      ),
+    /books/
+  );
+});
+
+test("accepts the bounded books-only catalog publication update", () => {
+  assert.deepEqual(
+    inspectBookCatalogPublicationSeedSource(
+      "20261026190000.lingocafe.catalog-publication.js",
+      validCatalogPublicationSeed
+    ),
+    { bookIds: [], publicationAt: "2026-10-26T17:45:00.000Z" }
+  );
+});
+
+test("rejects a catalog publication update that touches reader pages", () => {
+  assert.throws(
+    () =>
+      inspectBookCatalogPublicationSeedSource(
+        "20261026190000.lingocafe.catalog-publication.js",
+        validCatalogPublicationSeed.replace(".table('books')", ".table('books_pages')")
       ),
     /books/
   );

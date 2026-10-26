@@ -18,6 +18,7 @@ const productionEnvPath = resolve(projectRoot, ".env.prod");
 
 const BOOK_SEED_FILENAME = /^\d{14}\.lingocafe\.[a-z0-9]+(?:-[a-z0-9]+)*-[a-z]{2,3}-(?:a[12]|b[12])\.js$/;
 const BOOK_TITLE_METADATA_SEED_FILENAME = /^\d{14}\.lingocafe\.[a-z0-9]+(?:-[a-z0-9]+)*-titles\.js$/;
+const BOOK_CATALOG_PUBLICATION_SEED_FILENAME = /^\d{14}\.lingocafe\.catalog-publication\.js$/;
 const FORBIDDEN_SEED_OPERATIONS = [
   /\.(?:delete)\s*\(/i,
   /(?:knex|trx)\s*\(/,
@@ -187,12 +188,73 @@ export const inspectBookTitleMetadataSeedSource = (seedFile, source) => {
   };
 };
 
+export const inspectBookCatalogPublicationSeedSource = (seedFile, source) => {
+  if (!BOOK_CATALOG_PUBLICATION_SEED_FILENAME.test(seedFile)) {
+    fail("the catalog publication seed filename must end in .lingocafe.catalog-publication.js.");
+  }
+
+  if (
+    FORBIDDEN_SEED_OPERATIONS.some((pattern) => pattern.test(source)) ||
+    /(?:knex|trx)\.raw\s*\(/i.test(source) ||
+    /\.(?:insert|del|delete|onConflict)\s*\(/i.test(source)
+  ) {
+    fail("the catalog publication seed contains a forbidden database operation.");
+  }
+
+  const declaration = source.match(/const publication = (\{[\s\S]*?\})\s*;?\s*\n\s*exports\.seed/m);
+  if (!declaration) {
+    fail("the catalog publication seed must declare a JSON publication object.");
+  }
+
+  let publication;
+  try {
+    publication = JSON.parse(declaration[1]);
+  } catch {
+    fail("the catalog publication object must be valid JSON.");
+  }
+  if (
+    Object.keys(publication || {}).sort().join(",") !== "publishedAt" ||
+    typeof publication.publishedAt !== "string" ||
+    new Date(publication.publishedAt).toISOString() !== publication.publishedAt
+  ) {
+    fail("the catalog publication seed must contain one exact ISO publishedAt timestamp.");
+  }
+
+  const tableCalls = [...source.matchAll(/\.table\(\s*([^)]*?)\s*\)/g)];
+  const schemaCalls = [...source.matchAll(/\.withSchema\(\s*([^)]*?)\s*\)/g)];
+  if (
+    tableCalls.length === 0 ||
+    tableCalls.some((match) => match[1] !== "'books'" && match[1] !== '"books"') ||
+    schemaCalls.length === 0 ||
+    schemaCalls.some((match) => match[1] !== "'lingocafe'" && match[1] !== '"lingocafe"')
+  ) {
+    fail("the catalog publication seed may write only lingocafe.books.");
+  }
+
+  const updateCalls = source.match(/\.update\s*\(/g) || [];
+  const isBoundedUpdate =
+    /withSchema\(\s*["']lingocafe["']\s*\)\s*\.table\(\s*["']books["']\s*\)[\s\S]*?\.whereNull\(\s*["']published_at["']\s*\)[\s\S]*?\.update\(\s*\{\s*published_at:\s*publication\.publishedAt\s*,\s*updated_at:\s*knex\.fn\.now\(\)\s*,?\s*\}\s*\)/.test(
+      source
+    );
+  if (updateCalls.length !== 1 || !isBoundedUpdate) {
+    fail("catalog publication must only set published_at and updated_at for books that are not yet published.");
+  }
+
+  return { bookIds: [], publicationAt: publication.publishedAt };
+};
+
 const inspectProductionBookSeedSource = (seedFile, source) => {
   if (BOOK_SEED_FILENAME.test(seedFile)) {
     return { kind: "new-edition", ...inspectBookSeedSource(seedFile, source) };
   }
   if (BOOK_TITLE_METADATA_SEED_FILENAME.test(seedFile)) {
     return { kind: "title-metadata", ...inspectBookTitleMetadataSeedSource(seedFile, source) };
+  }
+  if (BOOK_CATALOG_PUBLICATION_SEED_FILENAME.test(seedFile)) {
+    return {
+      kind: "catalog-publication",
+      ...inspectBookCatalogPublicationSeedSource(seedFile, source),
+    };
   }
   fail("the seed is not an approved book edition or title metadata operation.");
 };
@@ -245,7 +307,9 @@ const resolveSeedsSince = (baseRef) => {
     .map((entry) => basename(entry))
     .filter(
       (seedFile) =>
-        BOOK_SEED_FILENAME.test(seedFile) || BOOK_TITLE_METADATA_SEED_FILENAME.test(seedFile)
+        BOOK_SEED_FILENAME.test(seedFile) ||
+        BOOK_TITLE_METADATA_SEED_FILENAME.test(seedFile) ||
+        BOOK_CATALOG_PUBLICATION_SEED_FILENAME.test(seedFile)
     );
 
   if (files.length === 0) {
@@ -337,6 +401,17 @@ const assertMetadataWasPublished = async (client, metadataSeeds) => {
   }
 };
 
+const assertCatalogWasPublished = async (client, catalogPublicationSeeds) => {
+  if (catalogPublicationSeeds.length === 0) return;
+
+  const result = await client.query(
+    "SELECT count(*)::int AS unpublished FROM lingocafe.books WHERE published_at IS NULL"
+  );
+  if (result.rows[0].unpublished !== 0) {
+    fail("the catalog publication seed completed while unpublished books still remain.");
+  }
+};
+
 const runBookSeed = async (seedFile, databaseUrl) => {
   const seedPath = resolve(seedsDirectory, seedFile);
   const seedModule = require(seedPath);
@@ -379,11 +454,12 @@ export const publishProductionBooks = async ({ requestedFiles, baseline }) => {
   const seenSeedFiles = new Set();
   const seenBookIds = new Set();
   for (const seed of seeds) {
-    const [bookId] = seed.bookIds;
     if (seenSeedFiles.has(seed.seedFile)) duplicateSeedFiles.add(seed.seedFile);
-    if (seenBookIds.has(bookId)) duplicateBookIds.add(bookId);
     seenSeedFiles.add(seed.seedFile);
-    seenBookIds.add(bookId);
+    for (const bookId of seed.bookIds) {
+      if (seenBookIds.has(bookId)) duplicateBookIds.add(bookId);
+      seenBookIds.add(bookId);
+    }
   }
   if (duplicateSeedFiles.size > 0 || duplicateBookIds.size > 0) {
     fail("every production publication batch must contain unique seed files and book ids.");
@@ -402,6 +478,7 @@ export const publishProductionBooks = async ({ requestedFiles, baseline }) => {
     await client.query("SELECT pg_advisory_lock(hashtext('lingocafe-production-book-publish'))");
     const existingBookIds = await getExistingBookIds(client, seeds.flatMap((seed) => seed.bookIds));
     const metadataSeeds = seeds.filter((seed) => seed.kind === "title-metadata");
+    const catalogPublicationSeeds = seeds.filter((seed) => seed.kind === "catalog-publication");
     await assertMetadataBooksExist(client, metadataSeeds);
     if (!baseline && existingBookIds.size > 0) {
       fail(`book id already exists in production: ${[...existingBookIds].join(", ")}`);
@@ -410,7 +487,7 @@ export const publishProductionBooks = async ({ requestedFiles, baseline }) => {
     const newSeeds = seeds.filter(
       (seed) => seed.kind === "new-edition" && !existingBookIds.has(seed.bookIds[0])
     );
-    if (newSeeds.length === 0 && metadataSeeds.length === 0) {
+    if (newSeeds.length === 0 && metadataSeeds.length === 0 && catalogPublicationSeeds.length === 0) {
       console.log("Every requested book edition is already published; the verified backup was retained and no seed ran.");
       return;
     }
@@ -425,6 +502,11 @@ export const publishProductionBooks = async ({ requestedFiles, baseline }) => {
       await runBookSeed(seed.seedFile, databaseUrl);
     }
 
+    for (const seed of catalogPublicationSeeds) {
+      await runBookSeed(seed.seedFile, databaseUrl);
+    }
+    await assertCatalogWasPublished(client, catalogPublicationSeeds);
+
     const published = await client.query(
       "SELECT id FROM lingocafe.books WHERE id = ANY($1::text[]) ORDER BY id",
       [bookIds]
@@ -434,6 +516,9 @@ export const publishProductionBooks = async ({ requestedFiles, baseline }) => {
     }
 
     console.log(`Published ${bookIds.length} new production book editions.`);
+    if (catalogPublicationSeeds.length > 0) {
+      console.log("Published every book in the production catalog.");
+    }
   } finally {
     await client.query("SELECT pg_advisory_unlock(hashtext('lingocafe-production-book-publish'))").catch(() => {});
     await client.end();

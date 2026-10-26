@@ -386,7 +386,7 @@ verify.deployment:
 ### DB Utilities
 ###
 
-.PHONY: prod.book.publish prod.book.publish.idangerouslyconfirm prod.books.publish.since prod.books.publish.since.idangerouslyconfirm prod.migrate prod.migrate.idangerouslyconfirm prod.seed prod.seed.idangerouslyconfirm prod.seed.file prod.seed.file.idangerouslyconfirm prod.lc.books prod.lc.books.idangerouslyconfirm prod.lc.convs prod.lc.convs.idangerouslyconfirm
+.PHONY: prod.book.publish prod.book.publish.idangerouslyconfirm prod.books.publish.since prod.books.publish.since.idangerouslyconfirm prod.books.publish.catalog prod.books.publish.catalog.idangerouslyconfirm prod.migrate prod.migrate.idangerouslyconfirm prod.seed prod.seed.idangerouslyconfirm prod.seed.file prod.seed.file.idangerouslyconfirm prod.lc.books prod.lc.books.idangerouslyconfirm prod.lc.convs prod.lc.convs.idangerouslyconfirm
 
 PROD_SEED_FILES := $(notdir $(wildcard knex/seeds/*.js))
 
@@ -412,6 +412,13 @@ prod.books.publish.since:
 
 prod.books.publish.since.idangerouslyconfirm:
 	@node scripts/production-book-seed.mjs --all-new-since "$(base)"
+
+prod.books.publish.catalog:
+	$(call confirm_production_action,prod.books.publish.catalog,prod.books.publish.catalog.idangerouslyconfirm)
+	@$(MAKE) prod.books.publish.catalog.idangerouslyconfirm
+
+prod.books.publish.catalog.idangerouslyconfirm:
+	@node scripts/production-book-seed.mjs --file "20261026190000.lingocafe.catalog-publication.js"
 
 migrate.up:
 	npx knex migrate:up

@@ -14,23 +14,34 @@ one locked, backup-first batch:
 make prod.books.publish.since base=<baseline-commit>
 ```
 
+When every canonical book must be reader-released, the only allowed catalog
+wide operation is the committed, books-only publication-status seed:
+
+```bash
+make prod.books.publish.catalog
+```
+
 The command requires an interactive confirmation. Its non-interactive target
 is intended only for a separately confirmed operator workflow.
 
 Before it performs any other production-database operation, the guarded
 publisher:
 
-1. accepts only committed, unmodified language-and-level book seeds and
-   title-only metadata seeds;
+1. accepts only committed, unmodified language-and-level book seeds,
+   title-only metadata seeds, and the single bounded catalog-publication
+   seed;
 2. verifies that an edition seed is limited to `lingocafe.books` and
    `lingocafe.books_pages`, while a metadata seed can update only
    `lingocafe.books.title`, `description`, and `updated_at` for an exact
-   existing `id`/`project` pair;
+   existing `id`/`project` pair; the catalog-publication seed can set only
+   `lingocafe.books.published_at` and `updated_at`, and only where
+   `published_at` is currently empty;
 3. creates and verifies a full `pg_dump` snapshot under
    `.local/42go-backups/`; and
 4. obtains an advisory lock, rejects an already-published direct request, and
    runs only that seed (or, for the recovery batch, only new editions still
    absent from production plus verified metadata updates for existing books).
+   The catalog-publication workflow verifies that no unpublished book remains.
 
 No production book workflow may write authentication, profiles, consent,
 reading progress, completions, quicklist, events, conversations, notes, or any
