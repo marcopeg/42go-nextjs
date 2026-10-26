@@ -31,9 +31,10 @@ publisher:
 
 The legacy `prod.migrate`, `prod.seed`, `prod.seed.file`, `prod.lc.books`, and
 `prod.lc.convs` targets are intentionally disabled. `knexfile.js` also rejects
-direct `.env.prod` Knex commands unless they carry the guarded publisher's
-verified-backup capability. Application releases do not execute database
-migrations or seeds.
+every direct `.env.prod` or `--env production` Knex command. The guarded
+publisher invokes the statically validated book seed itself, so no separate
+production Knex command can bypass its table scope and verified-backup check.
+Application releases do not execute database migrations or seeds.
 
 Backups are ignored local recovery artifacts. Keep them protected and test a
 restore in an isolated database before an incident recovery.

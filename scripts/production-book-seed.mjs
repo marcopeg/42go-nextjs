@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { basename, dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,6 +8,8 @@ import dotenv from "dotenv";
 import pg from "pg";
 
 const { Client } = pg;
+const require = createRequire(import.meta.url);
+const createKnex = require("knex");
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDirectory, "..");
 const seedsDirectory = resolve(projectRoot, "knex/seeds");
@@ -16,8 +19,10 @@ const productionEnvPath = resolve(projectRoot, ".env.prod");
 const BOOK_SEED_FILENAME = /^\d{14}\.lingocafe\.[a-z0-9]+(?:-[a-z0-9]+)*-[a-z]{2,3}-(?:a[12]|b[12])\.js$/;
 const FORBIDDEN_SEED_OPERATIONS = [
   /\.(?:delete)\s*\(/i,
-  /(?:knex|trx)\s*\(\s*["'](?:auth|quicklist|events|notes)[.'"]/i,
+  /(?:knex|trx)\s*\(/,
   /(?:knex|trx)\.schema\b/i,
+  /^\s*import\s/m,
+  /^\s*(?:const|let|var)\s+\w+\s*=\s*require\s*\(/m,
 ];
 
 const fail = (message) => {
@@ -70,9 +75,11 @@ export const inspectBookSeedSource = (seedFile, source) => {
     fail("the seed may use knex.raw only for the generated tags text-array value.");
   }
 
-  const tableNames = [
-    ...source.matchAll(/\.table\(\s*["']([^"']+)["']\s*\)/g),
-  ].map((match) => match[1]);
+  const tableCalls = [...source.matchAll(/\.table\(\s*([^)]*?)\s*\)/g)];
+  if (tableCalls.some((match) => !/^["'][^"']+["']$/.test(match[1]))) {
+    fail("table names must be static string literals.");
+  }
+  const tableNames = tableCalls.map((match) => match[1].slice(1, -1));
   const allowedTables = new Set(["books", "books_pages"]);
 
   if (
@@ -84,10 +91,12 @@ export const inspectBookSeedSource = (seedFile, source) => {
     fail("the seed may write only lingocafe.books and lingocafe.books_pages.");
   }
 
-  const schemaCalls = [
-    ...source.matchAll(/\.withSchema\(\s*["']([^"']+)["']\s*\)/g),
-  ].map((match) => match[1]);
-  if (schemaCalls.length === 0 || schemaCalls.some((schema) => schema !== "lingocafe")) {
+  const schemaCalls = [...source.matchAll(/\.withSchema\(\s*([^)]*?)\s*\)/g)];
+  if (schemaCalls.some((match) => !/^["'][^"']+["']$/.test(match[1]))) {
+    fail("schema names must be static string literals.");
+  }
+  const schemaNames = schemaCalls.map((match) => match[1].slice(1, -1));
+  if (schemaNames.length === 0 || schemaNames.some((schema) => schema !== "lingocafe")) {
     fail("the seed may use only the lingocafe schema.");
   }
 
@@ -197,17 +206,23 @@ const getExistingBookIds = async (client, bookIds) => {
   return new Set(result.rows.map((row) => row.id));
 };
 
-const runBookSeed = (seedFile, backupPath) => {
-  const environment = {
-    ...process.env,
-    DOTENV_CONFIG_PATH: ".env.prod",
-    LINGOCAFE_PRODUCTION_BOOK_SEED: "1",
-    LINGOCAFE_PRODUCTION_BACKUP_FILE: backupPath,
-  };
+const runBookSeed = async (seedFile, databaseUrl) => {
+  const seedPath = resolve(seedsDirectory, seedFile);
+  const seedModule = require(seedPath);
+  if (typeof seedModule.seed !== "function") {
+    fail(`${seedFile} does not export a Knex seed function.`);
+  }
 
-  run("npx", ["knex", "--env", "production", "seed:run", `--specific=${seedFile}`], {
-    env: environment,
+  const knex = createKnex({
+    client: "pg",
+    connection: databaseUrl,
+    pool: { min: 0, max: 1 },
   });
+  try {
+    await seedModule.seed(knex);
+  } finally {
+    await knex.destroy();
+  }
 };
 
 export const publishProductionBooks = async ({ requestedFiles, baseline }) => {
@@ -248,7 +263,7 @@ export const publishProductionBooks = async ({ requestedFiles, baseline }) => {
   // this workflow, including before the read that determines which editions
   // are already present. A no-op batch therefore still leaves a fresh,
   // verified recovery point.
-  const backupPath = createVerifiedBackup(databaseUrl, seeds.map((seed) => seed.seedFile));
+  createVerifiedBackup(databaseUrl, seeds.map((seed) => seed.seedFile));
   const client = new Client({ connectionString: databaseUrl });
 
   await client.connect();
@@ -267,7 +282,7 @@ export const publishProductionBooks = async ({ requestedFiles, baseline }) => {
 
     const bookIds = newSeeds.flatMap((seed) => seed.bookIds);
     for (const seed of newSeeds) {
-      runBookSeed(seed.seedFile, backupPath);
+      await runBookSeed(seed.seedFile, databaseUrl);
     }
 
     const published = await client.query(

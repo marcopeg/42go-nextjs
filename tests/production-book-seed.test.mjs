@@ -65,6 +65,31 @@ test("rejects a destructive seed operation", () => {
   );
 });
 
+test("rejects arbitrary raw SQL", () => {
+  assert.throws(
+    () =>
+      inspectBookSeedSource(
+        "20261027120000.lingocafe.example-en-a2.js",
+        validSeed.replace(
+          "for (const book of books) {",
+          'for (const book of books) { knex.raw("SELECT * FROM auth.users");'
+        )
+      ),
+    /blocked/
+  );
+});
+
+test("rejects direct table expressions outside the approved schema chain", () => {
+  assert.throws(
+    () =>
+      inspectBookSeedSource(
+        "20261027120000.lingocafe.example-en-a2.js",
+        validSeed.replace("trx.withSchema('lingocafe').table('books')", "trx('auth.users')")
+      ),
+    /blocked/
+  );
+});
+
 test("rejects a seed that could update an existing book identity", () => {
   assert.throws(
     () =>

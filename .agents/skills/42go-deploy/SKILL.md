@@ -94,8 +94,8 @@ edition. Never interpolate an unverified user-supplied string into a command.
 The guarded publisher validates that the file has no local changes, scopes it
 to `lingocafe.books` and `lingocafe.books_pages`, creates and verifies a fresh
 full production backup before any other production-database operation, rejects
-an already-published book id, and only then invokes the exact seed. Do not
-offer a bypass.
+an already-published book id, and invokes the validated seed itself. Direct
+production Knex commands are always rejected. Do not offer a bypass.
 
 For an incident recovery, `deploy new books since <baseline>` may use the
 batch target after fresh confirmation. It enumerates only committed,

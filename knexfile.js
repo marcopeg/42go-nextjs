@@ -1,36 +1,20 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const fs = require("fs");
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const path = require("path");
 
 const dotenvPath = process.env.DOTENV_CONFIG_PATH || "./.env";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require("dotenv").config({ path: dotenvPath });
 
-const productionSeedPattern = /^\d{14}\.lingocafe\.[a-z0-9]+(?:-[a-z0-9]+)*-[a-z]{2,3}-(?:a[12]|b[12])\.js$/;
-const specificSeed = process.argv.find((argument) => argument.startsWith("--specific="))?.slice("--specific=".length);
 const knexEnvironmentIndex = process.argv.indexOf("--env");
 const requestedKnexEnvironment =
   knexEnvironmentIndex >= 0 ? process.argv[knexEnvironmentIndex + 1] : undefined;
 const targetsProductionDatabase =
   path.basename(dotenvPath) === ".env.prod" || requestedKnexEnvironment === "production";
-const isSeedCommand = process.argv.includes("seed:run");
 
 if (targetsProductionDatabase) {
-  const backupPath = process.env.LINGOCAFE_PRODUCTION_BACKUP_FILE;
-  const isGuardedBookSeed =
-    isSeedCommand &&
-    process.env.LINGOCAFE_PRODUCTION_BOOK_SEED === "1" &&
-    Boolean(backupPath) &&
-    fs.existsSync(backupPath) &&
-    Boolean(specificSeed) &&
-    productionSeedPattern.test(specificSeed);
-
-  if (!isGuardedBookSeed) {
-    throw new Error(
-      "Production Knex commands are disabled. Use `make prod.book.publish file=<committed new-book seed>`; it creates and verifies a full backup before the only allowed production mutation."
-    );
-  }
+  throw new Error(
+    "Production Knex commands are disabled. Use `make prod.book.publish file=<committed new-book seed>`; the guarded publisher creates and verifies a full backup before the only allowed production mutation."
+  );
 }
 
 const createKnexConfig = (connString) => {
