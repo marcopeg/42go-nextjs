@@ -178,7 +178,7 @@ test("parseBookTitle automatically infers volume 1 badge for -01 series books wi
     "bakom-myten-sv-b2"
   );
   assert.equal(figures01.mainTitle, "Bakom myten");
-  assert.equal(figures01.volumeLabel, "Del 1");
+  assert.equal(figures01.volumeLabel, "Vol. 1");
 
   const figures02 = parseBookTitle(
     "Bakom myten: 20 historiska personer som förändrade världen, Del 2",
@@ -187,7 +187,7 @@ test("parseBookTitle automatically infers volume 1 badge for -01 series books wi
     "bakom-myten-2-sv-b2"
   );
   assert.equal(figures02.mainTitle, "Bakom myten");
-  assert.equal(figures02.volumeLabel, "Del 2");
+  assert.equal(figures02.volumeLabel, "Vol. 2");
 
   // 2. Discoveries series: volume 1 has (Del 1), volume 2 has (Del 2)
   const discoveries01 = parseBookTitle(
@@ -196,7 +196,7 @@ test("parseBookTitle automatically infers volume 1 badge for -01 series books wi
     "sv"
   );
   assert.equal(discoveries01.mainTitle, "Stora upptäckter som förändrade världen");
-  assert.equal(discoveries01.volumeLabel, "Del 1");
+  assert.equal(discoveries01.volumeLabel, "Vol. 1");
 
   const discoveries02 = parseBookTitle(
     "Stora upptäckter som förändrade världen (Del 2)",
@@ -204,7 +204,7 @@ test("parseBookTitle automatically infers volume 1 badge for -01 series books wi
     "sv"
   );
   assert.equal(discoveries02.mainTitle, "Stora upptäckter som förändrade världen");
-  assert.equal(discoveries02.volumeLabel, "Del 2");
+  assert.equal(discoveries02.volumeLabel, "Vol. 2");
 
   // 3. Startups series: startups-01 infers Del 1, startups-02 parses Volym 2
   const startups01 = parseBookTitle(
@@ -213,7 +213,7 @@ test("parseBookTitle automatically infers volume 1 badge for -01 series books wi
     "sv"
   );
   assert.equal(startups01.mainTitle, "Från garage till imperium");
-  assert.equal(startups01.volumeLabel, "Del 1");
+  assert.equal(startups01.volumeLabel, "Vol. 1");
 
   const startups02 = parseBookTitle(
     "Från idé till succé: 20 startup-resor som förändrade världen, Volym 2",
@@ -221,7 +221,7 @@ test("parseBookTitle automatically infers volume 1 badge for -01 series books wi
     "sv"
   );
   assert.equal(startups02.mainTitle, "Från idé till succé");
-  assert.equal(startups02.volumeLabel, "Volym 2");
+  assert.equal(startups02.volumeLabel, "Vol. 2");
 
   // 4. Multilingual volume 1 inference (German, English)
   const figuresEn01 = parseBookTitle(
@@ -238,7 +238,7 @@ test("parseBookTitle automatically infers volume 1 badge for -01 series books wi
     "de"
   );
   assert.equal(figuresDe01.mainTitle, "Hinter dem Mythos");
-  assert.equal(figuresDe01.volumeLabel, "Band 1");
+  assert.equal(figuresDe01.volumeLabel, "Bd. 1");
 
   // 5. Standalone non-series books do NOT get a volume badge
   const nemo = parseBookTitle(

@@ -21,10 +21,9 @@ export const formatVolumeLabel = (
 ): string => {
   const normalized = (lang ?? "").trim().toLowerCase();
   switch (normalized) {
-    case "sv":
-      return `Del ${vol}`;
     case "de":
-      return `Band ${vol}`;
+      return `Bd. ${vol}`;
+    case "sv":
     case "es":
     case "it":
     case "fr":
@@ -42,7 +41,7 @@ export const extractCollectionInfo = (
   const projTrimmed = (project ?? "").trim().toLowerCase();
   const idTrimmed = (id ?? "").trim().toLowerCase();
 
-  // 1. If title explicitly contains a volume keyword (e.g. "Volym 2", "(Del 2)", "Vol. 1"), preserve that explicit label
+  // 1. Read explicit numbering, then use the catalog's short localized badge.
   if (rawTitle) {
     const volRegex = new RegExp(
       `\\b(${VOLUME_KEYWORD_PATTERN}\\s*(\\d+))\\b`,
@@ -59,7 +58,7 @@ export const extractCollectionInfo = (
         isCollection: true,
         collectionKey,
         volumeNumber,
-        volumeLabel: titleMatch[1].trim(),
+        volumeLabel: formatVolumeLabel(volumeNumber, lang),
       };
     }
   }
@@ -252,7 +251,7 @@ const cleanVolumeSuffix = (str: string) => {
       ""
     )
     .replace(
-      new RegExp(`[,\\s]+${VOLUME_KEYWORD_PATTERN}\\s*\\d+\\s*$`, "i"),
+      new RegExp(`[,\\s:–—-]+${VOLUME_KEYWORD_PATTERN}\\s*\\d+\\s*$`, "i"),
       ""
     )
     .trim();
