@@ -23,6 +23,7 @@
     "test:lingocafe-questionnaire-runtime": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-questionnaire-runtime.test.mts",
     "test:lingocafe-questionnaire-seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-questionnaire-seed.test.mts",
     "test:lingocafe-questionnaire-ui": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-questionnaire-ui.test.mts",
+    "test:production-book-seed": "node --test tests/production-book-seed.test.mjs",
     "test:lingocafe-conversations-schema": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-conversations-schema.test.mts",
     "test:lingocafe-personas-schema": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-personas-schema.test.mts",
     "test:lingocafe-conversations-api": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/lingocafe-conversations-api.test.mts",

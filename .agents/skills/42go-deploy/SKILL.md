@@ -61,15 +61,18 @@ production database mutation, not an application release. Do not bump a
 version, create a tag, build an image, or run `make deploy.github` for these
 requests.
 
+Production database mutation is deliberately limited to new book editions.
+Generic seeds, migrations, bulk books refreshes, and conversation publication
+are disabled from the production Makefile because they can alter more than the
+new book scope.
+
 Recognize these request phrases and prepare exactly one matching command:
 
 | User request | Command after confirmation |
 | --- | --- |
-| `deploy migrations` or `deploy migration` | `make prod.migrate.idangerouslyconfirm` |
-| `deploy seed` | `make prod.seed.idangerouslyconfirm` |
-| `deploy seed <xxx>` | `make prod.seed.file.idangerouslyconfirm file=<exact committed seed basename>` |
-| `deploy books` | `make prod.lc.books.idangerouslyconfirm` |
-| `deploy convs`, `deploy conversations`, or `deploy conversation content` | `make prod.lc.convs.idangerouslyconfirm` |
+| `deploy new book <xxx>` | `make prod.book.publish.idangerouslyconfirm file=<exact committed new-book seed basename>` |
+| restore new books after a known baseline | `make prod.books.publish.since.idangerouslyconfirm base=<exact baseline commit>` |
+| migrations, generic seeds, bulk books refreshes, or conversations | Do not run a production command. Explain that the target is disabled and requires a separately reviewed safe workflow. |
 
 Before executing any command in this table, stop and ask for fresh, explicit
 confirmation in the conversation. State the exact command in backticks and
@@ -85,12 +88,21 @@ does not count. After confirmation, run the corresponding
 the conversation confirmation is the authorization gate. Report the result
 without displaying environment values or database connection details.
 
-For `deploy seed <xxx>`, first resolve `<xxx>` to exactly one basename in
-`knex/seeds/*.js`. Never interpolate an unverified user-supplied string into a
-command. If it is not an exact unambiguous committed seed, list the matching
-filenames or ask the user to choose one; do not ask for confirmation yet. Once
-resolved, include that exact basename in the confirmation command. `deploy
-seed` without a basename runs the complete seed collection.
+For `deploy new book <xxx>`, first resolve `<xxx>` to exactly one committed
+basename in `knex/seeds/*.js`. It must identify one language-and-level book
+edition. Never interpolate an unverified user-supplied string into a command.
+The guarded publisher validates that the file has no local changes, scopes it
+to `lingocafe.books` and `lingocafe.books_pages`, creates and verifies a fresh
+full production backup before any other production-database operation, rejects
+an already-published book id, and only then invokes the exact seed. Do not
+offer a bypass.
+
+For an incident recovery, `deploy new books since <baseline>` may use the
+batch target after fresh confirmation. It enumerates only committed,
+language-and-level book seeds added after that exact Git commit, skips editions
+already present in production, validates every remaining seed, creates and
+verifies one full backup for the batch, then runs the remaining new editions
+serially under the same advisory lock.
 
 ## Preconditions
 
