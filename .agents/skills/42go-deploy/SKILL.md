@@ -61,17 +61,19 @@ production database mutation, not an application release. Do not bump a
 version, create a tag, build an image, or run `make deploy.github` for these
 requests.
 
-Production database mutation is deliberately limited to new book editions.
+Production database mutation is deliberately limited to books content. New
+editions may add a book and its pages; a separately verified metadata seed may
+update only title, description, and timestamp for an exact existing book.
 Generic seeds, migrations, bulk books refreshes, and conversation publication
 are disabled from the production Makefile because they can alter more than the
-new book scope.
+books scope.
 
 Recognize these request phrases and prepare exactly one matching command:
 
 | User request | Command after confirmation |
 | --- | --- |
 | `deploy new book <xxx>` | `make prod.book.publish.idangerouslyconfirm file=<exact committed new-book seed basename>` |
-| restore new books after a known baseline | `make prod.books.publish.since.idangerouslyconfirm base=<exact baseline commit>` |
+| restore or fully publish books after a known baseline | `make prod.books.publish.since.idangerouslyconfirm base=<exact baseline commit>` |
 | migrations, generic seeds, bulk books refreshes, or conversations | Do not run a production command. Explain that the target is disabled and requires a separately reviewed safe workflow. |
 
 Before executing any command in this table, stop and ask for fresh, explicit
@@ -97,12 +99,13 @@ full production backup before any other production-database operation, rejects
 an already-published book id, and invokes the validated seed itself. Direct
 production Knex commands are always rejected. Do not offer a bypass.
 
-For an incident recovery, `deploy new books since <baseline>` may use the
-batch target after fresh confirmation. It enumerates only committed,
-language-and-level book seeds added after that exact Git commit, skips editions
-already present in production, validates every remaining seed, creates and
-verifies one full backup for the batch, then runs the remaining new editions
-serially under the same advisory lock.
+For an incident recovery, `deploy new books since <baseline>` or a full books
+deployment may use the batch target after fresh confirmation. It enumerates
+only committed language-and-level book seeds and verified books-only title
+metadata seeds added after that exact Git commit, skips editions already
+present in production, validates every operation, creates and verifies one
+full backup for the batch, then runs metadata updates and new editions serially
+under the same advisory lock. No other tables may be accessed.
 
 ## Preconditions
 

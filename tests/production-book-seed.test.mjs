@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { inspectBookSeedSource } from "../scripts/production-book-seed.mjs";
+import {
+  inspectBookSeedSource,
+  inspectBookTitleMetadataSeedSource,
+} from "../scripts/production-book-seed.mjs";
 
 const validSeed = `
 const books = [
@@ -24,6 +27,31 @@ exports.seed = async function (knex) {
     }
   });
 };
+`;
+
+const validTitleMetadataSeed = `
+const updates = [
+  {
+    "project": "startups-01",
+    "id": "an-existing-startup-en-a2",
+    "title": "Startups That Changed the World — Vol. 1",
+    "description": "A safe title-only update."
+  }
+];
+
+exports.seed = async function (knex) {
+  await knex.transaction(async (trx) => {
+    for (const book of updates) {
+      await trx.withSchema('lingocafe').table('books')
+        .where({ id: book.id, project: book.project })
+        .update({
+          title: book.title,
+          description: book.description,
+          updated_at: knex.fn.now()
+        })
+    }
+  })
+}
 `;
 
 test("accepts one generated new-book seed limited to the books tables", () => {
@@ -105,5 +133,36 @@ test("rejects a non-edition filename", () => {
   assert.throws(
     () => inspectBookSeedSource("20261027120000.lingocafe.example-titles.js", validSeed),
     /language-and-level/
+  );
+});
+
+test("accepts a books-only title metadata update", () => {
+  assert.deepEqual(
+    inspectBookTitleMetadataSeedSource(
+      "20261027120000.lingocafe.startups-titles.js",
+      validTitleMetadataSeed
+    ),
+    {
+      bookIds: ["an-existing-startup-en-a2"],
+      metadataUpdates: [
+        {
+          project: "startups-01",
+          id: "an-existing-startup-en-a2",
+          title: "Startups That Changed the World — Vol. 1",
+          description: "A safe title-only update.",
+        },
+      ],
+    }
+  );
+});
+
+test("rejects a title metadata update that touches book pages", () => {
+  assert.throws(
+    () =>
+      inspectBookTitleMetadataSeedSource(
+        "20261027120000.lingocafe.startups-titles.js",
+        validTitleMetadataSeed.replace(".table('books')", ".table('books_pages')")
+      ),
+    /books/
   );
 });

@@ -17,6 +17,7 @@ const backupDirectory = resolve(projectRoot, ".local/42go-backups");
 const productionEnvPath = resolve(projectRoot, ".env.prod");
 
 const BOOK_SEED_FILENAME = /^\d{14}\.lingocafe\.[a-z0-9]+(?:-[a-z0-9]+)*-[a-z]{2,3}-(?:a[12]|b[12])\.js$/;
+const BOOK_TITLE_METADATA_SEED_FILENAME = /^\d{14}\.lingocafe\.[a-z0-9]+(?:-[a-z0-9]+)*-titles\.js$/;
 const FORBIDDEN_SEED_OPERATIONS = [
   /\.(?:delete)\s*\(/i,
   /(?:knex|trx)\s*\(/,
@@ -43,7 +44,7 @@ const run = (command, args, options = {}) => {
 const timestamp = () => new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 
 const backupNameFor = (seedFiles) =>
-  `${timestamp()}.production-before-${seedFiles.length}-new-book-editions.dump`;
+  `${timestamp()}.production-before-${seedFiles.length}-book-publication-operations.dump`;
 
 const parseBookIds = (source) => {
   const matches = [
@@ -111,6 +112,91 @@ export const inspectBookSeedSource = (seedFile, source) => {
   return { bookIds: parseBookIds(source) };
 };
 
+const parseTitleMetadataUpdates = (source) => {
+  const declaration = source.match(/const updates = (\[[\s\S]*?\n\])\s*;?\s*\n\s*exports\.seed/m);
+  if (!declaration) {
+    fail("a title metadata seed must declare a JSON updates array.");
+  }
+
+  let updates;
+  try {
+    updates = JSON.parse(declaration[1]);
+  } catch {
+    fail("the title metadata updates array must be valid JSON.");
+  }
+
+  if (!Array.isArray(updates) || updates.length === 0) {
+    fail("a title metadata seed must contain at least one update.");
+  }
+
+  const ids = new Set();
+  for (const update of updates) {
+    const keys = Object.keys(update || {}).sort().join(",");
+    if (
+      keys !== "description,id,project,title" ||
+      !["id", "project", "title", "description"].every(
+        (key) => typeof update[key] === "string" && update[key].trim().length > 0
+      ) ||
+      ids.has(update.id)
+    ) {
+      fail("each title metadata update must have one unique id plus project, title, and description strings.");
+    }
+    ids.add(update.id);
+  }
+
+  return updates;
+};
+
+export const inspectBookTitleMetadataSeedSource = (seedFile, source) => {
+  if (!BOOK_TITLE_METADATA_SEED_FILENAME.test(seedFile)) {
+    fail("the metadata seed filename must end in -titles.js.");
+  }
+
+  if (
+    FORBIDDEN_SEED_OPERATIONS.some((pattern) => pattern.test(source)) ||
+    /(?:knex|trx)\.raw\s*\(/i.test(source) ||
+    /\.(?:insert|del|delete|onConflict)\s*\(/i.test(source)
+  ) {
+    fail("the title metadata seed contains a forbidden database operation.");
+  }
+
+  const tableCalls = [...source.matchAll(/\.table\(\s*([^)]*?)\s*\)/g)];
+  const schemaCalls = [...source.matchAll(/\.withSchema\(\s*([^)]*?)\s*\)/g)];
+  if (
+    tableCalls.length === 0 ||
+    tableCalls.some((match) => match[1] !== "'books'" && match[1] !== '"books"') ||
+    schemaCalls.length === 0 ||
+    schemaCalls.some((match) => match[1] !== "'lingocafe'" && match[1] !== '"lingocafe"')
+  ) {
+    fail("the title metadata seed may write only lingocafe.books.");
+  }
+
+  const updates = parseTitleMetadataUpdates(source);
+  const updateCalls = source.match(/\.update\s*\(/g) || [];
+  const isBoundedUpdate =
+    /withSchema\(\s*["']lingocafe["']\s*\)\.table\(\s*["']books["']\s*\)[\s\S]*?\.where\(\s*\{\s*id:\s*book\.id\s*,\s*project:\s*book\.project\s*\}\s*\)[\s\S]*?\.update\(\s*\{\s*title:\s*book\.title\s*,\s*description:\s*book\.description\s*,\s*updated_at:\s*knex\.fn\.now\(\)\s*\}\s*\)/.test(
+      source
+    );
+  if (updateCalls.length !== 1 || !isBoundedUpdate) {
+    fail("title metadata updates must update only title, description, and updated_at for the exact id/project pair.");
+  }
+
+  return {
+    bookIds: updates.map((update) => update.id),
+    metadataUpdates: updates,
+  };
+};
+
+const inspectProductionBookSeedSource = (seedFile, source) => {
+  if (BOOK_SEED_FILENAME.test(seedFile)) {
+    return { kind: "new-edition", ...inspectBookSeedSource(seedFile, source) };
+  }
+  if (BOOK_TITLE_METADATA_SEED_FILENAME.test(seedFile)) {
+    return { kind: "title-metadata", ...inspectBookTitleMetadataSeedSource(seedFile, source) };
+  }
+  fail("the seed is not an approved book edition or title metadata operation.");
+};
+
 const resolveSeed = (requestedFile) => {
   if (!requestedFile || basename(requestedFile) !== requestedFile) {
     fail("pass one committed seed basename with --file.");
@@ -157,10 +243,13 @@ const resolveSeedsSince = (baseRef) => {
     .split("\n")
     .filter(Boolean)
     .map((entry) => basename(entry))
-    .filter((seedFile) => BOOK_SEED_FILENAME.test(seedFile));
+    .filter(
+      (seedFile) =>
+        BOOK_SEED_FILENAME.test(seedFile) || BOOK_TITLE_METADATA_SEED_FILENAME.test(seedFile)
+    );
 
   if (files.length === 0) {
-    fail("no language-and-level book seeds were added after the requested baseline.");
+    fail("no approved book publication seeds were added after the requested baseline.");
   }
 
   return files.map(resolveSeed);
@@ -206,6 +295,48 @@ const getExistingBookIds = async (client, bookIds) => {
   return new Set(result.rows.map((row) => row.id));
 };
 
+const assertMetadataBooksExist = async (client, metadataSeeds) => {
+  const updates = metadataSeeds.flatMap((seed) => seed.metadataUpdates);
+  if (updates.length === 0) return;
+
+  const result = await client.query(
+    "SELECT id, project FROM lingocafe.books WHERE id = ANY($1::text[])",
+    [updates.map((update) => update.id)]
+  );
+  const existingById = new Map(result.rows.map((row) => [row.id, row.project]));
+  if (
+    existingById.size !== updates.length ||
+    updates.some((update) => existingById.get(update.id) !== update.project)
+  ) {
+    fail("every title metadata update must match one existing production book id and project before any seed runs.");
+  }
+};
+
+const assertMetadataWasPublished = async (client, metadataSeeds) => {
+  const updates = metadataSeeds.flatMap((seed) => seed.metadataUpdates);
+  if (updates.length === 0) return;
+
+  const result = await client.query(
+    "SELECT id, project, title, description FROM lingocafe.books WHERE id = ANY($1::text[])",
+    [updates.map((update) => update.id)]
+  );
+  const publishedById = new Map(result.rows.map((row) => [row.id, row]));
+  if (
+    publishedById.size !== updates.length ||
+    updates.some((update) => {
+      const published = publishedById.get(update.id);
+      return (
+        !published ||
+        published.project !== update.project ||
+        published.title !== update.title ||
+        published.description !== update.description
+      );
+    })
+  ) {
+    fail("the title metadata seed completed without applying every expected books-only update.");
+  }
+};
+
 const runBookSeed = async (seedFile, databaseUrl) => {
   const seedPath = resolve(seedsDirectory, seedFile);
   const seedModule = require(seedPath);
@@ -240,7 +371,7 @@ export const publishProductionBooks = async ({ requestedFiles, baseline }) => {
     const seedFile = basename(seedPath);
     return {
       seedFile,
-      ...inspectBookSeedSource(seedFile, readFileSync(seedPath, "utf8")),
+      ...inspectProductionBookSeedSource(seedFile, readFileSync(seedPath, "utf8")),
     };
   });
   const duplicateSeedFiles = new Set();
@@ -270,17 +401,26 @@ export const publishProductionBooks = async ({ requestedFiles, baseline }) => {
   try {
     await client.query("SELECT pg_advisory_lock(hashtext('lingocafe-production-book-publish'))");
     const existingBookIds = await getExistingBookIds(client, seeds.flatMap((seed) => seed.bookIds));
+    const metadataSeeds = seeds.filter((seed) => seed.kind === "title-metadata");
+    await assertMetadataBooksExist(client, metadataSeeds);
     if (!baseline && existingBookIds.size > 0) {
       fail(`book id already exists in production: ${[...existingBookIds].join(", ")}`);
     }
 
-    const newSeeds = seeds.filter((seed) => !existingBookIds.has(seed.bookIds[0]));
-    if (newSeeds.length === 0) {
+    const newSeeds = seeds.filter(
+      (seed) => seed.kind === "new-edition" && !existingBookIds.has(seed.bookIds[0])
+    );
+    if (newSeeds.length === 0 && metadataSeeds.length === 0) {
       console.log("Every requested book edition is already published; the verified backup was retained and no seed ran.");
       return;
     }
 
     const bookIds = newSeeds.flatMap((seed) => seed.bookIds);
+    for (const seed of metadataSeeds) {
+      await runBookSeed(seed.seedFile, databaseUrl);
+    }
+    await assertMetadataWasPublished(client, metadataSeeds);
+
     for (const seed of newSeeds) {
       await runBookSeed(seed.seedFile, databaseUrl);
     }

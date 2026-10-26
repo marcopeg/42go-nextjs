@@ -462,7 +462,7 @@ seed:
 	npx knex seed:run
 
 prod.migrate prod.migrate.idangerouslyconfirm prod.seed prod.seed.idangerouslyconfirm prod.seed.file prod.seed.file.idangerouslyconfirm prod.lc.books prod.lc.books.idangerouslyconfirm prod.lc.convs prod.lc.convs.idangerouslyconfirm:
-	@echo "This production database target is disabled. Only committed new-book editions may publish through the guarded book targets."
+	@echo "This production database target is disabled. Only committed, validated books content may publish through the guarded book targets."
 	@echo "The guarded publisher always creates and verifies a full backup before it can modify production."
 	@exit 1
 
