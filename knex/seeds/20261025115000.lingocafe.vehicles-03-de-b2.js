@@ -18,7 +18,9 @@ const books = [
   ],
   "info": {
     "chapters_count": 20,
-    "words_count": 1293
+    "words_count": 1293,
+    "cover_version": "v2",
+    "cover_url": "https://assets.lingocafe.app/vehicles-03/reader-v2"
   },
   "published_at": "2026-10-25T11:40:00.000Z",
   "questionnaireSql": null,

@@ -194,7 +194,14 @@ const resolveBookCover = (book: Pick<BookRow, "project" | "info">) => {
   if (override) return override;
   const project = book.project.trim().replace(/^\/+|\/+$/g, "");
   if (!project) return null;
-  return resolveLingoCafeAssetUrl(`${project}/reader`);
+  const info = normalizeBookInfo(book.info);
+  const version =
+    typeof info.cover_version === "string" && info.cover_version.trim()
+      ? info.cover_version.trim()
+      : null;
+  return resolveLingoCafeAssetUrl(
+    version ? `${project}/reader-${version}` : `${project}/reader`
+  );
 };
 
 const buildReadPageHref = (
