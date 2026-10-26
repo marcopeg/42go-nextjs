@@ -16,6 +16,7 @@ const books = [
     "nonfiction"
   ],
   "info": {
+    "cover_version": "v2",
     "chapters_count": 20,
     "words_count": 1179
   },
